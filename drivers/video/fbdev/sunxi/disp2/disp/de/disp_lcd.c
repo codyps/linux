@@ -542,14 +542,14 @@ static s32 cal_real_frame_period(struct disp_device *lcd)
 	unsigned long long temp = 0;
 
 	if (!lcd) {
-		DE_WRN("NULL hdl!\n");
+		DE_WRN_STOCK(539, "NULL hdl!\n");
 		goto OUT;
 	}
 
 	lcdp = disp_lcd_get_priv(lcd);
 
 	if (!lcdp) {
-		DE_WRN("NULL hdl!\n");
+		DE_WRN_STOCK(546, "NULL hdl!\n");
 		goto OUT;
 	}
 
@@ -558,10 +558,10 @@ static s32 cal_real_frame_period(struct disp_device *lcd)
 				 &lcdp->panel_info);
 
 	if (!lcdp->clk || !(&lcdp->panel_info)) {
-		DE_WRN("NULL clk or panel_info!\n");
+		DE_WRN_STOCK(555, "NULL clk or panel_info!\n");
 		goto OUT;
 	}
-
+	/* Stock leaves dividers unchecked; TODO: handle zero separately. */
 	if (lcdp->panel_info.lcd_if == LCD_IF_DSI)
 		lcd->timings.dclk_rate_set =
 		    clk_get_rate(lcdp->clk) / clk_info.dsi_div;
@@ -570,7 +570,7 @@ static s32 cal_real_frame_period(struct disp_device *lcd)
 		    clk_get_rate(lcdp->clk) / clk_info.tcon_div;
 
 	if (lcd->timings.dclk_rate_set == 0) {
-		DE_WRN("lcd dclk_rate_set is 0!\n");
+		DE_WRN_STOCK(567, "lcd dclk_rate_set is 0!\n");
 		ret = -2;
 		goto OUT;
 	}
