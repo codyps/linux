@@ -53,7 +53,11 @@ static const char *master[10] = {"DE", "EISE", "AI", "VE", "CSI", "ISP",
 #endif
 #ifdef CONFIG_ARCH_SUN50IW10
 static const char *master[10] = {"DE0", "DE1", "VE", "CSI", "ISP",
-                        "G2D", "EINK", "DEBUG_MODE"};
+					"G2D", "EINK", "DEBUG_MODE"};
+#endif
+#ifdef CONFIG_ARCH_SUN8IW21
+static const char *master[10] = {"VE", "CSI", "DE", "G2D", "ISP",
+	"RISCV", "NPU", "DEBUG_MODE"};
 #endif
 
 
@@ -66,10 +70,6 @@ struct sunxi_iommu_owner *global_iommu_owner;
 static struct iommu_group *global_group;
 
 static bool tlb_init_flag;
-unsigned int sunxi_iommu_version;
-unsigned int sun50iw10_ic_version;
-
-#define IOMMU_VERSION_V14 0x14
 
 static inline u32 *iopde_offset(u32 *iopd, unsigned int iova)
 {
@@ -119,22 +119,16 @@ static int sunxi_tlb_flush(struct sunxi_iommu *iommu)
 {
 	int ret;
 
+#if defined(CONFIG_ARCH_SUN8IW21)
+	sunxi_iommu_write(iommu, IOMMU_TLB_FLUSH_ENABLE_REG, 0x0003007f);
+#else
 	sunxi_iommu_write(iommu, IOMMU_TLB_FLUSH_ENABLE_REG, 0x0003003f);
+#endif
 	ret = sunxi_wait_when(
 		(sunxi_iommu_read(iommu, IOMMU_TLB_FLUSH_ENABLE_REG)), 2);
 	if (ret)
 		dev_err(iommu->dev, "Enable flush all request timed out\n");
 	return ret;
-}
-
-static bool is_sun50iw10_ic_new(void)
-{
-	if (sun50iw10_ic_version == 0 || sun50iw10_ic_version == 3 ||
-		sun50iw10_ic_version == 4)
-		return false;
-	else
-		return true;
-
 }
 
 static int
@@ -152,43 +146,30 @@ sunxi_tlb_init(struct sunxi_iommu_owner *owner,
 	spin_lock_irqsave(&iommu->iommu_lock, mflag);
 	dte_addr = __pa(sunxi_domain->pgtable);
 	sunxi_iommu_write(iommu, IOMMU_TTB_REG, dte_addr);
-	sunxi_iommu_version = sunxi_iommu_read(iommu, IOMMU_VERSION_REG);
 	/* sun8iw15p1: disable preftech on G2D for better performance */
-#if defined(CONFIG_ARCH_SUN8IW15)
+#if defined(CONFIG_ARCH_SUN8IW15) | defined(CONFIG_ARCH_SUN50IW9) \
+	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10)
 	sunxi_iommu_write(iommu, IOMMU_TLB_PREFETCH_REG, 0x5f);
-	/* disable preftech for tlb invalid mode for unsolved issue*/
-#elif defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW9)
-	sunxi_iommu_write(iommu, IOMMU_TLB_PREFETCH_REG, 0x0);
-#elif defined(CONFIG_ARCH_SUN50IW10)
-	sun50iw10_ic_version = readl(ioremap(0x03000024, 4)) & 0x00000007;
-	if (is_sun50iw10_ic_new()) {
-		sunxi_iommu_write(iommu, IOMMU_TLB_PREFETCH_REG, 0x5f);
-	} else {
-		/* disable preftech for tlb invalid mode for unsolved issue for sun50iw10(old)*/
-		sunxi_iommu_write(iommu, IOMMU_TLB_PREFETCH_REG, 0x0);
-	}
+#elif defined(CONFIG_ARCH_SUN8IW21)
+	sunxi_iommu_write(iommu, IOMMU_TLB_PREFETCH_REG, 0x77);
 #else
 	sunxi_iommu_write(iommu, IOMMU_TLB_PREFETCH_REG, 0x7f);
 #endif
 	/* disable interrupt of prefetch */
-	sunxi_iommu_write(iommu, IOMMU_INT_ENABLE_REG, 0x3003f);
+	sunxi_iommu_write(iommu, IOMMU_INT_ENABLE_REG, 0x3007f);
 	sunxi_iommu_write(iommu, IOMMU_BYPASS_REG, iommu->bypass);
 	/* sun50iw9p1: use iova start and end to invalid TLB */
-#if defined(CONFIG_ARCH_SUN50IW9) || defined(CONFIG_ARCH_SUN8IW19)
+#if defined(CONFIG_ARCH_SUN8IW19)
 	sunxi_iommu_write(iommu, IOMMU_TLB_IVLD_MODE_SEL_REG, 0x1);
-#elif defined(CONFIG_ARCH_SUN50IW10)
+#elif defined(CONFIG_ARCH_SUN8IW21)
+	/* use range(iova_start, iova_end) to invalid PTW and TLB */
+	sunxi_iommu_write(iommu, IOMMU_PC_IVLD_MODE_SEL_REG, 0x1);
 	sunxi_iommu_write(iommu, IOMMU_TLB_IVLD_MODE_SEL_REG, 0x1);
-	if (is_sun50iw10_ic_new()) {
-		/* for sun50iw10(new) */
-		/* enable prefetch valid fix mode to avoid prefetching extra invalid TLB or PTW */
-		ret = sunxi_iommu_read(iommu, IOMMU_TLB_PREFETCH_REG);
-		sunxi_iommu_write(iommu, IOMMU_TLB_PREFETCH_REG, ret | 0x30000);
-	} else {
-		/* for sun50iw10(old) */
-		/* disable prefetch valid fix mode*/
-		ret = sunxi_iommu_read(iommu, IOMMU_TLB_PREFETCH_REG);
-		sunxi_iommu_write(iommu, IOMMU_TLB_PREFETCH_REG, ret & (0xfffcffff));
-	}
+	/* enable prefetch valid fix mode to
+	 * avoid prefetching extra invalid TLB or PTW
+	 */
+	ret = sunxi_iommu_read(iommu, IOMMU_TLB_PREFETCH_REG);
+	sunxi_iommu_write(iommu, IOMMU_TLB_PREFETCH_REG, ret | 0x30000);
 #else
 	sunxi_iommu_write(iommu, IOMMU_TLB_IVLD_MODE_SEL_REG, 0x0);
 #endif
@@ -201,15 +182,13 @@ sunxi_tlb_init(struct sunxi_iommu_owner *owner,
 	sunxi_iommu_write(iommu, IOMMU_AUTO_GATING_REG, 0x1);
 	sunxi_iommu_write(iommu, IOMMU_ENABLE_REG, IOMMU_ENABLE);
 	tlb_init_flag = true;
-
 out:
 	spin_unlock_irqrestore(&iommu->iommu_lock, mflag);
 	return ret;
 
 }
 
-#if defined(CONFIG_ARCH_SUN50IW9) || defined(CONFIG_ARCH_SUN8IW19) \
-	|| defined(CONFIG_ARCH_SUN50IW10)
+#if defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN8IW21)
 static int sunxi_tlb_invalid(dma_addr_t iova_start, dma_addr_t iova_end)
 {
 	struct sunxi_iommu *iommu = global_iommu_dev;
@@ -257,7 +236,9 @@ out:
 }
 #endif
 
-/* iommu version >= 0x14: use start/end to invalid ptw*/
+/* sun8iw20/sun20iw1/sun50iw12/sun50iw10(new)/sun8iw21
+ * iommu version >= 0x14: use start/end to invalid ptw
+ */
 static int __maybe_unused sunxi_ptw_cache_invalid_new(dma_addr_t iova_start, dma_addr_t iova_end)
 {
 	struct sunxi_iommu *iommu = global_iommu_dev;
@@ -282,8 +263,7 @@ out:
 	return ret;
 }
 
-/* sun50iw10(old) iommu version < 0x14*/
-static int sunxi_ptw_cache_invalid(dma_addr_t iova)
+static int __maybe_unused sunxi_ptw_cache_invalid(dma_addr_t iova)
 {
 	struct sunxi_iommu *iommu = global_iommu_dev;
 	int ret = 0;
@@ -331,7 +311,8 @@ static void sunxi_free_iopte(u32 *pent)
 	kmem_cache_free(iopte_cache, pent);
 }
 
-#if defined(CONFIG_ARCH_SUN50IW6) || defined(CONFIG_ARCH_SUN50IW3) || defined(CONFIG_ARCH_SUN8IW15)
+#if defined(CONFIG_ARCH_SUN50IW6) || defined(CONFIG_ARCH_SUN50IW3) || defined(CONFIG_ARCH_SUN8IW15) \
+	|| defined(CONFIG_ARCH_SUN50IW9) || defined(CONFIG_ARCH_SUN50IW10)
 void sunxi_zap_tlb(unsigned long iova, size_t size)
 {
 	sunxi_tlb_invalid(iova, (u32)IOMMU_PT_MASK);
@@ -343,21 +324,22 @@ void sunxi_zap_tlb(unsigned long iova, size_t size)
 	sunxi_ptw_cache_invalid(iova + size);
 	sunxi_ptw_cache_invalid(iova + size + SPD_SIZE);
 }
-#else
+#elif defined(CONFIG_ARCH_SUN8IW21)
 static inline void sunxi_zap_tlb(unsigned long iova, size_t size)
 {
 	sunxi_tlb_invalid(iova, iova + 2 * SPAGE_SIZE);
 	sunxi_tlb_invalid(iova + size - SPAGE_SIZE, iova + size + 8 * SPAGE_SIZE);
+	sunxi_ptw_cache_invalid_new(iova, iova + SPD_SIZE);
+	sunxi_ptw_cache_invalid_new(iova + size - SPD_SIZE, iova + size);
+}
+#else
+static inline void sunxi_zap_tlb(unsigned long iova, size_t size)
+{
+	sunxi_tlb_invalid(iova, iova + size + SPAGE_SIZE);
 	sunxi_ptw_cache_invalid(iova);
-	sunxi_ptw_cache_invalid(iova + size);
-	/* new version of iommu (>= 0x14) will not pretetch any extra invalid TLB or PTW ,
-	   so no need to walk around(sunxi_zap_tlb); */
-	if (sunxi_iommu_version >= IOMMU_VERSION_V14 || is_sun50iw10_ic_new())
-		return ;
-
 	sunxi_ptw_cache_invalid(iova + SPD_SIZE);
+	sunxi_ptw_cache_invalid(iova + size);
 	sunxi_ptw_cache_invalid(iova + size + SPD_SIZE);
-	sunxi_ptw_cache_invalid(iova + size + 2 * SPD_SIZE);
 }
 #endif
 
@@ -453,8 +435,7 @@ out:
 	return 0;
 }
 
-#if defined(CONFIG_ARCH_SUN50IW9) || defined(CONFIG_ARCH_SUN8IW19) \
-	|| defined(CONFIG_ARCH_SUN50IW10)
+#if defined(CONFIG_ARCH_SUN8IW19)
 static size_t sunxi_iommu_unmap(struct iommu_domain *domain, unsigned long iova,
 		 size_t size)
 {
@@ -473,6 +454,16 @@ static size_t sunxi_iommu_unmap(struct iommu_domain *domain, unsigned long iova,
 	mutex_lock(&sunxi_domain->dt_lock);
 
 	/* Invalid TLB */
+	/*
+	for (s_iova_start = iova_start; s_iova_start <= iova_end;
+		s_iova_start = IOVA_4M_ALIGN(iova_start) + 4 * SPD_SIZE) {
+		if (IOVA_4M_ALIGN(s_iova_start) == IOVA_4M_ALIGN(iova_end))
+			sunxi_tlb_invalid(s_iova_start, iova_end);
+		else
+			sunxi_tlb_invalid(s_iova_start, IOVA_4M_ALIGN(
+			s_iova_start + 4 * SPD_SIZE - SPAGE_SIZE));
+	}
+	*/
 	sunxi_tlb_invalid(iova_start, iova_end);
 
 	/* Invalid PTW and clear iommu pagetable pde and pte */
@@ -541,7 +532,10 @@ static size_t sunxi_iommu_unmap(struct iommu_domain *domain, unsigned long iova,
 						iova_start += SPAGE_SIZE) {
 			pent = iopte_offset(dent, iova_start);
 			*pent = 0;
+			/*
+			sunxi_tlb_invalid(iova_start, (u32)IOMMU_PT_MASK);
 			++flush_count;
+			*/
 		}
 		__dma_flush_area(iopte_offset(dent, s_iova_start),
 					flush_count << 2);
@@ -549,10 +543,101 @@ static size_t sunxi_iommu_unmap(struct iommu_domain *domain, unsigned long iova,
 	}
 
 done:
-	if (sunxi_iommu_version < IOMMU_VERSION_V14 || !is_sun50iw10_ic_new())
-		sunxi_zap_tlb(iova, size);
+	sunxi_zap_tlb(iova, size);
 	mutex_unlock(&sunxi_domain->dt_lock);
 	trace_sunxi_unmap(iova, size);
+
+	return size;
+}
+#elif defined(CONFIG_ARCH_SUN8IW21)
+static size_t sunxi_iommu_unmap(struct iommu_domain *domain, unsigned long iova,
+		 size_t size)
+{
+	struct sunxi_iommu_domain *sunxi_domain =
+			container_of(domain, struct sunxi_iommu_domain, domain);
+	size_t iova_start, iova_end;
+	size_t s_iova_start;
+	u32 *dent, *pent;
+	int i;
+	int flush_count = 0;
+
+	WARN_ON(sunxi_domain->pgtable == NULL);
+	iova_start = iova & IOMMU_PT_MASK;
+	iova_end = SPAGE_ALIGN(iova + size) - SPAGE_SIZE;
+
+	mutex_lock(&sunxi_domain->dt_lock);
+
+	/* Invalid TLB and PTW :*/
+	sunxi_tlb_invalid(iova_start, iova_end);
+	sunxi_ptw_cache_invalid_new(iova_start, iova_end);
+
+	/* Invalid PTW and clear iommu pagetable pde and pte */
+	/* 1
+	 * if the iova_start and iova_end are between PD_SIZE(1M)
+	 * for example the iova is between: 0x100000--0x200000 */
+	s_iova_start = iova_start;
+	if (IOPDE_INDEX(iova_start) == IOPDE_INDEX(iova_end)) {
+		dent = iopde_offset(sunxi_domain->pgtable, iova_start);
+		if (IS_VALID(*dent)) {
+			for (flush_count = 0; iova_start <= iova_end;
+						iova_start += SPAGE_SIZE) {
+				pent = iopte_offset(dent, iova_start);
+				*pent = 0;
+				++flush_count;
+			}
+			__dma_flush_area(iopte_offset(dent, s_iova_start),
+					flush_count << 2);
+		}
+		goto done;
+	}
+	/* 2
+	 * if the iova_start and iova_end are not between PD_SIZE(1M)
+	 * for example the iova is between: 0x120000--0x540000
+	 */
+	/* 2.1. Handle the iova between:0x120000--0x1ff000 */
+	dent = iopde_offset(sunxi_domain->pgtable, iova_start);
+	if (IS_VALID(*dent)) {
+		for (flush_count = 0;
+			iova_start < SPDE_ALIGN(s_iova_start + 1);
+					iova_start += SPAGE_SIZE) {
+			pent = iopte_offset(dent, iova_start);
+			*pent = 0;
+			++flush_count;
+		}
+		__dma_flush_area(iopte_offset(dent, s_iova_start),
+				flush_count << 2);
+	}
+	/* 2.2. Handle the iova between:0x200000--0x500000 */
+	if (IOPDE_INDEX(iova_start) < IOPDE_INDEX(iova_end)) {
+		for (i = IOPDE_INDEX(iova_start); i < IOPDE_INDEX(iova_end);
+			i++, iova_start += SPD_SIZE) {
+			dent = iopde_offset(sunxi_domain->pgtable, iova_start);
+			if (IS_VALID(*dent)) {
+				pent = iopte_offset(dent, iova_start);
+				memset(pent, 0, PT_SIZE);
+				__dma_flush_area(pent, PT_SIZE);
+				*dent = 0;
+				__dma_flush_area(dent, sizeof(*dent));
+				sunxi_free_iopte(pent);
+			}
+		}
+	}
+	/* 2.3. Handle the iova between:0x500000--0x520000 */
+	s_iova_start = iova_start;
+	dent = iopde_offset(sunxi_domain->pgtable, iova_start);
+	if (IS_VALID(*dent)) {
+		for (flush_count = 0; iova_start <= iova_end;
+						iova_start += SPAGE_SIZE) {
+			pent = iopte_offset(dent, iova_start);
+			*pent = 0;
+			++flush_count;
+		}
+		__dma_flush_area(iopte_offset(dent, s_iova_start),
+					flush_count << 2);
+	}
+
+done:
+	mutex_unlock(&sunxi_domain->dt_lock);
 
 	return size;
 }
@@ -660,24 +745,36 @@ sunxi_convert_sg_to_table(struct iommu_domain *domain,
 	u32 *p = sunxi_domain->sg_buffer;
 	int i;
 	size_t total_length = 0;
-#if !defined(CONFIG_ARCH_SUN8IW15) && !defined(CONFIG_ARCH_SUN8IW19)
+	dma_addr_t phys = 0;
+	unsigned int length = 0;
+
+	/*
+	 * size param signify different meanings in arm and arm64 platform
+	 * in arm, size param signify the sg buffer size. in arm64, size param
+	 * signify the length of sg list, so handle it in this interface.
+	 */
+#if !defined(CONFIG_ARM)
 	int j = 0;
 #endif
 
-#if defined(CONFIG_ARCH_SUN8IW15) || defined(CONFIG_ARCH_SUN8IW19)
+#if defined(CONFIG_ARM)
 	WARN_ON(size > MAX_SG_SIZE);
 	while (total_length < size) {
 #else
 	while (j < size) {
 #endif
-		u32 phys = page_to_phys(sg_page(cur));
-		unsigned int length = PAGE_ALIGN(cur->offset + cur->length);
+		/*
+		 * sg_next maybe return NULL, check the cur point in it
+		 */
+		WARN_ON(IS_ERR_OR_NULL(cur));
+		phys = page_to_phys(sg_page(cur));
+		length = PAGE_ALIGN(cur->offset + cur->length);
 
 		for (i = 0; i < length / SPAGE_SIZE; i++, p++)
 			*p = phys + (i * SPAGE_SIZE);
 		cur = sg_next(cur);
 		total_length += length;
-#if !defined(CONFIG_ARCH_SUN8IW15) && !defined(CONFIG_ARCH_SUN8IW19)
+#if !defined(CONFIG_ARM)
 		WARN_ON(total_length > MAX_SG_SIZE);
 		++j;
 #endif
@@ -698,15 +795,16 @@ sunxi_iommu_map_sg(struct iommu_domain *domain, unsigned long iova,
 	size_t total_size = 0;
 
 	WARN_ON(sunxi_domain->pgtable == NULL);
+	WARN_ON(IS_ERR_OR_NULL(sg));
 	iova_start = iova & IOMMU_PT_MASK;
 	paddr_start = sunxi_domain->sg_buffer;
 	s_iova_start = iova_start;
-#if defined(CONFIG_ARCH_SUN8IW15) || defined(CONFIG_ARCH_SUN8IW19)
+#if defined(CONFIG_ARM)
 	iova_end = SPAGE_ALIGN(iova + nents_size) - SPAGE_SIZE;
 #endif
 	mutex_lock(&sunxi_domain->dt_lock);
 	total_size = sunxi_convert_sg_to_table(domain, sg, nents_size);
-#if !defined(CONFIG_ARCH_SUN8IW15) && !defined(CONFIG_ARCH_SUN8IW19)
+#if !defined(CONFIG_ARM)
 	iova_end = SPAGE_ALIGN(iova+total_size) - SPAGE_SIZE;
 #endif
 	if (IOPDE_INDEX(iova_start) == IOPDE_INDEX(iova_end)) {
@@ -1021,7 +1119,8 @@ sunxi_iommu_of_xlate(struct device *dev, struct of_phandle_args *args)
 }
 
 #if defined(CONFIG_ARCH_SUN8IW15) || defined(CONFIG_ARCH_SUN50IW9) \
-	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10)
+	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10) \
+	|| defined(CONFIG_ARCH_SUN8IW21)
 void sunxi_set_debug_mode(void)
 {
 	struct sunxi_iommu *iommu = global_iommu_dev;
@@ -1167,7 +1266,8 @@ static irqreturn_t sunxi_iommu_irq(int irq, void *dev_id)
 		data_reg = sunxi_iommu_read(iommu, IOMMU_INT_ERR_DATA_REG5);
 	}
 #if defined(CONFIG_ARCH_SUN8IW15) || defined(CONFIG_ARCH_SUN50IW9) \
-	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10)
+	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10) \
+	|| defined(CONFIG_ARCH_SUN8IW21)
 	else if (inter_status_reg & MICRO_TLB6_INVALID_INTER_MASK) {
 		pr_err("%s Invalid Authority\n", master[6]);
 		addr_reg = sunxi_iommu_read(iommu, IOMMU_INT_ERR_ADDR_REG6);
@@ -1207,13 +1307,16 @@ static irqreturn_t sunxi_iommu_irq(int irq, void *dev_id)
 			master[master_id], addr_reg, data_reg,
 				int_masterid_bitmap);
 	}
-
-#if defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW9) \
-	|| defined(CONFIG_ARCH_SUN50IW10)
+#if defined(CONFIG_ARCH_SUN8IW21)
 	sunxi_iommu_write(iommu, IOMMU_TLB_IVLD_START_ADDR_REG, addr_reg);
 	sunxi_iommu_write(iommu, IOMMU_TLB_IVLD_END_ADDR_REG, addr_reg + 4 * SPAGE_SIZE);
 	sunxi_iommu_write(iommu, IOMMU_TLB_IVLD_ENABLE_REG, 0x1);
 	while (sunxi_iommu_read(iommu, IOMMU_TLB_IVLD_ENABLE_REG) & 0x1)
+		;
+	sunxi_iommu_write(iommu, IOMMU_PC_IVLD_START_ADDR_REG, addr_reg);
+	sunxi_iommu_write(iommu, IOMMU_PC_IVLD_END_ADDR_REG, addr_reg + 2 * SPD_SIZE);
+	sunxi_iommu_write(iommu, IOMMU_PC_IVLD_ENABLE_REG, 0x1);
+	while (sunxi_iommu_read(iommu, IOMMU_PC_IVLD_ENABLE_REG) & 0x1)
 		;
 #else
 	sunxi_iommu_write(iommu, IOMMU_TLB_IVLD_ADDR_REG, addr_reg);
@@ -1229,7 +1332,6 @@ static irqreturn_t sunxi_iommu_irq(int irq, void *dev_id)
 	sunxi_iommu_write(iommu, IOMMU_TLB_IVLD_ENABLE_REG, 0x1);
 	while (sunxi_iommu_read(iommu, IOMMU_TLB_IVLD_ENABLE_REG) & 0x1)
 		;
-#endif
 	sunxi_iommu_write(iommu, IOMMU_PC_IVLD_ADDR_REG, addr_reg);
 	sunxi_iommu_write(iommu, IOMMU_PC_IVLD_ENABLE_REG, 0x1);
 	while (sunxi_iommu_read(iommu, IOMMU_PC_IVLD_ENABLE_REG) & 0x1)
@@ -1239,7 +1341,7 @@ static irqreturn_t sunxi_iommu_irq(int irq, void *dev_id)
 	sunxi_iommu_write(iommu, IOMMU_PC_IVLD_ENABLE_REG, 0x1);
 	while (sunxi_iommu_read(iommu, IOMMU_PC_IVLD_ENABLE_REG) & 0x1)
 		;
-
+#endif
 	sunxi_iommu_write(iommu, IOMMU_INT_CLR_REG, inter_status_reg);
 	inter_status_reg |= (l1_pgint_reg | l2_pgint_reg);
 	inter_status_reg &= 0xffff;
@@ -1319,7 +1421,8 @@ static ssize_t sunxi_iommu_profilling_show(struct device *dev,
 	u64 micro_tlb5_access_count;
 	u64 micro_tlb5_hit_count;
 #if defined(CONFIG_ARCH_SUN8IW15) | defined(CONFIG_ARCH_SUN50IW9) \
-	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10)
+	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10) \
+	|| defined(CONFIG_ARCH_SUN8IW21)
 	u64 micro_tlb6_access_count;
 	u64 micro_tlb6_hit_count;
 #endif
@@ -1334,7 +1437,8 @@ static ssize_t sunxi_iommu_profilling_show(struct device *dev,
 	u64 micro_tlb4_latency;
 	u64 micro_tlb5_latency;
 #if defined(CONFIG_ARCH_SUN8IW15) | defined(CONFIG_ARCH_SUN50IW9) \
-	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10)
+	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10) \
+	|| defined(CONFIG_ARCH_SUN8IW21)
 	u64 micro_tlb6_latency;
 	u32 micro_tlb0_max_latency;
 	u32 micro_tlb1_max_latency;
@@ -1348,7 +1452,8 @@ static ssize_t sunxi_iommu_profilling_show(struct device *dev,
 	spin_lock(&iommu->iommu_lock);
 
 #if defined(CONFIG_ARCH_SUN8IW15) | defined(CONFIG_ARCH_SUN50IW9) \
-	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10)
+	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10) \
+	|| defined(CONFIG_ARCH_SUN8IW21)
 	macrotlb_access_count =
 		((u64)(sunxi_iommu_read(iommu, IOMMU_PMU_ACCESS_HIGH_REG6) &
 		0x7ff) << 32) |
@@ -1415,7 +1520,8 @@ static ssize_t sunxi_iommu_profilling_show(struct device *dev,
 		0x7ff) << 32) | sunxi_iommu_read(iommu, IOMMU_PMU_HIT_LOW_REG5);
 
 #if defined(CONFIG_ARCH_SUN8IW15) | defined(CONFIG_ARCH_SUN50IW9) \
-	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10)
+	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10) \
+	|| defined(CONFIG_ARCH_SUN8IW21)
 	micro_tlb6_access_count =
 		((u64)(sunxi_iommu_read(iommu, IOMMU_PMU_ACCESS_HIGH_REG6) &
 		0x7ff) << 32) |
@@ -1467,7 +1573,8 @@ static ssize_t sunxi_iommu_profilling_show(struct device *dev,
 		sunxi_iommu_read(iommu, IOMMU_PMU_TL_LOW_REG5);
 
 #if defined(CONFIG_ARCH_SUN8IW15) | defined(CONFIG_ARCH_SUN50IW9) \
-	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10)
+	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10) \
+	|| defined(CONFIG_ARCH_SUN8IW21)
 	micro_tlb6_latency =
 		((u64)(sunxi_iommu_read(iommu, IOMMU_PMU_TL_HIGH_REG6) &
 		0x3ffff) << 32) |
@@ -1498,7 +1605,8 @@ static ssize_t sunxi_iommu_profilling_show(struct device *dev,
 		"%s_access_count = 0x%llx\n"
 		"%s_hit_count = 0x%llx\n"
 #if defined(CONFIG_ARCH_SUN8IW15) | defined(CONFIG_ARCH_SUN50IW9) \
-	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10)
+	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10) \
+	|| defined(CONFIG_ARCH_SUN8IW21)
 		"%s_access_count = 0x%llx\n"
 		"%s_hit_count = 0x%llx\n"
 #endif
@@ -1513,7 +1621,8 @@ static ssize_t sunxi_iommu_profilling_show(struct device *dev,
 		"%s_total_latency = 0x%llx\n"
 		"%s_total_latency = 0x%llx\n"
 #if defined(CONFIG_ARCH_SUN8IW15) | defined(CONFIG_ARCH_SUN50IW9) \
-	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10)
+	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10) \
+	|| defined(CONFIG_ARCH_SUN8IW21)
 		"%s_total_latency = 0x%llx\n"
 		"%s_max_latency = 0x%x\n"
 		"%s_max_latency = 0x%x\n"
@@ -1537,7 +1646,8 @@ static ssize_t sunxi_iommu_profilling_show(struct device *dev,
 		master[5], micro_tlb5_access_count,
 		master[5], micro_tlb5_hit_count,
 #if defined(CONFIG_ARCH_SUN8IW15) | defined(CONFIG_ARCH_SUN50IW9) \
-	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10)
+	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10) \
+	|| defined(CONFIG_ARCH_SUN8IW21)
 		master[6], micro_tlb6_access_count,
 		master[6], micro_tlb6_hit_count,
 #endif
@@ -1552,7 +1662,8 @@ static ssize_t sunxi_iommu_profilling_show(struct device *dev,
 		master[4], micro_tlb4_latency,
 		master[5], micro_tlb5_latency
 #if defined(CONFIG_ARCH_SUN8IW15) | defined(CONFIG_ARCH_SUN50IW9) \
-	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10)
+	|| defined(CONFIG_ARCH_SUN8IW19) || defined(CONFIG_ARCH_SUN50IW10) \
+	|| defined(CONFIG_ARCH_SUN8IW21)
 		,
 		master[6], micro_tlb6_latency,
 		master[0], micro_tlb0_max_latency,
