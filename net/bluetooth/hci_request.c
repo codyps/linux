@@ -1073,9 +1073,10 @@ void __hci_req_update_scan_rsp_data(struct hci_request *req, u8 instance)
 	memcpy(hdev->scan_rsp_data, cp.data, sizeof(cp.data));
 	hdev->scan_rsp_data_len = len;
 
-	cp.length = len;
-
-	hci_req_add(req, HCI_OP_LE_SET_SCAN_RSP_DATA, sizeof(cp), &cp);
+	/* TrimUI #860 only updates the host cache here.  Preserve the missing
+	 * controller command: a later unchanged request also returns early.
+	 * TODO: send LE Set Scan Response Data when fixing this stock bug.
+	 */
 }
 
 static u8 create_instance_adv_data(struct hci_dev *hdev, u8 instance, u8 *ptr)
@@ -1167,9 +1168,10 @@ void __hci_req_update_adv_data(struct hci_request *req, u8 instance)
 	memcpy(hdev->adv_data, cp.data, sizeof(cp.data));
 	hdev->adv_data_len = len;
 
-	cp.length = len;
-
-	hci_req_add(req, HCI_OP_LE_SET_ADV_DATA, sizeof(cp), &cp);
+	/* TrimUI #860 only updates the host cache here.  Preserve the missing
+	 * controller command: a later unchanged request also returns early.
+	 * TODO: send LE Set Advertising Data when fixing this stock bug.
+	 */
 }
 
 int hci_req_update_adv_data(struct hci_dev *hdev, u8 instance)
