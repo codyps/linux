@@ -842,9 +842,7 @@ u32 dsi_io_open(u32 sel, struct disp_panel_para *panel)
 	    dsi_lane_den[panel->lcd_dsi_lane - 1];
 
 #endif
-	/*modify the ANA4 reg, set vlv to 1*/
-	dphy_dev[sel]->dphy_ana4.dwval = 0x844631ff;
-
+	/* #860 keeps the ANA4 value selected by the open sequence above. */
 	return 0;
 }
 
