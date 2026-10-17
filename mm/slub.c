@@ -4517,7 +4517,7 @@ static void process_slab(struct loc_track *t, struct kmem_cache *s,
 static int list_locations(struct kmem_cache *s, char *buf,
 					enum track_item alloc)
 {
-	int len = 0;
+	int len = 0, overflow = 0;
 	unsigned long i;
 	struct loc_track t = { 0, 0, NULL };
 	int node;
@@ -4551,8 +4551,11 @@ static int list_locations(struct kmem_cache *s, char *buf,
 	for (i = 0; i < t.count; i++) {
 		struct location *l = &t.loc[i];
 
-		if (len > PAGE_SIZE - KSYM_SYMBOL_LEN - 100)
-			break;
+		if (len > PAGE_SIZE - KSYM_SYMBOL_LEN - 100) {
+			overflow = 1;
+			len = 0;
+			pr_err("%s\n", buf);
+		}
 		len += sprintf(buf + len, "%7ld ", l->count);
 
 		if (l->addr)
@@ -4590,6 +4593,16 @@ static int list_locations(struct kmem_cache *s, char *buf,
 					 nodemask_pr_args(&l->nodes));
 
 		len += sprintf(buf + len, "\n");
+	}
+
+	if (overflow) {
+		pr_info("%s\n", buf);
+		/* #860 concatenates these exact strings, including the absent
+		 * newline after PAGE_SIZE. TODO: improve formatting separately.
+		 */
+		len = sprintf(buf, "sysfs node buffer size is PAGE_SIZE.");
+		len += sprintf(buf + len, "The message is more than 1 page.\n");
+		len += sprintf(buf + len, "Please get the message by kmsg\n");
 	}
 
 	free_loc_track(&t);
