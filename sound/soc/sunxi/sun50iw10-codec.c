@@ -594,15 +594,18 @@ extern int trimui_speaker_mute;
 
 int trimui_set_speaker_enable(int enable)
 {
-	struct codec_spk_config *spk;
 	if (!trimui_codec)
 		return -1;
-	spk = &trimui_codec->spk_config;
-	if (enable && trimui_headphone_present) {
-		pr_info("Headphone exist, skip speaker.\n");
-		return 0;
+	if (enable) {
+		if (!trimui_headphone_present)
+			gpio_set_value(trimui_codec->spk_config.spk_gpio,
+				trimui_codec->spk_config.pa_level);
+		else
+			printk("Headphone exist, skip speaker.\n");
+	} else {
+		gpio_set_value(trimui_codec->spk_config.spk_gpio,
+			!trimui_codec->spk_config.pa_level);
 	}
-	gpio_set_value(spk->spk_gpio, enable ? spk->pa_level : !spk->pa_level);
 	return 0;
 }
 
@@ -628,9 +631,18 @@ static int sunxi_codec_hpspeaker_event(struct snd_soc_dapm_widget *w,
 			dachpf_enable(codec, 0);
 #endif
 		if (spk_cfg->used && !spk_cfg->pa_power_always_on) {
-			gpio_set_value(spk_cfg->spk_gpio,
-				(trimui_headphone_present || trimui_speaker_mute) ?
-				!spk_cfg->pa_level : spk_cfg->pa_level);
+			int level;
+
+			if (trimui_headphone_present) {
+				printk("hp status in, skip SPK PA\n");
+				level = !spk_cfg->pa_level;
+			} else if (trimui_speaker_mute) {
+				printk("spk status mute, skip SPK PA\n");
+				level = !spk_cfg->pa_level;
+			} else {
+				level = spk_cfg->pa_level;
+			}
+			gpio_set_value(spk_cfg->spk_gpio, level);
 			/* time delay to wait spk pa work fine */
 			msleep(spk_cfg->pa_msleep);
 		}
@@ -641,6 +653,7 @@ static int sunxi_codec_hpspeaker_event(struct snd_soc_dapm_widget *w,
 #ifdef SUNXI_CODEC_DAP_ENABLE
 		if (hw_cfg->dacdrc_cfg & DAP_SPK_EN)
 			dacdrc_enable(codec, 0);
+		/* TODO: stock also gates HPF-off on the DRC field, not dachpf_cfg. */
 		if (hw_cfg->dacdrc_cfg & DAP_SPK_EN)
 			dachpf_enable(codec, 0);
 #endif
@@ -1024,6 +1037,13 @@ static void sunxi_codec_init(struct snd_soc_codec *codec)
 
 	snd_soc_update_bits(codec, SUNXI_DAC_REG,
 			(0x3 << CPLDO_VOLTAGE), (0x1 << CPLDO_VOLTAGE));
+
+	/* Stock enables an always-on PA here without checking spk_config.used
+	 * or the headphone/mute flags. TODO: review those omissions separately.
+	 */
+	if (sunxi_codec->spk_config.pa_power_always_on)
+		gpio_set_value(sunxi_codec->spk_config.spk_gpio,
+			sunxi_codec->spk_config.pa_level);
 
 #ifdef SUNXI_CODEC_DAP_ENABLE
 	if (sunxi_codec->hw_config.adcdrc_cfg)
@@ -1494,6 +1514,7 @@ static int sunxi_codec_resume(struct snd_soc_codec *codec)
 
 	if (spk_cfg->used) {
 		gpio_direction_output(spk_cfg->spk_gpio, 1);
+		printk("%s  speaker:%d\n", __func__, !spk_cfg->pa_level);
 		gpio_set_value(spk_cfg->spk_gpio, !(spk_cfg->pa_level));
 	}
 
@@ -1655,6 +1676,10 @@ static int sunxi_internal_codec_probe(struct platform_device *pdev)
 		goto err_node_put;
 	}
 	dev_set_drvdata(&pdev->dev, sunxi_codec);
+	/* TODO: stock publishes this before probe can fail, retaining a stale
+	 * pointer on failure. Do not silently move publication to success.
+	 */
+	trimui_codec = sunxi_codec;
 	sunxi_codec->dev = &pdev->dev;
 
 	/* PA/SPK enable property */
@@ -1686,6 +1711,8 @@ static int sunxi_internal_codec_probe(struct platform_device *pdev)
 				ret = -EBUSY;
 				goto err_digital_iounmap;
 			} else {
+				printk("%s  speaker:%d\n", __func__,
+					!sunxi_codec->spk_config.pa_level);
 				gpio_direction_output(sunxi_codec->spk_config.spk_gpio, 1);
 				gpio_set_value(sunxi_codec->spk_config.spk_gpio,
 					!(sunxi_codec->spk_config.pa_level));
@@ -1925,7 +1952,12 @@ static int sunxi_internal_codec_probe(struct platform_device *pdev)
 	}
 
 	ret = of_property_read_u32(np, "pa_power_always_on", &temp_val);
-	sunxi_codec->spk_config.pa_power_always_on = ret < 0 ? false : !!temp_val;
+	if (ret < 0) {
+		dev_warn(&pdev->dev, "pa_power_always_on get failed and set it off.\n");
+		sunxi_codec->spk_config.pa_power_always_on = false;
+	} else {
+		sunxi_codec->spk_config.pa_power_always_on = !!temp_val;
+	}
 
 	pr_debug("digital_vol:%d, lineout_vol:%d, mic1gain:%d, mic2gain:%d"
 		" pa_msleep:%d, pa_level:%d, dac_digital_vol:%d\n",
@@ -1991,7 +2023,6 @@ static int sunxi_internal_codec_probe(struct platform_device *pdev)
 		goto err_unregister_codec;
 	}
 
-	trimui_codec = sunxi_codec;
 	dev_warn(&pdev->dev, "[%s] codec probe finished.\n", __func__);
 
 	return 0;
@@ -2012,6 +2043,7 @@ err_devm_kfree:
 err_node_put:
 	of_node_put(np);
 err_devm_free_memregion:
+	/* TODO: stock reaches this with memregion == NULL on early failures. */
 	devm_release_mem_region(&pdev->dev, memregion->start,
 						resource_size(memregion));
 	return ret;
