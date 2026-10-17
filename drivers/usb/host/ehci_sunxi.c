@@ -371,8 +371,6 @@ static ssize_t ehci_phy_range(struct device *dev, struct device_attribute *attr,
 
 	sunxi_ehci = dev->platform_data;
 
-	DMSG_INFO("adjust PHY's rate and range:0x0~0x1f\n");
-
 #if defined(CONFIG_ARCH_SUN8IW17) || defined(CONFIG_ARCH_SUN8IW11)
 	DMSG_INFO("adjust PHY's rate and range:0x0~0x1f\n");
 	if ((val >= 0) && (val <= 0x1f)) {
@@ -391,6 +389,7 @@ static ssize_t ehci_phy_range(struct device *dev, struct device_attribute *attr,
 		usb_phyx_write(sunxi_ehci, val);
 	} else {
 		DMSG_PANIC("adjust PHY's paraments 0x%x is fail! value:0x0~0x3ff\n", val);
+		/* TODO: stock accepts the write count even for an invalid value. */
 		return count;
 	}
 

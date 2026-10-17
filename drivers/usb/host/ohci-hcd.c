@@ -875,6 +875,19 @@ static irqreturn_t ohci_irq (struct usb_hcd *hcd)
 	 */
 	ints = ohci_readl(ohci, &regs->intrstatus);
 
+	/* Stock samples the first port before checking for a dead controller.
+	 * TODO: this adds an MMIO read even when intrstatus is all ones.
+	 */
+	if (ints & OHCI_INTR_RHSC) {
+		u32 status = ohci_readl(ohci, &ohci->regs->roothub.portstatus[0]);
+
+		status &= RH_PS_CSC | RH_PS_CCS;
+		if (status == (RH_PS_CSC | RH_PS_CCS))
+			ohci_info(ohci, "ohci_irq: fullspeed or lowspeed device connect\n");
+		else if (status == RH_PS_CSC)
+			ohci_info(ohci, "ohci_irq: fullspeed or lowspeed device disconnect\n");
+	}
+
 	/* Check for an all 1's result which is a typical consequence
 	 * of dead, unclocked, or unplugged (CardBus...) devices
 	 */
