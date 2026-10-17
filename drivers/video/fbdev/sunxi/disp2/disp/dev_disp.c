@@ -3231,10 +3231,12 @@ static void disp_shutdown(struct platform_device *pdev)
 		    && mgr->device->disable)
 			if (mgr->device->is_enabled(mgr->device))
 				mgr->device->disable(mgr->device);
+		/* #860 always invokes enable_iommu(false), including after a skipped
+		 * device check.  Missing managers/callbacks therefore fault.
+		 * TODO: validate both pointers in a separate stock-bug fix.
+		 */
+		mgr->enable_iommu(mgr, false);
 	}
-#if defined(CONFIG_SUNXI_IOMMU)
-	sunxi_enable_device_iommu(DE_MASTOR_ID, false);
-#endif
 }
 
 #ifdef EINK_FLUSH_TIME_TEST
