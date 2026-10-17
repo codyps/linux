@@ -1758,9 +1758,6 @@ static irqreturn_t sunxi_i2c_handler(int this_irq, void *dev_id)
 		 * enable irq only when twi is transferring,
 		 * otherwise disable irq
 		 */
-#if !IS_ENABLED(CONFIG_I2C_SLAVE)
-		if (i2c->status != I2C_XFER_IDLE)
-#endif
 			twi_enable_irq(i2c->base_addr);
 	}
 	return IRQ_HANDLED;

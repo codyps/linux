@@ -18,6 +18,11 @@
 #ifndef _SUNXI_I2C_H_
 #define _SUNXI_I2C_H_
 
+/* Stock sunxi_i2c_handler re-enables engine-mode IRQs even after the
+ * transfer becomes idle, despite the older comment in i2c-sunxi.c.
+ * Preserve that behavior; TODO: evaluate idle IRQ gating as a separate fix.
+ */
+
 #include <linux/regulator/consumer.h>
 #include <linux/dma/sunxi-dma.h>
 #include <asm/ioctl.h>
