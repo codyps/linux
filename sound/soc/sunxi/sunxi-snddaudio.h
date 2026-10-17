@@ -16,6 +16,9 @@
 #ifndef	__SUNXI_SNDDAUDIO_H_
 #define	__SUNXI_SNDDAUDIO_H_
 
+/* Stock hw_params ignores sysclk, PLL, format and clock-divider API failures.
+ * TODO: propagate those failures in a separate corrective change. */
+
 #ifdef CONFIG_SND_SUNXI_MAD
 #include "sunxi-mad.h"
 #endif

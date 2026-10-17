@@ -285,27 +285,43 @@ static const struct snd_kcontrol_new sunxi_daudio_controls[] = {
 static void sunxi_daudio_txctrl_enable(struct sunxi_daudio_info *sunxi_daudio,
 					bool enable)
 {
+	unsigned int reg_val = 0;
+
 	if (enable) {
-		/* HDMI audio Transmit Clock just enable at startup */
-		if (sunxi_daudio->pdata->daudio_type != SUNXI_DAUDIO_TDMHDMI_TYPE) {
-			regmap_update_bits(sunxi_daudio->regmap,
-					SUNXI_DAUDIO_CTL,
-					(1 << SDO0_EN), (1 << SDO0_EN));
-			regmap_update_bits(sunxi_daudio->regmap,
-					SUNXI_DAUDIO_CTL,
-					(1 << CTL_TXEN), (1 << CTL_TXEN));
-		}
 		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_INTCTL,
 					(1 << TXDRQEN), (1 << TXDRQEN));
+
+		/* HDMI audio Transmit Clock just enable at startup */
+		if (sunxi_daudio->pdata->daudio_type != SUNXI_DAUDIO_TDMHDMI_TYPE) {
+			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
+					(1 << SDO0_EN), (1 << SDO0_EN));
+
+			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
+					(1 << CTL_TXEN), (1 << CTL_TXEN));
+		}
 	} else {
 		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_INTCTL,
 					(1 << TXDRQEN), (0 << TXDRQEN));
+
 		if (sunxi_daudio->pdata->daudio_type != SUNXI_DAUDIO_TDMHDMI_TYPE) {
-			regmap_update_bits(sunxi_daudio->regmap,
-					SUNXI_DAUDIO_CTL,
+			/* add this to avoid the i2s pop */
+			while (1) {
+				regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FIFOCTL,
+					(1 << FIFO_CTL_FTX), (1 << FIFO_CTL_FTX));
+				regmap_write(sunxi_daudio->regmap, SUNXI_DAUDIO_TXCNT, 0);
+
+				regmap_read(sunxi_daudio->regmap, SUNXI_DAUDIO_FIFOSTA, &reg_val);
+				reg_val = ((reg_val & 0xFF0000) >> 16);
+				if (reg_val == 0x80) {
+					break;
+				}
+			}
+			udelay(250);
+
+			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
 					(1 << CTL_TXEN), (0 << CTL_TXEN));
-			regmap_update_bits(sunxi_daudio->regmap,
-					SUNXI_DAUDIO_CTL,
+
+			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
 					(1 << SDO0_EN), (0 << SDO0_EN));
 		}
 	}
@@ -1222,13 +1238,13 @@ static int sunxi_daudio_trigger(struct snd_pcm_substream *substream,
 	case	SNDRV_PCM_TRIGGER_RESUME:
 	case	SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
 		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
-			sunxi_daudio_txctrl_enable(sunxi_daudio, true);
 			/* Global enable I2S/TDM module */
 			if ((pdata->daudio_type != SUNXI_DAUDIO_TDMHDMI_TYPE) &&
 				(!sunxi_daudio->playback_en)) {
 					sunxi_daudio_global_enable(sunxi_daudio, true);
 				sunxi_daudio->playback_en = 1;
 			}
+			sunxi_daudio_txctrl_enable(sunxi_daudio, true);
 		} else {
 #ifdef CONFIG_SND_SUNXI_MAD
 			if (pdata->daudio_type != SUNXI_DAUDIO_TDMHDMI_TYPE) {
@@ -1249,9 +1265,10 @@ static int sunxi_daudio_trigger(struct snd_pcm_substream *substream,
 			} else
 				sunxi_daudio_rxctrl_enable(sunxi_daudio, true);
 #else
-			sunxi_daudio_rxctrl_enable(sunxi_daudio, true);
 			if (pdata->daudio_type != SUNXI_DAUDIO_TDMHDMI_TYPE)
 				sunxi_daudio_global_enable(sunxi_daudio, true);
+
+			sunxi_daudio_rxctrl_enable(sunxi_daudio, true);
 #endif
 		}
 		break;
@@ -1259,15 +1276,16 @@ static int sunxi_daudio_trigger(struct snd_pcm_substream *substream,
 	case	SNDRV_PCM_TRIGGER_SUSPEND:
 	case	SNDRV_PCM_TRIGGER_PAUSE_PUSH:
 		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
-			sunxi_daudio_txctrl_enable(sunxi_daudio, false);
 			/* Global enable I2S/TDM module */
 			if ((pdata->daudio_type != SUNXI_DAUDIO_TDMHDMI_TYPE) &&
 				(sunxi_daudio->playback_en)) {
 					sunxi_daudio_global_enable(sunxi_daudio, false);
 				sunxi_daudio->playback_en = 0;
 			}
+			sunxi_daudio_txctrl_enable(sunxi_daudio, false);
 		} else {
 			if (sunxi_daudio->pdata->daudio_type != SUNXI_DAUDIO_TDMHDMI_TYPE) {
+				sunxi_daudio_global_enable(sunxi_daudio, false);
 #ifdef CONFIG_SND_SUNXI_MAD
 				/* should not shutdown when capturing at mad working. */
 				if (sunxi_daudio->mad_priv->mad_bind) {
@@ -1279,7 +1297,6 @@ static int sunxi_daudio_trigger(struct snd_pcm_substream *substream,
 				{
 					sunxi_daudio_rxctrl_enable(sunxi_daudio, false);
 				}
-				sunxi_daudio_global_enable(sunxi_daudio, false);
 			} else
 				sunxi_daudio_rxctrl_enable(sunxi_daudio, false);
 		}

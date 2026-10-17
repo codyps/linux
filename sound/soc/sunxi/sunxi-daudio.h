@@ -16,6 +16,8 @@
 
 #ifndef	__SUNXI_DAUDIO_H_
 #define	__SUNXI_DAUDIO_H_
+/* Stock TX disable polls FIFO readiness forever and ignores regmap_read errors.
+ * TODO: bound that wait and report read failures in a separate corrective fix. */
 /*
  * Platform    I2S_count   HDMI_seq(index is 0 to i)     MODE
  * sun8iw7        3           2                           A(TDM:8-channel)

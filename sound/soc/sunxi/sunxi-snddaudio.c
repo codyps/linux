@@ -39,7 +39,6 @@ static int sunxi_snddaudio_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	struct snd_soc_card *card = rtd->card;
 	unsigned int freq, clk_div;
-	int ret;
 #ifdef USE_ASOC_FMT_SETTING
 	struct sunxi_snddaudio_priv *snddaudio_priv =
 				snd_soc_card_get_drvdata(card);
@@ -79,20 +78,12 @@ static int sunxi_snddaudio_hw_params(struct snd_pcm_substream *substream,
 	}
 
 	/* set platform clk source freq and set the mode as daudio or pcm */
-	ret = snd_soc_dai_set_sysclk(cpu_dai, 0, freq, 0);
-	if (ret < 0) {
-		dev_warn(card->dev, "cpu_dai set sysclk failed\n");
-		return ret;
-	}
+	snd_soc_dai_set_sysclk(cpu_dai, 0, freq, 0);
 
 	/* set codec clk source freq and set the mode as daudio or pcm */
-	ret = snd_soc_dai_set_sysclk(codec_dai, 0, freq, 0);
-	if (ret < 0)
-		dev_warn(card->dev, "codec_dai set sysclk failed\n");
+	snd_soc_dai_set_sysclk(codec_dai, 0, freq, 0);
 
-	ret = snd_soc_dai_set_pll(codec_dai, 0, 0, freq, freq);
-	if (ret < 0)
-		dev_warn(card->dev, "codec_dai set set_pll failed.\n");
+	snd_soc_dai_set_pll(codec_dai, 0, 0, freq, freq);
 
 	/*
 	 * SND_SOC_DAIFMT_I2S
@@ -101,42 +92,29 @@ static int sunxi_snddaudio_hw_params(struct snd_pcm_substream *substream,
 	 */
 #ifdef USE_ASOC_FMT_SETTING
 	/* set codec dai fmt */
-	ret = snd_soc_dai_set_fmt(codec_dai, pdata->audio_format
+	snd_soc_dai_set_fmt(codec_dai, pdata->audio_format
 			| (pdata->signal_inversion << SND_SOC_DAIFMT_SIG_SHIFT)
 			| (pdata->daudio_master << SND_SOC_DAIFMT_MASTER_SHIFT));
-	if (ret < 0)
-		dev_warn(card->dev, "codec dai set fmt failed\n");
 
 	/* set cpu dai fmt */
-	ret = snd_soc_dai_set_fmt(cpu_dai, pdata->audio_format
+	snd_soc_dai_set_fmt(cpu_dai, pdata->audio_format
 			| (pdata->signal_inversion << SND_SOC_DAIFMT_SIG_SHIFT)
 			| (pdata->daudio_master << SND_SOC_DAIFMT_MASTER_SHIFT));
-	if (ret < 0)
-		dev_warn(card->dev, "cpu dai set fmt failed\n");
 #else
 	/* set codec dai fmt */
-	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S |
+	snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S |
 			SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS);
-	if (ret < 0)
-		dev_warn(card->dev, "codec dai set fmt failed\n");
+
 	/* set cpudai fmt */
-	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S |
+	snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S |
 			SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS);
-	if (ret < 0)
-		dev_warn(card->dev, "cpu dai set fmt failed\n");
 #endif
 
 	/* set system clk div */
 	clk_div = freq / params_rate(params);
-	ret = snd_soc_dai_set_clkdiv(cpu_dai, 0, clk_div);
-	if (ret < 0) {
-		dev_warn(card->dev, "cpu_dai set clkdiv failed\n");
-		return ret;
-	}
+	snd_soc_dai_set_clkdiv(cpu_dai, 0, clk_div);
 
-	ret = snd_soc_dai_set_clkdiv(codec_dai, 0, clk_div);
-	if (ret < 0)
-		dev_warn(card->dev, "codec_dai set clkdiv failed\n");
+	snd_soc_dai_set_clkdiv(codec_dai, 0, clk_div);
 
 	return 0;
 }
