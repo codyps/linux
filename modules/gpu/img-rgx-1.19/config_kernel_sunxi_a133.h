@@ -124,7 +124,8 @@
  * Confirmed via alignment check array extraction from vendor pvrsrvkm.ko. */
 /* #define SUPPORT_AGP */
 #define RGXFW_SAFETY_WATCHDOG_PERIOD_IN_US 1000000
-#define PVR_ANNOTATION_MAX_LEN 96
+/* Stock DWARF and allocation call sites retain a 63-byte annotation limit. */
+#define PVR_ANNOTATION_MAX_LEN 63
 #define PVRSRV_DEVICE_INIT_MODE PVRSRV_LINUX_DEV_INIT_ON_PROBE
 #define SUPPORT_DI_BRG_IMPL
 #define PVR_LINUX_PHYSMEM_MAX_POOL_PAGES 10240
