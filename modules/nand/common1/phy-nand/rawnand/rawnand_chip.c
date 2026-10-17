@@ -334,7 +334,7 @@ int init_nci_from_id(struct nand_chip_info *nci, struct sunxi_nand_flash_device 
 	nci->itf_cfg.toggle_cfg.support_io_driver_strength_setting =
 		(npi->ddr_opt & NAND_TOGGLE_IO_DRIVER_STRENGTH) ? 1 : 0;
 	nci->itf_cfg.toggle_cfg.support_vendor_specific_setting =
-		(npi->operation_opt & NAND_TOGGLE_VENDOR_SPECIFIC_CFG) ? 1 : 0;
+		(npi->ddr_opt & NAND_TOGGLE_VENDOR_SPECIFIC_CFG) ? 1 : 0;
 
 	nci->ecc_sector = 1;
 	nci->sdata_bytes_per_page = (nci->sector_cnt_per_page >> nci->ecc_sector) * 4;

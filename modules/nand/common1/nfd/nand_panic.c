@@ -148,9 +148,6 @@ dma_addr_t nand_panic_dma_map(__u32 rw, void *buf, __u32 len, __u32 panic_res)
 	return panic_dma[panic_res];
 }
 
-
-
-
 void nand_panic_dma_unmap(__u32 rw, dma_addr_t dma_handle, __u32 len)
 {
 	int i;
@@ -215,5 +212,101 @@ err_free:
 	rawnand_panic_free_dma_buf();
 err_out:
 	PANIC_INFO("panic nand init failed\n");
+	return ret;
+}
+
+int critical_dev_nand_write(const char *dev, size_t sec_off,
+		size_t sec_cnt, char *buf)
+{
+	struct block_device *bdev;
+	struct hd_struct *part;
+	size_t part_off, part_size;
+	int ret = -EACCES;
+
+	if (!is_panic_enable()) {
+		PANIC_ERR("not support panic nand\n");
+		return -EBUSY;
+	}
+
+	if (!g_nftl_blk) {
+		PANIC_ERR("invalid nftl_blk\n");
+		return -EINVAL;
+	}
+
+	bdev = blkdev_get_by_path(dev, FMODE_WRITE, NULL);
+	if (IS_ERR(bdev)) {
+		PANIC_ERR("get bdev failed - %ld\n", PTR_ERR(bdev));
+		return (int)PTR_ERR(bdev);
+	}
+	part = bdev->bd_part;
+	part_off = (size_t)part->start_sect;
+	part_size = (size_t)part_nr_sects_read(part);
+
+	if (sec_off > part_size) {
+		PANIC_ERR("start sector is out of range\n");
+		goto out;
+	}
+
+	if (sec_off + sec_cnt > part_size) {
+		PANIC_ERR("sectors %ld with start sector %ld is out of range, \n",
+				sec_cnt, sec_off);
+		goto out;
+	}
+
+	ret = panic_write(g_nftl_blk, sec_off + part_off, sec_cnt, buf);
+	if (ret)
+		goto out;
+
+	ret = 0;
+out:
+	blkdev_put(bdev, FMODE_WRITE);
+	return ret;
+}
+
+int critical_dev_nand_read(const char *dev, size_t sec_off,
+		size_t sec_cnt, char *buf)
+{
+	struct block_device *bdev;
+	struct hd_struct *part;
+	size_t part_off, part_size;
+	int ret = -EACCES;
+
+	if (!is_panic_enable()) {
+		PANIC_ERR("not support panic nand\n");
+		return -EBUSY;
+	}
+
+	if (!g_nftl_blk) {
+		PANIC_ERR("invalid nftl_blk\n");
+		return -EINVAL;
+	}
+
+	bdev = blkdev_get_by_path(dev, FMODE_READ, NULL);
+	if (IS_ERR(bdev)) {
+		PANIC_ERR("get bdev failed - %ld\n", PTR_ERR(bdev));
+		return (int)PTR_ERR(bdev);
+	}
+	part = bdev->bd_part;
+	part_off = (size_t)part->start_sect;
+	part_size = (size_t)part_nr_sects_read(part);
+
+	if (sec_off > part_size) {
+		PANIC_ERR("start sector is out of range\n");
+		goto out;
+	}
+
+	if (sec_off + sec_cnt > part_size) {
+		PANIC_ERR("sectors %ld with start sector %ld is out of range, \n",
+				sec_cnt, sec_off);
+		goto out;
+	}
+
+	ret = panic_read(g_nftl_blk, sec_off + part_off, sec_cnt, buf);
+	if (ret)
+		goto out;
+
+	ret = 0;
+out:
+	blkdev_put(bdev, FMODE_READ);
 	return ret;
 }

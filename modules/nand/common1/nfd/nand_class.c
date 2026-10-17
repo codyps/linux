@@ -13,6 +13,7 @@
 #include "nand_base.h"
 #include "nand_class.h"
 #include "nand_dev.h"
+#include "nand_panic.h"
 #include <linux/device.h>
 #include <linux/sunxi-boot.h>
 #include "../phy-nand/nand_nftl.h"
@@ -715,6 +716,8 @@ static ssize_t nand_debug_show(struct device *dev,
 
 	return ret;
 }
+
+#define PANIC_TEST_MAX_SIZE (16 * 1024)
 static ssize_t nand_debug_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
@@ -725,9 +728,9 @@ static ssize_t nand_debug_store(struct device *dev,
 	unsigned int arg0_int = 0;
 	unsigned int arg1_int = 0;
 	unsigned int arg2_int = 0;
-	char arg3_str[16] = {0};
+	char arg3_str[32] = {0};
 
-	arg_num = sscanf(buf, "%31s %u %u %u %15s", cmd, &arg0_int, &arg1_int,
+	arg_num = sscanf(buf, "%31s %u %u %u %31s", cmd, &arg0_int, &arg1_int,
 			 &arg2_int, arg3_str);
 
 	if (-1 == arg_num || 0 == arg_num) {
@@ -897,7 +900,53 @@ static ssize_t nand_debug_store(struct device *dev,
 		}
 		kfree(tempbuf);
 		return count;
+#if IS_ENABLED(CONFIG_PSTORE_BLK)
+	} else if (strcmp(cmd, "panicwrite") == 0) {
+		char *tempbuf;
+		if (5 != arg_num) {
+			nand_dbg_err("err: %s needs 4 argument\n", cmd);
+			return -EINVAL;
+		}
+		nand_dbg_err("NAND DEBUG: %s %u %u %u %s\n", cmd, arg0_int,
+			     arg1_int, arg2_int, arg3_str);
+		char *dev = arg3_str;
+		size_t sec_off = arg0_int;
+		size_t sec_cnt = arg1_int;
+		tempbuf = kmalloc(PANIC_TEST_MAX_SIZE, GFP_KERNEL);
+		if (!tempbuf)
+			return PTR_ERR(tempbuf);
+		memset(tempbuf, arg2_int, PANIC_TEST_MAX_SIZE);
+		if (sec_cnt > PANIC_TEST_MAX_SIZE / 512)
+			sec_cnt = PANIC_TEST_MAX_SIZE / 512;
+		critical_dev_nand_write(dev, sec_off, sec_cnt, tempbuf);
 
+		kfree(tempbuf);
+		return count;
+	} else if (strcmp(cmd, "panicread") == 0) {
+		char *tempbuf;
+		if (5 != arg_num) {
+			nand_dbg_err("err: %s needs 4 argument\n", cmd);
+			return -EINVAL;
+		}
+		nand_dbg_err("NAND DEBUG: %s %u %u %u %s\n", cmd, arg0_int,
+			     arg1_int, arg2_int, arg3_str);
+		char *dev = arg3_str;
+		size_t sec_off = arg0_int;
+		size_t sec_cnt = arg1_int;
+		tempbuf = kmalloc(PANIC_TEST_MAX_SIZE, GFP_KERNEL);
+		if (!tempbuf)
+			return PTR_ERR(tempbuf);
+		memset(tempbuf, 0, PANIC_TEST_MAX_SIZE);
+		if (sec_cnt > PANIC_TEST_MAX_SIZE / 512)
+			sec_cnt = PANIC_TEST_MAX_SIZE / 512;
+		critical_dev_nand_read(dev, sec_off, sec_cnt, tempbuf);
+		print_hex_dump(KERN_CONT, "", DUMP_PREFIX_OFFSET,
+				16, 1,
+				tempbuf, sec_cnt * 512, false);
+
+		kfree(tempbuf);
+		return count;
+#endif
 	} else {
 		nand_dbg_err("NAND DEBUG: undefined cmd: %s\n", cmd);
 		return -EINVAL;
