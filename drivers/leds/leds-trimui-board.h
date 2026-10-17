@@ -166,9 +166,15 @@ static ssize_t trimui_led_attr_show(struct class *class,
 	}
 	if (!strcmp(name, "frame_hex") || !strcmp(name, "anim_frames_hex")) {
 		u32 *data = !strcmp(name, "frame_hex") ? trimui_frame : trimui_anim_frames;
-		for (i = 0; i < sunxi_led->led_count; i++)
-			count += sprintf(buffer + count, "%06X ", data[i] & 0xffffff);
-		return count + sprintf(buffer + count, "\n");
+		char *position = buffer;
+		/* Preserve the shipped sparse pointer stepping and returned length. */
+		for (i = 0; i < sunxi_led->led_count; i++) {
+			count += 7;
+			sprintf(position, "%06X ", data[i] & 0xffffff);
+			position += count;
+		}
+		strcpy(position, "\n");
+		return count + 1;
 	}
 	if (!strcmp(name, "effect_names"))
 		return sprintf(buffer, "TRIMUI LED Animation Effect names:\n0 - disable\n1 - linear\n2 - breath\n3 - sniff\n4 - static\n5 - blink1\n6 - blink2\n7 - blink3\n");
@@ -210,6 +216,7 @@ static ssize_t trimui_led_attr_store(struct class *class,
 		colors = min_t(size_t, count / 7, max(capacity - offset, 0));
 		for (i = 0; i < colors; i++) {
 			rgb = 0;
+			if (animation) data[i] = 0;
 			sscanf(buffer + 7 * i, "%x", &rgb);
 			data[offset + i] = rgb;
 		}
