@@ -165,6 +165,7 @@ struct geth_priv {
 
 	/* resume work */
 	struct work_struct eth_work;
+	bool disable_az;
 };
 
 static u64 geth_dma_mask = DMA_BIT_MASK(32);
@@ -641,6 +642,17 @@ static void geth_adjust_link(struct net_device *ndev)
 	spin_unlock_irqrestore(&priv->lock, flags);
 }
 
+static void ip101gr_write_reg(struct net_device *ndev, u32 page,
+			      u32 reg, u16 value)
+{
+	struct phy_device *phydev = ndev->phydev;
+
+	phy_write(phydev, 0x14, page);
+	phy_write(phydev, reg, value);
+	/* Stock always returns to page zero instead of restoring the old page. */
+	phy_write(phydev, 0x14, 0);
+}
+
 static int geth_phy_init(struct net_device *ndev)
 {
 	int value;
@@ -747,6 +759,15 @@ resume:
 		/* reg 0x17 bit3,set 0 to disable iEEE */
 		phy_write(phydev, 0x17, phy_read(phydev, 0x17) & (~(1<<3)));
 		phy_write(phydev, 0x1f, 0x0000); /* switch to page 0 */
+	} else if (priv->disable_az &&
+		   phy_read(phydev, MII_PHYSID1) == 0x0243 &&
+		   phy_read(phydev, MII_PHYSID2) == 0x0c54) {
+		/* TODO: stock ignores all MDIO write errors in this sequence. */
+		ip101gr_write_reg(ndev, 0, 0x0d, 0x0007);
+		ip101gr_write_reg(ndev, 0, 0x0e, 0x003c);
+		ip101gr_write_reg(ndev, 0, 0x0d, 0x4007);
+		ip101gr_write_reg(ndev, 0, 0x0e, 0x0000);
+		ip101gr_write_reg(ndev, 0, 0x00, 0x3300);
 	}
 	if (priv->is_suspend)
 		phy_init_hw(phydev);
@@ -1054,7 +1075,6 @@ static const struct dev_pm_ops geth_pm_ops = {
 static const struct dev_pm_ops geth_pm_ops;
 #endif /* CONFIG_PM */
 
-//#define sunxi_get_soc_chipid(x) {}
 static void geth_chip_hwaddr(u8 *addr)
 {
 #define MD5_SIZE	16
@@ -1071,7 +1091,9 @@ static void geth_chip_hwaddr(u8 *addr)
 	memset(chipid, 0, sizeof(chipid));
 	memset(result, 0, sizeof(result));
 
-	sunxi_get_soc_chipid((u8 *)chipid);
+	/* TODO: #860 never reads the chip ID here. Hashing sixteen zero bytes
+	 * gives every device the same fallback MAC when this path succeeds.
+	 */
 
 	tfm = crypto_alloc_ahash("md5", 0, CRYPTO_ALG_ASYNC);
 	if (IS_ERR(tfm)) {
@@ -1264,11 +1286,8 @@ static int geth_open(struct net_device *ndev)
 	if (ret)
 		goto err;
 
-	ret = sunxi_mac_reset((void *)priv->base, &sunxi_udelay, 10000);
-	if (ret) {
-		netdev_err(ndev, "Initialize hardware error\n");
-		goto desc_err;
-	}
+	/* TODO: stock continues to initialize DMA even when MAC reset failed. */
+	sunxi_mac_reset((void *)priv->base, &sunxi_udelay, 10000);
 
 	sunxi_mac_init(priv->base, txmode, rxmode);
 	sunxi_set_umac(priv->base, ndev->dev_addr, 0);
@@ -1987,6 +2006,8 @@ static int geth_hw_init(struct platform_device *pdev)
 
 	if (!of_property_read_u32(np, "rx-delay", &value))
 		priv->rx_delay = value;
+
+	priv->disable_az = of_property_read_bool(np, "disable-az-mode");
 
 	/* config pinctrl */
 	if (EXT_PHY == priv->phy_ext) {
