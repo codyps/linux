@@ -14,6 +14,11 @@
  * 2013.6.6 Mintow <duanmintao@allwinnertech.com>
  *    Adapt to support sun8i/sun9i of Allwinner.
  */
+
+#if defined(CONFIG_SERIAL_SUNXI_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ)
+#define SUPPORT_SYSRQ
+#endif
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/io.h>
@@ -206,6 +211,8 @@ static unsigned int sw_uart_handle_rx(struct sw_uart_port *sw_uport, unsigned in
 #ifdef CONFIG_SW_UART_DUMP_DATA
 			sw_uport->dump_buff[sw_uport->dump_len++] = ch;
 #endif
+		} else {
+			ch = 0;
 		}
 
 		flag = TTY_NORMAL;
@@ -224,7 +231,7 @@ static unsigned int sw_uart_handle_rx(struct sw_uart_port *sw_uport, unsigned in
 				 * may get masked by ignore_status_mask
 				 * or read_status_mask.
 				 */
-				if (uart_handle_break(&sw_uport->port))
+				if (!ch && uart_handle_break(&sw_uport->port))
 					goto ignore_char;
 			} else if (lsr & SUNXI_UART_LSR_PE)
 				sw_uport->port.icount.parity++;
