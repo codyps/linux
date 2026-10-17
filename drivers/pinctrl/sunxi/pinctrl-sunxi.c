@@ -1736,7 +1736,7 @@ int sunxi_sel_pio_mode(struct pinctrl *pinctrl, u32 pm_sel)
 	struct sunxi_pinctrl *pctl;
 	struct pinctrl_dev *pctldev;
 	const struct pinctrl_ops *pctlops;
-	int ret, i;
+	int ret = 0, i;
 	const unsigned *pins = NULL;
 	unsigned num_pins = 0;
 	const char *gname;

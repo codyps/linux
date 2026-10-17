@@ -15,6 +15,8 @@
 
 /* Stock IRQ translation omits desc->pin_base before looking up the pin.
  * TODO: correct nonzero-base controller handling in a separate change. */
+/* Stock power selection ORs mode bits and cannot clear an already set bank.
+ * TODO: replace the selected bit rather than ORing it in a separate fix. */
 
 #include <linux/kernel.h>
 #include <linux/spinlock.h>
@@ -53,6 +55,7 @@
 
 #if defined(CONFIG_ARCH_SUN8IW16P1) \
 	|| defined(CONFIG_ARCH_SUN8IW19P1) \
+	|| defined(CONFIG_ARCH_SUN50IW10P1) \
 	|| defined(CONFIG_ARCH_SUN50IW11P1)
 #define CONFIG_SUNXI_PIO_POWER_SEL
 #define GPIO_POW_VOL_SEL   0x0350
