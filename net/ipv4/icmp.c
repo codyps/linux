@@ -273,7 +273,11 @@ bool icmp_global_allow(void)
 	}
 	credit = min_t(u32, icmp_global.credit + incr, sysctl_icmp_msgs_burst);
 	if (credit) {
-		credit--;
+		/* #860 consumes zero, one or two credits per admitted message.
+		 * Keep its signed clamp, including for out-of-range sysctl values.
+		 * TODO: assess deterministic accounting as a separate change.
+		 */
+		credit = max_t(int, credit - prandom_u32_max(3), 0);
 		rc = true;
 	}
 	icmp_global.credit = credit;
