@@ -156,7 +156,7 @@ sunxi_tlb_init(struct sunxi_iommu_owner *owner,
 	sunxi_iommu_write(iommu, IOMMU_TLB_PREFETCH_REG, 0x7f);
 #endif
 	/* disable interrupt of prefetch */
-	sunxi_iommu_write(iommu, IOMMU_INT_ENABLE_REG, 0x3007f);
+	sunxi_iommu_write(iommu, IOMMU_INT_ENABLE_REG, 0xffffffff);
 	sunxi_iommu_write(iommu, IOMMU_BYPASS_REG, iommu->bypass);
 	/* sun50iw9p1: use iova start and end to invalid TLB */
 #if defined(CONFIG_ARCH_SUN8IW19)

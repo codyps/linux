@@ -761,7 +761,7 @@ static int hci_uart_register_dev(struct hci_uart *hu)
 {
 	struct hci_dev *hdev;
 
-	BT_DBG("");
+	BT_INFO("hci_uart_register_dev");
 
 	/* Initialize and register HCI device */
 	hdev = hci_alloc_dev();
@@ -930,7 +930,7 @@ static int hci_uart_tty_ioctl(struct tty_struct *tty, struct file *file,
 
 	switch (cmd) {
 	case HCIUARTSETPROTO:
-		BT_DBG("HCIUARTSETPROTO");
+		BT_INFO("hci_uart_tty_ioctl HCIUARTSETPROTO");
 		if (!test_and_set_bit(HCI_UART_PROTO_SET, &hu->flags)) {
 			err = hci_uart_set_proto(hu, arg);
 			if (err) {
