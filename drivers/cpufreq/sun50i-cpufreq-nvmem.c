@@ -26,7 +26,6 @@ struct cpufreq_nvmem_data {
 	u32 nv_speed;
 	u32 nv_Icpu;
 	u32 nv_bin;
-	u32 nv_bin_ext;
 	u32 version;
 	char name[MAX_NAME_LEN];
 };
@@ -39,61 +38,50 @@ struct cpufreq_soc_data {
 	bool nvmem_bin;
 };
 
+/* Stock accepts lengths 0..2 but always reads a u16.
+ * TODO: validate the actual read width in a separate behavior fix.
+ * OF_DYNAMIC is disabled in stock, so of_node_put emits no instructions;
+ * retaining these cleanup calls makes no claim about unrecoverable source text.
+ */
 static int sun50i_nvmem_get_data(char *cell_name, u32 *data)
 {
 	struct nvmem_cell *cell_nvmem;
 	size_t len;
 	u8 *cell_value;
-	u32 tmp_data = 0;
-	u32 i;
 	struct device_node *np;
 	struct device *cpu_dev;
 	int ret = 0;
-	int ptr;
 
 	cpu_dev = get_cpu_device(0);
 	if (!cpu_dev)
 		return -ENODEV;
-
 	np = of_parse_phandle(cpu_dev->of_node, "operating-points-v2", 0);
 	if (!np)
 		return -ENOENT;
-
-	ptr = of_device_is_compatible(np,
-				      "allwinner,sun50i-operating-points");
-	if (!ptr) {
-		ret = -ENOENT;
-		goto err;
+	if (!of_device_is_compatible(np, "allwinner,sun50i-operating-points")) {
+		of_node_put(np);
+		return -ENOENT;
 	}
-
 	cell_nvmem = of_nvmem_cell_get(np, cell_name);
 	if (IS_ERR(cell_nvmem)) {
 		if (PTR_ERR(cell_nvmem) != -EPROBE_DEFER)
-			pr_err("Could not get nvmem cell: %ld\n",
-			       PTR_ERR(cell_nvmem));
-		ret = PTR_ERR(cell_nvmem);
-		goto err;
+			pr_err("Could not get nvmem cell: %ld\n", PTR_ERR(cell_nvmem));
+		of_node_put(np);
+		return PTR_ERR(cell_nvmem);
 	}
-
 	cell_value = nvmem_cell_read(cell_nvmem, &len);
 	nvmem_cell_put(cell_nvmem);
 	if (IS_ERR(cell_value)) {
-		ret = PTR_ERR(cell_value);
-		goto err;
+		of_node_put(np);
+		return PTR_ERR(cell_value);
 	}
-
-	if (len > 4) {
+	if (len > 2) {
 		pr_err("Invalid nvmem cell length\n");
 		ret = -EINVAL;
 	} else {
-		for (i = 0; i < len; i++)
-			tmp_data |= ((u32)cell_value[i] << (i * 8));
-		*data = tmp_data;
+		*data = *(u16 *)cell_value;
 	}
-
 	kfree(cell_value);
-
-err:
 	of_node_put(np);
 	return ret;
 }
@@ -142,89 +130,40 @@ static struct cpufreq_soc_data sun50iw9_soc_data = {
 	.nvmem_Icpu = true,
 };
 
+
+
 static void sun50iw10_bin_xlate(bool high_speed, char *name, u32 bin)
 {
 	int value = 0;
-	bool version_before_f;
-	unsigned int ver_bits = sunxi_get_soc_ver() & 0x7;
-	u32 bin_ext = ver_data.nv_bin_ext;
 
 	bin >>= 12;
-	bin_ext >>= 31;
-
-	if (ver_bits == 0 || ver_bits == 3 || ver_bits == 4)
-		version_before_f = true;
-	else
-		version_before_f = false;
-
 	if (high_speed) {
 		switch (bin) {
-		case 0b100:
-			if (version_before_f) {
-				/* ic version A-E */
-				value = 1;
-			} else {
-				/* ic version F and later version */
-				value = 3;
-			}
+		case 4:
+			value = 1;
 			break;
 		default:
-			if (version_before_f) {
-				/* ic version A-E */
-				value = 0;
-			} else {
-				/* ic version F and later version */
-				value = 2;
-			}
+			break;
 		}
-
 		snprintf(name, MAX_NAME_LEN, "b%d", value);
 	} else {
-		if (bin_ext && (!version_before_f)) {
-			value = 6;
-		} else {
-			switch (bin) {
-			case 0b100:
-				if (version_before_f) {
-					/* ic version A-E */
-					value = 2;
-				} else {
-					/* ic version F and later version */
-					value = 5;
-				}
-				break;
-			case 0b010:
-				if (version_before_f) {
-					/* ic version A-E */
-					value = 1;
-				} else {
-					/* ic version F and later version */
-					value = 4;
-				}
-				break;
-			default:
-				if (version_before_f) {
-					/* ic version A-E */
-					value = 0;
-				} else {
-					/* ic version F and later version */
-					value = 3;
-				}
-			}
+		switch (bin) {
+		case 4:
+			value = 2;
+			break;
+		case 2:
+			value = 1;
+			break;
+		default:
+			break;
 		}
-
 		snprintf(name, MAX_NAME_LEN, "a%d", value);
 	}
-	pr_debug("sun50iw10 vf-table: %s\n", name);
 }
 
 static void sun50iw10_nvmem_xlate(u32 *versions, char *name)
 {
 	switch (ver_data.nv_speed) {
-	case 0x0200:
-	case 0x0600:
-	case 0x0620:
-	case 0x0640:
 	case 0x0800:
 	case 0x1000:
 	case 0x1400:
@@ -232,10 +171,14 @@ static void sun50iw10_nvmem_xlate(u32 *versions, char *name)
 	case 0x4000:
 		sun50iw10_bin_xlate(true, name, ver_data.nv_bin);
 		break;
-	case 0x0400:
+	case 0x8000:
+		snprintf(name, MAX_NAME_LEN, "c%d", 0);
+		break;
 	default:
 		sun50iw10_bin_xlate(false, name, ver_data.nv_bin);
+		break;
 	}
+	pr_notice("using table: %s\n", name);
 }
 
 static struct cpufreq_soc_data sun50iw10_soc_data = {
@@ -295,9 +238,6 @@ static int sun50i_cpufreq_get_efuse(const struct cpufreq_soc_data *soc_data,
 		ptr = sun50i_nvmem_get_data("bin", &ver_data.nv_bin);
 		if (ptr)
 			return ptr;
-		ptr = sun50i_nvmem_get_data("bin_ext", &ver_data.nv_bin_ext);
-		if (ptr)
-			return ptr;
 	}
 
 	soc_data->nvmem_xlate(versions, name);
@@ -305,6 +245,10 @@ static int sun50i_cpufreq_get_efuse(const struct cpufreq_soc_data *soc_data,
 	return 0;
 };
 
+/* Stock tests the zeroed opp_tables entry instead of the property setter
+ * result, and remove can release supported-hw twice. TODO: check the actual
+ * result and balance OPP references in a separate behavior fix.
+ */
 static int sun50i_cpufreq_nvmem_probe(struct platform_device *pdev)
 {
 	const struct of_device_id *match;
