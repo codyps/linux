@@ -2031,6 +2031,7 @@ static int xradio_update_beaconing(struct xradio_vif *priv)
 		if (priv->join_status != XRADIO_JOIN_STATUS_AP ||
 		    priv->beacon_int != conf->beacon_int) {
 			ap_printk(XRADIO_DBG_WARN, "ap restarting!\n");
+			printk("ap restarting!\n");
 			wsm_lock_tx(hw_priv);
 			if (priv->join_status != XRADIO_JOIN_STATUS_PASSIVE)
 				SYS_WARN(wsm_reset(hw_priv, &reset, priv->if_id));
@@ -2038,9 +2039,10 @@ static int xradio_update_beaconing(struct xradio_vif *priv)
 			SYS_WARN(xradio_start_ap(priv));
 			wsm_unlock_tx(hw_priv);
 		} else
-			ap_printk(XRADIO_DBG_NIY, "ap started join_status: %d\n",
-				  priv->join_status);
+			printk("ap started join_status: %d\n", priv->join_status);
+		printk("%s, %d\n", __func__, __LINE__);
 	}
+	printk("%s, %d\n", __func__, __LINE__);
 	return 0;
 }
 
