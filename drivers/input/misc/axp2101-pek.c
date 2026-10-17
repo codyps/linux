@@ -440,6 +440,9 @@ static int axp803_config_set(struct axp20x_pek *axp20x_pek)
 	regmap_write(regmap, AXP803_POK_SET, val);
 
 	/*Init offlevel restart or not */
+	/* TODO: stock's restart value 0x01 lies outside mask 0x04, so the
+	 * update clears the restart bit even when restart was requested.
+	 */
 	if (pk_dts->pmu_powkey_off_func)
 		regmap_update_bits(regmap, AXP803_POK_SET, 0x04,
 				   0x01); /* restart */
@@ -522,6 +525,7 @@ static int axp2202_config_set(struct axp20x_pek *axp20x_pek)
 	struct pk_dts *pk_dts = &axp20x_pek->pk_dts;
 	unsigned int val;
 
+	/* TODO: stock ignores register I/O errors throughout this setup. */
 	regmap_read(regmap, AXP2202_PONLEVEL, &val);
 	if (pk_dts->pmu_powkey_on_time < 128)
 		val &= 0x3C;
@@ -530,10 +534,10 @@ static int axp2202_config_set(struct axp20x_pek *axp20x_pek)
 		val |= 0x01;
 	} else if (pk_dts->pmu_powkey_on_time < 1000) {
 		val &= 0x3C;
-		val |= 0x10;
+		val |= 0x02;
 	} else {
 		val &= 0x3C;
-		val |= 0x11;
+		val |= 0x03;
 	}
 	regmap_write(regmap, AXP2202_PONLEVEL, val);
 
@@ -901,6 +905,19 @@ static int axp20x_pek_probe(struct platform_device *pdev)
 	return 0;
 }
 
+static int axp20x_pek_remove(struct platform_device *pdev)
+{
+	struct axp20x_pek *pek = platform_get_drvdata(pdev);
+
+	/* Stock removes this group explicitly as well as registering a managed
+	 * cleanup action during probe. Keep both teardown sites.
+	 */
+	if (pek->axp20x->variant == AXP2101_ID)
+		axp20x_remove_sysfs_group(&pdev->dev);
+	input_unregister_device(pek->input);
+	return 0;
+}
+
 static int axp2101_powerkey_suspend(struct device *dev)
 {
 	struct platform_device *pdev = to_platform_device(dev);
@@ -949,6 +966,7 @@ static struct of_device_id axp_match_table[] = {
 
 static struct platform_driver axp20x_pek_driver = {
 	.probe		= axp20x_pek_probe,
+	.remove		= axp20x_pek_remove,
 	.driver		= {
 		.of_match_table = axp_match_table,
 		.name = "axp2101-pek",
