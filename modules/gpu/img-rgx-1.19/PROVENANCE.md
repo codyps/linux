@@ -96,10 +96,11 @@ The reconstruction changes the A133 build to the generic handle backend, enables
 the stock physical-memory tests, and disables the separate RGX kick-sync bridge.
 These choices follow the compilation-unit inventory retained in the original
 TG3040 #860 module DWARF, rather than matching the reported DDK version alone.
-`services/server/common/handle_generic.c` comes from the public Creality
-`sonic_pad_os` commit `7f37a7fbf4ad59907034715e3d967b9177de1cd4`, under
-`lichee/linux-4.9/modules/gpu/img-rgx/linux/rogue_km/`; its handle implementation
-interface matches this DDK's header. The source remains dual MIT/GPLv2.
+`services/server/common/handle_generic.c` initially used the related public
+Creality DDK 1.11 implementation. Comparing its error paths with stock identified
+the matching generic backend in the same Semidrive DDK 1.18 tree cited below.
+The replacement retains the matching handle API and dual MIT/GPLv2 license;
+its callback table and error handling restore ten more comparable stock bodies.
 
 The stock display-class ABI differs from the imported modern kernel port.
 Its DWARF describes a 208-byte `_DC_DEVICE_` with a physical heap pointer and
