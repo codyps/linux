@@ -36,6 +36,8 @@
 #include "rtc-sunxi.h"
 
 static void __iomem *global_pgregbase;
+static void __iomem *boot_reasonbase;
+
 
 atomic_t rtc_sync_flag = ATOMIC_INIT(0);
 
@@ -50,12 +52,23 @@ static struct sunxi_rtc_data_year data_year_param =
 	};
 #else
 	{
-		.min		= 2020,
+		.min		= 1970,
 		.max		= 2097,
 		.mask		= 0x7f,
 		.yshift		= 16,
 		.leap_shift	= 23,
 	};
+#endif
+
+
+#ifdef CONFIG_SUNXI_BOOTUP_EXTEND
+enum {
+	SUNXI_RTC_BOOT_REASON_NONE = 0,
+	SUNXI_RTC_BOOT_REASON_COLD_BOOT,
+	SUNXI_RTC_BOOT_REASON_HOT_REBOOT,
+	SUNXI_RTC_BOOT_REASON_PANIC_REBOOT,
+	SUNXI_RTC_BOOT_REASON_MAX,
+};
 #endif
 
 #ifdef CONFIG_RTC_SHUTDOWN_ALARM
@@ -602,6 +615,8 @@ static const struct rtc_class_ops sunxi_rtc_ops = {
 	.alarm_irq_enable	= sunxi_rtc_alarm_irq_enable
 };
 
+
+
 static const struct of_device_id sunxi_rtc_dt_ids[] = {
 	{.compatible = "allwinner,sunxi-rtc", .data = &data_year_param},
 	{ /* sentinel */ },
@@ -631,48 +646,61 @@ static struct device_attribute sunxi_rtc_max_year_attr =
 	__ATTR(max_year, S_IRUGO, sunxi_rtc_max_year_show, NULL);
 
 #ifdef CONFIG_SUNXI_BOOTUP_EXTEND
-static int sunxi_reboot_callback(struct notifier_block *this,
-		unsigned long code, void *data)
+
+static int rtc_set_bootreason_flag(u32 value)
 {
-	unsigned int rtc_flag = 0;
-
-	if (data == NULL)
-		return NOTIFY_DONE;
-
-	pr_info("sunxi rtc reboot, arg %s\n", (char *)data);
-
-	if (!strncmp(data, "debug", sizeof("debug"))) {
-		rtc_flag = SUNXI_DEBUG_MODE_FLAG;
-	} else if (!strncmp(data, "efex", sizeof("efex"))) {
-		rtc_flag = SUNXI_EFEX_CMD_FLAG;
-	} else if (!strncmp(data, "boot-resignature",
-						sizeof("boot-resignature"))) {
-		rtc_flag = SUNXI_BOOT_RESIGNATURE_FLAG;
-	} else if (!strncmp(data, "recovery", sizeof("recovery"))
-		|| !strncmp(data, "boot-recovery", sizeof("boot-recovery"))) {
-		rtc_flag = SUNXI_BOOT_RECOVERY_FLAG;
-	} else if (!strncmp(data, "sysrecovery", sizeof("sysrecovery"))) {
-		rtc_flag = SUNXI_SYS_RECOVERY_FLAG;
-	} else if (!strncmp(data, "bootloader", sizeof("bootloader"))) {
-		rtc_flag = SUNXI_FASTBOOT_FLAG;
-	} else if (!strncmp(data, "usb-recovery", sizeof("usb-recovery"))) {
-		rtc_flag = SUNXI_USB_RECOVERY_FLAG;
-	} else if (!strncmp(data, "uboot", sizeof("uboot"))) {
-		rtc_flag = SUNXI_UBOOT_FLAG;
-	} else {
-		pr_warn("unkown reboot arg %s", (char *)data);
-		return NOTIFY_DONE;
+	if ((value & 0xffff) >= SUNXI_RTC_BOOT_REASON_MAX) {
+		pr_err("invalid reason\n");
+		return -1;
 	}
-
-	/*write the data to reg*/
-	writel(rtc_flag, global_pgregbase);
-	return NOTIFY_DONE;
+	/* Stock retries forever if the register never accepts the write.
+	 * TODO: add a bounded retry in a separate corrective change. */
+	do {
+		writel(value, boot_reasonbase);
+	} while (readl(boot_reasonbase) != value);
+	return 0;
+}
+static int rtc_get_bootreason_flag(void)
+{
+	u32 value;
+	value = readl(boot_reasonbase);
+	return (value & 0xffff);
 }
 
-static struct notifier_block sunxi_reboot_notifier = {
-	.notifier_call = sunxi_reboot_callback,
-};
+static int sunxi_rtc_set_bootreason_hot_reboot(void)
+{
+	rtc_set_bootreason_flag(SUNXI_RTC_BOOT_REASON_HOT_REBOOT);
+	return 0;
+}
 
+static int sunxi_rtc_bootreason_init(void)
+{
+	unsigned int bootreason = 0;
+	bootreason = rtc_get_bootreason_flag();
+	/*
+	 * reason | 0x80000000 to mark uboot fixed bootreason
+	 * then kernel will not fix it again
+	 */
+	if ((bootreason & 0xffff) == SUNXI_RTC_BOOT_REASON_NONE) {
+		/* none --> cold */
+		pr_info("fix to cold boot, save boot reason\n");
+		rtc_set_bootreason_flag(SUNXI_RTC_BOOT_REASON_COLD_BOOT | 0x80000000);
+	} else if ((bootreason & 0xffff) == SUNXI_RTC_BOOT_REASON_COLD_BOOT) {
+		/* cold --> hot */
+		pr_info("fix to hot reboot, save boot reason\n");
+		rtc_set_bootreason_flag(SUNXI_RTC_BOOT_REASON_HOT_REBOOT | 0x80000000);
+	} else if ((bootreason & 0xffff) < SUNXI_RTC_BOOT_REASON_MAX) {
+		/* others, remain */
+		pr_info("fix to hot reboot, save boot reason\n");
+		rtc_set_bootreason_flag(bootreason | 0x80000000);
+	} else {
+		/* error --> hot */
+		pr_info("reason large than max, fix to hot reboot, save boot reason\n");
+		rtc_set_bootreason_flag(SUNXI_RTC_BOOT_REASON_HOT_REBOOT | 0x80000000);
+	}
+	bootreason = rtc_get_bootreason_flag();
+	return 0;
+}
 
 static int rtc_flag_str2num(const char *rtc_str, unsigned int *rtc_flag_p)
 {
@@ -705,6 +733,35 @@ static int rtc_flag_str2num(const char *rtc_str, unsigned int *rtc_flag_p)
 	return ret;
 }
 
+static int sunxi_reboot_callback(struct notifier_block *this,
+		unsigned long code, void *data)
+{
+	unsigned int rtc_flag = 0;
+	int ret;
+
+	if (data == NULL)
+		return NOTIFY_DONE;
+
+	pr_info("sunxi rtc reboot, arg %s\n", (char *)data);
+	ret = rtc_flag_str2num((char *)data, &rtc_flag);
+	if (ret == -1) {
+		pr_warn("unkown reboot arg %s", (char *)data);
+		return NOTIFY_DONE;
+	}
+
+	/*write the data to reg*/
+	writel(rtc_flag, global_pgregbase);
+
+	sunxi_rtc_set_bootreason_hot_reboot();
+
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block sunxi_reboot_notifier = {
+	.notifier_call = sunxi_reboot_callback,
+};
+
+
 static ssize_t sunxi_rtc_flag_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -727,6 +784,8 @@ static ssize_t sunxi_rtc_flag_store(struct device *dev,
 		return size;
 	}
 
+	/* Stock passes size, not size + 1, and writes zero for unknown flags.
+	 * TODO: fix truncation and reject unknown input in a separate change. */
 	snprintf(rtc_str, size, "%s", buf);
 	ret = rtc_flag_str2num(rtc_str, &rtc_flag);
 	if (ret == -1)
@@ -742,6 +801,48 @@ static ssize_t sunxi_rtc_flag_store(struct device *dev,
 
 static struct device_attribute sunxi_rtc_flag_attr =
 	__ATTR(flag, 0664, sunxi_rtc_flag_show, sunxi_rtc_flag_store);
+
+static ssize_t sunxi_rtc_bootreason_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	unsigned int rtc_bootreason = 0;
+
+	rtc_bootreason = rtc_get_bootreason_flag();
+
+	return sprintf(buf, "0x%x\n", rtc_bootreason);
+}
+
+static ssize_t sunxi_rtc_bootreason_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
+{
+	unsigned int rtc_bootreason = 0;
+	int ret;
+	char rtc_str[30] = {0};
+
+	if (size >= 30) {
+		pr_err("parameters too long\n");
+		return size;
+	}
+
+	snprintf(rtc_str, size, "%s", buf);
+	/* Stock writes an unsigned long through a u32 local and tests the parse
+	 * return code against the reason limit. Preserve both mistakes.
+	 * TODO: use a correctly sized local, check conversion failure, and validate
+	 * the parsed value in a separate corrective change. */
+	ret = kstrtoul(rtc_str, 0, (unsigned long *)&rtc_bootreason);
+	if (ret >= SUNXI_RTC_BOOT_REASON_MAX)
+		pr_warn("unknown reason %s", buf);
+	else
+		pr_info("store rtc reason 0x%x\n", rtc_bootreason);
+
+	/* write the data to reg */
+	writel(rtc_bootreason, boot_reasonbase);
+
+	return size;
+}
+
+static struct device_attribute sunxi_rtc_bootreason_attr =
+	__ATTR(bootreason, 0664, sunxi_rtc_bootreason_show, sunxi_rtc_bootreason_store);
 #endif
 
 static int sunxi_rtc_probe(struct platform_device *pdev)
@@ -756,8 +857,10 @@ static int sunxi_rtc_probe(struct platform_device *pdev)
 	u32 gpr_offset = 0;
 	u32 gpr_len = 0;
 	u32 gpr_num = 0;
+	u32 gpr_bootcount = 0;
 #endif
 	global_pgregbase = NULL;
+	boot_reasonbase = NULL;
 	of_id = of_match_device(sunxi_rtc_dt_ids, &pdev->dev);
 	if (!of_id) {
 		dev_err(&pdev->dev, "Unable to setup RTC data\n");
@@ -925,75 +1028,87 @@ no_clk:
 	device_create_file(&pdev->dev, &sunxi_rtc_max_year_attr);
 
 #ifdef CONFIG_SUNXI_BOOTUP_EXTEND
-		ret = of_property_read_u32(pdev->dev.of_node,
-						"gpr_offset", &gpr_offset);
-		if (ret) {
-			dev_err(&pdev->dev, "Could not get Gpr offset\n");
-			goto fail_3;
-		}
+	ret = of_property_read_u32(pdev->dev.of_node,
+					"gpr_offset", &gpr_offset);
+	if (ret) {
+		dev_err(&pdev->dev, "Could not get Gpr offset\n");
+		goto fail_3;
+	}
 
-		ret = of_property_read_u32(pdev->dev.of_node,
-						"gpr_len", &gpr_len);
-		if (ret) {
-			dev_err(&pdev->dev, "Could not get Gpr len\n");
-			goto fail_3;
-		}
+	ret = of_property_read_u32(pdev->dev.of_node,
+					"gpr_len", &gpr_len);
+	if (ret) {
+		dev_err(&pdev->dev, "Could not get Gpr len\n");
+		goto fail_3;
+	}
 
-		ret = of_property_read_u32(pdev->dev.of_node,
-						"gpr_cur_pos", &gpr_num);
-		if (ret) {
-			dev_err(&pdev->dev, "Could not get Gpr reboot cur pos");
-			goto fail_3;
-		} else {
+	ret = of_property_read_u32(pdev->dev.of_node,
+					"gpr_cur_pos", &gpr_num);
+	if (ret) {
+		dev_err(&pdev->dev, "Could not get Gpr reboot cur pos");
+		goto fail_3;
+	}
 
-			if (gpr_num >= gpr_len) {
-				dev_err(&pdev->dev,
-					"gpr_cur_pos is out of range!\n");
-				goto fail_3;
-			}
-			/*
-			  * This notification function is for monitoring reboot command
-			  * when the system has been started, the reboot parameter is
-			  * stored in the RTC General Purpose register.
-			  *
-			  * gpr_offset:  General Purpose register's offset
-			  * gpr_len: The number of General Purpose registers
-			  * gpr_cur_pos: which to store the parameter in
-			  * General Purpose register
-			 */
-			ret = register_reboot_notifier(&sunxi_reboot_notifier);
-			if (ret) {
-				dev_err(&pdev->dev,
-					"register reboot notifier error %d\n", ret);
-				goto fail_3;
-			}
-			/*
-				* Export sunxi rtc flag to sysfs:
-				* To support "reboot efex" with RTC, we need to store a flag
-				* in RTC before reboot. Android's reboot can pass parameters to
-				* kernel but busybox's reboot can not do that.
-				* Here we export rtc flag to sysfs, so the flowing command can
-				* be used as an alternative of "reboot efex":
-				* echo "efex" > "/sys/devices/platform/soc/rtc/flag"; reboot
-			*/
-			ret = device_create_file(&pdev->dev, &sunxi_rtc_flag_attr);
-			if (ret) {
-				dev_err(&pdev->dev, "device_create_file failed\n");
-				goto fail_3;
-			}
-			global_pgregbase = chip->base + gpr_offset + 0x4 * gpr_num;
-		}
+	ret = of_property_read_u32(pdev->dev.of_node,
+					"gpr_bootcount_pos", &gpr_bootcount);
+	if (ret)
+		gpr_bootcount = 0;
 
-		return 0;
+	if (gpr_num >= gpr_len || gpr_bootcount >= gpr_len) {
+		dev_err(&pdev->dev,
+			"gpr_cur_pos is out of range!\n");
+		goto fail_3;
+	}
+	/*
+	 * This notification function is for monitoring reboot command
+	 * when the system has been started, the reboot parameter is
+	 * stored in the RTC General Purpose register.
+	 *
+	 * gpr_offset:  General Purpose register's offset
+	 * gpr_len: The number of General Purpose registers
+	 * gpr_cur_pos: which to store the parameter in
+	 * General Purpose register
+	*/
+	ret = register_reboot_notifier(&sunxi_reboot_notifier);
+	if (ret) {
+		dev_err(&pdev->dev,
+			"register reboot notifier error %d\n", ret);
+		goto fail_3;
+	}
+	/*
+	 * Export sunxi rtc flag to sysfs:
+	 * To support "reboot efex" with RTC, we need to store a flag
+	 * in RTC before reboot. Android's reboot can pass parameters to
+	 * kernel but busybox's reboot can not do that.
+	 * Here we export rtc flag to sysfs, so the flowing command can
+	 * be used as an alternative of "reboot efex":
+	 * echo "efex" > "/sys/devices/platform/soc/rtc/flag"; reboot
+	 */
+	ret = device_create_file(&pdev->dev, &sunxi_rtc_flag_attr);
+	if (ret) {
+		dev_err(&pdev->dev, "device_create_file failed\n");
+		goto fail_3;
+	}
+	global_pgregbase = chip->base + gpr_offset + 0x4 * gpr_num;
 
+	ret = device_create_file(&pdev->dev, &sunxi_rtc_bootreason_attr);
+	if (ret) {
+		dev_err(&pdev->dev, "device_create_file failed\n");
+		goto fail_4;
+	}
+	boot_reasonbase = chip->base + gpr_offset + 0x4 * gpr_bootcount;
+	sunxi_rtc_bootreason_init();
+	return 0;
+fail_4:
+	device_remove_file(&pdev->dev, &sunxi_rtc_flag_attr);
 fail_3:
-		device_remove_file(&pdev->dev, &sunxi_rtc_min_year_attr);
-		device_remove_file(&pdev->dev, &sunxi_rtc_max_year_attr);
-		devm_free_irq(&pdev->dev, chip->irq, chip);
-		if (!IS_ERR(chip->clk))
-			clk_disable_unprepare(chip->clk);
+	device_remove_file(&pdev->dev, &sunxi_rtc_min_year_attr);
+	device_remove_file(&pdev->dev, &sunxi_rtc_max_year_attr);
+	devm_free_irq(&pdev->dev, chip->irq, chip);
+	if (!IS_ERR(chip->clk))
+		clk_disable_unprepare(chip->clk);
 #else
-		return 0;
+	return 0;
 #endif
 
 fail:
@@ -1007,6 +1122,8 @@ static int sunxi_rtc_remove(struct platform_device *pdev)
 	struct sunxi_rtc_dev *chip = platform_get_drvdata(pdev);
 #ifdef CONFIG_SUNXI_BOOTUP_EXTEND
 	unregister_reboot_notifier(&sunxi_reboot_notifier);
+	device_remove_file(&pdev->dev, &sunxi_rtc_flag_attr);
+	device_remove_file(&pdev->dev, &sunxi_rtc_bootreason_attr);
 #endif
 	device_remove_file(&pdev->dev, &sunxi_rtc_min_year_attr);
 	device_remove_file(&pdev->dev, &sunxi_rtc_max_year_attr);
