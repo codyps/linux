@@ -497,6 +497,10 @@ s32 disp_init_connections(struct disp_bsp_init_para *para)
 			dispdev = disp_device_get(disp, DISP_OUTPUT_TYPE_LCD);
 			if ((dispdev) && (dispdev->set_manager))
 				dispdev->set_manager(dispdev, mgr);
+			/* TODO: stock assumes enable_iommu is installed, even
+			 * when no LCD device was attached above.
+			 */
+			mgr->enable_iommu(mgr, true);
 		}
 
 #if defined(CONFIG_DISP2_SUNXI_SUPPORT_ENAHNCE)
@@ -734,7 +738,7 @@ static s32 disp_sync_all(u32 disp, bool sync)
 
 	mgr = disp_get_layer_manager(disp);
 	if (!mgr) {
-		DE_WRN("get mgr%d fail\n", disp);
+		DISP_STOCK_WRN(738, "get mgr%d fail\n", disp);
 	} else {
 		dispdev = mgr->device;
 		if (mgr->sync)
@@ -743,6 +747,11 @@ static s32 disp_sync_all(u32 disp, bool sync)
 			if (dispdev->get_status(dispdev) != 0)
 				gdisp.screen[disp].health_info.error_cnt++;
 		}
+		/* TODO: stock repeats this for each synchronized update without
+		 * a callback check. Preserve its position after status accounting.
+		 */
+		if (sync)
+			mgr->enable_iommu(mgr, true);
 	}
 
 	return 0;
@@ -878,7 +887,7 @@ void disp_tasklet(unsigned long data)
 
 	mgr = disp_get_layer_manager(disp);
 	if (!mgr) {
-		DE_WRN("get mgr%d fail\n", disp);
+		DISP_STOCK_WRN(884, "get mgr%d fail\n", disp);
 	} else {
 		if (mgr->tasklet)
 			mgr->tasklet(mgr);
