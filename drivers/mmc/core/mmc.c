@@ -2213,11 +2213,11 @@ int mmc_attach_mmc(struct mmc_host *host)
 	if (err)
 		goto remove_card;
 
-	mmc_claim_host(host);
-
+/* Stock initializes panic storage while the host is still released. */
 #if IS_ENABLED(CONFIG_PSTORE_BLK)
 	sunxi_mmc_panic_init_ps(NULL);
 #endif
+	mmc_claim_host(host);
 	return 0;
 
 remove_card:
