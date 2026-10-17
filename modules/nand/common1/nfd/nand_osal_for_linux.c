@@ -21,7 +21,7 @@
  * nand common1 version rule vx.ab data time
  * x >= 1; 00 <= ab <= 99
  */
-#define NAND_COMMON1_PHY_DRV_VERSION "v1.07 2020-11-12 16:30"
+#define NAND_COMMON1_PHY_DRV_VERSION "v1.10 2021-02-03 10:02"
 
 #define GPIO_BASE_ADDR 0x0300B000
 
