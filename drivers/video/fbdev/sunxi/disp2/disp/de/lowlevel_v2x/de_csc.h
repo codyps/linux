@@ -21,6 +21,7 @@ int de_dcsc_init(struct disp_bsp_init_para *para);
 int de_dcsc_exit(void);
 int de_dcsc_update_regs(unsigned int sel);
 int de_dcsc_get_config(unsigned int sel, struct disp_csc_config *config);
+int de_gamma(unsigned int sel, unsigned int en, unsigned int *gamma_tbl);
 
 int de_ccsc_apply(unsigned int sel, unsigned int ch_id,
 		  struct disp_csc_config *config);

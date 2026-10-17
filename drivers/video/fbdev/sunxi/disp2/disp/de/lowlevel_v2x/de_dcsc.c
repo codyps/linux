@@ -124,6 +124,26 @@ int de_dcsc_get_config(unsigned int sel, struct disp_csc_config *config)
 	return 0;
 }
 
+int de_gamma(unsigned int sel, unsigned int en, unsigned int *gamma_tbl)
+{
+	volatile unsigned int *gamma = (volatile unsigned int *)dcsc2_dev[0] + 32;
+	unsigned int i, rgb;
+
+	/* TG3040 #860 ignores sel/en and writes 256 words at CSC2 + 0x80,
+	 * even though init allocates only sizeof(struct __csc2_reg_t) (0xb0).
+	 * It marks only the 0x30-byte CSC coefficient block dirty afterward.
+	 * TODO: establish the intended gamma register/allocation and transfer
+	 * size separately; preserve the unchecked writes and selector here.
+	 */
+	for (i = 0; i < 256; i++) {
+		rgb = gamma_tbl[i];
+		gamma[i] = ((rgb & 0xff0000) << 4) |
+			   ((rgb & 0xff00) << 2) | (rgb & 0xff);
+	}
+	dcsc_coeff_block[0].dirty = 1;
+	return 0;
+}
+
 int de_dcsc_update_regs(unsigned int sel)
 {
 	unsigned int reg_val;
