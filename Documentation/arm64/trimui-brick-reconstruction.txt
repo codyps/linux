@@ -57,6 +57,17 @@ Reconstruction evidence
 -----------------------
 
 * All five panel command arrays match the original bytes after compilation.
+* LCD panel state, clock-divider adjustment, PWM disable sequence and emitted
+  diagnostics are recovered: all 55 comparable disp_lcd.o bodies match stock.
+  The separate frame-period helper lacks a unique stock symbol; complete
+  display-driver code/data validation remains open.
+* G2D restores the 108-byte image ABI and invalid-ioctl mutex leak. All 78
+  comparable enabled bodies match; 56 ioctl-copy/lock cases match in emulation.
+* All 14 comparable PWM bodies match, retaining stock same-polarity bound
+  channels. A TODO identifies the separate complementary-polarity fix.
+* RTC and watchdog match 26 and 11 comparable bodies respectively, with
+  recursive table/callback checks and 665 compiled register/sysfs comparisons.
+  RTC's malformed-input behavior and wide write through a u32 local remain.
 * TCS4838 MFD/regulator tables, pointers and register settings match stock.
 * Arelink is usable reconstructed C, not decompiler pseudocode: 754 comparisons
   against emulated stock code cover cipher output, framing and EEPROM commands.
