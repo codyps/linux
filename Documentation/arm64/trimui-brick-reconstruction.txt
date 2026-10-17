@@ -18,11 +18,11 @@ Build
 
 Use an AArch64 GCC cross toolchain and an absolute output path:
 
-  make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=/path/to/output \
+  make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LOCALVERSION= O=/path/to/output \
        trimui_brick_defconfig
-  make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=/path/to/output \
+  make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LOCALVERSION= O=/path/to/output \
        -j16 Image modules dtbs
-  make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=/path/to/output \
+  make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LOCALVERSION= O=/path/to/output \
        M="$PWD/modules/gpu/img-rgx-1.19" PVR_SYSTEM=sunxi_a133 \
        CONFIG_DRM_IMG_ROGUE=m ODYSSEY_CAPTURE=0 -j16 modules
 
@@ -31,6 +31,8 @@ trimui_brick_stock_defconfig preserves the full original IKCONFIG as evidence.
 trimui_brick_reconstructed_defconfig is a compatibility copy of the normalized
 trimui_brick_defconfig. The companion workbench build wrapper checks all stock
 configuration values before building in its default stock mode.
+Pass LOCALVERSION= explicitly to suppress Git's '+' suffix and preserve the
+shipped 4.9.191 module vermagic. This does not change the stock configuration.
 
 Source provenance
 -----------------

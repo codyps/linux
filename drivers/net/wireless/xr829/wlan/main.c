@@ -46,7 +46,8 @@ MODULE_ALIAS("xradio_core");
 #define XRADIO_DEV_VER  "_HT40_01.40"
 
 char *drv_version   = XRADIO_VERSION XRADIO_DEV_VER;
-char *drv_buildtime = __DATE__" "__TIME__;
+/* Preserved driver identity from the shipped TG3040 module. */
+char *drv_buildtime = "Apr 13 2024 02:34:44";
 
 #define XRADIO_MAC_CHARLEN 18
 #ifdef XRADIO_MACPARAM_HEX
