@@ -6,7 +6,17 @@
 #include "de_fcm.h"
 #include "de_fcm_tables.h"
 
-static u32 *fcm_dev[DE_NUM][CHN_NUM];
+/* Volatile fields preserve stock's separate read/modify/write accesses even
+ * when set_reg_base points directly at registers rather than a RAM shadow.
+ */
+union fcm_word {
+	u32 value;
+	struct { u32 low:13, reserved0:3, high:13, reserved1:3; } pair13;
+	struct { u32 low:11, reserved0:5, high:11, reserved1:5; } pair11;
+	struct { u32 low:9, reserved0:7, high:9, reserved1:7; } pair9;
+	struct { u32 enable:1, reserved0:3, window:1, reserved1:27; } control;
+};
+static volatile union fcm_word *fcm_dev[DE_NUM][CHN_NUM];
 static struct de_reg_blocks fcm_block[DE_NUM][CHN_NUM];
 
 int de_fcm_set_reg_base(unsigned int sel, unsigned int channel, void *base)
@@ -17,46 +27,68 @@ int de_fcm_set_reg_base(unsigned int sel, unsigned int channel, void *base)
 
 int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 {
-	u32 *reg = fcm_dev[sel][channel];
-	unsigned int i, offset;
-	memcpy(reg + 0x20 / 4, fcm_angle_hue, sizeof(fcm_angle_hue));
-	memcpy(reg + 0xa0 / 4, fcm_angle_sat, sizeof(fcm_angle_sat));
-	memcpy(reg + 0xe0 / 4, fcm_angle_lum, sizeof(fcm_angle_lum));
+	volatile union fcm_word *reg = fcm_dev[sel][channel];
+	int i;
+
+	memcpy((void *)(reg + 0x20 / 4), fcm_angle_hue, sizeof(fcm_angle_hue));
+	memcpy((void *)(reg + 0xa0 / 4), fcm_angle_sat, sizeof(fcm_angle_sat));
+	memcpy((void *)(reg + 0xe0 / 4), fcm_angle_lum, sizeof(fcm_angle_lum));
 	for (i = 0; i < 28; i++) {
-		reg[0x120 / 4 + i] = (reg[0x120 / 4 + i] & 0xe000e000) |
-			(fcm_hbh[i] & 0x1fff) |
-			((i == 27 ? 0 : fcm_hbh[i + 1] & 0x1fff) << 16);
-		reg[0x1a0 / 4 + i] = (reg[0x1a0 / 4 + i] & 0xf800f800) |
-			(fcm_sbh[i] & 0x7ff) |
-			((i == 27 ? 200 : fcm_sbh[i + 1] & 0x7ff) << 16);
-		reg[0x220 / 4 + i] = (reg[0x220 / 4 + i] & 0xfe00fe00) |
-			(fcm_ybh[i] & 0x1ff) |
-			((i == 27 ? 50 : fcm_ybh[i + 1] & 0x1ff) << 16);
+		reg[0x120 / 4 + i].pair13.low = fcm_hbh[i];
+		reg[0x1a0 / 4 + i].pair11.low = fcm_sbh[i];
+		reg[0x220 / 4 + i].pair9.low = fcm_ybh[i];
+		if (i == 27) {
+			reg[0x120 / 4 + i].pair13.high = 0;
+			reg[0x1a0 / 4 + i].pair11.high = 200;
+			reg[0x220 / 4 + i].pair9.high = 50;
+		} else {
+			reg[0x120 / 4 + i].pair13.high = fcm_hbh[i + 1];
+			reg[0x1a0 / 4 + i].pair11.high = fcm_sbh[i + 1];
+			reg[0x220 / 4 + i].pair9.high = fcm_ybh[i + 1];
+		}
 	}
-	for (offset = 0x300; offset <= 0x2100; offset += 0x600)
-		for (i = 0; i < 0x5b0 / 4; i++)
-			reg[offset / 4 + i] = 0x64646464;
-	reg[0] |= 1;
+	/* Stock reloads the base after the LUT updates, then fills each plane. */
+	reg = fcm_dev[sel][channel];
+	for (i = 0; i < 364; i++)
+		reg[0x300 / 4 + i].value = 0x64646464;
+	for (i = 0; i < 364; i++)
+		reg[0x900 / 4 + i].value = 0x64646464;
+	for (i = 0; i < 364; i++)
+		reg[0xf00 / 4 + i].value = 0x64646464;
+	for (i = 0; i < 364; i++)
+		reg[0x1500 / 4 + i].value = 0x64646464;
+	for (i = 0; i < 364; i++)
+		reg[0x1b00 / 4 + i].value = 0x64646464;
+	for (i = 0; i < 364; i++)
+		reg[0x2100 / 4 + i].value = 0x64646464;
+	reg[0].control.enable = 1;
 	fcm_block[sel][channel].dirty = 1;
 	return 0;
 }
 
 int de_fcm_init(unsigned int sel, unsigned int channel, uintptr_t reg_base)
 {
+	uintptr_t base = reg_base + (sel + 1) * 0x100000 + 0xaa000;
 	void *memory = kzalloc(0x26b0, GFP_KERNEL);
-	if (!memory)
+
+	if (!memory) {
+		DISP_STOCK_WRN(190,
+			"malloc vep fcm[%d][%d] memory fail! size=0x%x\n",
+			sel, channel, 0x26b0);
 		return -1;
-	fcm_dev[sel][channel] = memory;
+	}
 	fcm_block[sel][channel].val = memory;
-	fcm_block[sel][channel].off = reg_base + (sel + 1) * 0x100000 + 0xaa000;
+	fcm_block[sel][channel].off = base;
 	fcm_block[sel][channel].size = 0x26b0;
 	fcm_block[sel][channel].dirty = 0;
+	de_fcm_set_reg_base(sel, channel, memory);
 	de_fcm_set_init_para(sel, channel);
 	return 0;
 }
 
 int de_fcm_exit(unsigned int sel, unsigned int channel)
 {
+	/* TODO: stock leaves the freed shadow pointer and descriptor intact. */
 	kfree(fcm_block[sel][channel].val);
 	return 0;
 }
@@ -79,9 +111,8 @@ int de_fcm_enable(unsigned int sel, unsigned int channel, unsigned int enable)
 int de_fcm_set_size(unsigned int sel, unsigned int channel,
 		    unsigned int width, unsigned int height)
 {
-	u32 *reg = fcm_dev[sel][channel];
-	reg[2] = (reg[2] & 0xe000e000) | (width ? (width - 1) & 0x1fff : 0) |
-		((height ? (height - 1) & 0x1fff : 0) << 16);
+	fcm_dev[sel][channel][2].pair13.low = width ? width - 1 : 0;
+	fcm_dev[sel][channel][2].pair13.high = height ? height - 1 : 0;
 	fcm_block[sel][channel].dirty = 1;
 	return 0;
 }
@@ -89,13 +120,14 @@ int de_fcm_set_size(unsigned int sel, unsigned int channel,
 int de_fcm_set_window(unsigned int sel, unsigned int channel,
 		      unsigned int enable, struct de_rect window)
 {
-	u32 *reg = fcm_dev[sel][channel];
-	reg[0] = (reg[0] & ~(1 << 4)) | ((enable & 1) << 4);
+	volatile union fcm_word *reg = fcm_dev[sel][channel];
+	reg[0].control.window = enable;
+	/* Stock tests the full argument although only bit zero is stored above. */
 	if (enable) {
-		reg[3] = (reg[3] & 0xe000e000) | (window.x & 0x1fff) |
-			((window.y & 0x1fff) << 16);
-		reg[4] = (reg[4] & 0xe000e000) | ((window.x + window.w - 1) & 0x1fff) |
-			(((window.y + window.h - 1) & 0x1fff) << 16);
+		reg[3].pair13.low = window.x;
+		reg[3].pair13.high = window.y;
+		reg[4].pair13.low = window.x + window.w - 1;
+		reg[4].pair13.high = window.y + window.h - 1;
 	}
 	fcm_block[sel][channel].dirty = 1;
 	return 0;
@@ -103,17 +135,27 @@ int de_fcm_set_window(unsigned int sel, unsigned int channel,
 
 int set_364(u32 *table)
 {
-	u8 *registers = (u8 *)fcm_dev[0][0];
-	unsigned int row, column, plane, index;
+	volatile u8 *registers = (volatile u8 *)fcm_dev[0][0];
+	unsigned int row, column, index;
+
+	/* TODO: stock reads the next column/row even at the right/bottom edge.
+	 * Keep its plane-interleaved byte accesses, including aliased input.
+	 */
 	for (row = 0; row < 28; row++)
 		for (column = 0; column < 13; column++) {
 			index = row * 13 + column;
-			for (plane = 0x300; plane <= 0xf00; plane += 0x600) {
-				registers[plane + 4 * index] = table[index];
-				registers[plane + 4 * index + 1] = table[index + 1];
-				registers[plane + 4 * index + 2] = table[index + 13];
-				registers[plane + 4 * index + 3] = table[index + 14];
-			}
+			registers[0x300 + 4 * index] = table[index];
+			registers[0x900 + 4 * index] = table[index];
+			registers[0xf00 + 4 * index] = table[index];
+			registers[0x301 + 4 * index] = table[index + 1];
+			registers[0x901 + 4 * index] = table[index + 1];
+			registers[0xf01 + 4 * index] = table[index + 1];
+			registers[0x302 + 4 * index] = table[index + 13];
+			registers[0x902 + 4 * index] = table[index + 13];
+			registers[0xf02 + 4 * index] = table[index + 13];
+			registers[0x303 + 4 * index] = table[index + 14];
+			registers[0x903 + 4 * index] = table[index + 14];
+			registers[0xf03 + 4 * index] = table[index + 14];
 		}
 	return 0;
 }
