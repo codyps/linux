@@ -63,7 +63,7 @@ Reconstruction evidence
   its out-of-tree build rule was broken. It is not recovered original C.
 * The inode i_sequence backport restores the 560-byte stock inode layout.
   All 414 shared structures sampled from vin_io DWARF match member layouts.
-* Bluetooth UART/H4/coexistence matches all 73 compared instruction bodies.
+* Bluetooth UART/H4/coexistence matches all 74 compared instruction bodies.
 * Public exFAT matches every uniquely comparable function body after restoring
   inode layout. Static comparison accounts for address relocation instructions;
   it does not establish equality of every referenced data object.
