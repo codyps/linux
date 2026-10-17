@@ -178,6 +178,10 @@ static inline int axp_vts_to_mV(u16 reg)
 static inline int axp_vts_to_temp(int data,
 		const struct axp_config_info *axp_config)
 {
+	/* TODO: stock does not validate NTC ordering or equal endpoints. Its
+	 * unsigned interpolation emits AArch64 UDIV (zero result for divisor 0).
+	 * Keep the arithmetic here; malformed curves need a separate fix.
+	 */
 	int temp;
 
 	if (data < 80 || !axp_config->pmu_bat_temp_enable)
@@ -344,6 +348,10 @@ static enum power_supply_property axp803_bat_props[] = {
 	POWER_SUPPLY_PROP_CHARGE_FULL,
 	POWER_SUPPLY_PROP_CAPACITY,
 	POWER_SUPPLY_PROP_TEMP,
+	POWER_SUPPLY_PROP_TEMP_ALERT_MIN,
+	POWER_SUPPLY_PROP_TEMP_ALERT_MAX,
+	POWER_SUPPLY_PROP_TEMP_AMBIENT_ALERT_MIN,
+	POWER_SUPPLY_PROP_TEMP_AMBIENT_ALERT_MAX,
 };
 
 static int axp803_bat_get_property(struct power_supply *psy,
@@ -414,6 +422,35 @@ static int axp803_bat_get_property(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_TEMP:
 		val->intval = axp803_get_bat_temp(bat_power) * 10;
+		break;
+	/* TODO: stock returns the raw voltage threshold as the callback's return
+	 * value, reports these temperatures in degrees rather than tenths, and
+	 * substitutes +/-200000 only when temperature sensing is disabled.
+	 * Preserve that interface, including signed wrapping of malformed values.
+	 */
+	case POWER_SUPPLY_PROP_TEMP_ALERT_MIN:
+		ret = bat_power->dts_info.pmu_bat_shutdown_ltf;
+		val->intval = axp_vts_to_temp(ret, &bat_power->dts_info);
+		if (!bat_power->dts_info.pmu_bat_temp_enable)
+			val->intval = -200000;
+		break;
+	case POWER_SUPPLY_PROP_TEMP_ALERT_MAX:
+		ret = bat_power->dts_info.pmu_bat_shutdown_htf;
+		val->intval = axp_vts_to_temp(ret, &bat_power->dts_info);
+		if (!bat_power->dts_info.pmu_bat_temp_enable)
+			val->intval = 200000;
+		break;
+	case POWER_SUPPLY_PROP_TEMP_AMBIENT_ALERT_MIN:
+		ret = bat_power->dts_info.pmu_bat_charge_ltf;
+		val->intval = axp_vts_to_temp(ret, &bat_power->dts_info);
+		if (!bat_power->dts_info.pmu_bat_temp_enable)
+			val->intval = -200000;
+		break;
+	case POWER_SUPPLY_PROP_TEMP_AMBIENT_ALERT_MAX:
+		ret = bat_power->dts_info.pmu_bat_charge_htf;
+		val->intval = axp_vts_to_temp(ret, &bat_power->dts_info);
+		if (!bat_power->dts_info.pmu_bat_temp_enable)
+			val->intval = 200000;
 		break;
 	default:
 		return -EINVAL;
