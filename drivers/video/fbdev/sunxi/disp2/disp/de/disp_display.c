@@ -652,7 +652,7 @@ s32 bsp_disp_sync_with_hw(struct disp_bsp_init_para *para)
 		/* enable display device(only software) */
 		if (ret != 0) {
 			/* attach fail */
-			DE_WRN("Can't find device(%d) for manager %d\n",
+			DISP_STOCK_WRN(656, "Can't find device(%d) for manager %d\n",
 			     (int)type, disp);
 			return -1;
 		}
@@ -1868,7 +1868,7 @@ s32 bsp_disp_get_panel_info(u32 disp, struct disp_panel_para *info)
 
 	lcd = disp_get_lcd(disp);
 	if (!lcd)
-		DE_WRN("get lcd%d fail\n", disp);
+		DISP_STOCK_WRN(1874, "get lcd%d fail\n", disp);
 
 	if (lcd && lcd->get_panel_info)
 		return lcd->get_panel_info(lcd, info);
@@ -1897,7 +1897,7 @@ s32 bsp_disp_lcd_dsi_mode_switch(u32 disp, u32 cmd_en, u32 lp_en)
 
 	ret = bsp_disp_get_panel_info(disp, panel_info);
 	if (ret == DIS_FAIL) {
-		DE_WRN("%s:Get panel info failed\n", __func__);
+		DISP_STOCK_WRN(1903, "%s:Get panel info failed\n", __func__);
 		goto OUT;
 	}
 
@@ -1925,7 +1925,7 @@ s32 bsp_disp_lcd_dsi_clk_enable(u32 disp, u32 en)
 
 	ret = bsp_disp_get_panel_info(disp, panel_info);
 	if (ret == DIS_FAIL) {
-		DE_WRN("%s:Get panel info failed\n", __func__);
+		DISP_STOCK_WRN(1931, "%s:Get panel info failed\n", __func__);
 		goto OUT;
 	}
 
@@ -1952,7 +1952,7 @@ s32 bsp_disp_lcd_dsi_dcs_wr(u32 disp, u8 command, u8 *para, u32 para_num)
 
 	ret = bsp_disp_get_panel_info(disp, panel_info);
 	if (ret == DIS_FAIL) {
-		DE_WRN("%s:Get panel info failed\n", __func__);
+		DISP_STOCK_WRN(1958, "%s:Get panel info failed\n", __func__);
 		goto OUT;
 	}
 
@@ -1981,7 +1981,7 @@ s32 bsp_disp_lcd_dsi_gen_wr(u32 disp, u8 command, u8 *para, u32 para_num)
 
 	ret = bsp_disp_get_panel_info(disp, panel_info);
 	if (ret == DIS_FAIL) {
-		DE_WRN("%s:Get panel info failed\n", __func__);
+		DISP_STOCK_WRN(1987, "%s:Get panel info failed\n", __func__);
 		goto OUT;
 	}
 
@@ -2008,7 +2008,7 @@ s32 bsp_disp_lcd_dsi_gen_short_read(u32 sel, u8 *para_p, u8 para_num,
 	s32 ret = -1;
 
 	if (!result || !para_p || para_num > 2) {
-		DE_WRN("Wrong para!\n");
+		DISP_STOCK_WRN(2014, "Wrong para!\n");
 		goto OUT;
 	}
 	ret = dsi_gen_short_rd(sel, para_p, para_num, result);
@@ -2021,7 +2021,7 @@ s32 bsp_disp_lcd_dsi_dcs_read(u32 sel, u8 cmd, u8 *result, u32 *num_p)
 	s32 ret = -1;
 
 	if (!result || !num_p) {
-		DE_WRN("Wrong para!\n");
+		DISP_STOCK_WRN(2027, "Wrong para!\n");
 		goto OUT;
 	}
 	ret = dsi_dcs_rd(sel, cmd, result, num_p);

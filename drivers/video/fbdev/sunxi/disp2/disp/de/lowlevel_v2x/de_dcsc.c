@@ -180,7 +180,7 @@ int de_dcsc_init(struct disp_bsp_init_para *para)
 			memory = kmalloc(sizeof(struct __csc2_reg_t),
 			    GFP_KERNEL | __GFP_ZERO);
 			if (memory == NULL) {
-				__wrn("malloc Ccsc[%d] mm fail! size=0x%x\n",
+				DISP_STOCK_WRN(199, "malloc Ccsc[%d] mm fail! size=0x%x\n",
 				     screen_id,
 				     (unsigned int)sizeof(struct __csc2_reg_t));
 				return -1;
@@ -200,7 +200,7 @@ int de_dcsc_init(struct disp_bsp_init_para *para)
 			memory =  kmalloc(sizeof(struct __csc_reg_t),
 			    GFP_KERNEL | __GFP_ZERO);
 			if (memory == NULL) {
-				__wrn("malloc Ccsc[%d] mm fail! size=0x%x\n",
+				DISP_STOCK_WRN(219, "malloc Ccsc[%d] mm fail! size=0x%x\n",
 				     screen_id,
 				     (unsigned int)sizeof(struct __csc_reg_t));
 				return -1;

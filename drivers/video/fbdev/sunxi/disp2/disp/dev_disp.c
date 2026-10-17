@@ -2444,7 +2444,7 @@ int disp_mmap(struct file *file, struct vm_area_struct *vma)
 	int mem_id = g_disp_mem_id;
 	if (mem_id >= DISP_MEM_NUM || mem_id < 0 ||
 	    !g_disp_mm[mem_id].info_base) {
-		__wrn("invalid param\n");
+		DISP_STOCK_WRN(2443, "invalid param\n");
 		return -EINVAL;
 	}
 
@@ -4142,7 +4142,7 @@ static long disp_compat_ioctl(struct file *file, unsigned int cmd,
 
 	if (copy_from_user
 	    ((void *)karg, (void __user *)arg, 4 * sizeof(compat_uptr_t))) {
-		__wrn("copy_from_user fail\n");
+		DISP_STOCK_WRN(4129, "copy_from_user fail\n");
 		return -EFAULT;
 	}
 
@@ -4153,7 +4153,7 @@ static long disp_compat_ioctl(struct file *file, unsigned int cmd,
 	if (put_user(karg[0], &ubuffer[0]) ||
 	    put_user(karg[1], &ubuffer[1]) ||
 	    put_user(karg[2], &ubuffer[2]) || put_user(karg[3], &ubuffer[3])) {
-		__wrn("put_user fail\n");
+		DISP_STOCK_WRN(4140, "put_user fail\n");
 		return -EFAULT;
 	}
 
@@ -4238,13 +4238,13 @@ static int __init disp_module_init(void)
 	my_cdev->owner = THIS_MODULE;
 	err = cdev_add(my_cdev, devid, 1);
 	if (err) {
-		__wrn("cdev_add fail\n");
+		DISP_STOCK_WRN(4225, "cdev_add fail\n");
 		return -1;
 	}
 
 	disp_class = class_create(THIS_MODULE, "disp");
 	if (IS_ERR(disp_class)) {
-		__wrn("class_create fail\n");
+		DISP_STOCK_WRN(4231, "class_create fail\n");
 		return -1;
 	}
 

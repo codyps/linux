@@ -1330,7 +1330,7 @@ int disp_al_vdevice_cfg(u32 screen_id, struct disp_video_timings *video_info,
 	if (para->sub_intf == LCD_HV_IF_CCIR656_2CYC)
 		tcon1_yuv_range(screen_id, 1);
 	if (tcon0_cfg(screen_id, &info) != 0)
-		DE_WRN("lcd cfg fail!\n");
+		DISP_STOCK_WRN(1337, "lcd cfg fail!\n");
 	else
 		DE_INF("lcd cfg ok!\n");
 
@@ -1511,7 +1511,7 @@ int disp_init_al(struct disp_bsp_init_para *para)
 				break;
 		}
 		if (hwdev_index == DEVICE_NUM) {
-			__wrn("Can not find tcon index for smooth display\n");
+			DISP_STOCK_WRN(1518, "Can not find tcon index for smooth display\n");
 			hwdev_index = 0;
 		}
 #if defined(HAVE_DEVICE_COMMON_MODULE)
@@ -1626,7 +1626,7 @@ int disp_al_vdpo_cfg(u32 screen_id, u32 vdpo_index,
 		disp_al_lcd_get_clk_info(screen_id, &clk_info, &panel);
 		tcon0_set_dclk_div(screen_id, clk_info.tcon_div);
 		if (tcon0_cfg(screen_id, &panel) != 0)
-			DE_WRN("lcd cfg fail!\n");
+			DISP_STOCK_WRN(1633, "lcd cfg fail!\n");
 		else
 			DE_INF("lcd cfg ok!\n");
 

@@ -471,7 +471,7 @@ int de_enhance_set_mode(unsigned int format, struct disp_enhance_config *config)
 
 	if ((mode >= MODE_NUM) || (format >= 2)
 	    || (enhance_mode >= ENHANCE_MODE_NUM)) {
-		__wrn("para excess! mode = %d, enhance_mode = %d, format=%d\n",
+		DISP_STOCK_WRN(504, "para excess! mode = %d, enhance_mode = %d, format=%d\n",
 			mode, enhance_mode, format);
 		return 1;
 	}

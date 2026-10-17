@@ -103,6 +103,12 @@
 			pr_warn(msg); \
 		} while (0)
 
+/* Diagnostic values recovered from stock #860, independently of source layout. */
+#define DISP_STOCK_WRN(line, msg...) do { \
+			pr_warn("[DISP] %s,line:%d:", __func__, line); \
+			pr_warn(msg); \
+		} while (0)
+
 #endif				/* end of define __LINUX_PLAT__ */
 
 #ifdef __UBOOT_PLAT__
@@ -126,6 +132,7 @@
 #define __inf(msg...)
 #define __msg(msg...)
 #define __wrn(msg...) printf(msg)
+#define DISP_STOCK_WRN(line, msg...) printf(msg)
 #define __here
 #define __debug
 
