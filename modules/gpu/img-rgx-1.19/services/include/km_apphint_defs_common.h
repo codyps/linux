@@ -106,7 +106,7 @@ X(TPUTrilinearFracMaskRDM,          UINT32,         VALIDATION,  0xF,           
 X(HTBufferSizeInKB,                 UINT32,         ALWAYS,      PVRSRV_APPHINT_HTBUFFERSIZE,                  NO_PARAM_TABLE,   ALWAYS   ) \
 X(FWTraceBufSizeInDWords,           UINT32,         ALWAYS,      PVRSRV_APPHINT_FWTRACEBUFSIZEINDWORDS,        NO_PARAM_TABLE,   ALWAYS   ) \
 \
-X(EnablePageFaultDebug,             BOOL,           ALWAYS,      PVRSRV_APPHINT_ENABLEPAGEFAULTDEBUG,          NO_PARAM_TABLE,   ALWAYS   ) \
+X(EnablePageFaultDebug,             BOOL,           ALWAYS,      IMG_FALSE,                                  NO_PARAM_TABLE,   ALWAYS   ) \
 X(EnableFullSyncTracking,           BOOL,           ALWAYS,      PVRSRV_APPHINT_ENABLEFULLSYNCTRACKING,        NO_PARAM_TABLE,   ALWAYS   ) \
 X(IgnoreHWReportedBVNC,             BOOL,           ALWAYS,      PVRSRV_APPHINT_IGNOREHWREPORTEDBVNC,          NO_PARAM_TABLE,   ALWAYS   ) \
 \

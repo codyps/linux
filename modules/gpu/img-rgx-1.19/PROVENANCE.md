@@ -154,3 +154,10 @@ resolving named address targets. No source padding or #line directives were
 added to manufacture diagnostic equality. The mirrored compiler is not asserted
 to be the original OpenWrt-customized compiler. This code comparison still does
 not validate every referenced object or physical GPU behavior.
+
+
+Named-data comparison additionally identifies a false EnablePageFaultDebug
+initial apphint in both stock apphint tables. The generic fallback macro remains
+true in stock PVRSRVInit/PVRSRVDeviceCreate instruction bodies, so only the list
+initializer is changed. Do not globally change the fallback macro to make those
+separately compiled defaults agree. Both stock table values and code are retained.
