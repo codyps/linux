@@ -67,19 +67,19 @@ PVRSRV_ERROR InfoPageCreate(PVRSRV_DATA *psData)
                                       uiMemFlags,
                                       "PVRSRVInfoPage",
                                       &psData->psInfoPageMemDesc);
-    PVR_LOG_GOTO_IF_ERROR(eError, "DevmemAllocateExportable", e0);
+    PVR_LOG_GOTO_IF_ERROR_STOCK(69, eError, "DevmemAllocateExportable", e0);
 
     eError =  DevmemAcquireCpuVirtAddr(psData->psInfoPageMemDesc,
                                        (void **) &psData->pui32InfoPage);
-    PVR_LOG_GOTO_IF_ERROR(eError, "DevmemAllocateExportable", e0);
+    PVR_LOG_GOTO_IF_ERROR_STOCK(73, eError, "DevmemAllocateExportable", e0);
 
     /* Look-up the memory descriptor PMR handle */
     eError = DevmemLocalGetImportHandle(psData->psInfoPageMemDesc,
                                         (void **) &psData->psInfoPagePMR);
-    PVR_LOG_GOTO_IF_ERROR(eError, "DevmemLocalGetImportHandle", e0);
+    PVR_LOG_GOTO_IF_ERROR_STOCK(78, eError, "DevmemLocalGetImportHandle", e0);
 
     eError = OSLockCreate(&psData->hInfoPageLock);
-    PVR_LOG_GOTO_IF_ERROR(eError, "OSLockCreate", e0);
+    PVR_LOG_GOTO_IF_ERROR_STOCK(81, eError, "OSLockCreate", e0);
 
     /* Because the memory is allocated read only we need to explicitly set it to
      * 0. The reason for this is that if the memory is allocated with
@@ -119,9 +119,9 @@ PVRSRV_ERROR PVRSRVAcquireInfoPageKM(PMR **ppsPMR)
 {
     PVRSRV_DATA *psData = PVRSRVGetPVRSRVData();
 
-    PVR_LOG_RETURN_IF_FALSE(psData->psInfoPageMemDesc != NULL, "invalid MEMDESC"
+    PVR_LOG_RETURN_IF_FALSE_STOCK(122, psData->psInfoPageMemDesc != NULL, "invalid MEMDESC"
                       " handle", PVRSRV_ERROR_INVALID_PARAMS);
-    PVR_LOG_RETURN_IF_FALSE(psData->psInfoPagePMR != NULL, "invalid PMR handle",
+    PVR_LOG_RETURN_IF_FALSE_STOCK(124, psData->psInfoPagePMR != NULL, "invalid PMR handle",
                       PVRSRV_ERROR_INVALID_PARAMS);
 
     /* Copy the PMR import handle back */

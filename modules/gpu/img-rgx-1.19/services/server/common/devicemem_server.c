@@ -319,7 +319,7 @@ static INLINE IMG_BOOL DevmemIntHeapAcquire(DEVMEMINT_HEAP *psDevmemHeap)
 
 	if (!bSuccess)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "%s(): Failed to acquire the device memory "
+		PVR_DPF_STOCK(245, (PVR_DBG_ERROR, "%s(): Failed to acquire the device memory "
 		         "heap, reference count has overflowed.", __func__));
 		return IMG_FALSE;
 	}
@@ -341,7 +341,7 @@ static INLINE void DevmemIntHeapRelease(DEVMEMINT_HEAP *psDevmemHeap)
 
 	if (!bSuccess)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "%s(): Failed to acquire the device memory "
+		PVR_DPF_STOCK(267, (PVR_DBG_ERROR, "%s(): Failed to acquire the device memory "
 		         "heap, reference count has underflowed.", __func__));
 	}
 }
@@ -361,7 +361,7 @@ static INLINE IMG_BOOL DevmemIntReservationAcquire(DEVMEMINT_RESERVATION *psDevm
 
 	if (!bSuccess)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "%s(): Failed to acquire the device memory "
+		PVR_DPF_STOCK(287, (PVR_DBG_ERROR, "%s(): Failed to acquire the device memory "
 		         "reservation, reference count has overflowed.", __func__));
 	}
 	else
@@ -386,7 +386,7 @@ static INLINE void DevmemIntReservationRelease(DEVMEMINT_RESERVATION *psDevmemRe
 
 	if (psDevmemReservation->i32RefCount == DEVMEMRESERVATION_REFCOUNT_MIN)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "%s(): Failed to release the device memory "
+		PVR_DPF_STOCK(312, (PVR_DBG_ERROR, "%s(): Failed to release the device memory "
 		         "reservation, reference count has underflowed.", __func__));
 	}
 	else
@@ -520,7 +520,7 @@ DevmemIntCtxCreate(CONNECTION_DATA *psConnection,
 
 	/* Only allow request for a kernel context that comes from a direct bridge
 	 * (psConnection == NULL). Only the FW/KM Ctx is created over the direct bridge. */
-	PVR_LOG_RETURN_IF_INVALID_PARAM(!bKernelFWMemoryCtx || psConnection == NULL,
+	PVR_LOG_RETURN_IF_INVALID_PARAM_STOCK(446, !bKernelFWMemoryCtx || psConnection == NULL,
 	                                "bKernelFWMemoryCtx && psConnection");
 
 	/*
@@ -533,7 +533,7 @@ DevmemIntCtxCreate(CONNECTION_DATA *psConnection,
 
 	/* allocate a Devmem context */
 	psDevmemCtx = OSAllocMem(sizeof(*psDevmemCtx));
-	PVR_LOG_GOTO_IF_NOMEM(psDevmemCtx, eError, fail_alloc);
+	PVR_LOG_GOTO_IF_NOMEM_STOCK(458, psDevmemCtx, eError, fail_alloc);
 
 	OSAtomicWrite(&psDevmemCtx->hRefCount, 1);
 	psDevmemCtx->psDevNode = psDeviceNode;
@@ -544,12 +544,12 @@ DevmemIntCtxCreate(CONNECTION_DATA *psConnection,
 	                           psDeviceNode,
 	                           &psDevmemCtx->psMMUContext,
 	                           psMMUDevAttrs);
-	PVR_LOG_GOTO_IF_ERROR(eError, "MMU_ContextCreate", fail_mmucontext);
+	PVR_LOG_GOTO_IF_ERROR_STOCK(469, eError, "MMU_ContextCreate", fail_mmucontext);
 
 	if (psDeviceNode->pfnRegisterMemoryContext)
 	{
 		eError = psDeviceNode->pfnRegisterMemoryContext(psDeviceNode, psDevmemCtx->psMMUContext, &hPrivDataInt);
-		PVR_LOG_GOTO_IF_ERROR(eError, "pfnRegisterMemoryContext", fail_register);
+		PVR_LOG_GOTO_IF_ERROR_STOCK(474, eError, "pfnRegisterMemoryContext", fail_register);
 	}
 
 	/* Store the private data as it is required to unregister the memory context */
@@ -609,7 +609,7 @@ DevmemIntHeapCreate(DEVMEMINT_CTX *psDevmemCtx,
 
 	/* allocate a Devmem context */
 	psDevmemHeap = OSAllocMem(sizeof(*psDevmemHeap));
-	PVR_LOG_RETURN_IF_NOMEM(psDevmemHeap, "psDevmemHeap");
+	PVR_LOG_RETURN_IF_NOMEM_STOCK(534, psDevmemHeap, "psDevmemHeap");
 
 	psDevmemHeap->psDevmemCtx = psDevmemCtx;
 
@@ -630,7 +630,7 @@ DevmemIntHeapCreate(DEVMEMINT_CTX *psDevmemCtx,
 	                            &ui32BlueprintLog2ImportAlignment);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "%s: Failed to get details for HeapConfig:%d HeapIndex:%d.",
+		PVR_DPF_STOCK(556, (PVR_DBG_ERROR, "%s: Failed to get details for HeapConfig:%d HeapIndex:%d.",
 				 __func__, uiHeapConfigIndex, uiHeapIndex));
 		goto ErrorCtxRelease;
 	}
@@ -647,7 +647,7 @@ DevmemIntHeapCreate(DEVMEMINT_CTX *psDevmemCtx,
 	                             &psDevmemHeap->pfnDeInit);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "%s: Failed to get callbacks for HeapConfig:%d HeapIndex:%d.",
+		PVR_DPF_STOCK(573, (PVR_DBG_ERROR, "%s: Failed to get callbacks for HeapConfig:%d HeapIndex:%d.",
 				 __func__, uiHeapConfigIndex, uiHeapIndex));
 		goto ErrorCtxRelease;
 	}
@@ -736,14 +736,14 @@ DevmemXIntReserveRange(DEVMEMINT_HEAP *psDevmemHeap,
 	uiAllocationSize = PVR_ALIGN(uiAllocationSize, IMG_UINT64_C(1) << psDevmemHeap->uiLog2PageSize);
 	uiNumPages = uiAllocationSize >> psDevmemHeap->uiLog2PageSize;
 
-	PVR_LOG_GOTO_IF_INVALID_PARAM(uiNumPages <= PMR_MAX_SUPPORTED_4K_PAGE_COUNT, eError,
+	PVR_LOG_GOTO_IF_INVALID_PARAM_STOCK(662, uiNumPages <= PMR_MAX_SUPPORTED_4K_PAGE_COUNT, eError,
 	                              ErrorUnreferenceHeap);
 
 	psRsrv = OSAllocZMem(sizeof(*psRsrv->ppsPMR) * uiNumPages + sizeof(*psRsrv));
-	PVR_LOG_GOTO_IF_NOMEM(psRsrv, eError, ErrorUnreferenceHeap);
+	PVR_LOG_GOTO_IF_NOMEM_STOCK(665, psRsrv, eError, ErrorUnreferenceHeap);
 
 	eError = OSLockCreate(&psRsrv->hLock);
-	PVR_LOG_GOTO_IF_ERROR(eError, "OSLockCreate", ErrorFreeReservation);
+	PVR_LOG_GOTO_IF_ERROR_STOCK(668, eError, "OSLockCreate", ErrorFreeReservation);
 
 	psRsrv->sBase = sAllocationDevVAddr;
 	psRsrv->uiLength = uiAllocationSize;
@@ -826,17 +826,17 @@ DevmemXIntMapPages(DEVMEMXINT_RESERVATION *psRsrv,
 	IMG_UINT32 uiLog2PageSize = psDevmemHeap->uiLog2PageSize;
 	IMG_UINT32 i;
 
-	PVR_LOG_RETURN_IF_INVALID_PARAM(uiPageCount <= uiPMRMaxChunkCount, "uiPageCount");
-	PVR_LOG_RETURN_IF_INVALID_PARAM(uiPhysPageOffset < uiPMRMaxChunkCount, "uiPhysPageOffset");
+	PVR_LOG_RETURN_IF_INVALID_PARAM_STOCK(751, uiPageCount <= uiPMRMaxChunkCount, "uiPageCount");
+	PVR_LOG_RETURN_IF_INVALID_PARAM_STOCK(752, uiPhysPageOffset < uiPMRMaxChunkCount, "uiPhysPageOffset");
 	/* The range is not valid for the given virtual descriptor */
-	PVR_LOG_RETURN_IF_FALSE((uiVirtPageOffset + uiPageCount) <= _ReservationPageCount(psRsrv),
+	PVR_LOG_RETURN_IF_FALSE_STOCK(755, (uiVirtPageOffset + uiPageCount) <= _ReservationPageCount(psRsrv),
 	                        "mapping offset out of range", PVRSRV_ERROR_DEVICEMEM_OUT_OF_RANGE);
-	PVR_LOG_RETURN_IF_FALSE((uiFlags & ~PVRSRV_MEMALLOCFLAGS_DEVMEMX_VIRTUAL_MASK) == 0,
+	PVR_LOG_RETURN_IF_FALSE_STOCK(757, (uiFlags & ~PVRSRV_MEMALLOCFLAGS_DEVMEMX_VIRTUAL_MASK) == 0,
 	                        "invalid flags", PVRSRV_ERROR_INVALID_FLAGS);
 
 	if (uiLog2PageSize > PMR_GetLog2Contiguity(psPMR))
 	{
-		PVR_DPF((PVR_DBG_ERROR, "%s: Device heap and PMR have incompatible "
+		PVR_DPF_STOCK(764, (PVR_DBG_ERROR, "%s: Device heap and PMR have incompatible "
 		        "Log2Contiguity (%u - %u). PMR contiguity must be a multiple "
 		        "of the heap contiguity!", __func__, uiLog2PageSize,
 		        PMR_GetLog2Contiguity(psPMR)));
@@ -885,7 +885,7 @@ DevmemXIntUnmapPages(DEVMEMXINT_RESERVATION *psRsrv,
 	DEVMEMINT_HEAP *psDevmemHeap = psRsrv->psDevmemHeap;
 	IMG_UINT32 i;
 
-	PVR_LOG_RETURN_IF_FALSE((uiVirtPageOffset + uiPageCount) <= _ReservationPageCount(psRsrv),
+	PVR_LOG_RETURN_IF_FALSE_STOCK(811, (uiVirtPageOffset + uiPageCount) <= _ReservationPageCount(psRsrv),
 	                        "mapping offset out of range", PVRSRV_ERROR_DEVICEMEM_OUT_OF_RANGE);
 
 	OSLockAcquire(psRsrv->hLock);
@@ -933,7 +933,7 @@ DevmemIntMapPMR(DEVMEMINT_HEAP *psDevmemHeap,
 
 	if (uiLog2HeapContiguity > PMR_GetLog2Contiguity(psPMR))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(863, (PVR_DBG_ERROR,
 		         "%s: Device heap and PMR have incompatible contiguity (%u - %u). "
 		         "Heap contiguity must be a multiple of the heap contiguity!",
 		         __func__,
@@ -949,7 +949,7 @@ DevmemIntMapPMR(DEVMEMINT_HEAP *psDevmemHeap,
 
 	/* allocate memory to record the mapping info */
 	psMapping = OSAllocMem(sizeof(*psMapping));
-	PVR_LOG_GOTO_IF_NOMEM(psMapping, eError, ErrorUnreference);
+	PVR_LOG_GOTO_IF_NOMEM_STOCK(874, psMapping, eError, ErrorUnreference);
 
 	uiAllocationSize = psReservation->uiLength;
 
@@ -1014,7 +1014,7 @@ ErrorUnlockPhysAddr:
 	{
 		PVRSRV_ERROR eError1 = PVRSRV_OK;
 		eError1 = PMRUnlockSysPhysAddresses(psPMR);
-		PVR_LOG_IF_ERROR(eError1, "PMRUnlockSysPhysAddresses");
+		PVR_LOG_IF_ERROR_STOCK(925, eError1, "PMRUnlockSysPhysAddresses");
 
 		*ppsMappingPtr = NULL;
 	}
@@ -1104,7 +1104,7 @@ DevmemIntReserveRange(DEVMEMINT_HEAP *psDevmemHeap,
 
 	/* allocate memory to record the reservation info */
 	psReservation = OSAllocMem(sizeof(*psReservation));
-	PVR_LOG_GOTO_IF_NOMEM(psReservation, eError, ErrorUnreference);
+	PVR_LOG_GOTO_IF_NOMEM_STOCK(1006, psReservation, eError, ErrorUnreference);
 
 	/* Create lock */
 	eError = OSLockCreate(&psReservation->hLock);
@@ -1180,7 +1180,7 @@ DevmemIntHeapDestroy(DEVMEMINT_HEAP *psDevmemHeap)
 
 	if (OSAtomicRead(&psDevmemHeap->uiRefCount) != DEVMEMHEAP_REFCOUNT_MIN)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "BUG!  %s called but has too many references (%d) "
+		PVR_DPF_STOCK(1085, (PVR_DBG_ERROR, "BUG!  %s called but has too many references (%d) "
 		         "which probably means reservations & mappings have been made from "
 		         "the heap and not freed", __func__,
 		         OSAtomicRead(&psDevmemHeap->uiRefCount)));
@@ -1593,7 +1593,7 @@ DevmemIntExportCtx(DEVMEMINT_CTX *psContext,
 	DEVMEMINT_CTX_EXPORT *psCtxExport;
 
 	psCtxExport = OSAllocMem(sizeof(DEVMEMINT_CTX_EXPORT));
-	PVR_LOG_RETURN_IF_NOMEM(psCtxExport, "psCtxExport");
+	PVR_LOG_RETURN_IF_NOMEM_STOCK(1495, psCtxExport, "psCtxExport");
 
 	DevmemIntCtxAcquire(psContext);
 	PMRRefPMR(psPMR);
@@ -1658,7 +1658,7 @@ DevmemIntAcquireRemoteCtx(PMR *psPMR,
 	OSWRLockReleaseRead(g_hExportCtxListLock);
 
 	/* Unable to find exported context, return error */
-	PVR_DPF((PVR_DBG_ERROR,
+	PVR_DPF_STOCK(1562, (PVR_DBG_ERROR,
 			"%s: Failed to acquire remote context. Could not retrieve context with given PMR",
 			__func__));
 	return PVRSRV_ERROR_INVALID_PARAMS;
@@ -1682,7 +1682,7 @@ PVRSRV_ERROR DevmemIntRegisterPFNotifyKM(DEVMEMINT_CTX *psDevmemCtx,
 	PVRSRV_ERROR        eError;
 	IMG_PID             ui32PID;
 
-	PVR_LOG_RETURN_IF_INVALID_PARAM(psDevmemCtx, "psDevmemCtx");
+	PVR_LOG_RETURN_IF_INVALID_PARAM_STOCK(1584, psDevmemCtx, "psDevmemCtx");
 
 	/* Acquire write lock for the duration, to avoid resource free
 	 * while trying to read (no need to then also acquire the read lock
@@ -1725,7 +1725,7 @@ PVRSRV_ERROR DevmemIntRegisterPFNotifyKM(DEVMEMINT_CTX *psDevmemCtx,
 	{
 		if (bPresent)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(1629, (PVR_DBG_ERROR,
 			         "%s: Trying to register a PID that is already registered",
 			         __func__));
 			eError = PVRSRV_ERROR_PID_ALREADY_REGISTERED;
@@ -1735,7 +1735,7 @@ PVRSRV_ERROR DevmemIntRegisterPFNotifyKM(DEVMEMINT_CTX *psDevmemCtx,
 		psNotifyNode = OSAllocMem(sizeof(*psNotifyNode));
 		if (psNotifyNode == NULL)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(1639, (PVR_DBG_ERROR,
 			         "%s: Unable to allocate memory for the notify list",
 			          __func__));
 			eError = PVRSRV_ERROR_OUT_OF_MEMORY;
@@ -1749,7 +1749,7 @@ PVRSRV_ERROR DevmemIntRegisterPFNotifyKM(DEVMEMINT_CTX *psDevmemCtx,
 	{
 		if (!bPresent)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(1653, (PVR_DBG_ERROR,
 			         "%s: Trying to unregister a PID that is not registered",
 			         __func__));
 			eError = PVRSRV_ERROR_PID_NOT_REGISTERED;
@@ -1815,7 +1815,7 @@ PVRSRV_ERROR DevmemIntPFNotify(PVRSRV_DEVICE_NODE *psDevNode,
 		eError = MMU_AcquireBaseAddr(psThisContext->psMMUContext, &sPCDevPAddr);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_LOG_ERROR(eError, "MMU_AcquireBaseAddr");
+			PVR_LOG_ERROR_STOCK(1717, eError, "MMU_AcquireBaseAddr");
 			OSWRLockReleaseRead(psDevNode->hMemoryContextPageFaultNotifyListLock);
 			return eError;
 		}
@@ -1853,7 +1853,7 @@ PVRSRV_ERROR DevmemIntPFNotify(PVRSRV_DEVICE_NODE *psDevNode,
 		eError = OSDebugSignalPID(psNotifyNode->ui32PID);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(1758, (PVR_DBG_ERROR,
 			         "%s: Unable to signal process for PID: %u",
 			         __func__,
 			         psNotifyNode->ui32PID));

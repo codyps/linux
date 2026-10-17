@@ -293,7 +293,7 @@ PVRSRVBridgeDCDeviceRelease(IMG_UINT32 ui32DispatchTableEntry,
 		     (psDCDeviceReleaseOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psDCDeviceReleaseOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(289, (PVR_DBG_ERROR,
 			 "%s: %s", __func__, PVRSRVGetErrorString(psDCDeviceReleaseOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
 		goto DCDeviceRelease_exit;
@@ -1164,7 +1164,7 @@ PVRSRVBridgeDCSystemBufferRelease(IMG_UINT32 ui32DispatchTableEntry,
 		     (psDCSystemBufferReleaseOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psDCSystemBufferReleaseOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(1137, (PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psDCSystemBufferReleaseOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
@@ -1522,7 +1522,7 @@ PVRSRVBridgeDCDisplayContextDestroy(IMG_UINT32 ui32DispatchTableEntry,
 	     && (psDCDisplayContextDestroyOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL)
 	     && (psDCDisplayContextDestroyOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(1487, (PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psDCDisplayContextDestroyOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
@@ -1877,7 +1877,7 @@ PVRSRVBridgeDCBufferFree(IMG_UINT32 ui32DispatchTableEntry,
 		     (psDCBufferFreeOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psDCBufferFreeOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(1833, (PVR_DBG_ERROR,
 			 "%s: %s", __func__, PVRSRVGetErrorString(psDCBufferFreeOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
 		goto DCBufferFree_exit;
@@ -1912,7 +1912,7 @@ PVRSRVBridgeDCBufferUnimport(IMG_UINT32 ui32DispatchTableEntry,
 		     (psDCBufferUnimportOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psDCBufferUnimportOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(1868, (PVR_DBG_ERROR,
 			 "%s: %s", __func__, PVRSRVGetErrorString(psDCBufferUnimportOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
 		goto DCBufferUnimport_exit;
@@ -2035,7 +2035,7 @@ PVRSRVBridgeDCBufferUnpin(IMG_UINT32 ui32DispatchTableEntry,
 		     (psDCBufferUnpinOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psDCBufferUnpinOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(1991, (PVR_DBG_ERROR,
 			 "%s: %s", __func__, PVRSRVGetErrorString(psDCBufferUnpinOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
 		goto DCBufferUnpin_exit;
@@ -2159,7 +2159,7 @@ PVRSRVBridgeDCBufferRelease(IMG_UINT32 ui32DispatchTableEntry,
 		     (psDCBufferReleaseOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psDCBufferReleaseOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(2115, (PVR_DBG_ERROR,
 			 "%s: %s", __func__, PVRSRVGetErrorString(psDCBufferReleaseOUT->eError)));
 		UnlockHandle(psConnection->psProcessHandleBase->psHandleBase);
 		goto DCBufferRelease_exit;

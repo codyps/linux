@@ -365,7 +365,7 @@ PVRSRV_ERROR OSPhyContigPagesClean(PHYS_HEAP *psPhysHeap,
 	ui32Order = psMemHandle->uiOrder;
 	if ((uiOffset + uiLength) > ((1 << ui32Order) * PAGE_SIZE))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(371, (PVR_DBG_ERROR,
 				"%s: Invalid size params, uiOffset %u, uiLength %u",
 				__func__,
 				uiOffset,
@@ -408,7 +408,7 @@ IMG_UINT32 OSCPUCacheAttributeSize(OS_CPU_CACHE_ATTRIBUTE eCacheAttribute)
 			break;
 
 		default:
-			PVR_DPF((PVR_DBG_ERROR, "%s: Invalid cache attribute type %d",
+			PVR_DPF_STOCK(411, (PVR_DBG_ERROR, "%s: Invalid cache attribute type %d",
 					__func__, (IMG_UINT32)eCacheAttribute));
 			PVR_ASSERT(0);
 			break;
@@ -913,7 +913,7 @@ PVRSRV_ERROR OSInstallMISR(IMG_HANDLE *hMISRData, PFN_MISR pfnMISR,
 	MISR_DATA *psMISRData;
 
 	psMISRData = OSAllocMem(sizeof(*psMISRData));
-	PVR_LOG_RETURN_IF_NOMEM(psMISRData, "psMISRData");
+	PVR_LOG_RETURN_IF_NOMEM_STOCK(915, psMISRData, "psMISRData");
 
 	psMISRData->hData = hData;
 	psMISRData->pfnMISR = pfnMISR;
@@ -925,7 +925,7 @@ PVRSRV_ERROR OSInstallMISR(IMG_HANDLE *hMISRData, PFN_MISR pfnMISR,
 
 	if (psMISRData->psWorkQueue == NULL)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "OSInstallMISR: create_singlethreaded_workqueue failed"));
+		PVR_DPF_STOCK(927, (PVR_DBG_ERROR, "OSInstallMISR: create_singlethreaded_workqueue failed"));
 		OSFreeMem(psMISRData);
 		return PVRSRV_ERROR_UNABLE_TO_CREATE_THREAD;
 	}
@@ -1044,7 +1044,7 @@ PVRSRV_ERROR OSThreadCreatePriority(IMG_HANDLE *phThread,
 	PVRSRV_ERROR eError;
 
 	psOSThreadData = OSAllocZMem(sizeof(*psOSThreadData));
-	PVR_LOG_GOTO_IF_NOMEM(psOSThreadData, eError, fail_alloc);
+	PVR_LOG_GOTO_IF_NOMEM_STOCK(1046, psOSThreadData, eError, fail_alloc);
 
 	psOSThreadData->pfnThread = pfnThread;
 	psOSThreadData->hData = hData;
@@ -1146,7 +1146,7 @@ void OSUnMapPhysArrayToLin(void *pvLinAddr, void *pvPrivData)
 	}
 	else
 	{
-		PVR_DPF((PVR_DBG_ERROR, "%s: Given kernel address is not a vmalloc addr", __func__));
+		PVR_DPF_STOCK(1148, (PVR_DBG_ERROR, "%s: Given kernel address is not a vmalloc addr", __func__));
 	}
 }
 
@@ -1399,7 +1399,7 @@ IMG_HANDLE OSAddTimer(PFN_TIMER_FUNC pfnTimerFunc, void *pvData, IMG_UINT32 ui32
 	/* check callback */
 	if (!pfnTimerFunc)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "OSAddTimer: passed invalid callback"));
+		PVR_DPF_STOCK(1401, (PVR_DBG_ERROR, "OSAddTimer: passed invalid callback"));
 		return NULL;
 	}
 
@@ -1417,7 +1417,7 @@ IMG_HANDLE OSAddTimer(PFN_TIMER_FUNC pfnTimerFunc, void *pvData, IMG_UINT32 ui32
 	mutex_unlock(&sTimerStructLock);
 	if (ui32i >= OS_MAX_TIMERS)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "OSAddTimer: all timers are in use"));
+		PVR_DPF_STOCK(1419, (PVR_DBG_ERROR, "OSAddTimer: all timers are in use"));
 		return NULL;
 	}
 
@@ -1524,7 +1524,7 @@ PVRSRV_ERROR OSEventObjectCreate(const IMG_CHAR *pszName, IMG_HANDLE *hEventObje
 {
 	PVR_UNREFERENCED_PARAMETER(pszName);
 
-	PVR_LOG_RETURN_IF_INVALID_PARAM(hEventObject, "hEventObject");
+	PVR_LOG_RETURN_IF_INVALID_PARAM_STOCK(1526, hEventObject, "hEventObject");
 
 	return LinuxEventObjectListCreate(hEventObject);
 }
@@ -1532,7 +1532,7 @@ PVRSRV_ERROR OSEventObjectCreate(const IMG_CHAR *pszName, IMG_HANDLE *hEventObje
 
 PVRSRV_ERROR OSEventObjectDestroy(IMG_HANDLE hEventObject)
 {
-	PVR_LOG_RETURN_IF_INVALID_PARAM(hEventObject, "hEventObject");
+	PVR_LOG_RETURN_IF_INVALID_PARAM_STOCK(1534, hEventObject, "hEventObject");
 
 	return LinuxEventObjectListDestroy(hEventObject);
 }
@@ -1554,7 +1554,7 @@ static PVRSRV_ERROR EventObjectWaitTimeout(IMG_HANDLE hOSEventKM,
 	}
 	else
 	{
-		PVR_DPF((PVR_DBG_ERROR, "OSEventObjectWait: invalid arguments %p, %lld", hOSEventKM, uiTimeoutus));
+		PVR_DPF_STOCK(1556, (PVR_DBG_ERROR, "OSEventObjectWait: invalid arguments %p, %lld", hOSEventKM, uiTimeoutus));
 		eError = PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
@@ -1594,7 +1594,7 @@ PVRSRV_ERROR OSEventObjectWaitKernel(IMG_HANDLE hOSEventKM,
 #endif /* defined(PVRSRV_SERVER_THREADS_INDEFINITE_SLEEP) */
 	else
 	{
-		PVR_DPF((PVR_DBG_ERROR, "OSEventObjectWaitKernel: invalid arguments %p",
+		PVR_DPF_STOCK(1597, (PVR_DBG_ERROR, "OSEventObjectWaitKernel: invalid arguments %p",
 		        hOSEventKM));
 		eError = PVRSRV_ERROR_INVALID_PARAMS;
 	}
@@ -1611,11 +1611,11 @@ PVRSRV_ERROR OSEventObjectOpen(IMG_HANDLE hEventObject, IMG_HANDLE *phOSEvent)
 {
 	PVRSRV_ERROR eError;
 
-	PVR_LOG_RETURN_IF_INVALID_PARAM(phOSEvent, "phOSEvent");
-	PVR_LOG_GOTO_IF_INVALID_PARAM(hEventObject, eError, error);
+	PVR_LOG_RETURN_IF_INVALID_PARAM_STOCK(1613, phOSEvent, "phOSEvent");
+	PVR_LOG_GOTO_IF_INVALID_PARAM_STOCK(1614, hEventObject, eError, error);
 
 	eError = LinuxEventObjectAdd(hEventObject, phOSEvent);
-	PVR_LOG_GOTO_IF_ERROR(eError, "LinuxEventObjectAdd", error);
+	PVR_LOG_GOTO_IF_ERROR_STOCK(1617, eError, "LinuxEventObjectAdd", error);
 
 	return PVRSRV_OK;
 
@@ -1626,14 +1626,14 @@ error:
 
 PVRSRV_ERROR OSEventObjectClose(IMG_HANDLE hOSEventKM)
 {
-	PVR_LOG_RETURN_IF_INVALID_PARAM(hOSEventKM, "hOSEventKM");
+	PVR_LOG_RETURN_IF_INVALID_PARAM_STOCK(1628, hOSEventKM, "hOSEventKM");
 
 	return LinuxEventObjectDelete(hOSEventKM);
 }
 
 PVRSRV_ERROR OSEventObjectSignal(IMG_HANDLE hEventObject)
 {
-	PVR_LOG_RETURN_IF_INVALID_PARAM(hEventObject, "hEventObject");
+	PVR_LOG_RETURN_IF_INVALID_PARAM_STOCK(1635, hEventObject, "hEventObject");
 
 	return LinuxEventObjectSignal(hEventObject);
 }
@@ -1687,7 +1687,7 @@ PVRSRV_ERROR PVROSFuncInit(void)
 		psTimerWorkQueue = create_freezable_workqueue("pvr_timer");
 		if (psTimerWorkQueue == NULL)
 		{
-			PVR_DPF((PVR_DBG_ERROR, "%s: couldn't create timer workqueue",
+			PVR_DPF_STOCK(1690, (PVR_DBG_ERROR, "%s: couldn't create timer workqueue",
 					 __func__));
 			return PVRSRV_ERROR_UNABLE_TO_CREATE_THREAD;
 		}
@@ -1918,14 +1918,14 @@ PVRSRV_ERROR OSDebugSignalPID(IMG_UINT32 ui32PID)
 	psPID = find_vpid(ui32PID);
 	if (psPID == NULL)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "%s: Failed to get PID struct.", __func__));
+		PVR_DPF_STOCK(1920, (PVR_DBG_ERROR, "%s: Failed to get PID struct.", __func__));
 		return PVRSRV_ERROR_NOT_FOUND;
 	}
 
 	err = kill_pid(psPID, SIGTRAP, 0);
 	if (err != 0)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "%s: Signal Failure %d", __func__, err));
+		PVR_DPF_STOCK(1927, (PVR_DBG_ERROR, "%s: Signal Failure %d", __func__, err));
 		return PVRSRV_ERROR_SIGNAL_FAILED;
 	}
 

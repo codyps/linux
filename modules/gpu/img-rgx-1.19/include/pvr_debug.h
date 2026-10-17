@@ -922,10 +922,78 @@ IMG_EXPORT void IMG_CALLCONV PVRSRVTrace(const IMG_CHAR* pszFormat, ... )
 		return _rc; } \
 	MSC_SUPPRESS_4127 \
 	} while (false)
+	#define PVR_LOG_ERROR_STOCK(line, _rc, _call) \
+		PVR_DPF_STOCK(line, (PVR_DBG_ERROR, "%s() failed (%s) in %s()", _call, PVRSRVGETERRORSTRING(_rc), __func__))
+	#define PVR_LOG_GOTO_IF_FALSE_STOCK(line, _expr, _msg, _go) do \
+		{ if (unlikely(!(_expr))) { \
+			PVR_DPF_STOCK(line, (PVR_DBG_ERROR, "%s in %s()", _msg, __func__)); \
+			goto _go; } \
+		MSC_SUPPRESS_4127\
+		} while (false)
+	#define PVR_LOG_GOTO_IF_INVALID_PARAM_STOCK(line, _expr, _err, _go) do \
+		{ if (unlikely(!(_expr))) { \
+			PVR_DPF_STOCK(line, (PVR_DBG_ERROR, "%s invalid in %s()", #_expr, __func__)); \
+			_err = PVRSRV_ERROR_INVALID_PARAMS; \
+			goto _go; } \
+		MSC_SUPPRESS_4127\
+		} while (false)
+	#define PVR_LOG_GOTO_IF_NOMEM_STOCK(line, _expr, _err, _go) do \
+		{ if (unlikely(_expr == NULL)) { \
+			PVR_DPF_STOCK(line, (PVR_DBG_ERROR, "%s failed (PVRSRV_ERROR_OUT_OF_MEMORY) in %s()", #_expr, __func__)); \
+			_err = PVRSRV_ERROR_OUT_OF_MEMORY; \
+			goto _go; } \
+		MSC_SUPPRESS_4127\
+		} while (false)
+	#define PVR_LOG_IF_ERROR_STOCK(line, _rc, _call) do \
+		{ if (unlikely(_rc != PVRSRV_OK)) { \
+			PVR_DPF_STOCK(line, (PVR_DBG_ERROR, "%s() failed (%s) in %s()", _call, PVRSRVGETERRORSTRING(_rc), __func__)); \
+		  } \
+		MSC_SUPPRESS_4127\
+		} while (false)
+	#define PVR_LOG_IF_FALSE_STOCK(line, _expr, _msg) do \
+		{ if (unlikely(!(_expr))) { \
+			PVR_DPF_STOCK(line, (PVR_DBG_ERROR, "%s in %s()", _msg, __func__)); \
+		  } \
+		MSC_SUPPRESS_4127\
+		} while (false)
+	#define PVR_LOG_RETURN_IF_ERROR_STOCK(line, _rc, _call) do \
+		{ if (unlikely(_rc != PVRSRV_OK)) { \
+			PVR_DPF_STOCK(line, (PVR_DBG_ERROR, "%s() failed (%s) in %s()", _call, PVRSRVGETERRORSTRING(_rc), __func__)); \
+			return _rc; } \
+		MSC_SUPPRESS_4127\
+		} while (false)
+	#define PVR_LOG_RETURN_IF_FALSE_VA_STOCK(line, _expr, _rc, _msg, ...) do \
+		{ if (unlikely(!(_expr))) { \
+			PVR_DPF_STOCK(line, (PVR_DBG_ERROR, ("At %s: "_msg), __func__, __VA_ARGS__)); \
+			return _rc; \
+		} MSC_SUPPRESS_4127\
+		} while (false)
+	#define PVR_LOG_RETURN_IF_INVALID_PARAM_STOCK(line, _expr, _param) do \
+		{ if (unlikely(!(_expr))) { \
+			PVR_DPF_STOCK(line, (PVR_DBG_ERROR, "%s invalid in %s()", _param, __func__)); \
+			return PVRSRV_ERROR_INVALID_PARAMS; } \
+		MSC_SUPPRESS_4127\
+		} while (false)
+	#define PVR_LOG_RETURN_IF_NOMEM_STOCK(line, _expr, _call) do \
+		{ if (unlikely(_expr == NULL)) { \
+			PVR_DPF_STOCK(line, (PVR_DBG_ERROR, "%s failed (PVRSRV_ERROR_OUT_OF_MEMORY) in %s()", _call, __func__)); \
+			return PVRSRV_ERROR_OUT_OF_MEMORY; } \
+		MSC_SUPPRESS_4127\
+		} while (false)
 #else
 #define PVR_DPF_STOCK(line, x) PVR_DPF(x)
 #define PVR_LOG_GOTO_IF_ERROR_STOCK(line, _rc, _call, _go) PVR_LOG_GOTO_IF_ERROR(_rc, _call, _go)
 #define PVR_LOG_RETURN_IF_FALSE_STOCK(line, _expr, _msg, _rc) PVR_LOG_RETURN_IF_FALSE(_expr, _msg, _rc)
+	#define PVR_LOG_ERROR_STOCK(line, _rc, _call) (void)(_rc)
+	#define PVR_LOG_GOTO_IF_FALSE_STOCK(line, _expr, _msg, _go) do { if (unlikely(!(_expr))) { goto _go; } MSC_SUPPRESS_4127 } while (false)
+	#define PVR_LOG_GOTO_IF_INVALID_PARAM_STOCK(line, _expr, _err, _go) do { if (unlikely(!(_expr))) { _err = PVRSRV_ERROR_INVALID_PARAMS; goto _go; } MSC_SUPPRESS_4127 } while (false)
+	#define PVR_LOG_GOTO_IF_NOMEM_STOCK(line, _expr, _err, _go) do { if (unlikely(_expr == NULL)) { _err = PVRSRV_ERROR_OUT_OF_MEMORY; goto _go; } MSC_SUPPRESS_4127	} while (false)
+	#define PVR_LOG_IF_ERROR_STOCK(line, _rc, _call) (void)(_rc)
+	#define PVR_LOG_IF_FALSE_STOCK(line, _expr, _msg) (void)(_expr)
+	#define PVR_LOG_RETURN_IF_ERROR_STOCK(line, _rc, _call) do { if (unlikely(_rc != PVRSRV_OK)) { return (_rc); } MSC_SUPPRESS_4127 } while (false)
+	#define PVR_LOG_RETURN_IF_FALSE_VA_STOCK(line, _expr, _rc, _msg, ...) do { if (unlikely(!(_expr))) { return (_rc); } MSC_SUPPRESS_4127 } while (false)
+	#define PVR_LOG_RETURN_IF_INVALID_PARAM_STOCK(line, _expr, _param) do { if (unlikely(!(_expr))) { return PVRSRV_ERROR_INVALID_PARAMS; } MSC_SUPPRESS_4127 } while (false)
+	#define PVR_LOG_RETURN_IF_NOMEM_STOCK(line, _expr, _call) do { if (unlikely(_expr == NULL)) { return PVRSRV_ERROR_OUT_OF_MEMORY; } MSC_SUPPRESS_4127 } while (false)
 #endif
 
 #endif /* PVR_DEBUG_H */

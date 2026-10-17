@@ -527,7 +527,7 @@ PVRSRVBridgeRGXDestroyHWRTDataSet(IMG_UINT32 ui32DispatchTableEntry,
 	     && (psRGXDestroyHWRTDataSetOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL)
 	     && (psRGXDestroyHWRTDataSetOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(510, (PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psRGXDestroyHWRTDataSetOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
@@ -681,7 +681,7 @@ PVRSRVBridgeRGXDestroyZSBuffer(IMG_UINT32 ui32DispatchTableEntry,
 	     && (psRGXDestroyZSBufferOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL)
 	     && (psRGXDestroyZSBufferOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(664, (PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psRGXDestroyZSBufferOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
@@ -814,7 +814,7 @@ PVRSRVBridgeRGXUnpopulateZSBuffer(IMG_UINT32 ui32DispatchTableEntry,
 		     (psRGXUnpopulateZSBufferOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psRGXUnpopulateZSBufferOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(797, (PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psRGXUnpopulateZSBufferOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
@@ -1002,7 +1002,7 @@ PVRSRVBridgeRGXDestroyFreeList(IMG_UINT32 ui32DispatchTableEntry,
 		     (psRGXDestroyFreeListOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psRGXDestroyFreeListOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(985, (PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psRGXDestroyFreeListOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
@@ -1271,7 +1271,7 @@ PVRSRVBridgeRGXDestroyRenderContext(IMG_UINT32 ui32DispatchTableEntry,
 	     && (psRGXDestroyRenderContextOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL)
 	     && (psRGXDestroyRenderContextOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(1254, (PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psRGXDestroyRenderContextOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
