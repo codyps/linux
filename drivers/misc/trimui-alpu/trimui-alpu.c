@@ -6,14 +6,15 @@
 #include <asm/unaligned.h>
 #include "arelink.h"
 
-static u8 board_serial[5];
+u8 gTrimuiSerialNumber[5];
+EXPORT_SYMBOL(gTrimuiSerialNumber);
 static char serial_text[32];
 
 char *get_trimui_serialno(void)
 {
 	memset(serial_text, 0, sizeof(serial_text));
-	sprintf(serial_text, "TG3040%02X%08X", board_serial[4],
-		get_unaligned_le32(board_serial) + 0x3c14dc00U);
+	sprintf(serial_text, "TG3040%02X%08X", gTrimuiSerialNumber[4],
+		get_unaligned_le32(gTrimuiSerialNumber) + 0x3c14dc00U);
 	return serial_text;
 }
 EXPORT_SYMBOL(get_trimui_serialno);
@@ -62,9 +63,9 @@ void arelink_main(void)
 	I2CSetInitial();
 	arelink_power_on();
 	arelink_delay(2);
-	arelink_init(board_serial);
-	pr_info("serial: %02X%02X%02X%02X%02X\n", board_serial[4],
-		board_serial[3], board_serial[2], board_serial[1], board_serial[0]);
+	arelink_init(gTrimuiSerialNumber);
+	pr_info("serial: %02X%02X%02X%02X%02X\n", gTrimuiSerialNumber[4],
+		gTrimuiSerialNumber[3], gTrimuiSerialNumber[2], gTrimuiSerialNumber[1], gTrimuiSerialNumber[0]);
 	for (i = 0; i < 16; i++)
 		challenge[i] = arelink_random();
 	arelink_authentication(2, 0, challenge);

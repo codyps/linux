@@ -11,6 +11,7 @@
 
 /*Linux version 3.4.0 compilation*/
 #include <linux/version.h>
+#include <asm/unaligned.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/firmware.h>
@@ -473,18 +474,33 @@ static int xradio_macaddr_char2val(u8 *v_mac, const char *c_mac)
  a[4] != 0 || a[5] != 0) && \
  !(a[0] & 0x3))
 
+extern u8 gTrimuiSerialNumber[5];
+
 static void xradio_get_mac_addrs(u8 *macaddr)
 {
 	int ret = 0;
+	u32 serial;
 	SYS_BUG(!macaddr);
 	/* Check mac addrs param, if exsist, use it first.*/
 #ifdef XRADIO_MACPARAM_HEX
 	memcpy(macaddr, xradio_macaddr_param, ETH_ALEN);
 #else
 	if (xradio_macaddr_param) {
-		ret = xradio_macaddr_char2val(macaddr, xradio_macaddr_param);
+		xradio_macaddr_char2val(macaddr, xradio_macaddr_param);
 	}
 #endif
+
+	/* TG3040 uses the authenticated board serial before the fallback policy. */
+	serial = get_unaligned_le32(gTrimuiSerialNumber) << 4;
+	macaddr[0] = 0xdc;
+	macaddr[1] = 0x44;
+	macaddr[2] = 0x60 | (serial >> 24);
+	macaddr[3] = serial >> 16;
+	macaddr[4] = serial >> 8;
+	macaddr[5] = serial + 1;
+	printk("XRADIO MACADDR=%02x:%02x:%02x:%02x:%02x:%02x\n",
+	       macaddr[0], macaddr[1], macaddr[2],
+	       macaddr[3], macaddr[4], macaddr[5]);
 
 	/* Use random value to set mac addr for the first time,
 	 * and save it in  wifi config file. TODO: read from product ID*/
