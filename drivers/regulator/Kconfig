@@ -899,3 +899,9 @@ config REGULATOR_WM8994
 
 endif
 
+
+config REGULATOR_TCS4838
+	bool "TCS4838 dual buck regulators"
+	depends on MFD_TCS4838
+	help
+	  Enable the two 712500 uV + selector * 12500 uV buck regulators.

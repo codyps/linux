@@ -219,3 +219,6 @@ obj-$(CONFIG_MFD_AC100)		+= ac100-core.o
 #obj-$(CONFIG_XP_MFD_AC100)	+= ac100.o
 
 obj-$(CONFIG_MFD_ALTERA_A10SR)	+= altera-a10sr.o
+
+obj-$(CONFIG_MFD_TCS4838) += tcs4838.o
+obj-$(CONFIG_MFD_TCS4838_I2C) += tcs4838-i2c.o

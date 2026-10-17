@@ -116,3 +116,5 @@ obj-$(CONFIG_REGULATOR_WM8994) += wm8994-regulator.o
 
 
 ccflags-$(CONFIG_REGULATOR_DEBUG) += -DDEBUG
+
+obj-$(CONFIG_REGULATOR_TCS4838) += tcs4838-regulator.o

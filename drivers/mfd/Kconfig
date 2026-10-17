@@ -1688,3 +1688,14 @@ config MFD_VEXPRESS_SYSREG
 
 endmenu
 endif
+
+config MFD_TCS4838
+	bool "TCS4838 power management core"
+	select MFD_CORE
+	select REGMAP
+
+config MFD_TCS4838_I2C
+	bool "TCS4838 I2C interface"
+	depends on I2C
+	select MFD_TCS4838
+	select REGMAP_I2C
