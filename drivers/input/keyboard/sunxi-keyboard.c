@@ -337,6 +337,7 @@ static int sunxi_keyboard_startup(struct sunxi_key_data *key_data,
 	if (key_data->irq_num == 0) {
 		pr_err("%s:Failed to map irq.\n", __func__);
 		ret = -EBUSY;
+		goto out_iounmap;
 	} else
 		pr_debug("ir irq num: %d !\n", key_data->irq_num);
 
@@ -346,13 +347,25 @@ static int sunxi_keyboard_startup(struct sunxi_key_data *key_data,
 	key_data->mclk = of_clk_get(np, 0);
 	if (IS_ERR_OR_NULL(key_data->mclk)) {
 		pr_debug("%s: keyboard has no clk.\n", __func__);
-	} else{
+		ret = -EBUSY;
+		goto out_irq;
+	} else {
 		if (clk_prepare_enable(key_data->mclk)) {
 			pr_err("%s enable apb1_keyadc clock failed!\n",
 							__func__);
-			return -EINVAL;
+			ret = -EINVAL;
+			goto out_clk;
 		}
 	}
+	return ret;
+
+out_clk:
+	clk_put(key_data->mclk);
+out_irq:
+	irq_dispose_mapping(key_data->irq_num);
+out_iounmap:
+	iounmap(key_data->reg_base);
+
 	return ret;
 }
 

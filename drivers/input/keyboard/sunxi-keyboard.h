@@ -18,6 +18,10 @@
 #ifndef SUNXI_KEYBOARD_H
 #define SUNXI_KEYBOARD_H
 
+/* Stock probe's input-registration error path calls free_irq with NULL even
+ * though it registered key_data as dev_id. TODO: use the matching dev_id in
+ * a separate corrective change; also unwind the missing-node allocation. */
+
 #define INPUT_DEV_NAME          ("sunxi-keyboard")
 
 #define KEY_MAX_CNT             (13)
