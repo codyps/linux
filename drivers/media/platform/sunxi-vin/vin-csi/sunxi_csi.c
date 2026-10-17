@@ -144,6 +144,18 @@ static struct csi_format sunxi_csi_formats[] = {
 		.code = MEDIA_BUS_FMT_SRGGB12_1X12,
 		.infmt = FMT_RAW,
 		.data_width = 12,
+	}, {
+		.code = MEDIA_BUS_FMT_RGB888_1X24,
+		.infmt = FMT_RAW,
+		.data_width = 8,
+	}, {
+		.code = MEDIA_BUS_FMT_BGR888_1X24,
+		.infmt = FMT_RAW,
+		.data_width = 8,
+	}, {
+		.code = MEDIA_BUS_FMT_GBR888_1X24,
+		.infmt = FMT_RAW,
+		.data_width = 8,
 	}
 };
 

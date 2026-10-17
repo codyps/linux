@@ -3859,6 +3859,12 @@ static int vin_subdev_s_stream(struct v4l2_subdev *sd, int enable)
 			buf_len.buf_len_y = cap->frame.o_width * 2;
 			buf_len.buf_len_c = buf_len.buf_len_y;
 			break;
+		case V4L2_PIX_FMT_RGB24:
+		case V4L2_PIX_FMT_BGR24:
+			cfg.fmt = FRAME_RGB888; /* Stock A133 DMA mode 13, for either field flag. */
+			buf_len.buf_len_y = cap->frame.o_width * 3;
+			buf_len.buf_len_c = buf_len.buf_len_y;
+			break;
 		default:
 			cfg.fmt = flag ? FRAME_UV_CB_YUV420 : FIELD_UV_CB_YUV420;
 			buf_len.buf_len_y = cap->frame.o_width;

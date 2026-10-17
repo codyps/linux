@@ -1821,7 +1821,6 @@ static int vin_remove(struct platform_device *pdev)
 
 	device_remove_file(&pdev->dev, &dev_attr_subdev_api);
 	vin_md_put_clocks(vind);
-	vin_mclk_pin_release(vind);
 	vin_gpio_release(vind);
 	vin_md_unregister_entities(vind);
 	v4l2_device_unregister(&vind->v4l2_dev);

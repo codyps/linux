@@ -428,6 +428,8 @@ static int sunxi_isp_subdev_s_stream(struct v4l2_subdev *sd, int enable)
 	case V4L2_PIX_FMT_SGBRG12:
 	case V4L2_PIX_FMT_SGRBG12:
 	case V4L2_PIX_FMT_SRGGB12:
+	case V4L2_PIX_FMT_RGB24:
+	case V4L2_PIX_FMT_BGR24:
 		vin_log(VIN_LOG_FMT, "%s output fmt is raw, return directly\n", __func__);
 		if (isp->isp_dbg.debug_en) {
 			bsp_isp_debug_output_cfg(isp->id, 1, isp->isp_dbg.debug_sel);
@@ -630,6 +632,9 @@ static struct isp_pix_fmt *__isp_try_format(struct isp_dev *isp,
 		break;
 	case V4L2_COLORSPACE_BT2020:
 		mf->colorspace = V4L2_COLORSPACE_BT2020;
+		break;
+	case V4L2_COLORSPACE_REC709_PART_RANGE:
+		mf->colorspace = V4L2_COLORSPACE_REC709_PART_RANGE;
 		break;
 	default:
 		mf->colorspace = V4L2_COLORSPACE_JPEG;
@@ -1058,6 +1063,9 @@ void sunxi_isp_frame_sync_isr(struct v4l2_subdev *sd)
 		break;
 	case V4L2_COLORSPACE_BT2020:
 		event.u.data[1] = 2;
+		break;
+	case V4L2_COLORSPACE_REC709_PART_RANGE:
+		event.u.data[1] = 4;
 		break;
 	default:
 		event.u.data[1] = 0;

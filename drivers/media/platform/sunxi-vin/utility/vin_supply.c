@@ -92,6 +92,7 @@ int vin_set_pmu_channel(struct v4l2_subdev *sd, enum pmic_channel pmic_ch,
 		if (power[pmic_ch].pmic == NULL)
 			return 0;
 		ret = regulator_disable(power[pmic_ch].pmic);
+		ret = regulator_set_voltage(power[pmic_ch].pmic, 0, def_vol[pmic_ch]);
 #ifndef CONFIG_SUNXI_REGULATOR_DT
 		regulator_put(power[pmic_ch].pmic);
 #endif

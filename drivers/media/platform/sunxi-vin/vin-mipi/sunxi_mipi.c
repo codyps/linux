@@ -170,6 +170,15 @@ static struct combo_format sunxi_mipi_formats[] = {
 		.code = MEDIA_BUS_FMT_YVYU10_2X10,
 		.bit_width = YUV10,
 		.yuv_seq = YVYU,
+	}, {
+		.code = MEDIA_BUS_FMT_RGB888_1X24,
+		.bit_width = RAW8,
+	}, {
+		.code = MEDIA_BUS_FMT_BGR888_1X24,
+		.bit_width = RAW8,
+	}, {
+		.code = MEDIA_BUS_FMT_GBR888_1X24,
+		.bit_width = RAW8,
 	}
 };
 
@@ -178,6 +187,10 @@ static enum pkt_fmt get_pkt_fmt(u32 code)
 	switch (code) {
 	case MEDIA_BUS_FMT_RGB565_2X8_BE:
 		return MIPI_RGB565;
+	case MEDIA_BUS_FMT_RGB888_1X24:
+	case MEDIA_BUS_FMT_BGR888_1X24:
+	case MEDIA_BUS_FMT_GBR888_1X24:
+		return MIPI_RGB888;
 	case MEDIA_BUS_FMT_UYVY8_1X16:
 	case MEDIA_BUS_FMT_VYUY8_1X16:
 	case MEDIA_BUS_FMT_YUYV8_1X16:
@@ -222,6 +235,7 @@ static unsigned int data_formats_type(u32 code)
 	case MIPI_YUV422_10:
 		return YUV;
 	case MIPI_RGB565:
+	case MIPI_RGB888:
 		return RGB;
 	default:
 		return RAW;

@@ -385,6 +385,8 @@ static int sunxi_scaler_subdev_s_stream(struct v4l2_subdev *sd, int enable)
 	case V4L2_PIX_FMT_SGBRG12:
 	case V4L2_PIX_FMT_SGRBG12:
 	case V4L2_PIX_FMT_SRGGB12:
+	case V4L2_PIX_FMT_RGB24:
+	case V4L2_PIX_FMT_BGR24:
 		vin_log(VIN_LOG_FMT, "%s output fmt is raw, return directly\n", __func__);
 		return 0;
 	default:
