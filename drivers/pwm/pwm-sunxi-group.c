@@ -210,11 +210,12 @@ static int sunxi_pwm_set_polarity_dual(struct pwm_chip *chip,
 	reg_width[1] = PWM_ACT_STA_WIDTH;
 	temp[1] = sunxi_pwm_readl(chip, reg_offset[1]);
 
-	/*bind pwm's polarity is reverse compare with the  current pwm*/
+	/* TG3040 #860 sets the bound channel to the same polarity as current.
+	 * TODO: restore complementary polarity in a separate corrective change. */
 	if (polarity == PWM_POLARITY_NORMAL)
-		temp[1] = SET_BITS(reg_shift[0], 1, temp[1], 0);
-	else
 		temp[1] = SET_BITS(reg_shift[0], 1, temp[1], 1);
+	else
+		temp[1] = SET_BITS(reg_shift[0], 1, temp[1], 0);
 
 	/*config register at the same time*/
 	sunxi_pwm_writel(chip, reg_offset[0], temp[0]);
