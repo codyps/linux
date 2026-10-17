@@ -80,5 +80,3 @@ obj-$(CONFIG_SUNXI_RFKILL)      += sunxi-rf/
 obj-y				+= leds/
 obj-$(CONFIG_CMSIS_DAP)        +=cmsis-dap/
 obj-$(CONFIG_LT9611)		+= lt9611.o
-
-obj-$(CONFIG_TRIMUI_BOARD_ALPU_ARELINK) += trimui-alpu/
