@@ -33,7 +33,7 @@ void are_enc_path256(const u8 *input, u8 *output)
 	for (i = 0; i < 256; i += 16) {
 		result = arelink_req_enc_dec(input + i, output + i, 0);
 		if (result)
-			pr_info("ret:%d\n", result);
+			printk("ret:%d\n", result);
 	}
 }
 
@@ -47,14 +47,13 @@ void are_dec_path256(const u8 *input, u8 *output)
 	for (i = 0; i < 256; i += 16) {
 		result = arelink_req_enc_dec(input + i, output + i, 1);
 		if (result)
-			pr_info("ret:%d\n", result);
+			printk("ret:%d\n", result);
 	}
 }
 
 void arelink_main(void)
 {
-	u8 challenge[16], input[32] = { 0 }, decoded[32] = { 0 };
-	u8 encrypted[32] = { 0 };
+	u8 challenge[16], input[32], decoded[32], encrypted[32];
 	unsigned int i;
 	I2CSetInitial();
 	arelink_power_on();
@@ -65,12 +64,18 @@ void arelink_main(void)
 	for (i = 0; i < 16; i++)
 		challenge[i] = arelink_random();
 	arelink_authentication(2, 0, challenge);
+	/* #860 clears the self-test buffers only after authentication. */
+	memset(input, 0, sizeof(input));
+	memset(decoded, 0, sizeof(decoded));
+	memset(encrypted, 0, sizeof(encrypted));
 	strcpy(input, "TEST 123456789");
-	/* Preserve the stock fatal error path when the cipher API fails. */
+	/* Preserve the stock 32-bit NULL store when the cipher API fails.
+	 * TODO: report an initialization error instead in a separate fix.
+	 */
 	if (arelink_req_enc_dec(input, encrypted, 0))
-		*(volatile u8 *)0 = 1;
+		*(volatile u32 *)0 = 1;
 	if (arelink_req_enc_dec(encrypted, decoded, 1))
-		*(volatile u8 *)0 = 1;
+		*(volatile u32 *)0 = 1;
 }
 
 static int __init alpu_init(void)
