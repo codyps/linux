@@ -697,7 +697,7 @@ static void _RGXDumpPMRPageList(DLLIST_NODE *psNode)
 			RGX_BIF_PM_PHYSICAL_PAGE_ALIGNSHIFT);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(308, (PVR_DBG_ERROR,
 				"Error (%s) printing pmr %p",
 				PVRSRVGetErrorString(eError),
 				psPMRNode->psPMR));
@@ -892,7 +892,7 @@ PVRSRV_ERROR RGXGrowFreeList(RGX_FREELIST *psFreeList,
 	psPMRNode = OSAllocMem(sizeof(*psPMRNode));
 	if (psPMRNode == NULL)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(502, (PVR_DBG_ERROR,
 				"%s: failed to allocate host data structure",
 				__func__));
 		eError = PVRSRV_ERROR_OUT_OF_MEMORY;
@@ -952,7 +952,7 @@ PVRSRV_ERROR RGXGrowFreeList(RGX_FREELIST *psFreeList,
 			NULL);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(563, (PVR_DBG_ERROR,
 				"%s: Failed to allocate PB block of size: 0x%016" IMG_UINT64_FMTSPECX,
 				__func__,
 				(IMG_UINT64)uiSize));
@@ -965,7 +965,7 @@ PVRSRV_ERROR RGXGrowFreeList(RGX_FREELIST *psFreeList,
 		eError = PMRZeroingPMR(psPMRNode->psPMR, RGX_BIF_PM_PHYSICAL_PAGE_ALIGNSHIFT);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(578, (PVR_DBG_ERROR,
 					"%s: Failed to zero PMR %p of freelist %p (%s)",
 					__func__,
 					psPMRNode->psPMR,
@@ -1016,7 +1016,7 @@ PVRSRV_ERROR RGXGrowFreeList(RGX_FREELIST *psFreeList,
 			&psPMRNode->psPageList);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(627, (PVR_DBG_ERROR,
 				"%s: Failed to write pages of Node %p",
 				__func__,
 				psPMRNode));
@@ -1181,7 +1181,7 @@ static PVRSRV_ERROR RGXShrinkFreeList(PDLLIST_NODE pListHeader,
 		eError = PMRUnwritePMPageList(psPMRNode->psPageList);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(792, (PVR_DBG_ERROR,
 					"%s: Failed to unwrite pages of Node %p",
 					__func__,
 					psPMRNode));
@@ -1204,7 +1204,7 @@ static PVRSRV_ERROR RGXShrinkFreeList(PDLLIST_NODE pListHeader,
 		eError = PMRUnrefPMR(psPMRNode->psPMR);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(816, (PVR_DBG_ERROR,
 					"%s: Failed to free PB block %p (%s)",
 					__func__,
 					psPMRNode->psPMR,
@@ -1322,7 +1322,7 @@ void RGXProcessRequestGrow(PVRSRV_RGXDEV_INFO *psDevInfo,
 		{
 			/* Grow failed */
 			ui32GrowValue = 0;
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(933, (PVR_DBG_ERROR,
 					"Grow for FreeList %p failed (%s)",
 					psFreeList,
 					PVRSRVGetErrorString(eError)));
@@ -1355,7 +1355,7 @@ void RGXProcessRequestGrow(PVRSRV_RGXDEV_INFO *psDevInfo,
 	else
 	{
 		/* Should never happen */
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(965, (PVR_DBG_ERROR,
 				"FreeList Lookup for FreeList ID 0x%08x failed (Populate)",
 				ui32FreelistID));
 		PVR_ASSERT(IMG_FALSE);
@@ -1397,7 +1397,7 @@ static void _RGXFreeListReconstruction(PDLLIST_NODE psNode)
 
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(1009, (PVR_DBG_ERROR,
 				"%s: Error (%s) writing FL 0x%08x",
 				__func__,
 				PVRSRVGetErrorString(eError),
@@ -1410,7 +1410,7 @@ static void _RGXFreeListReconstruction(PDLLIST_NODE psNode)
 		eError = PMRZeroingPMR(psPMRNode->psPMR, RGX_BIF_PM_PHYSICAL_PAGE_ALIGNSHIFT);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(1023, (PVR_DBG_ERROR,
 					"%s: Failed to zero PMR %p of freelist %p (%s)",
 					__func__,
 					psPMRNode->psPMR,
@@ -1601,7 +1601,7 @@ void RGXProcessRequestFreelistsReconstruction(PVRSRV_RGXDEV_INFO *psDevInfo,
 					eError = DevmemAcquireCpuVirtAddr(psKMHWRTDataSet->psHWRTDataFwMemDesc, (void **)&psHWRTData);
 					if (eError != PVRSRV_OK)
 					{
-						PVR_DPF((PVR_DBG_ERROR,
+						PVR_DPF_STOCK(1212, (PVR_DBG_ERROR,
 									"Devmem AcquireCpuVirtAddr Failed during Reconstructing of FreeList, FwMemDesc(%p),psHWRTData(%p)",
 									psKMHWRTDataSet->psHWRTDataFwMemDesc,
 									psHWRTData));
@@ -1628,7 +1628,7 @@ void RGXProcessRequestFreelistsReconstruction(PVRSRV_RGXDEV_INFO *psDevInfo,
 			}
 			else
 			{
-				PVR_DPF((PVR_DBG_ERROR,
+				PVR_DPF_STOCK(1239, (PVR_DBG_ERROR,
 						"Reconstructing of FreeList %p failed (%s)",
 						psFreeList,
 						PVRSRVGetErrorString(eError)));
@@ -1725,7 +1725,7 @@ static PVRSRV_ERROR RGXCreateHWRTData_aux(
 			&psHWRTDataFwMemDesc);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(1332, (PVR_DBG_ERROR,
 				"%s: DevmemAllocate for RGX_FWIF_HWRTDATA failed",
 				__func__));
 		goto FWRTDataAllocateError;
@@ -1736,11 +1736,11 @@ static PVRSRV_ERROR RGXCreateHWRTData_aux(
 							psHWRTDataFwMemDesc,
 							0,
 							RFW_FWADDR_FLAG_NONE);
-	PVR_LOG_GOTO_IF_ERROR(eError, "RGXSetFirmwareAddress:1", FWRTDataFwAddrError);
+	PVR_LOG_GOTO_IF_ERROR_STOCK(1341, eError, "RGXSetFirmwareAddress:1", FWRTDataFwAddrError);
 
 	eError = DevmemAcquireCpuVirtAddr(psHWRTDataFwMemDesc,
 									  (void **)&psHWRTData);
-	PVR_LOG_GOTO_IF_ERROR(eError, "Devmem AcquireCpuVirtAddr", FWRTDataCpuMapError);
+	PVR_LOG_GOTO_IF_ERROR_STOCK(1345, eError, "Devmem AcquireCpuVirtAddr", FWRTDataCpuMapError);
 
 	psHWRTData->psVHeapTableDevVAddr = psVHeapTableDevVAddr;
 
@@ -1794,7 +1794,7 @@ static PVRSRV_ERROR RGXCreateHWRTData_aux(
 					&psRTArrayFwMemDesc);
 			if (eError != PVRSRV_OK)
 			{
-				PVR_DPF((PVR_DBG_ERROR,
+				PVR_DPF_STOCK(1402, (PVR_DBG_ERROR,
 						"%s: Failed to allocate %u bytes for render target array (%s)",
 						__func__,
 						ui16MaxRTs, PVRSRVGetErrorString(eError)));
@@ -1806,7 +1806,7 @@ static PVRSRV_ERROR RGXCreateHWRTData_aux(
 					psRTArrayFwMemDesc,
 					0,
 					RFW_FWADDR_FLAG_NONE);
-			PVR_LOG_GOTO_IF_ERROR(eError, "RGXSetFirmwareAddress:2", FWAllocateRTArryFwAddrError);
+			PVR_LOG_GOTO_IF_ERROR_STOCK(1411, eError, "RGXSetFirmwareAddress:2", FWAllocateRTArryFwAddrError);
 
 			PDUMPCOMMENT(psDeviceNode, "Allocate memory for tracking renders accumulation");
 			eError = DevmemFwAllocate(psDevInfo,
@@ -1822,7 +1822,7 @@ static PVRSRV_ERROR RGXCreateHWRTData_aux(
 					&psRendersAccArrayFwMemDesc);
 			if (eError != PVRSRV_OK)
 			{
-				PVR_DPF((PVR_DBG_ERROR,
+				PVR_DPF_STOCK(1430, (PVR_DBG_ERROR,
 						"%s: Failed to allocate %u bytes for render target array (%s) (renders accumulation)",
 						__func__,
 						ui16MaxRTs, PVRSRVGetErrorString(eError)));
@@ -1833,7 +1833,7 @@ static PVRSRV_ERROR RGXCreateHWRTData_aux(
 					psRendersAccArrayFwMemDesc,
 					0,
 					RFW_FWADDR_FLAG_NONE);
-			PVR_LOG_GOTO_IF_ERROR(eError, "RGXSetFirmwareAddress:3", FWAllocRTAccArryFwAddrError);
+			PVR_LOG_GOTO_IF_ERROR_STOCK(1438, eError, "RGXSetFirmwareAddress:3", FWAllocRTAccArryFwAddrError);
 		}
 	}
 
@@ -1986,14 +1986,14 @@ PVRSRV_ERROR RGXCreateHWRTDataSet(CONNECTION_DATA      *psConnection,
 
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "%s: DevmemAllocate for FwHWRTDataCommon failed", __func__));
+		PVR_DPF_STOCK(1583, (PVR_DBG_ERROR, "%s: DevmemAllocate for FwHWRTDataCommon failed", __func__));
 		goto err_HWRTDataCommonAlloc;
 	}
 	eError = RGXSetFirmwareAddress(&sHWRTDataCommonFwAddr, psHWRTDataCommonFwMemDesc, 0, RFW_FWADDR_FLAG_NONE);
-	PVR_LOG_GOTO_IF_ERROR(eError, "RGXSetFirmwareAddress", err_HWRTDataCommonFwAddr);
+	PVR_LOG_GOTO_IF_ERROR_STOCK(1587, eError, "RGXSetFirmwareAddress", err_HWRTDataCommonFwAddr);
 
 	eError = DevmemAcquireCpuVirtAddr(psHWRTDataCommonFwMemDesc, (void **)&psHWRTDataCommon);
-	PVR_LOG_GOTO_IF_ERROR(eError, "DevmemAcquireCpuVirtAddr", err_HWRTDataCommonVA);
+	PVR_LOG_GOTO_IF_ERROR_STOCK(1590, eError, "DevmemAcquireCpuVirtAddr", err_HWRTDataCommonVA);
 
 	psHWRTDataCommon->bTACachesNeedZeroing = IMG_FALSE;
 	psHWRTDataCommon->ui32ScreenPixelMax    = ui32ScreenPixelMax;
@@ -2046,7 +2046,7 @@ PVRSRV_ERROR RGXCreateHWRTDataSet(CONNECTION_DATA      *psConnection,
 
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(1647, (PVR_DBG_ERROR,
 					"%s: Failed to create HWRTData [slot %u] (%s)",
 					__func__,
 					ui32RTDataID,
@@ -2198,7 +2198,7 @@ PVRSRV_ERROR RGXCreateFreeList(CONNECTION_DATA      *psConnection,
 	psFreeList = OSAllocZMem(sizeof(*psFreeList));
 	if (psFreeList == NULL)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(1797, (PVR_DBG_ERROR,
 				"%s: failed to allocate host data structure",
 				__func__));
 		eError = PVRSRV_ERROR_OUT_OF_MEMORY;
@@ -2229,7 +2229,7 @@ PVRSRV_ERROR RGXCreateFreeList(CONNECTION_DATA      *psConnection,
 			&psFWFreelistMemDesc);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(1828, (PVR_DBG_ERROR,
 				"%s: DevmemAllocate for RGXFWIF_FREELIST failed",
 				__func__));
 		goto FWFreeListAlloc;
@@ -2242,7 +2242,7 @@ PVRSRV_ERROR RGXCreateFreeList(CONNECTION_DATA      *psConnection,
 	psFreeList->uiFreeListPMROffset = uiFreeListPMROffset;
 	psFreeList->psFWFreelistMemDesc = psFWFreelistMemDesc;
 	eError = RGXSetFirmwareAddress(&psFreeList->sFreeListFWDevVAddr, psFWFreelistMemDesc, 0, RFW_FWADDR_FLAG_NONE);
-	PVR_LOG_GOTO_IF_ERROR(eError, "RGXSetFirmwareAddress", ErrorSetFwAddr);
+	PVR_LOG_GOTO_IF_ERROR_STOCK(1839, eError, "RGXSetFirmwareAddress", ErrorSetFwAddr);
 
 	/* psFreeList->ui32FreelistID set below with lock... */
 	psFreeList->ui32FreelistGlobalID = (psGlobalFreeList ? psGlobalFreeList->ui32FreelistID : 0);
@@ -2272,7 +2272,7 @@ PVRSRV_ERROR RGXCreateFreeList(CONNECTION_DATA      *psConnection,
 
 	/* Initialise FW data structure */
 	eError = DevmemAcquireCpuVirtAddr(psFreeList->psFWFreelistMemDesc, (void **)&psFWFreeList);
-	PVR_LOG_GOTO_IF_ERROR(eError, "Devmem AcquireCpuVirtAddr", FWFreeListCpuMap);
+	PVR_LOG_GOTO_IF_ERROR_STOCK(1869, eError, "Devmem AcquireCpuVirtAddr", FWFreeListCpuMap);
 
 	{
 		const IMG_UINT32 ui32ReadyPages = _CalculateFreelistReadyPages(psFreeList, ui32InitFLPages);
@@ -2346,7 +2346,7 @@ PVRSRV_ERROR RGXCreateFreeList(CONNECTION_DATA      *psConnection,
 
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(1947, (PVR_DBG_ERROR,
 				"%s: failed to allocate initial memory block for free list 0x%016" IMG_UINT64_FMTSPECx " (%d)",
 				__func__,
 				sFreeListDevVAddr.uiAddr,
@@ -2499,7 +2499,7 @@ PVRSRV_ERROR RGXCreateZSBufferKM(CONNECTION_DATA * psConnection,
 	psZSBuffer = OSAllocZMem(sizeof(*psZSBuffer));
 	if (psZSBuffer == NULL)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(2098, (PVR_DBG_ERROR,
 				"%s: Failed to allocate cleanup data structure for ZS-Buffer",
 				__func__));
 		eError = PVRSRV_ERROR_OUT_OF_MEMORY;
@@ -2543,7 +2543,7 @@ PVRSRV_ERROR RGXCreateZSBufferKM(CONNECTION_DATA * psConnection,
 			&psFWZSBufferMemDesc);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(2143, (PVR_DBG_ERROR,
 				"%s: Failed to allocate firmware ZS-Buffer (%s)",
 				__func__,
 				PVRSRVGetErrorString(eError)));
@@ -2556,7 +2556,7 @@ PVRSRV_ERROR RGXCreateZSBufferKM(CONNECTION_DATA * psConnection,
 			(void **)&psFWZSBuffer);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(2156, (PVR_DBG_ERROR,
 				"%s: Failed to map firmware ZS-Buffer (%s)",
 				__func__,
 				PVRSRVGetErrorString(eError)));
@@ -2570,7 +2570,7 @@ PVRSRV_ERROR RGXCreateZSBufferKM(CONNECTION_DATA * psConnection,
 
 	/* Get firmware address of ZS-Buffer. */
 	eError = RGXSetFirmwareAddress(&psZSBuffer->sZSBufferFWDevVAddr, psFWZSBufferMemDesc, 0, RFW_FWADDR_FLAG_NONE);
-	PVR_LOG_GOTO_IF_ERROR(eError, "RGXSetFirmwareAddress", ErrorSetFwAddr);
+	PVR_LOG_GOTO_IF_ERROR_STOCK(2167, eError, "RGXSetFirmwareAddress", ErrorSetFwAddr);
 
 	/* Dump the ZS-Buffer and the memory content */
 #if defined(PDUMP)
@@ -2697,7 +2697,7 @@ RGXBackingZSBuffer(RGX_ZSBUFFER_DATA *psZSBuffer)
 				&psZSBuffer->psMapping);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(2298, (PVR_DBG_ERROR,
 					"Unable populate ZS Buffer [%p, ID=0x%08x] (%s)",
 					psZSBuffer,
 					psZSBuffer->ui32ZSBufferID,
@@ -2795,7 +2795,7 @@ RGXUnbackingZSBuffer(RGX_ZSBUFFER_DATA *psZSBuffer)
 			eError = DevmemIntUnmapPMR(psZSBuffer->psMapping);
 			if (eError != PVRSRV_OK)
 			{
-				PVR_DPF((PVR_DBG_ERROR,
+				PVR_DPF_STOCK(2396, (PVR_DBG_ERROR,
 						"Unable to unpopulate ZS Buffer [%p, ID=0x%08x] (%s)",
 						psZSBuffer,
 						psZSBuffer->ui32ZSBufferID,
@@ -2881,7 +2881,7 @@ void RGXProcessRequestZSBufferBacking(PVRSRV_RGXDEV_INFO *psDevInfo,
 		eError = RGXBackingZSBuffer(psZSBuffer);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(2481, (PVR_DBG_ERROR,
 					"Populating ZS-Buffer (ID = 0x%08x) failed (%s)",
 					ui32ZSBufferID,
 					PVRSRVGetErrorString(eError)));
@@ -2919,7 +2919,7 @@ void RGXProcessRequestZSBufferBacking(PVRSRV_RGXDEV_INFO *psDevInfo,
 	}
 	else
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(2518, (PVR_DBG_ERROR,
 				"ZS Buffer Lookup for ZS Buffer ID 0x%08x failed (Populate)",
 				ui32ZSBufferID));
 	}
@@ -2943,7 +2943,7 @@ void RGXProcessRequestZSBufferUnbacking(PVRSRV_RGXDEV_INFO *psDevInfo,
 		eError = RGXUnbackingZSBuffer(psZSBuffer);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(2543, (PVR_DBG_ERROR,
 					"UnPopulating ZS-Buffer (ID = 0x%08x) failed (%s)",
 					ui32ZSBufferID,
 					PVRSRVGetErrorString(eError)));
@@ -2974,7 +2974,7 @@ void RGXProcessRequestZSBufferUnbacking(PVRSRV_RGXDEV_INFO *psDevInfo,
 	}
 	else
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(2573, (PVR_DBG_ERROR,
 				"ZS Buffer Lookup for ZS Buffer ID 0x%08x failed (UnPopulate)",
 				ui32ZSBufferID));
 	}
@@ -3014,7 +3014,7 @@ PVRSRV_ERROR _CreateTAContext(CONNECTION_DATA *psConnection,
 			&psTAData->psContextStateMemDesc);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(2614, (PVR_DBG_ERROR,
 				"%s: Failed to allocate firmware GPU context suspend state (%s)",
 				__func__,
 				PVRSRVGetErrorString(eError)));
@@ -3025,7 +3025,7 @@ PVRSRV_ERROR _CreateTAContext(CONNECTION_DATA *psConnection,
 			(void **)&psContextState);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(2625, (PVR_DBG_ERROR,
 				"%s: Failed to map firmware render context state (%s)",
 				__func__,
 				PVRSRVGetErrorString(eError)));
@@ -3059,7 +3059,7 @@ PVRSRV_ERROR _CreateTAContext(CONNECTION_DATA *psConnection,
 			&psTAData->psServerCommonContext);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(2659, (PVR_DBG_ERROR,
 				"%s: Failed to init TA fw common context (%s)",
 				__func__,
 				PVRSRVGetErrorString(eError)));
@@ -3143,7 +3143,7 @@ PVRSRV_ERROR _Create3DContext(CONNECTION_DATA *psConnection,
 			&ps3DData->psContextStateMemDesc);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(2743, (PVR_DBG_ERROR,
 				"%s: Failed to allocate firmware GPU context suspend state (%s)",
 				__func__,
 				PVRSRVGetErrorString(eError)));
@@ -3169,7 +3169,7 @@ PVRSRV_ERROR _Create3DContext(CONNECTION_DATA *psConnection,
 			&ps3DData->psServerCommonContext);
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(2769, (PVR_DBG_ERROR,
 				"%s: Failed to init 3D fw common context (%s)",
 				__func__,
 				PVRSRVGetErrorString(eError)));
@@ -3277,7 +3277,7 @@ PVRSRV_ERROR PVRSRVRGXCreateRenderContextKM(CONNECTION_DATA				*psConnection,
 				ui32FrameworkRegisterSize);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(2877, (PVR_DBG_ERROR,
 						"%s: Failed to allocate firmware GPU framework state (%s)",
 						__func__,
 						PVRSRVGetErrorString(eError)));
@@ -3291,7 +3291,7 @@ PVRSRV_ERROR PVRSRVRGXCreateRenderContextKM(CONNECTION_DATA				*psConnection,
 				ui32FrameworkRegisterSize);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(2891, (PVR_DBG_ERROR,
 						"%s: Failed to populate the framework buffer (%s)",
 						__func__,
 						PVRSRVGetErrorString(eError)));
@@ -3842,7 +3842,7 @@ PVRSRV_ERROR PVRSRVRGXKickTA3DKM(RGX_SERVER_RENDER_CONTEXT	*psRenderContext,
 	 */
 	if (ui32ClientTAFenceCount > 0)
 	{
-		PVR_LOG_RETURN_IF_FALSE(paui32ClientTAFenceValue != NULL,
+		PVR_LOG_RETURN_IF_FALSE_STOCK(3442, paui32ClientTAFenceValue != NULL,
 		                        "paui32ClientTAFenceValue NULL but "
 		                        "ui32ClientTAFenceCount > 0",
 		                        PVRSRV_ERROR_INVALID_PARAMS);
@@ -3853,7 +3853,7 @@ PVRSRV_ERROR PVRSRVRGXKickTA3DKM(RGX_SERVER_RENDER_CONTEXT	*psRenderContext,
 	 */
 	if (ui32ClientTAUpdateCount > 0)
 	{
-		PVR_LOG_RETURN_IF_FALSE(paui32ClientTAUpdateValue != NULL,
+		PVR_LOG_RETURN_IF_FALSE_STOCK(3453, paui32ClientTAUpdateValue != NULL,
 		                        "paui32ClientTAUpdateValue NULL but "
 		                        "ui32ClientTAUpdateCount > 0",
 		                        PVRSRV_ERROR_INVALID_PARAMS);
@@ -3864,7 +3864,7 @@ PVRSRV_ERROR PVRSRVRGXKickTA3DKM(RGX_SERVER_RENDER_CONTEXT	*psRenderContext,
 	 */
 	if (ui32Client3DUpdateCount > 0)
 	{
-		PVR_LOG_RETURN_IF_FALSE(paui32Client3DUpdateValue != NULL,
+		PVR_LOG_RETURN_IF_FALSE_STOCK(3464, paui32Client3DUpdateValue != NULL,
 		                        "paui32Client3DUpdateValue NULL but "
 		                        "ui32Client3DUpdateCount > 0",
 		                        PVRSRV_ERROR_INVALID_PARAMS);
@@ -3878,7 +3878,7 @@ PVRSRV_ERROR PVRSRVRGXKickTA3DKM(RGX_SERVER_RENDER_CONTEXT	*psRenderContext,
 
 		if (psKMHWRTDataSet == NULL)
 		{
-			PVR_DPF((PVR_DBG_ERROR, "KMHWRTDataSet is a null-pointer"));
+			PVR_DPF_STOCK(3475, (PVR_DBG_ERROR, "KMHWRTDataSet is a null-pointer"));
 			return PVRSRV_ERROR_INVALID_PARAMS;
 		}
 
@@ -4520,7 +4520,7 @@ PVRSRV_ERROR PVRSRVRGXKickTA3DKM(RGX_SERVER_RENDER_CONTEXT	*psRenderContext,
 				   ui32ClientPRUpdateCount));
 
 #else /* defined(SUPPORT_BUFFER_SYNC) */
-		PVR_DPF((PVR_DBG_ERROR,
+		PVR_DPF_STOCK(4119, (PVR_DBG_ERROR,
 				 "%s: Buffer sync not supported but got %u buffers",
 				 __func__, ui32SyncPMRCount));
 		eError = PVRSRV_ERROR_INVALID_PARAMS;
@@ -4575,7 +4575,7 @@ PVRSRV_ERROR PVRSRVRGXKickTA3DKM(RGX_SERVER_RENDER_CONTEXT	*psRenderContext,
 						ui32PDumpFlags);
 				if (unlikely(eError != PVRSRV_OK))
 				{
-					PVR_DPF((PVR_DBG_ERROR,
+					PVR_DPF_STOCK(4175, (PVR_DBG_ERROR,
 							"%s:   SyncCheckpointCreateFence[TA] failed (%s)",
 							__func__,
 							PVRSRVGetErrorString(eError)));
@@ -4650,7 +4650,7 @@ PVRSRV_ERROR PVRSRVRGXKickTA3DKM(RGX_SERVER_RENDER_CONTEXT	*psRenderContext,
 						ui32PDumpFlags);
 				if (unlikely(eError != PVRSRV_OK))
 				{
-					PVR_DPF((PVR_DBG_ERROR,
+					PVR_DPF_STOCK(4250, (PVR_DBG_ERROR,
 							"%s:   SyncCheckpointCreateFence[3D] failed (%s)",
 							__func__,
 							PVRSRVGetErrorString(eError)));
@@ -4967,31 +4967,31 @@ PVRSRV_ERROR PVRSRVRGXKickTA3DKM(RGX_SERVER_RENDER_CONTEXT	*psRenderContext,
 	/* Command size check */
 	if (ui32TAFenceCount != ui32ClientTAFenceCount)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "TA pre-calculated number of fences"
+		PVR_DPF_STOCK(4566, (PVR_DBG_ERROR, "TA pre-calculated number of fences"
 		        " is different than the actual number (%u != %u)",
 		        ui32TAFenceCount, ui32ClientTAFenceCount));
 	}
 	if (ui32TAUpdateCount != ui32ClientTAUpdateCount)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "TA pre-calculated number of updates"
+		PVR_DPF_STOCK(4572, (PVR_DBG_ERROR, "TA pre-calculated number of updates"
 		        " is different than the actual number (%u != %u)",
 		        ui32TAUpdateCount, ui32ClientTAUpdateCount));
 	}
 	if (!bTestSLRAdd3DCheck && (ui323DFenceCount != ui32Client3DFenceCount))
 	{
-		PVR_DPF((PVR_DBG_ERROR, "3D pre-calculated number of fences"
+		PVR_DPF_STOCK(4578, (PVR_DBG_ERROR, "3D pre-calculated number of fences"
 		        " is different than the actual number (%u != %u)",
 		        ui323DFenceCount, ui32Client3DFenceCount));
 	}
 	if (ui323DUpdateCount != ui32Client3DUpdateCount)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "3D pre-calculated number of updates"
+		PVR_DPF_STOCK(4584, (PVR_DBG_ERROR, "3D pre-calculated number of updates"
 		        " is different than the actual number (%u != %u)",
 		        ui323DUpdateCount, ui32Client3DUpdateCount));
 	}
 	if (ui32PRUpdateCount != ui32ClientPRUpdateCount)
 	{
-		PVR_DPF((PVR_DBG_ERROR, "PR pre-calculated number of updates"
+		PVR_DPF_STOCK(4590, (PVR_DBG_ERROR, "PR pre-calculated number of updates"
 		        " is different than the actual number (%u != %u)",
 		        ui32PRUpdateCount, ui32ClientPRUpdateCount));
 	}
@@ -5382,7 +5382,7 @@ PVRSRV_ERROR PVRSRVRGXKickTA3DKM(RGX_SERVER_RENDER_CONTEXT	*psRenderContext,
 
 		if (eError2 != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR, "PVRSRVRGXKicKTA3DKM failed to schedule kernel CCB command. (0x%x)", eError2));
+			PVR_DPF_STOCK(4979, (PVR_DBG_ERROR, "PVRSRVRGXKicKTA3DKM failed to schedule kernel CCB command. (0x%x)", eError2));
 			/* Mark the error and bail out */
 			eError = eError2;
 			goto fail_taacquirecmd;
@@ -5480,7 +5480,7 @@ PVRSRV_ERROR PVRSRVRGXKickTA3DKM(RGX_SERVER_RENDER_CONTEXT	*psRenderContext,
 
 		if (eError2 != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR, "PVRSRVRGXKicKTA3DKM failed to schedule kernel CCB command. (0x%x)", eError2));
+			PVR_DPF_STOCK(5077, (PVR_DBG_ERROR, "PVRSRVRGXKicKTA3DKM failed to schedule kernel CCB command. (0x%x)", eError2));
 			if (eError == PVRSRV_OK)
 			{
 				eError = eError2;
@@ -5784,7 +5784,7 @@ PVRSRV_ERROR PVRSRVRGXSetRenderContextPriorityKM(CONNECTION_DATA *psConnection,
 				RGXFWIF_DM_GEOM);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(5333, (PVR_DBG_ERROR,
 					 "%s: Failed to set the priority of the TA part of the rendercontext (%s)",
 					 __func__, PVRSRVGetErrorString(eError)));
 			goto fail_tacontext;
@@ -5801,7 +5801,7 @@ PVRSRV_ERROR PVRSRVRGXSetRenderContextPriorityKM(CONNECTION_DATA *psConnection,
 				RGXFWIF_DM_3D);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF((PVR_DBG_ERROR,
+			PVR_DPF_STOCK(5350, (PVR_DBG_ERROR,
 					 "%s: Failed to set the priority of the 3D part of the rendercontext (%s)",
 					 __func__, PVRSRVGetErrorString(eError)));
 			goto fail_3dcontext;
@@ -5847,7 +5847,7 @@ PVRSRV_ERROR PVRSRVRGXSetRenderContextPropertyKM(RGX_SERVER_RENDER_CONTEXT *psRe
 
 		default:
 		{
-			PVR_DPF((PVR_DBG_ERROR, "%s: PVRSRV_ERROR_NOT_SUPPORTED - asked to set unknown property (%d)", __func__, eContextProperty));
+			PVR_DPF_STOCK(5394, (PVR_DBG_ERROR, "%s: PVRSRV_ERROR_NOT_SUPPORTED - asked to set unknown property (%d)", __func__, eContextProperty));
 			eError = PVRSRV_ERROR_NOT_SUPPORTED;
 		}
 	}

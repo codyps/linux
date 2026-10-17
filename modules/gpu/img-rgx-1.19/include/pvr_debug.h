@@ -897,6 +897,37 @@ IMG_EXPORT void IMG_CALLCONV PVRSRVTrace(const IMG_CHAR* pszFormat, ... )
     @brief Truncates size_t value to 32 bit value (with possible precision loss).
  */
 
+/* Recovered diagnostic values describe stock machine-code arguments, not
+ * positions in reconstructed source. Retain the normal logging gates and
+ * error/return behavior while allowing individual call sites to name them.
+ */
+#if defined(PVRSRV_NEED_PVR_DPF) || defined(DOXYGEN)
+#if defined(DEBUG)
+#define PVR_DPF_STOCK_IMPL(line, lvl, ...) PVR_DPF_ ## lvl (__FILE__, line, __VA_ARGS__)
+#else
+#define PVR_DPF_STOCK_IMPL(line, lvl, ...) PVR_DPF_ ## lvl ("", line, __VA_ARGS__)
+#endif
+#define PVR_DPF_STOCK_UNWRAP(...) __VA_ARGS__
+#define PVR_DPF_STOCK_EXPAND(...) PVR_DPF_STOCK_IMPL(__VA_ARGS__)
+#define PVR_DPF_STOCK(line, x) PVR_DPF_STOCK_EXPAND(line, PVR_DPF_STOCK_UNWRAP x)
+#define PVR_LOG_GOTO_IF_ERROR_STOCK(line, _rc, _call, _go) do \
+	{ if (unlikely(_rc != PVRSRV_OK)) { \
+		PVR_DPF_STOCK(line, (PVR_DBG_ERROR, "%s() failed (%s) in %s()", _call, PVRSRVGETERRORSTRING(_rc), __func__)); \
+		goto _go; } \
+	MSC_SUPPRESS_4127 \
+	} while (false)
+#define PVR_LOG_RETURN_IF_FALSE_STOCK(line, _expr, _msg, _rc) do \
+	{ if (unlikely(!(_expr))) { \
+		PVR_DPF_STOCK(line, (PVR_DBG_ERROR, "%s in %s()", _msg, __func__)); \
+		return _rc; } \
+	MSC_SUPPRESS_4127 \
+	} while (false)
+#else
+#define PVR_DPF_STOCK(line, x) PVR_DPF(x)
+#define PVR_LOG_GOTO_IF_ERROR_STOCK(line, _rc, _call, _go) PVR_LOG_GOTO_IF_ERROR(_rc, _call, _go)
+#define PVR_LOG_RETURN_IF_FALSE_STOCK(line, _expr, _msg, _rc) PVR_LOG_RETURN_IF_FALSE(_expr, _msg, _rc)
+#endif
+
 #endif /* PVR_DEBUG_H */
 
 /******************************************************************************
