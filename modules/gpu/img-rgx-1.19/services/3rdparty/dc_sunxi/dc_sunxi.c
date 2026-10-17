@@ -412,18 +412,8 @@ static
 IMG_BOOL DC_SUNXI_GetBufferID(DC_SUNXI_CONTEXT *psDeviceContext, IMG_UINT32 *pui32BufferID)
 {
 	IMG_UINT32 ui32BufferID;
-	/* If we don't support flipping, allow this code to give every
-	 * allocated buffer the same ID. This means that the display
-	 * won't be panned, and the same page list will be used for
-	 * every allocation.
-	 */
-	if (!psDeviceContext->psDeviceData->bCanFlip)
-	{
-		*pui32BufferID = 0;
-		return IMG_TRUE;
-	}
-
-	for (ui32BufferID = 0; ui32BufferID < NUM_PREFERRED_BUFFERS; ++ui32BufferID)
+	IMG_UINT32 ui32BufferCount = !!psDeviceContext->psDeviceData->bCanFlip + 1;
+	for (ui32BufferID = 0; ui32BufferID < ui32BufferCount; ++ui32BufferID)
 	{
 		if ((psDeviceContext->ui32AllocUseMask & (1UL << ui32BufferID)) == 0)
 		{
@@ -728,7 +718,7 @@ static int __init DC_SUNXI_init(void)
 				   psLINFBInfo->var.blue.offset);
 			goto err_unlock;
 		}
-		ePixFormat = IMG_PIXFMT_B5G6R5_UNORM;
+		ePixFormat = IMG_PIXFMT_R5G6B5_UNORM;
 	}
 	else
 	{
