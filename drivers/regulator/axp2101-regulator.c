@@ -1322,11 +1322,6 @@ static int axp2101_regulator_probe(struct platform_device *pdev)
 						       &axp803_drivevbus_regulator,
 						       &config);
 			break;
-		case AXP2585_ID:
-			rdev = devm_regulator_register(&pdev->dev,
-						       &axp2585_drivevbus_regulator,
-						       &config);
-			break;
 		case AXP2202_ID:
 			regmap_read(axp20x->regmap, AXP2202_VBUS_TYPE, &reg);
 			if (!reg) {
@@ -1347,6 +1342,10 @@ static int axp2101_regulator_probe(struct platform_device *pdev)
 						       &axp2202_drivevbus_regulator,
 						       &config);
 			}
+			/* TODO(stock bug): retain ERR_PTR publication before the
+			 * registration check; make failed-probe cleanup a separate fix.
+			 */
+			trimui_drivevbus = rdev;
 			break;
 		default:
 			dev_err(&pdev->dev, "AXP variant: %ld unsupported drivevbus\n",
@@ -1358,8 +1357,6 @@ static int axp2101_regulator_probe(struct platform_device *pdev)
 			dev_err(&pdev->dev, "Failed to register drivevbus\n");
 			return PTR_ERR(rdev);
 		}
-		if (axp20x->variant == AXP2202_ID)
-			trimui_drivevbus = rdev;
 	}
 
 	return 0;

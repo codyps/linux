@@ -3122,13 +3122,7 @@ int axp20x_match_device(struct axp20x_dev *axp20x)
 		axp20x->regmap_irq_chip = &axp2202_regmap_irq_chip;
 		axp20x->dts_parse = axp2202_dts_parse;
 		break;
-	case AXP2585_ID:
-		axp20x->nr_cells = ARRAY_SIZE(axp2585_cells);
-		axp20x->cells = axp2585_cells;
-		axp20x->regmap_cfg = &axp2585_regmap_config;
-		axp20x->regmap_irq_chip = &axp2585_regmap_irq_chip;
-		axp20x->dts_parse = axp2585_dts_parse;
-		break;
+	/* Stock #860 rejects AXP2585 here; its regulator-only path remains. */
 /*-------------------*/
 	default:
 		dev_err(dev, "unsupported AXP20X ID %lu\n", axp20x->variant);
