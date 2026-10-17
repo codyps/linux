@@ -2199,8 +2199,9 @@ static s32 display_fb_request(u32 fb_id, struct disp_fb_create_info *fb_para)
 	info->var.xres_virtual = xres;
 	info->fix.line_length =
 	    (fb_para->width * info->var.bits_per_pixel) >> 3;
-	info->fix.smem_len =
-	    info->fix.line_length * fb_para->height * fb_para->buffer_num;
+	/* TG3040 reserves 64 MiB for userspace framebuffers of varying sizes. */
+	info->fix.smem_len = 64 * 1024 * 1024;
+	pr_info("TRIMUI fb0 size expand: %d\n", info->fix.smem_len);
 	if (info->fix.line_length != 0)
 		info->var.yres_virtual =
 		    info->fix.smem_len / info->fix.line_length;
