@@ -2624,14 +2624,7 @@ static void axp2101_dts_parse(struct axp20x_dev *axp20x)
 		regmap_update_bits(map, AXP2101_PWROFF_EN, BIT(2), 0);
 	}
 
-	/* init ldo over current protection */
-	if (of_property_read_u32(node, "pmu_over_current", &val))
-		val = 1;
-	if (val) {
-		regmap_update_bits(map, AXP2101_PWROFF_EN, BIT(3), BIT(3));
-	} else {
-		regmap_update_bits(map, AXP2101_PWROFF_EN, BIT(3), 0);
-	}
+	/* Stock #860 does not configure the AXP2101 over-current bit here. */
 	/* 85% low voltage turn off pmic function */
 	/* axp_regmap_write(axp2101->regmap, axp2101_DCDC_PWROFF_EN, 0x3f); */
 	/* set 2.6v for battery poweroff */
@@ -2741,6 +2734,19 @@ static void axp2202_dts_parse(struct axp20x_dev *axp20x)
 		regmap_update_bits(map, AXP2202_SLEEP_CFG, BIT(5), 0);
 	}
 
+	/* Recovered stock AXP2202 over-current configuration (default enabled). */
+	if (of_property_read_u32(node, "pmu_over_current", &val))
+		val = 1;
+	if (val) {
+		regmap_update_bits(map, AXP2202_PWROFF_EN, BIT(3), BIT(3));
+	} else {
+		regmap_update_bits(map, AXP2202_PWROFF_EN, BIT(3), 0);
+	}
+
+	/* TODO(stock bug): the repeated hot-shutdown read below uses a different
+	 * default and clears BIT(1) when disabled rather than BIT(2). Preserve both
+	 * register writes and the ignored regmap errors; correct them separately.
+	 */
 	/* init pmu over temperature protection */
 	if (of_property_read_u32(node, "pmu_hot_shutdown", &val))
 		val = 1;
