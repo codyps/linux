@@ -285,10 +285,11 @@ static void axp803_ac_virq_dts_set(struct axp803_ac_power *ac_power, bool enable
 {
 	struct axp_config_info *dts_info = &ac_power->dts_info;
 
-	if (!dts_info->wakeup_usb_in)
+	/* Stock #860 tests the AC flags parsed by this driver (offsets 0x1b8/1bc). */
+	if (!dts_info->wakeup_ac_in)
 		axp_irq_set(axp803_ac_irq[AXP803_VIRQ_ACIN].irq,
 				enable);
-	if (!dts_info->wakeup_usb_out)
+	if (!dts_info->wakeup_ac_out)
 		axp_irq_set(axp803_ac_irq[AXP803_VIRQ_ACRE].irq,
 				enable);
 }
