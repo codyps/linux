@@ -3206,7 +3206,7 @@ static int axp_sysfs_init(void)
 
 	status = class_register(&axp_class);
 	if (status < 0)
-		pr_err("%s,%d err, status:%d\n", __func__, __LINE__, status);
+		pr_err("%s,%d err, status:%d\n", __func__, 3148 /* stock #860 */, status);
 
 	return status;
 }

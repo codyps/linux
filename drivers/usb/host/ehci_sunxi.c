@@ -651,7 +651,7 @@ int sunxi_insmod_ehci(struct platform_device *pdev)
 	sunxi_ehci->supply = regulator_get(dev, "drvvbus");
 
 	if (IS_ERR(sunxi_ehci->supply)) {
-		DMSG_PANIC("%s()%d WARN: get supply failed\n", __func__, __LINE__);
+		DMSG_PANIC("%s()%d WARN: get supply failed\n", __func__, 655 /* stock #860 */);
 		sunxi_ehci->supply = NULL;
 	}
 #endif

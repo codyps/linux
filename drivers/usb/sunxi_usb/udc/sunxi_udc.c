@@ -406,7 +406,7 @@ void sunxi_set_cur_vol_work(struct work_struct *work)
 
 	if (!psy || IS_ERR(psy)) {
 		DMSG_PANIC("%s()%d WARN: get power supply failed\n",
-			   __func__, __LINE__);
+			   __func__, 409 /* stock #860 */);
 	} else {
 		temp.intval = 500;
 
@@ -2881,7 +2881,7 @@ static int sunxi_udc_vbus_draw(struct usb_gadget *_gadget, unsigned ma)
 {
 	if (!is_peripheral_active()) {
 		DMSG_INFO("%s_%d: usb device is not active\n",
-			__func__, __LINE__);
+			__func__, 2885 /* stock #860 */);
 		return 0;
 	}
 
@@ -3303,7 +3303,7 @@ static void sunxi_vbus_det_work(struct work_struct *work)
 						     "det_vbus_supply");
 
 	if (!psy || IS_ERR(psy)) {
-		DMSG_PANIC("%s()%d WARN: get power supply failed\n", __func__, __LINE__);
+		DMSG_PANIC("%s()%d WARN: get power supply failed\n", __func__, 3308 /* stock #860 */);
 	} else {
 		power_supply_get_property(psy,
 					POWER_SUPPLY_PROP_ONLINE, &temp);

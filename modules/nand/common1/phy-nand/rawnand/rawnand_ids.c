@@ -1876,7 +1876,7 @@ struct sunxi_nand_flash_device *sunxi_search_id(struct nand_chip_info *nci,
 
 	mem = kmalloc(REVISION_FEATURES_BLOCK_INFO_PARAMETER_LEN, GFP_KERNEL);
 	if (!mem) {
-		RAWNAND_ERR("malloc buffer fail in %s %d\n", __func__, __LINE__);
+		RAWNAND_ERR("malloc buffer fail in %s %d\n", __func__, 1716 /* stock #860 */);
 		goto err0;
 	}
 
