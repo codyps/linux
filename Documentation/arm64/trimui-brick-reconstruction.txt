@@ -47,6 +47,9 @@ Source provenance
   exFAT 5.8-2arter97, also identified in stock strings and function code.
 * pocketforge-os/gpu-km-tsp fbb38f3f712a9b151f7482450bafd939b8269ae8:
   DDK 1.19 port; retain modules/gpu/img-rgx-1.19/PROVENANCE.md.
+* licy007/myir-semidrive-linux c96cc8f345885b92d84ac52fc917b4329f8ee791:
+  related DDK 1.18 display-class component and generated Configure2 bridge.
+  This component's private ABI matches stock; the stock module reports 1.19.
 
 Reconstruction evidence
 -----------------------
@@ -64,6 +67,16 @@ Reconstruction evidence
 * The inode i_sequence backport restores the 560-byte stock inode layout.
   All 414 shared structures sampled from vin_io DWARF match member layouts.
 * Bluetooth UART/H4/coexistence matches all 74 compared instruction bodies.
+* AXP2202 battery/USB/GPIO power code matches all 46 uniquely comparable
+  instruction bodies. Battery SOC passes 5632 emulated comparisons, including
+  the 3450 mV median-voltage threshold. IRQ names/callbacks and property IDs
+  pass 24 recursive data checks. These checks do not validate a physical PMIC.
+* GC2590 and OV5648 each match all 14 comparable function bodies and 11 selected
+  data objects, including register arrays, window modes and callback tables.
+* GPU reconstruction restores the generic handle backend, memory tests,
+  display-class ABI, Configure2 bridge and 63-byte annotation limit. All 141
+  sampled display-class and 133 sampled memory layouts match stock DWARF.
+  1904 of 2063 comparable pvrsrvkm function bodies match; work remains.
 * Public exFAT matches every uniquely comparable function body after restoring
   inode layout. Static comparison accounts for address relocation instructions;
   it does not establish equality of every referenced data object.
@@ -80,7 +93,11 @@ but reorganizes implementation and private AES routines. LED arrays and effect
 lengths are bounded for oversized inputs, regulator errors are checked, and
 teardown releases resources. Valid tested sysfs outputs preserve stock behavior.
 
-Some Wi-Fi, GPU, camera, PMIC and other kernel code/data differences remain.
+Some Wi-Fi, GPU, video-capture and other kernel code/data differences remain.
+Camera sensor and PMIC checks above cover selected functions and tables, not
+every referenced object. Stock battery SOC handling after a failed voltage
+sample can read uninitialized values; that undefined case is excluded from the
+differential tests and has not been silently changed.
 Missing global names also include private AES routines replaced by reconstructed
 C and unused stock helpers; symbol inventory is not semantic equivalence.
 The compiler differs from stock. Not every local function or data object has
