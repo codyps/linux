@@ -161,3 +161,10 @@ initial apphint in both stock apphint tables. The generic fallback macro remains
 true in stock PVRSRVInit/PVRSRVDeviceCreate instruction bodies, so only the list
 initializer is changed. Do not globally change the fallback macro to make those
 separately compiled defaults agree. Both stock table values and code are retained.
+
+
+The stock module also exports the external physical-heap interface, including
+six PhysHeap functions, PVRSRVGetDeviceInstance and PVRSRVGetErrorString.
+Enable SUPPORT_EXTERNAL_PHYSHEAP_INTERFACE to restore those eight public
+exports; matching the corresponding function bodies alone does not restore
+module linkage compatibility.
