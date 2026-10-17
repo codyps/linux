@@ -473,8 +473,8 @@ static int sunxi_pctrl_dt_node_to_map(struct pinctrl_dev *pctldev,
 							grp->name,
 							muxsel);
 		if (!func) {
-			dev_err(pctl->dev, "can not get function on pin %s",
-				group);
+			dev_err(pctl->dev, "can not get func[mux=%d] on pin %s",
+				muxsel, group);
 			continue;
 		}
 		/*ignore io_disabled func name*/
@@ -1413,7 +1413,7 @@ static int sunxi_pinctrl_irq_of_xlate(struct irq_domain *d,
 		return -EINVAL;
 
 	base = PINS_PER_BANK * intspec[0];
-	pin = pctl->desc->pin_base + base + intspec[1];
+	pin = base + intspec[1];
 
 	desc = sunxi_pinctrl_desc_find_function_by_pin(pctl, pin, "irq");
 	if (!desc)

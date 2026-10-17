@@ -13,6 +13,9 @@
 #ifndef __PINCTRL_SUNXI_H
 #define __PINCTRL_SUNXI_H
 
+/* Stock IRQ translation omits desc->pin_base before looking up the pin.
+ * TODO: correct nonzero-base controller handling in a separate change. */
+
 #include <linux/kernel.h>
 #include <linux/spinlock.h>
 
