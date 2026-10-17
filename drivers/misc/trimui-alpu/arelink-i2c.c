@@ -17,12 +17,12 @@ void SDA0_PORT_INPUT(void) { gpio_direction_input(ALPU_SDA); }
 void trimui_sunxi_gpio_init(void)
 {
 	if (gpio_request(ALPU_SCL, "alpu_scl") < 0) {
-		pr_err("request alpu_scl gpio %d failed\n", ALPU_SCL);
+		printk("trimui_sunxi_gpio_init error! alpu_scl %d\n", ALPU_SCL);
 		return;
 	}
 	if (gpio_request(ALPU_SDA, "alpu_sda") < 0) {
 		gpio_free(ALPU_SCL);
-		pr_err("request alpu_sda gpio %d failed\n", ALPU_SDA);
+		printk("trimui_sunxi_gpio_init error! alpu_sda %d\n", ALPU_SDA);
 	}
 }
 
