@@ -135,7 +135,7 @@ static inline void sunxi_set_reset_ns(struct sunxi_led *led)
 	u32 max = SUNXI_RESET_TIME_MAX_NS;
 
 	if (led->reset_ns < min || led->reset_ns > max) {
-		LED_ERR("invalid parameter, reset_ns should be %u-%u!\n",
+		SUNXI_LED_STOCK_ERR(151, "invalid parameter, reset_ns should be %u-%u!\n",
 				min, max);
 		return;
 	}
@@ -156,7 +156,7 @@ static inline void sunxi_set_t1h_ns(struct sunxi_led *led)
 	u32 max = SUNXI_T1H_MAX_NS;
 
 	if (led->t1h_ns < min || led->t1h_ns > max) {
-		LED_ERR("invalid parameter, t1h_ns should be %u-%u!\n",
+		SUNXI_LED_STOCK_ERR(172, "invalid parameter, t1h_ns should be %u-%u!\n",
 				min, max);
 		return;
 	}
@@ -177,7 +177,7 @@ static inline void sunxi_set_t1l_ns(struct sunxi_led *led)
 	u32 max = SUNXI_T1L_MAX_NS;
 
 	if (led->t1l_ns < min || led->t1l_ns > max) {
-		LED_ERR("invalid parameter, t1l_ns should be %u-%u!\n",
+		SUNXI_LED_STOCK_ERR(193, "invalid parameter, t1l_ns should be %u-%u!\n",
 				min, max);
 		return;
 	}
@@ -198,7 +198,7 @@ static inline void sunxi_set_t0h_ns(struct sunxi_led *led)
 	u32 max = SUNXI_T0H_MAX_NS;
 
 	if (led->t0h_ns < min || led->t0h_ns > max) {
-		LED_ERR("invalid parameter, t0h_ns should be %u-%u!\n",
+		SUNXI_LED_STOCK_ERR(214, "invalid parameter, t0h_ns should be %u-%u!\n",
 			min, max);
 		return;
 	}
@@ -217,7 +217,7 @@ static inline void sunxi_set_t0l_ns(struct sunxi_led *led)
 	u32 max = SUNXI_T0L_MAX_NS;
 
 	if (led->t0l_ns < min || led->t0l_ns > max) {
-		LED_ERR("invalid parameter, t0l_ns should be %u-%u!\n",
+		SUNXI_LED_STOCK_ERR(233, "invalid parameter, t0l_ns should be %u-%u!\n",
 				min, max);
 		return;
 	}
@@ -236,7 +236,7 @@ static inline void sunxi_set_wait_time0_ns(struct sunxi_led *led)
 	u32 max = SUNXI_WAIT_TIME0_MAX_NS;
 
 	if (led->wait_time0_ns < min || led->wait_time0_ns > max) {
-		LED_ERR("invalid parameter, wait_time0_ns should be %u-%u!\n",
+		SUNXI_LED_STOCK_ERR(252, "invalid parameter, wait_time0_ns should be %u-%u!\n",
 				min, max);
 		return;
 	}
@@ -253,7 +253,7 @@ static inline void sunxi_set_wait_time1_ns(struct sunxi_led *led)
 	u32 n, reg_val;
 
 	if (led->wait_time1_ns < min || led->wait_time1_ns > max) {
-		LED_ERR("invalid parameter, wait_time1_ns should be %u-%llu!\n",
+		SUNXI_LED_STOCK_ERR(269, "invalid parameter, wait_time1_ns should be %u-%llu!\n",
 			min, max);
 		return;
 	}
@@ -285,7 +285,7 @@ static inline void sunxi_set_wait_data_time_ns(struct sunxi_led *led)
 #endif /* SUNXI_FPGA_LEDC */
 
 	if (led->wait_data_time_ns < min || led->wait_data_time_ns > max) {
-		LED_ERR("invalid parameter, wait_data_time_ns should be %u-%u!\n",
+		SUNXI_LED_STOCK_ERR(301, "invalid parameter, wait_data_time_ns should be %u-%u!\n",
 			min, max);
 		return;
 	}
@@ -404,7 +404,7 @@ static inline void sunxi_ledc_reset(struct sunxi_led *led)
 			| LEDC_GLOBAL_INT_EN);
 
 	if (debug_mask & DEBUG_INFO2) {
-		dprintk(DEBUG_INFO2, "dump reg:\n");
+		SUNXI_LED_STOCK_LOG(419, DEBUG_INFO2, "dump reg:\n");
 		led_dump_reg(led, 0, 0x30);
 	}
 
@@ -451,7 +451,7 @@ static ssize_t reset_ns_write(struct file *filp, const char __user *buf,
 	return count;
 
 err_out:
-	LED_ERR("invalid parameter, reset_ns should be %u-%u!\n",
+	SUNXI_LED_STOCK_ERR(467, "invalid parameter, reset_ns should be %u-%u!\n",
 		min, max);
 
 	return -EINVAL;
@@ -511,7 +511,7 @@ static ssize_t t1h_ns_write(struct file *filp, const char __user *buf,
 	return count;
 
 err_out:
-	LED_ERR("invalid parameter, t1h_ns should be %u-%u!\n",
+	SUNXI_LED_STOCK_ERR(527, "invalid parameter, t1h_ns should be %u-%u!\n",
 		min, max);
 
 	return -EINVAL;
@@ -570,7 +570,7 @@ static ssize_t t1l_ns_write(struct file *filp, const char __user *buf,
 	return count;
 
 err_out:
-	LED_ERR("invalid parameter, t1l_ns should be %u-%u!\n",
+	SUNXI_LED_STOCK_ERR(586, "invalid parameter, t1l_ns should be %u-%u!\n",
 		min, max);
 
 	return -EINVAL;
@@ -629,7 +629,7 @@ static ssize_t t0h_ns_write(struct file *filp, const char __user *buf,
 	return count;
 
 err_out:
-	LED_ERR("invalid parameter, t0h_ns should be %u-%u!\n",
+	SUNXI_LED_STOCK_ERR(645, "invalid parameter, t0h_ns should be %u-%u!\n",
 		min, max);
 
 	return -EINVAL;
@@ -688,7 +688,7 @@ static ssize_t t0l_ns_write(struct file *filp, const char __user *buf,
 	return count;
 
 err_out:
-	LED_ERR("invalid parameter, t0l_ns should be %u-%u!\n",
+	SUNXI_LED_STOCK_ERR(704, "invalid parameter, t0l_ns should be %u-%u!\n",
 		min, max);
 
 	return -EINVAL;
@@ -747,7 +747,7 @@ static ssize_t wait_time0_ns_write(struct file *filp, const char __user *buf,
 	return count;
 
 err_out:
-	LED_ERR("invalid parameter, wait_time0_ns should be %u-%u!\n",
+	SUNXI_LED_STOCK_ERR(763, "invalid parameter, wait_time0_ns should be %u-%u!\n",
 		min, max);
 
 	return -EINVAL;
@@ -807,7 +807,7 @@ static ssize_t wait_time1_ns_write(struct file *filp, const char __user *buf,
 	return count;
 
 err_out:
-	LED_ERR("invalid parameter, wait_time1_ns should be %u-%lld!\n",
+	SUNXI_LED_STOCK_ERR(823, "invalid parameter, wait_time1_ns should be %u-%lld!\n",
 		min, max);
 
 	return -EINVAL;
@@ -871,7 +871,7 @@ static ssize_t wait_data_time_ns_write(struct file *filp,
 	return count;
 
 err_out:
-	LED_ERR("invalid parameter, wait_data_time_ns should be %u-%u!\n",
+	SUNXI_LED_STOCK_ERR(887, "invalid parameter, wait_data_time_ns should be %u-%u!\n",
 		min, max);
 
 	return -EINVAL;
@@ -969,7 +969,7 @@ static ssize_t output_mode_write(struct file *filp, const char __user *buf,
 	return count;
 
 err_out:
-	LED_ERR("invalid parameter!\n");
+	SUNXI_LED_STOCK_ERR(984, "invalid parameter!\n");
 
 	return -EINVAL;
 }
@@ -1092,7 +1092,7 @@ static void sunxi_led_remove_debugfs(struct sunxi_led *led)
 
 static void sunxi_ledc_dma_callback(void *param)
 {
-	dprintk(DEBUG_INFO, "finish\n");
+	SUNXI_LED_STOCK_LOG(1107, DEBUG_INFO, "finish\n");
 }
 
 static void sunxi_ledc_trans_data(struct sunxi_led *led)
@@ -1107,7 +1107,7 @@ static void sunxi_ledc_trans_data(struct sunxi_led *led)
 	struct dma_async_tx_descriptor *dma_desc;
 
 	if (led->length <= SUNXI_LEDC_FIFO_DEPTH) {
-		dprintk(DEBUG_INFO, "cpu xfer\n");
+		SUNXI_LED_STOCK_LOG(1122, DEBUG_INFO, "cpu xfer\n");
 		led->start_time = current_kernel_time64();
 		sunxi_ledc_set_time(led);
 		sunxi_ledc_set_output_mode(led, led->output_mode.str);
@@ -1120,7 +1120,7 @@ static void sunxi_ledc_trans_data(struct sunxi_led *led)
 		for (i = 0; i < led->length; i++)
 			sunxi_set_reg(LEDC_DATA_REG_OFFSET, led->data[i]);
 	} else {
-		dprintk(DEBUG_INFO, "dma xfer\n");
+		SUNXI_LED_STOCK_LOG(1135, DEBUG_INFO, "dma xfer\n");
 		size = led->length * 4;
 		led->src_dma = dma_map_single(dev, led->data,
 					size, DMA_TO_DEVICE);
@@ -1139,7 +1139,7 @@ static void sunxi_ledc_trans_data(struct sunxi_led *led)
 		slave_config.slave_id = slave_id;
 		err = dmaengine_slave_config(led->dma_chan, &slave_config);
 		if (err < 0) {
-			LED_ERR("dmaengine_slave_config failed!\n");
+			SUNXI_LED_STOCK_ERR(1154, "dmaengine_slave_config failed!\n");
 			dma_unmap_single(dev, led->src_dma,
 					size, DMA_TO_DEVICE);
 			return;
@@ -1151,7 +1151,7 @@ static void sunxi_ledc_trans_data(struct sunxi_led *led)
 							DMA_MEM_TO_DEV,
 							flags);
 		if (!dma_desc) {
-			LED_ERR("dmaengine_prep_slave_single failed!\n");
+			SUNXI_LED_STOCK_ERR(1166, "dmaengine_prep_slave_single failed!\n");
 			dma_unmap_single(dev, led->src_dma,
 					size, DMA_TO_DEVICE);
 			return;
@@ -1260,7 +1260,7 @@ static irqreturn_t sunxi_ledc_irq_handler(int irq, void *dev_id)
 		if (delta_time_ns <= max_ns * 2) {
 			sunxi_ledc_trans_data(led);
 		} else {
-			LED_ERR("wait time is more than %d ns,"
+			SUNXI_LED_STOCK_ERR(1278, "wait time is more than %d ns,"
 				"going to reset ledc and drop this operation!\n",
 				max_ns);
 			led->result = RESULT_ERR;
@@ -1272,7 +1272,7 @@ static irqreturn_t sunxi_ledc_irq_handler(int irq, void *dev_id)
 	}
 
 	if (irq_status & LEDC_FIFO_OVERFLOW_INT) {
-		LED_ERR("there exists fifo overflow issue, irq_status=0x%x!\n",
+		SUNXI_LED_STOCK_ERR(1289, "there exists fifo overflow issue, irq_status=0x%x!\n",
 				irq_status);
 		sunxi_ledc_reset(led);
 		led->result = RESULT_ERR;
@@ -1863,7 +1863,7 @@ static int sunxi_led_remove(struct platform_device *pdev)
 	kfree(led);
 	led = NULL;
 
-	dprintk(DEBUG_INIT, "finish\n");
+	SUNXI_LED_STOCK_LOG(3403, DEBUG_INIT, "finish\n");
 	return 0;
 }
 
@@ -1875,14 +1875,14 @@ static int led_select_gpio_state(struct pinctrl *pctrl, char *name)
 
 	pctrl_state = pinctrl_lookup_state(pctrl, name);
 	if (IS_ERR(pctrl_state)) {
-		LED_ERR("pinctrl_lookup_state(%s) failed! return %p\n",
+		SUNXI_LED_STOCK_ERR(3416, "pinctrl_lookup_state(%s) failed! return %p\n",
 				name, pctrl_state);
 		return -1;
 	}
 
 	ret = pinctrl_select_state(pctrl, pctrl_state);
 	if (ret < 0)
-		LED_ERR("pinctrl_select_state(%s) failed! return %d\n",
+		SUNXI_LED_STOCK_ERR(3423, "pinctrl_select_state(%s) failed! return %d\n",
 				name, ret);
 
 	return ret;
