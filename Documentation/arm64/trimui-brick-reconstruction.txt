@@ -1,64 +1,89 @@
-TrimUI Brick kernel reconstruction -- provisional
-================================================
+TrimUI Brick kernel reconstruction
+=================================
 
-This tree is a partial reconstruction, not a recovered vendor source release.
-Stock-equivalent behavior, full source parity and hardware boot tests remain
-incomplete. The commit order is a reconstruction history, not the original
-vendor's patch order.
+This is a reconstruction, not the manufacturer's original source release.
+The normalized defconfig reproduces every enabled stock configuration value.
+Image, modules and the recovered DTB build, including candidates for every
+shipped module filename. Hardware boot and complete behavioral equivalence
+remain unverified. Commit order is reconstruction history, not vendor history.
 
-Stock firmware: trimui/firmware_brick v1.1.1-20251126, TG3040 Brick.
+Stock: trimui/firmware_brick v1.1.1-20251126, original TG3040 Brick.
 ZIP SHA256: 488db02176e81ad4fdcf9e0bb4dbf406c883199f5b3521445e038bf81c8916ef
 Kernel: Linux 4.9.191, #860 SMP PREEMPT, Nov 26 03:43:02 UTC 2025.
 Original compiler: OpenWrt/Linaro GCC 7.4.1 (7.4-2019.02).
 Compiler tested here: TRIMUI-published Linaro GCC 7.5.0.
 
-Baselines and public source candidates
--------------------------------------
-
-* Pristine kernel.org Linux 4.9.191.
-* CrealityTech/sonic_pad_os 7f37a7fbf4ad59907034715e3d967b9177de1cd4,
-  subtree lichee/linux-4.9. Related BSP, not verified original TRIMUI base.
-* lindenis-org/lindenis-v853-lichee-linux-4.9
-  92ac04e8e736c11ce7eb1a204790c6ceef100003: newer AXP2202 support.
-* YuzukiHD/TinyVision 356b94946a4887b721423f41711c7bc94fe74a18:
-  newer battery driver and missing camera source.
-* pocketforge-os/gpu-km-tsp fbb38f3f712a9b151f7482450bafd939b8269ae8:
-  DDK 1.19 port; retain modules/gpu/img-rgx-1.19/PROVENANCE.md.
-
 Build
 -----
 
-Use an AArch64 GCC cross toolchain. Set an absolute output path:
+Use an AArch64 GCC cross toolchain and an absolute output path:
 
   make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=/path/to/output \
-       trimui_brick_reconstructed_defconfig
+       trimui_brick_defconfig
   make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=/path/to/output \
        -j16 Image modules dtbs
   make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=/path/to/output \
        M="$PWD/modules/gpu/img-rgx-1.19" PVR_SYSTEM=sunxi_a133 \
        CONFIG_DRM_IMG_ROGUE=m ODYSSEY_CAPTURE=0 -j16 modules
 
-The DTB is arch/arm64/boot/dts/sunxi/trimui-brick-stock.dtb in the output tree.
-The original full IKCONFIG is preserved as trimui_brick_stock_defconfig.
-It is evidence, not a currently reproducible stock configuration.
+DTB: arch/arm64/boot/dts/sunxi/trimui-brick-stock.dtb in the output tree.
+trimui_brick_stock_defconfig preserves the full original IKCONFIG as evidence.
+trimui_brick_reconstructed_defconfig is a compatibility copy of the normalized
+trimui_brick_defconfig. The companion workbench build wrapper checks all stock
+configuration values before building in its default stock mode.
 
-Known incomplete areas
----------------------
+Source provenance
+-----------------
 
-* NAND: public BSP lacks common1/lib and nftl_v8.S; disabled in candidate.
-* Stock ALPU/Arelink, TCS4838, exFAT and two additional LCD driver options.
-* XRadio rate-control config and remaining driver differences.
-* Vendor LED animation/sysfs, motor and speaker integration.
-* Vendor framebuffer expansion and complete charging/PMIC behavior.
-* Full GPU data-layout/firmware ABI equivalence.
-* Not every kernel function/data object has been compared.
+* Pristine kernel.org Linux 4.9.191.
+* CrealityTech/sonic_pad_os 7f37a7fbf4ad59907034715e3d967b9177de1cd4,
+  subtree lichee/linux-4.9: related public Allwinner BSP baseline.
+* lindenis-org/lindenis-v853-lichee-linux-4.9
+  92ac04e8e736c11ce7eb1a204790c6ceef100003: split AXP2202 support.
+* YuzukiHD/TinyVision 356b94946a4887b721423f41711c7bc94fe74a18:
+  battery, camera, futex inode-sequence backport, XRadio 2.16.93/01.40,
+  Realtek UART/coexistence, IOMMU and matching NAND panic-storage support.
+* arter97/exfat-linux 034f47d607c441e7fb5be3eb71d7a289ef76bc0c:
+  exFAT 5.8-2arter97, also identified in stock strings and function code.
+* pocketforge-os/gpu-km-tsp fbb38f3f712a9b151f7482450bafd939b8269ae8:
+  DDK 1.19 port; retain modules/gpu/img-rgx-1.19/PROVENANCE.md.
 
-The reconstructed panel tables compile byte-identically to all five stock
-tables. This does not validate display operation. The lcd_model_name setup
-copy is intentionally bounded; stock used strcpy. Recovered 120-byte gc9702c
-counts are retained, including reads into the following table entry.
+Reconstruction evidence
+-----------------------
 
-Candidates exist for all 22 module filenames shipped in the firmware.
-Static function-code matches do not establish whole-module/data equivalence.
-No bootable replacement firmware or deployable stock-equivalent image has
-been established. No hardware has been flashed or tested.
+* All five panel command arrays match the original bytes after compilation.
+* TCS4838 MFD/regulator tables, pointers and register settings match stock.
+* Arelink is usable reconstructed C, not decompiler pseudocode: 754 comparisons
+  against emulated stock code cover cipher output, framing and EEPROM commands.
+* LED effects pass 27398 differential checks. Sysfs callbacks are also tested
+  against stock code, including the unusual stock hex-output formatting.
+* NAND IDs were recovered into C: 63 descriptors, eleven manufacturers, with
+  recursive comparison of every table byte and referenced string.
+* The published NAND translation-layer assembly was already in the baseline;
+  its out-of-tree build rule was broken. It is not recovered original C.
+* The inode i_sequence backport restores the 560-byte stock inode layout.
+  All 414 shared structures sampled from vin_io DWARF match member layouts.
+* Bluetooth UART/H4/coexistence matches all 73 compared instruction bodies.
+* Public exFAT matches every uniquely comparable function body after restoring
+  inode layout. Static comparison accounts for address relocation instructions;
+  it does not establish equality of every referenced data object.
+
+The companion workbench repository contains scripts, original artifact hashes,
+Ghidra pseudocode, detailed comparison results and the exported commit series.
+No manufacturer source files were inferred from filenames alone.
+
+Limits and deliberate deviations
+--------------------------------
+
+The LCD boot-argument copy is bounded. Arelink C preserves protocol behavior
+but reorganizes implementation and private AES routines. LED arrays and effect
+lengths are bounded for oversized inputs, regulator errors are checked, and
+teardown releases resources. Valid tested sysfs outputs preserve stock behavior.
+
+Some Wi-Fi, GPU, camera, PMIC and other kernel code/data differences remain.
+Missing global names also include private AES routines replaced by reconstructed
+C and unused stock helpers; symbol inventory is not semantic equivalence.
+The compiler differs from stock. Not every local function or data object has
+been compared. No physical display, audio, input, charging, suspend, storage,
+radio or GPU test has run. No device has been flashed. A stock-configured build
+must not be described as a hardware-validated stock-equivalent firmware image.
