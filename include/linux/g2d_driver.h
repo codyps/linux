@@ -308,6 +308,16 @@ typedef struct {
 	g2d_pixel_seq	pixel_seq;/* pixel sequence of image frame buffer */
 } g2d_image;
 
+typedef struct {
+	unsigned int x;
+	unsigned int y;
+} g2d_coor;
+
+enum color_range {
+	COLOR_RANGE_0_255 = 0,
+	COLOR_RANGE_16_235 = 1,
+};
+
 /* image struct */
 typedef struct {
 	int		 bbuff;
@@ -320,13 +330,15 @@ typedef struct {
 	__u32		 align[3];
 
 	g2d_rect	 clip_rect;
+	g2d_coor	 coor;
 
-	__u32		 gamut;
+	g2d_color_gmt	 gamut;
 	int		 bpremul;
 	__u8		 alpha;
 	g2d_alpha_mode_enh mode;
 	int		 fd;
 	__u32 use_phy_addr;
+	enum color_range color_range;
 } g2d_image_enh;
 
 /*
@@ -473,11 +485,6 @@ struct mixer_para {
 	g2d_ck ck_para;
 };
 
-struct g2d_hardware_version {
-	uint32_t g2d_version;
-	uint32_t chip_version;
-};
-
 #define SUNXI_G2D_IOC_MAGIC 'G'
 #define SUNXI_G2D_IO(nr)          _IO(SUNXI_G2D_IOC_MAGIC, nr)
 #define SUNXI_G2D_IOR(nr, size)   _IOR(SUNXI_G2D_IOC_MAGIC, nr, size)
@@ -507,8 +514,6 @@ typedef enum {
 	G2D_CMD_TASK_DESTROY = SUNXI_G2D_IOW(0x3, unsigned int),
 	G2D_CMD_TASK_GET_PARA = SUNXI_G2D_IOR(0x4, struct mixer_para),
 
-	// qurey g2d hardware version and soc chip version
-	G2D_CMD_QUERY_VERSION = _IOR(SUNXI_G2D_IOC_MAGIC, 0x9F, struct g2d_hardware_version),
 } g2d_cmd;
 
 #endif	/* __G2D_DRIVER_H */

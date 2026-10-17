@@ -2372,10 +2372,3 @@ __u32 mixer_set_reg_base(unsigned long addr)
 	base_addr = addr;
 	return 0;
 }
-
-__u32 g2d_ip_version(void)
-{
-	__u32 reg_val;
-	reg_val = read_wvalue(G2D_IP_VERSION);
-	return reg_val;
-}

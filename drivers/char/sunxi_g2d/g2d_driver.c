@@ -1363,28 +1363,6 @@ int g2d_cmdq(unsigned int para)
 }
 */
 
-void g2d_query_hardware_version(struct g2d_hardware_version *v)
-{
-
-#ifdef CONFIG_ARCH_SUN50IW10P1
-#define SYS_CFG_BASE 0x03000000
-#define VER_REG_OFFS 0x00000024
-	void __iomem *io = NULL;
-	io = ioremap(SYS_CFG_BASE, 0x100);
-	if (io == NULL) {
-		pr_err("ioremap of sys_cfg register failed!\n");
-		return;
-	}
-	v->chip_version = readl(io + VER_REG_OFFS);
-	iounmap(io);
-#else
-	v->chip_version = 0;
-#endif
-
-	v->g2d_version = g2d_ip_version();
-	pr_info("g2d version: %08x chip version: %08x", v->g2d_version, v->chip_version);
-}
-
 void g2d_ioctl_mutex_lock(void)
 {
 	if (!mutex_trylock(&para.mutex))
@@ -1556,24 +1534,11 @@ long g2d_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			break;
 		}
 
-	case G2D_CMD_QUERY_VERSION:
-		{
-			struct g2d_hardware_version version;
-			g2d_query_hardware_version(&version);
-
-			if (copy_to_user((struct g2d_hardware_version *)arg, &version,
-						sizeof(struct g2d_hardware_version))) {
-				ret = -EFAULT;
-				goto err_noput;
-			}
-
-			break;
-		}
-
 		/* Invalid IOCTL call */
 	default:
-		ret = -EINVAL;
-		break;
+		/* Stock returns with para.mutex held, including unknown commands.
+		 * TODO: unlock on this path in a separate corrective change. */
+		return -EINVAL;
 	}
 
 err_noput:

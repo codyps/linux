@@ -141,7 +141,6 @@ __s32	mixer_cmdq(__u32 addr);
 __u32	mixer_premultiply_set(__u32 flag);
 __u32	mixer_micro_block_set(g2d_blt *para);
 
-__u32 g2d_ip_version(void);
 
 #endif	/* __G2D_BSP_H */
 
