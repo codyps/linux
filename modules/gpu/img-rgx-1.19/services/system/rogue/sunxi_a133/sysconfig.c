@@ -41,30 +41,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */ /**************************************************************************/
 
-/*
- * PocketForge sunxi_a133 system layer for DDK 1.19.
- *
- * Ported from sonic_pad_os DDK 1.11 services/system/sunxi/ to the DDK 1.19
- * API.  The sunxi_platform.c platform code (clock, power, DVFS management)
- * is carried forward with only power-callback signature changes.
- *
- * Key 1.11 -> 1.19 changes in this file:
- *   - Static device config / phys-heap / timing structs (no OSAllocZMem)
- *   - PHYS_HEAP_CONFIG uses ui32UsageFlags instead of ui32PhysHeapID
- *   - eDefaultHeap replaces aui32PhysHeapID[] array
- *   - BIF tiling block removed (eBIFTilingMode, pui32BIFTilingHeapConfigs)
- *   - New fields: bHasFBCDCVersion31, bDevicePA0IsValid,
- *     pfnSysDevErrorNotify, pfnHostCacheMaintenance
- *   - pfnHostCacheMaintenance = NULL (safe per M2.A spike tsp-cv7.1.1:
- *     zero callers in DDK common code; ARM64 cache ops go through
- *     OSCPUCache*RangeKM)
- *   - vz_support.h -> vz_vmm_pvz.h
- *   - Power callbacks: PVRSRV_SYS_POWER_STATE + PVRSRV_POWER_FLAGS
- *     (not PVRSRV_DEV_POWER_STATE + IMG_BOOL)
- *   - SUPPORT_PDVFS omitted (optional per M2.A spike tsp-cv7.1.2:
- *     vendor build-options bit 9 = 0; sunxi_platform.c manages DVFS
- *     directly via clk/regulator APIs)
- */
+/* TG3040 system configuration reconstructed from the stock 1.19 module. */
 
 #include "pvrsrv_device.h"
 #include "syscommon.h"
@@ -83,12 +60,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "platform.h"
 
-/* Static device configuration (DDK 1.19 pattern) */
-static RGX_TIMING_INFORMATION	gsRGXTimingInfo;
-static RGX_DATA			gsRGXData;
-static PVRSRV_DEVICE_CONFIG	gsDevices[1];
-static PHYS_HEAP_FUNCTIONS	gsPhysHeapFuncs;
-static PHYS_HEAP_CONFIG		gsPhysHeapConfig[1];
+/* Stock also retains this static config object for the platform back-pointer. */
+static PVRSRV_DEVICE_CONFIG gsDevices[1];
 
 /*
 	CPU to Device physical address translation
@@ -150,130 +123,77 @@ static void SysDevFeatureDepInit(PVRSRV_DEVICE_CONFIG *psDevConfig, IMG_UINT64 u
 	}
 }
 
+static PHYS_HEAP_FUNCTIONS gsPhysHeapFuncs = {
+	.pfnCpuPAddrToDevPAddr = UMAPhysHeapCpuPAddrToDevPAddr,
+	.pfnDevPAddrToCpuPAddr = UMAPhysHeapDevPAddrToCpuPAddr,
+};
+
 PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 {
-	struct device *dev = (struct device *)pvOSDevice;
+	struct device *dev = pvOSDevice;
 	struct sunxi_platform *sunxi_data;
-
-	if (gsDevices[0].pvOSDevice)
-		return PVRSRV_ERROR_INVALID_DEVICE;
+	PVRSRV_DEVICE_CONFIG *psDevConfig;
+	RGX_DATA *psRGXData;
+	RGX_TIMING_INFORMATION *psRGXTimingInfo;
+	PHYS_HEAP_CONFIG *pasPhysHeaps;
 
 	if (sunxi_platform_init(dev))
 		return PVRSRV_ERROR_INIT_FAILURE;
+	sunxi_data = dev->platform_data;
+	dma_set_mask(pvOSDevice, DMA_BIT_MASK(48));
 
-	sunxi_data = (struct sunxi_platform *)dev->platform_data;
+	psDevConfig = OSAllocZMem(sizeof(*psDevConfig) + sizeof(*psRGXData) +
+				 sizeof(*psRGXTimingInfo));
+	if (!psDevConfig)
+		return PVRSRV_ERROR_OUT_OF_MEMORY;
+	psRGXData = (RGX_DATA *)((IMG_CHAR *)psDevConfig + sizeof(*psDevConfig));
+	psRGXTimingInfo = (RGX_TIMING_INFORMATION *)((IMG_CHAR *)psRGXData + sizeof(*psRGXData));
 
-#if defined(__linux__)
-	/* dma_coerce_mask_and_coherent(), not a bare dma_set_mask(): it wires
-	 * dev->dma_mask = &dev->coherent_dma_mask BEFORE writing the value, so
-	 * a platform device whose dma_mask pointer was never populated by the
-	 * bus/of layer cannot be left with an invalid pointer there. A bare
-	 * dma_set_mask() on such a device fails, the old code IGNORED that
-	 * failure, and the first *dev->dma_mask deref oopsed
-	 * (OSPhyContigPagesAlloc, VA 0xffffffff — tsp-mc9m.9, mainline A133).
-	 */
-	if (dma_coerce_mask_and_coherent(pvOSDevice, DMA_BIT_MASK(32)))
-	{
-		dev_err(dev, "pvrsrvkm: failed to set 32-bit DMA mask\n");
-		return PVRSRV_ERROR_INIT_FAILURE;
+	pasPhysHeaps = OSAllocZMem(2 * sizeof(*pasPhysHeaps));
+	if (!pasPhysHeaps) {
+		OSFreeMem(psDevConfig);
+		return PVRSRV_ERROR_OUT_OF_MEMORY;
 	}
-	/* Diagnostic (tsp-mc9m.9 round 5): round-3 faulted on a dma_mask FIELD
-	 * holding the literal mask value 0xffffffff at a site static analysis
-	 * says shares this exact struct device — log the wired state here so a
-	 * later mutation is visible in the boot log. Remove once explained. */
-	dev_info(dev, "pvrsrvkm: dma_mask ptr=%px val=%llx coherent=%llx\n",
-		 dev->dma_mask, dev->dma_mask ? *dev->dma_mask : 0ULL,
-		 dev->coherent_dma_mask);
-#endif
+	pasPhysHeaps[0].eType = PHYS_HEAP_TYPE_UMA;
+	pasPhysHeaps[0].pszPDumpMemspaceName = "SYSMEM";
+	pasPhysHeaps[0].psMemFuncs = &gsPhysHeapFuncs;
+	pasPhysHeaps[0].ui32UsageFlags = PHYS_HEAP_USAGE_GPU_LOCAL;
+	pasPhysHeaps[1].eType = PHYS_HEAP_TYPE_UMA;
+	pasPhysHeaps[1].pszPDumpMemspaceName = "SYSMEM_FW";
+	pasPhysHeaps[1].psMemFuncs = &gsPhysHeapFuncs;
+	pasPhysHeaps[1].ui32UsageFlags = PHYS_HEAP_USAGE_FW_SHARED;
 
-	/*
-	 * Setup information about physical memory heap(s) we have.
-	 * DDK 1.19: single UMA heap with ui32UsageFlags, not PhysHeapsCreate().
-	 */
-	gsPhysHeapFuncs.pfnCpuPAddrToDevPAddr = UMAPhysHeapCpuPAddrToDevPAddr;
-	gsPhysHeapFuncs.pfnDevPAddrToCpuPAddr = UMAPhysHeapDevPAddrToCpuPAddr;
+	psRGXTimingInfo->ui32CoreClockSpeed = clk_get_rate(sunxi_data->clks.core);
+	psRGXTimingInfo->bEnableActivePM = IMG_TRUE;
+	psRGXTimingInfo->bEnableRDPowIsland = IMG_TRUE;
+	psRGXTimingInfo->ui32ActivePMLatencyms = SYS_RGX_ACTIVE_POWER_LATENCY_MS;
+	psRGXData->psRGXTimingInfo = psRGXTimingInfo;
 
-	gsPhysHeapConfig[0].pszPDumpMemspaceName = "SYSMEM";
-	gsPhysHeapConfig[0].eType = PHYS_HEAP_TYPE_UMA;
-	gsPhysHeapConfig[0].psMemFuncs = &gsPhysHeapFuncs;
-	gsPhysHeapConfig[0].hPrivData = NULL;
-	gsPhysHeapConfig[0].ui32UsageFlags = PHYS_HEAP_USAGE_GPU_LOCAL;
-
-	/*
-	 * Setup RGX specific timing data
-	 */
-	gsRGXTimingInfo.ui32CoreClockSpeed = clk_get_rate(sunxi_data->clks.core);
-	if (sunxi_ic_version_ctrl(dev)) {
-		gsRGXTimingInfo.bEnableActivePM = IMG_TRUE;
-	} else {
-		gsRGXTimingInfo.bEnableActivePM = IMG_FALSE;
-	}
-	gsRGXTimingInfo.bEnableRDPowIsland = IMG_TRUE;
-	gsRGXTimingInfo.ui32ActivePMLatencyms = SYS_RGX_ACTIVE_POWER_LATENCY_MS;
-
-	/* Setup RGX data */
-	gsRGXData.psRGXTimingInfo = &gsRGXTimingInfo;
-
-	/* Setup device config */
-	gsDevices[0].pvOSDevice = pvOSDevice;
-	gsDevices[0].pszName = "sunxi";
-	gsDevices[0].pszVersion = NULL;
-	gsDevices[0].pfnSysDevFeatureDepInit = &SysDevFeatureDepInit;
-
-	/* Device setup information */
-	gsDevices[0].sRegsCpuPBase.uiAddr = sunxi_data->reg_base;
-	gsDevices[0].ui32RegsSize = sunxi_data->reg_size;
-	gsDevices[0].ui32IRQ = sunxi_data->irq_num;
-
-	/* DDK 1.19: eDefaultHeap replaces aui32PhysHeapID[] */
-	gsDevices[0].eDefaultHeap = PVRSRV_PHYS_HEAP_GPU_LOCAL;
-
-	/* Physical heaps */
-	gsDevices[0].pasPhysHeaps = gsPhysHeapConfig;
-	gsDevices[0].ui32PhysHeapCount = ARRAY_SIZE(gsPhysHeapConfig);
-
-	/*
-	 * DDK 1.19 fields (not present in 1.11):
-	 * - BIF tiling removed (no eBIFTilingMode / pui32BIFTilingHeapConfigs)
-	 * - bHasFBCDCVersion31: GE8300 does not have FBCDC v3.1
-	 * - bDevicePA0IsValid: device PA 0 is not a valid GPU address
-	 * - pfnSysDevErrorNotify: no system-layer error handler
-	 * - pfnHostCacheMaintenance: NULL is safe for ARM64 Cortex-A53
-	 *   (standard cache hierarchy; cache ops go through OSCPUCache*RangeKM)
-	 */
-	gsDevices[0].bHasFBCDCVersion31 = IMG_FALSE;
-	gsDevices[0].bDevicePA0IsValid = IMG_FALSE;
-	gsDevices[0].pfnSysDevErrorNotify = NULL;
-	gsDevices[0].pfnHostCacheMaintenance = NULL;
-
-	/* Power management */
-	gsDevices[0].pfnPrePowerState = sunxiPrePowerState;
-	gsDevices[0].pfnPostPowerState = sunxiPostPowerState;
-
-	/* No clock frequency callback */
-	gsDevices[0].pfnClockFreqGet = NULL;
-
-	gsDevices[0].hDevData = &gsRGXData;
-	gsDevices[0].hSysData = sunxi_data;
-
-	/*
-	 * PDVFS intentionally omitted (M2.A spike tsp-cv7.1.2: SUPPORT_PDVFS
-	 * is optional; runtime no-op when not defined; vendor build-options
-	 * bit 9 = 0).  GPU frequency/voltage managed externally by
-	 * sunxi_platform.c via clk_set_rate() / regulator framework, matching
-	 * the sonic_pad_os DDK 1.11 pattern.
-	 */
-
+	psDevConfig->pvOSDevice = pvOSDevice;
+	psDevConfig->pszName = "sunxi";
+	psDevConfig->pszVersion = NULL;
+	psDevConfig->pfnSysDevFeatureDepInit = SysDevFeatureDepInit;
+	psDevConfig->sRegsCpuPBase.uiAddr = sunxi_data->reg_base;
+	psDevConfig->ui32RegsSize = sunxi_data->reg_size;
+	psDevConfig->ui32IRQ = sunxi_data->irq_num;
+	psDevConfig->pfnPrePowerState = sunxiPrePowerState;
+	psDevConfig->pfnPostPowerState = sunxiPostPowerState;
+	psDevConfig->hDevData = psRGXData;
+	psDevConfig->hSysData = sunxi_data;
+	psDevConfig->eDefaultHeap = PVRSRV_PHYS_HEAP_GPU_LOCAL;
+	psDevConfig->pasPhysHeaps = pasPhysHeaps;
+	psDevConfig->ui32PhysHeapCount = 2;
+	psDevConfig->pfnClockFreqGet = NULL;
+	*ppsDevConfig = psDevConfig;
 	sunxi_data->config = &gsDevices[0];
-	*ppsDevConfig = &gsDevices[0];
-
 	return PVRSRV_OK;
 }
 
 void SysDevDeInit(PVRSRV_DEVICE_CONFIG *psDevConfig)
 {
 	sunxi_platform_term();
-	psDevConfig->pvOSDevice = NULL;
+	OSFreeMem(psDevConfig->pasPhysHeaps);
+	OSFreeMem(psDevConfig);
 }
 
 PVRSRV_ERROR SysInstallDeviceLISR(IMG_HANDLE hSysData,

@@ -19,7 +19,6 @@
 
 #include "platform.h"
 #include <linux/clk-provider.h>
-#include <linux/reset.h>
 #include <linux/pm_runtime.h>
 #include <linux/pm_opp.h>
 #include <linux/regulator/consumer.h>
@@ -31,16 +30,7 @@
 #include <linux/thermal.h>
 #include "rgxdevice.h"
 
-/*
- * A133 GPU PPU / clock register map. Historically gated on the vendor-BSP-only
- * Kconfig symbol CONFIG_ARCH_SUN50IW10, which does not exist on a mainline
- * kernel (mainline uses the generic CONFIG_ARCH_SUNXI + device tree, with the
- * A133 as sun50i-a100/a133). These are A133 hardware constants and this file
- * only ever builds for PVR_SYSTEM=sunxi_a133, so also accept CONFIG_ARCH_SUNXI
- * to cover the mainline 6.x build; the vendor 4.9 build (both symbols set) is
- * unchanged. (tsp-mc9m.1, mainline 6.x port.)
- */
-#if defined(CONFIG_ARCH_SUN50IW10) || defined(CONFIG_ARCH_SUNXI)
+#if defined(CONFIG_ARCH_SUN50IW10)
 #define PPU_REG_BASE		(0x07001000)
 #define GPU_SYS_REG_BASE		(0x01880000)
 #define GPU_RSTN_REG		(0x0)
@@ -92,40 +82,6 @@ static inline int get_clks_wrap(struct device *dev)
 		dev_err(dev, "failed to get GPU core clock");
 		return -1;
 	}
-
-#ifdef CONFIG_ARCH_SUN50IW10
-	/* Vendor 4.9 (kernel-sunxi-4.9): the GPU bus clock and reset are ABSENT from the
-	 * DT (boot firmware leaves them live). Tolerate genuine ABSENCE as best-effort;
-	 * do NOT mask any other, real acquisition error. */
-	sunxi_data->clks.bus = of_clk_get(dev->of_node, 2);
-	if (IS_ERR(sunxi_data->clks.bus)) {
-		if (PTR_ERR(sunxi_data->clks.bus) != -ENOENT) {
-			dev_err(dev, "failed to get GPU bus clock");
-			return -1;                 /* real error — fail, don't mask */
-		}
-		sunxi_data->clks.bus = NULL;       /* absent on 4.9 — best-effort */
-	}
-
-	sunxi_data->clks.reset = devm_reset_control_get_optional(dev, NULL);
-	if (IS_ERR(sunxi_data->clks.reset)) {
-		dev_err(dev, "failed to get GPU reset handle");
-		return -1;                         /* _optional returns NULL for absent; any err is real */
-	}
-#else
-	/* Mainline (kernel-sunxi-6.x): REQUIRED — gold-reference parity (tsp-mc9m.9).
-	 * BYTE-IDENTICAL to main's current code. */
-	sunxi_data->clks.bus = of_clk_get(dev->of_node, 2);
-	if (IS_ERR_OR_NULL(sunxi_data->clks.bus)) {
-		dev_err(dev, "failed to get GPU bus clock");
-		return -1;
-	}
-
-	sunxi_data->clks.reset = devm_reset_control_get(dev, NULL);
-	if (IS_ERR_OR_NULL(sunxi_data->clks.reset)) {
-		dev_err(dev, "failed to get GPU reset handle");
-		return -1;
-	}
-#endif
 #endif /* defined(CONFIG_OF) */
 
 	return 0;
@@ -133,11 +89,6 @@ static inline int get_clks_wrap(struct device *dev)
 
 static inline long ppu_mode_switch(int mode, bool irq_enable)
 {
-	/* H616-family PPU pokes — compiled out on mainline A133 (gold-reference
-	 * parity, kernel-sunxi-6.x drivers/gpu/drm/img-rogue/system/rgx_sunxi:
-	 * these registers are vendor-BSP H616 addresses; on mainline the genpd
-	 * provider (sun50i-ppu) owns domain sequencing). */
-#if defined(CONFIG_ARCH_SUN50IW10)
 	long val;
 	/* Mask the power_request irq */
 	val = readl(sunxi_data->ppu_reg + PPU_IRQ_MASK_REG);
@@ -152,39 +103,23 @@ static inline long ppu_mode_switch(int mode, bool irq_enable)
 	writel(val, sunxi_data->ppu_reg + PPU_POWER_CTRL_REG);
 
 	return readl(sunxi_data->ppu_reg + PPU_POWER_CTRL_REG);
-#else
-	(void)mode; (void)irq_enable;
-	return 0;
-#endif
 }
 
 static inline void ppu_power_mode(int mode)
 {
-#if defined(CONFIG_ARCH_SUN50IW10)
 	unsigned int val;
 	val = readl(sunxi_data->ppu_reg + GPU_PD_STAT_REG);
 	val &= (~GPU_PD_STAT_MASK);
 	val += mode;
 	writel(val, sunxi_data->ppu_reg + GPU_PD_STAT_REG);
-#else
-	(void)mode;
-#endif
 }
 
 static inline void switch_interl_dfs(int val)
 {
-	/* GPU_CLK_CTRL_REG (0x01880020) is an H616 GPU-SYS register OUTSIDE the
-	 * A133 gpu node reg window (0x01800000+0x80000) — the round-3 readback
-	 * WARN at this site was this write landing on unbacked address space.
-	 * Gold-reference parity: body compiled out on mainline A133. */
-#if defined(CONFIG_ARCH_SUN50IW10)
 	unsigned int val2;
 	writel(val, sunxi_data->gpu_reg);
 	val2 = readl(sunxi_data->gpu_reg);
 	WARN_ON(val != val2);
-#else
-	(void)val;
-#endif
 }
 
 PVRSRV_ERROR sunxiPrePowerState(IMG_HANDLE hSysData,
@@ -275,15 +210,14 @@ loop:
 
 }
 
-void sunxiSetFrequencyDVFS(IMG_UINT32 *ui32Frequency)
+void sunxiSetFrequencyDVFS(IMG_UINT32 ui32Frequency)
 {
 	if (sunxi_data->man_ctrl || sunxi_data->scenectrl)
 		goto dealed;
 	if (!sunxi_data->dvfs)
-		*ui32Frequency = sunxi_data->clk_table[0].true_clk;
+		ui32Frequency = sunxi_data->clk_table[0].true_clk;
 
-	sunxi_set_freq_safe(*ui32Frequency, false);
-	*ui32Frequency = sunxi_data->current_clk->true_clk;
+	sunxi_set_freq_safe(ui32Frequency, false);
 dealed:
 	dvfs_status++;
 	if (dvfs_status%2 == 0)
@@ -319,10 +253,6 @@ static int sunxi_decide_pll(struct sunxi_platform *sunxi)
 	u32 val2;
 	int err;
 	sunxi->pll_clk_rate = 500000000;
-	if (!sunxi->dev || !sunxi->dev->of_node) {
-		pr_err("pvrsrvkm: %s: no of_node for GPU device\n", __func__);
-		return -ENODEV;
-	}
 	err = of_property_read_u32(sunxi->dev->of_node, "pll_rate", &val2);
 	if (!err)
 		sunxi->pll_clk_rate = val2 * 1000;
@@ -659,51 +589,6 @@ static int sunxi_create_debugfs(void)
 }
 #endif /* CONFIG_DEBUG_FS */
 
-static inline int sunxi_get_ic_version(struct device *dev, char *version)
-{
-#define SYS_CFG_BASE 0x03000000
-#define VER_REG_OFFS 0x00000024
-	void __iomem *io = NULL;
-	static char ver = 0xff;
-	/* IC version:
-	 * A/B/C: 0
-	 *     D: 3
-	 *     E: 4
-	 *     F: 5
-	 *        6/7/1/2 to be used in future.
-	 */
-	*version = 0;
-	if (ver == 0xff) {
-		io = ioremap(SYS_CFG_BASE, 0x100);
-		if (io == NULL) {
-			dev_err(dev, "ioremap of sys_cfg register failed!\n");
-			return -1;
-		}
-		*version = (char)(readl(io + VER_REG_OFFS) & 0x7);
-		iounmap(io);
-		ver = *version;
-	} else {
-		*version = ver;
-	}
-	return 0;
-}
-
-bool sunxi_ic_version_ctrl(struct device *dev)
-{
-	char ic_version = 0;
-	sunxi_get_ic_version(dev, &ic_version);
-	/*
-	 * The flow of jtag reset before gpu reset will cause MIPS crash, so we
-	 * will put the domainA, domainB and gpu reset operations to boot0 stage.
-	 * And in kernel stage, we will always keep domainA poweron.
-	 */
-	if (ic_version == 0 || ic_version == 3 || ic_version == 4
-		|| ic_version == 5)
-		return false;
-	return true;
-}
-
-
 int sunxi_platform_init(struct device *dev)
 {
 #if defined(CONFIG_OF)
@@ -711,8 +596,6 @@ int sunxi_platform_init(struct device *dev)
 	struct platform_device *pdev = to_platform_device(dev);
 #endif /* defined(CONFIG_OF) */
 	unsigned int val, volt_val = 0;
-	char ic_version = 0;
-	int err;
 	sunxi_data = (struct sunxi_platform *)kzalloc(sizeof(struct sunxi_platform), GFP_KERNEL);
 	if (!sunxi_data) {
 		dev_err(dev, "failed to get kzalloc sunxi_platform");
@@ -727,8 +610,7 @@ int sunxi_platform_init(struct device *dev)
 	reg_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (reg_res == NULL) {
 		dev_err(dev, "failed to get register data from device tree");
-		err = -1;
-		goto err_free;
+		return -1;
 	}
 	sunxi_data->reg_base = reg_res->start;
 	sunxi_data->reg_size = reg_res->end - reg_res->start + 1;
@@ -737,18 +619,15 @@ int sunxi_platform_init(struct device *dev)
 	sunxi_data->irq_num = platform_get_irq_byname(pdev, "IRQGPU");
 	if (sunxi_data->irq_num < 0) {
 		dev_err(dev, "failed to get irq number from device tree");
-		err = -1;
-		goto err_free;
+		return -1;
 	}
 #endif /* defined(CONFIG_OF) */
 	sunxi_data->regula = regulator_get_optional(dev, "gpu");
 	if (!IS_ERR_OR_NULL(sunxi_data->regula))
 		volt_val = regulator_get_voltage(sunxi_data->regula);
 
-	if (get_clks_wrap(dev)) {
-		err = -1;
-		goto err_free;
-	}
+	if (get_clks_wrap(dev))
+		return -1;
 
 	sunxi_data->power_idle = 1;
 	sunxi_data->dvfs = 1;
@@ -758,66 +637,17 @@ int sunxi_platform_init(struct device *dev)
 	parse_dts(dev, sunxi_data);
 	if (!sunxi_data->independent_power)
 		sunxi_data->dvfs = 0;
-	sunxi_get_ic_version(dev, &ic_version);
 
-	if (!sunxi_ic_version_ctrl(dev)) {
-		sunxi_data->power_idle = 0;
-	}
-	dev_info(dev, "IC version: 0x%08x , power_idle:%d\n", ic_version, sunxi_data->power_idle);
-
-	/* A failed table build leaves clk_table/current_clk NULL, and later
-	 * consumers (sunxiPrePowerState, sunxi_set_freq_safe, debugfs/sysfs)
-	 * dereference them unconditionally — fail the probe cleanly instead
-	 * of arming a latent NULL deref (mainline dtbs differ from vendor;
-	 * absent/malformed "operating-points" must not crash).
-	 */
-	err = sunxi_decide_pll(sunxi_data);
-	if (err) {
-		dev_err(dev, "failed to build GPU clk/OPP table from DT (operating-points absent or invalid): %d\n", err);
-		goto err_free;
-	}
+	sunxi_decide_pll(sunxi_data);
 	spin_lock_init(&sunxi_data->lock);
 	pm_runtime_enable(dev);
 
-	/* Power the GPU genpd domain ON before any register access. This
-	 * vendor glue was written for the 4.9 world where boot firmware
-	 * pre-powers the GPU domain, so it only ever pm_runtime_enable()d
-	 * and poked the PPU registers directly. On mainline the domain is
-	 * driven by genpd (sun50i-ppu, CONFIG_SUN50I_PPU) and starts OFF on
-	 * the FEL/RAM-boot path — nobody else powers it, so the PD_STAT
-	 * read below and the caller's RGX BVNC probe would read a gated,
-	 * zeroed register block (observed live: "CORE_ID register returns
-	 * zero", tsp-mc9m.9). Hold one reference for the life of the load;
-	 * sunxiPrePowerState/sunxiPostPowerState layer their own get/put on
-	 * top for active power management.
-	 */
-	err = pm_runtime_get_sync(dev);
-	if (err < 0) {
-		dev_err(dev, "failed to power GPU domain on (pm_runtime_get_sync): %d\n", err);
-		pm_runtime_disable(dev);
-		goto err_free;
-	}
-
-#if defined(CONFIG_ARCH_SUN50IW10)
-	/* Vendor-BSP-only PPU/GPU-SYS windows — see the body-guard comments on
-	 * ppu_mode_switch/switch_interl_dfs. Not mapped on mainline A133. */
 	sunxi_data->ppu_reg = ioremap(PPU_REG_BASE, PPU_REG_SIZE);
 	sunxi_data->gpu_reg = ioremap(GPU_CLK_CTRL_REG, 4);
-#endif
-
-	/* Bring the GPU register bus alive BEFORE any register access (the RGX
-	 * BVNC probe runs right after this returns): deassert RST_BUS_GPU and
-	 * enable the bus clock, then the pll/core clocks — gold-reference
-	 * ordering. The vendor 4.9 chain inherited both live from firmware, so
-	 * this glue historically skipped them; mainline gates unused clocks and
-	 * leaves the reset asserted, which read as CORE_ID==0 in rounds 2-3. */
-	reset_control_deassert(sunxi_data->clks.reset);
-	clk_prepare_enable(sunxi_data->clks.bus);
 	clk_prepare_enable(sunxi_data->clks.pll);
 	clk_prepare_enable(sunxi_data->clks.core);
 	sunxi_data->power_on = 0;
 
-#if defined(CONFIG_ARCH_SUN50IW10)
 	val = readl(sunxi_data->ppu_reg + GPU_PD_STAT_REG);
 	WARN_ON((val & GPU_PD_STAT_MASK) != GPU_PD_STAT_3D_MODE);
 	if (!sunxi_data->soft_mode) {
@@ -827,9 +657,6 @@ int sunxi_platform_init(struct device *dev)
 		val = ppu_mode_switch(POWER_CTRL_MODE_SW, true);
 		WARN_ON((val & POWER_CTRL_MODE_MASK) != POWER_CTRL_MODE_SW);
 	}
-#else
-	(void)val;
-#endif
 	sunxi_create_debugfs();
 	if (sysfs_create_group(&dev->kobj, &scene_ctrl_attribute_group)) {
 		dev_err(dev, "sunxi sysfs group creation failed!\n");
@@ -847,71 +674,11 @@ int sunxi_platform_init(struct device *dev)
 		volt_val, clk_get_rate(sunxi_data->clks.core));
 
 	return 0;
-
-err_free:
-	/* Probe failed: free the platform data and clear the stale pointer so
-	 * a re-probe/module reload does not see a dangling dev->platform_data
-	 * (PR#8 review follow-up). */
-	kfree(sunxi_data);
-	sunxi_data = NULL;
-	dev->platform_data = NULL;
-	return err;
 }
 
 void sunxi_platform_term(void)
 {
-	/* Reverse of init ordering: clocks off (core, pll, bus), reset back
-	 * asserted, then release ALL runtime-PM references and hand the GPU
-	 * power domain back so a module reload (insmod -> rmmod -> insmod)
-	 * re-initialises from a cold-boot-equivalent state.
-	 *
-	 * TWO runtime-PM references are outstanding here, not one:
-	 *   - the init reference taken by pm_runtime_get_sync() in
-	 *     sunxi_platform_init() (held for the life of the load); and
-	 *   - the operational reference taken by sunxiPrePowerState() on the
-	 *     first power-on. sunxiPostPowerState() only drops that reference
-	 *     when power_idle is set, and sunxi_ic_version_ctrl() forces
-	 *     power_idle=0 on this silicon (IC versions 0/3/4/5, "always keep
-	 *     domainA poweron"), so it is still held at teardown with
-	 *     sunxi_data->power_on == 1.
-	 * Dropping only the init reference (the previous behaviour) left the
-	 * device runtime-active with the sun50i-ppu GPU power domain still
-	 * voted on and pm_runtime_disable() called while active; the driver-core
-	 * genpd detach on unbind then could not return the domain to a cold
-	 * state, so the next insmod's HW bring-up in sunxi_platform_init()
-	 * failed and SysDevInit() returned PVRSRV_ERROR_INIT_FAILURE
-	 * (tsp-mc9m.15.5). The first insmod's device-init was unaffected because
-	 * it starts from the genuine cold power-on state.
-	 *
-	 * pm_runtime_disable() first, then pm_runtime_put_noidle() +
-	 * pm_runtime_set_suspended(): the *_noidle put and the explicit
-	 * set_suspended reconcile the usage count and drop the domain vote
-	 * WITHOUT re-entering the services runtime-suspend callback
-	 * (pvr_pm_runtime_suspend -> sPVRSRVDeviceSuspend), which dereferences
-	 * the device node that PVRSRV is in the middle of destroying when it
-	 * calls SysDevDeInit -> sunxi_platform_term. A pm_runtime_put_sync()
-	 * here would trip that callback on a half-torn-down device node.
-	 */
-	clk_disable_unprepare(sunxi_data->clks.core);
-	clk_disable_unprepare(sunxi_data->clks.pll);
-	clk_disable_unprepare(sunxi_data->clks.bus);
-	reset_control_assert(sunxi_data->clks.reset);
-
 	pm_runtime_disable(sunxi_data->dev);
-	if (sunxi_data->power_on) {
-		pm_runtime_put_noidle(sunxi_data->dev);
-		sunxi_data->power_on = 0;
-	}
-	pm_runtime_put_noidle(sunxi_data->dev);
-	pm_runtime_set_suspended(sunxi_data->dev);
-
-	/* pll/core/bus come from of_clk_get() (not devm_clk_get) — release the
-	 * handles so they do not leak across reload cycles. The reset handle is
-	 * devm-managed and is freed by the driver core on unbind. */
-	clk_put(sunxi_data->clks.core);
-	clk_put(sunxi_data->clks.pll);
-	clk_put(sunxi_data->clks.bus);
-
 	debugfs_remove_recursive(sunxi_debugfs);
 	sysfs_remove_group(&sunxi_data->dev->kobj, &scene_ctrl_attribute_group);
 	kfree(sunxi_data);

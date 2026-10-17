@@ -11,10 +11,6 @@
  * GNU General Public License for more details.
  *
  * Author: Albert Yu <yuxyun@allwinnertech.com>
- *
- * Ported to DDK 1.19 by PocketForge:
- *   Power callbacks updated from PVRSRV_DEV_POWER_STATE + IMG_BOOL
- *   to PVRSRV_SYS_POWER_STATE + PVRSRV_POWER_FLAGS.
  */
 
 #ifndef _PLATFORM_H_
@@ -30,13 +26,9 @@ enum scene_ctrl_cmd {
 	SCENE_CTRL_PERFORMANCE_MODE
 };
 
-struct reset_control;
-
 struct sunxi_clks {
 	struct clk *pll;
 	struct clk *core;
-	struct clk *bus;
-	struct reset_control *reset;
 };
 
 struct sunxi_clks_table {
@@ -71,16 +63,10 @@ struct sunxi_platform {
 	PVRSRV_DEVICE_CONFIG   *config;
 };
 
-bool sunxi_ic_version_ctrl(struct device *dev);
 int sunxi_platform_init(struct device *dev);
 void sunxi_platform_term(void);
-void sunxiSetFrequencyDVFS(IMG_UINT32 *ui32Frequency);
+void sunxiSetFrequencyDVFS(IMG_UINT32 ui32Frequency);
 void sunxiSetVoltageDVFS(IMG_UINT32 ui32Volt);
-
-/*
- * DDK 1.19 power callbacks: PVRSRV_SYS_POWER_STATE + PVRSRV_POWER_FLAGS
- * (DDK 1.11 used PVRSRV_DEV_POWER_STATE + IMG_BOOL bForced)
- */
 PVRSRV_ERROR sunxiPrePowerState(IMG_HANDLE hSysData,
 					 PVRSRV_SYS_POWER_STATE eNewPowerState,
 					 PVRSRV_SYS_POWER_STATE eCurrentPowerState,
