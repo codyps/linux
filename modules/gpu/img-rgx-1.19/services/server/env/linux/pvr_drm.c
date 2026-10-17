@@ -110,25 +110,6 @@ static int pvr_pm_resume(struct device *dev)
 }
 
 
-static int pvr_pm_runtime_suspend(struct device *dev)
-{
-	struct drm_device *ddev = dev_get_drvdata(dev);
-	struct pvr_drm_private *priv = ddev->dev_private;
-
-	sPVRSRVDeviceSuspend(priv->dev_node);
-	return 0;
-}
-
-static int pvr_pm_runtime_resume(struct device *dev)
-{
-	struct drm_device *ddev = dev_get_drvdata(dev);
-	struct pvr_drm_private *priv = ddev->dev_private;
-
-	sPVRSRVDeviceResume(priv->dev_node);
-	return 0;
-}
-
-
 /* Executed before the hibernation image is created. This callback allows to
  * preserve the content of the video RAM into the system RAM which in turn
  * is then stored into a disk.
@@ -196,8 +177,6 @@ const struct dev_pm_ops pvr_pm_ops = {
 	 */
 	.suspend = pvr_pm_suspend,
 	.resume = pvr_pm_resume,
-        .runtime_suspend = pvr_pm_runtime_suspend,
-        .runtime_resume = pvr_pm_runtime_resume,
 
 
 	/* Hibernation (suspend-to-disk/S4) callbacks.
@@ -353,7 +332,6 @@ void pvr_drm_unload(struct drm_device *ddev)
 
 	PVRSRVDeviceDeinit(priv->dev_node);
 
-	pm_runtime_disable(ddev->dev);
 	mutex_lock(&g_device_mutex);
 	PVRSRVCommonDeviceDestroy(priv->dev_node);
 	mutex_unlock(&g_device_mutex);

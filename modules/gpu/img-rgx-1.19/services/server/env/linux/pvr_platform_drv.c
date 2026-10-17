@@ -85,10 +85,8 @@ static struct drm_driver pvr_drm_platform_driver;
  */
 #define MAX_DEVICES 16
 
-static unsigned int pvr_num_devices = 1;
-static struct platform_device **pvr_devices;
-
 #if defined(NO_HARDWARE)
+static unsigned int pvr_num_devices = 1;
 static int pvr_num_devices_set(const char *val,
 			       const struct kernel_param *param)
 {
@@ -155,30 +153,6 @@ static int pvr_devices_register(void)
 	return 0;
 }
 #endif
-
-static void pvr_devices_unregister(void)
-{
-#if defined(MODULE) && !defined(PVR_LDM_PLATFORM_PRE_REGISTERED)
-	unsigned int i;
-
-	/*
-	 * pvr_devices_register() is disabled in this fork (the GPU platform
-	 * device comes from the device tree, not a self-registered synthetic
-	 * device), so pvr_devices is never allocated. The upstream
-	 * BUG_ON(!pvr_devices) here made every rmmod fatal (kernel BUG in
-	 * pvr_exit); treat "nothing registered" as a no-op instead.
-	 * (tsp-mc9m.10, mainline 6.x port.)
-	 */
-	if (!pvr_devices)
-		return;
-
-	for (i = 0; i < pvr_num_devices && pvr_devices[i]; i++)
-		platform_device_unregister(pvr_devices[i]);
-
-	kfree(pvr_devices);
-	pvr_devices = NULL;
-#endif /* defined(MODULE) && !defined(PVR_LDM_PLATFORM_PRE_REGISTERED) */
-}
 
 static int pvr_probe(struct platform_device *pdev)
 {
@@ -345,7 +319,6 @@ static void __exit pvr_exit(void)
 {
 	DRM_DEBUG_DRIVER("\n");
 
-	pvr_devices_unregister();
 	platform_driver_unregister(&pvr_platform_driver);
 	PVRSRVDriverDeinit();
 

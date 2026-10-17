@@ -461,32 +461,6 @@ int PVRSRVDeviceResume(struct drm_device *psDev)
 	return 0;
 }
 
-int sPVRSRVDeviceSuspend(PVRSRV_DEVICE_NODE *psDeviceNode)
-{
-#if defined(PVR_SYSTEM_SF7110)
-	struct sf7110_cfg *sft = sys_get_privdata();
-
-	if (sft->runtime_suspend != NULL)
-		sft->runtime_suspend(NULL);
-#else
-	PVR_UNREFERENCED_PARAMETER(psDeviceNode);
-#endif
-	return 0;
-}
-
-int sPVRSRVDeviceResume(PVRSRV_DEVICE_NODE *psDeviceNode)
-{
-#if defined(PVR_SYSTEM_SF7110)
-	struct sf7110_cfg *sft = sys_get_privdata();
-
-	if (sft->runtime_resume != NULL)
-		sft->runtime_resume(NULL);
-#else
-	PVR_UNREFERENCED_PARAMETER(psDeviceNode);
-#endif
-	return 0;
-}
-
 /**************************************************************************/ /*!
 @Function     PVRSRVDeviceServicesOpen
 @Description  Services device open.
@@ -546,7 +520,6 @@ int PVRSRVDeviceServicesOpen(PVRSRV_DEVICE_NODE *psDeviceNode,
 
 	if (psDeviceNode->eDevState == PVRSRV_DEVICE_STATE_CREATED)
 	{
-		PVRSRVSetSystemPowerState(psDeviceNode->psDevConfig, PVRSRV_SYS_POWER_STATE_ON);
 		eError = PVRSRVCommonDeviceInitialise(psDeviceNode);
 		if (eError != PVRSRV_OK)
 		{
