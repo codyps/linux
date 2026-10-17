@@ -1082,7 +1082,7 @@ void sunxi_mmc_init_priv_v4p6x(struct sunxi_mmc_host *host,
 		host->des_addr_shift = 2;
 	}
 
-	if (mmc_readl(host, REG_SMCV) == SMHC_VERSION_V5P3) {
+	if (mmc_readl(host, REG_SMCV) >= SMHC_VERSION_V5P3) {
 		host->des_addr_shift = 2;
 	}
 

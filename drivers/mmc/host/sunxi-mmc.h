@@ -41,8 +41,12 @@
 #ifndef __SUNXI_MMC_H__
 #define __SUNXI_MMC_H__
 
+/* Stock diagnostics carry these original source locations. */
+#define SUNXI_MMC_STOCK_ERR(line, dev, fmt, func, source_line) \
+	dev_err(dev, fmt, func, line)
+
 #define DRIVER_NAME "sunxi-mmc"
-#define DRIVER_RIVISION "v3.48 2020-9-15 16:01"
+#define DRIVER_RIVISION "v3.53 2021-05-31 11:18"
 #define DRIVER_VERSION "SD/MMC/SDIO Host Controller Driver(" DRIVER_RIVISION ")"
 
 #if defined CONFIG_FPGA_V4_PLATFORM || defined CONFIG_FPGA_V7_PLATFORM

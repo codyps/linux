@@ -120,9 +120,7 @@ static void sunxi_timerout_handle(struct work_struct *work)
 	host = container_of(work, struct sunxi_mmc_host, sunxi_timerout_work.work);
 	spin_lock_irqsave(&host->lock, flags);
 	dev_err(mmc_dev(host->mmc), "timer timout\n");
-	queue_delayed_work(system_wq, \
-			&host->sunxi_timerout_work, \
-			SUNXI_TRANS_TIMEOUT);
+
 	if (host->mrq && !host->manual_stop_mrq
 	     && !host->mrq_busy && !host->mrq_retry){
 		rint = mmc_readl(host, REG_RINTR);
@@ -442,7 +440,7 @@ static void sunxi_mmc_send_manual_stop(struct sunxi_mmc_host *host,
 
 	if (!(ri & SDXC_COMMAND_DONE) || (ri & SDXC_INTERRUPT_ERROR_BIT)) {
 		dev_err(mmc_dev(host->mmc),
-			"send  manual stop command failed\n");
+			"send  manual stop command failed %x\n", (unsigned int)(ri & SDXC_INTERRUPT_ERROR_BIT));
 		if (req->stop)
 			req->stop->resp[0] = -ETIMEDOUT;
 	} else {
@@ -852,6 +850,25 @@ static irqreturn_t sunxi_mmc_handle_do_bottom_half(void *dev_id)
 
 	if (mrq_stop) {
 		dev_err(mmc_dev(mmc), "data error, sending stop command\n");
+		/***reset host***/
+		spin_lock_irqsave(&host->lock, iflags);
+		sunxi_mmc_regs_save(host);
+		spin_unlock_irqrestore(&host->lock, iflags);
+		/**if gating/reset protect itself,so no lock use host->lock**/
+		sunxi_mmc_bus_clk_en(host, 0);
+		sunxi_mmc_bus_clk_en(host, 1);
+		sunxi_mmc_regs_restore(host);
+		dev_dbg(mmc_dev(host->mmc),
+			"no device retry:host reset and reg recover ok\n");
+
+		/***use sunxi_mmc_oclk_en  to update clk***/
+		rval = host->sunxi_mmc_oclk_en(host, 1);
+		dev_err(mmc_dev(host->mmc),
+		"stop:recover\n");
+		if (rval) {
+			SUNXI_MMC_STOCK_ERR(869, mmc_dev(mmc), "retry:update clk failed %s %d\n",
+					__func__, __LINE__);
+		}
 
 		/*
 		 * We will never have more than one outstanding request,
@@ -878,7 +895,7 @@ static irqreturn_t sunxi_mmc_handle_do_bottom_half(void *dev_id)
 		/***update clk***/
 		rval = host->sunxi_mmc_oclk_en(host, 1);
 		if (rval) {
-			dev_err(mmc_dev(mmc), "reset:update clk failed %s %d\n",
+			SUNXI_MMC_STOCK_ERR(898, mmc_dev(mmc), "reset:update clk failed %s %d\n",
 				__func__, __LINE__);
 		}
 
@@ -901,16 +918,61 @@ static irqreturn_t sunxi_mmc_handle_do_bottom_half(void *dev_id)
 		struct mmc_data *data = mrq_retry->data;
 		cmd = (mrq_retry->sbc && !host->sunxi_mmc_opacmd23) ? mrq_retry->sbc : mrq_retry->cmd;
 
-		dev_info(mmc_dev(host->mmc), "*****retry:start*****\n");
+		if (host->ctl_spec_cap & SUNXI_SC_EN_TIMEOUT_DETECT)
+			cancel_delayed_work_sync(&host->sunxi_timerout_work);
+
+		dev_info(mmc_dev(host->mmc), "retry:start\n");
 
 		/***Recover device state and stop host state machine****/
-		if (data)
+		if (data) {
+			dev_err(mmc_dev(mmc), "retry:stop\n");
+			/***reset host***/
+			spin_lock_irqsave(&host->lock, iflags);
+			sunxi_mmc_regs_save(host);
+			spin_unlock_irqrestore(&host->lock, iflags);
+			/**if gating/reset protect itself,so no lock use host->lock**/
+			sunxi_mmc_bus_clk_en(host, 0);
+			sunxi_mmc_bus_clk_en(host, 1);
+			sunxi_mmc_regs_restore(host);
+			dev_dbg(mmc_dev(host->mmc),
+			"no device retry:host reset and reg recover ok\n");
+
+			/***use sunxi_mmc_oclk_en  to update clk***/
+			rval = host->sunxi_mmc_oclk_en(host, 1);
+			dev_err(mmc_dev(host->mmc),
+			"retry:stop recover\n");
+			if (rval) {
+				SUNXI_MMC_STOCK_ERR(944, mmc_dev(mmc), "retry:update clk failed %s %d\n",
+					__func__, __LINE__);
+			}
+
 			sunxi_mmc_send_manual_stop(host, mrq_retry);
+		}
 
 		/*****If device not exit,no need to retry*****/
 		/**to do:how to deal with data3 detect better here**/
 		if (!mmc_gpio_get_cd(mmc)) {
 			dev_err(mmc_dev(mmc), "retry:no device\n");
+			/***reset host***/
+			spin_lock_irqsave(&host->lock, iflags);
+			sunxi_mmc_regs_save(host);
+			spin_unlock_irqrestore(&host->lock, iflags);
+			/**if gating/reset protect itself,so no lock use host->lock**/
+			sunxi_mmc_bus_clk_en(host, 0);
+			sunxi_mmc_bus_clk_en(host, 1);
+			sunxi_mmc_regs_restore(host);
+			dev_dbg(mmc_dev(host->mmc),
+			"no device retry:host reset and reg recover ok\n");
+
+			/***use sunxi_mmc_oclk_en  to update clk***/
+			rval = host->sunxi_mmc_oclk_en(host, 1);
+			dev_err(mmc_dev(host->mmc),
+			"no device retry:recover ck\n");
+			if (rval) {
+				SUNXI_MMC_STOCK_ERR(971, mmc_dev(mmc), "retry:update clk failed %s %d\n",
+					__func__, __LINE__);
+			}
+
 			goto retry_giveup;
 		}
 
@@ -953,7 +1015,7 @@ static irqreturn_t sunxi_mmc_handle_do_bottom_half(void *dev_id)
 		/***use sunxi_mmc_oclk_en  to update clk***/
 		rval = host->sunxi_mmc_oclk_en(host, 1);
 		if (rval) {
-			dev_err(mmc_dev(mmc), "retry:update clk failed %s %d\n",
+			SUNXI_MMC_STOCK_ERR(1017, mmc_dev(mmc), "retry:update clk failed %s %d\n",
 				__func__, __LINE__);
 			goto retry_giveup;
 		}
@@ -974,6 +1036,9 @@ static irqreturn_t sunxi_mmc_handle_do_bottom_half(void *dev_id)
 		host->wait_dma = wait_dma;
 		host->retry_cnt++;
 		host->errno_retry = 0;
+		if (host->ctl_spec_cap & SUNXI_SC_EN_TIMEOUT_DETECT)
+			queue_delayed_work(system_wq, &host->sunxi_timerout_work,
+					   SUNXI_TRANS_TIMEOUT);
 		sunxi_mmc_exe_cmd(host, cmd, cmd_val, imask);
 		dev_info(mmc_dev(host->mmc), "*****retry:re-send cmd*****\n");
 /******************************************************/
@@ -984,7 +1049,7 @@ reupdate_clk:
 		/**update clk for other cmd from upper layer to be sent****/
 		rval = host->sunxi_mmc_oclk_en(host, 1);
 		if (rval)
-			dev_err(mmc_dev(mmc), "retry:update clk failed %s %d\n",
+			SUNXI_MMC_STOCK_ERR(1052, mmc_dev(mmc), "retry:update clk failed %s %d\n",
 				__func__, __LINE__);
 retry_giveup:
 		dev_err(mmc_dev(host->mmc), "retry:give up\n");
@@ -1677,6 +1742,9 @@ static void sunxi_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
 	}
 
 	sunxi_mmc_parse_cmd(mmc, cmd, &cmd_val, &imask, &wait_dma);
+
+	if (host->ctl_spec_cap & SUNXI_SC_EN_TIMEOUT_DETECT)
+		cancel_delayed_work_sync(&host->sunxi_timerout_work);
 
 	dev_dbg(mmc_dev(mmc), "cmd %d(%08x) arg %x ie 0x%08x len %d\n",
 		cmd_val & 0x3f, cmd_val, cmd->arg, imask,

@@ -17,6 +17,11 @@
 #ifndef __SUNXI_MMC_V4P5X_H__
 #define __SUNXI_MMC_V4P5X_H__
 
+/* Stock sunxi_mmc_clk_set_rate_for_sdmmc_v4p5x compares bus_width to
+ * literal 8, although MMC_BUS_WIDTH_8 is 3. Preserve the emitted clock
+ * selection; TODO: correct the enum comparison in a separate behavior fix.
+ */
+
 void sunxi_mmc_init_priv_v4p5x(struct sunxi_mmc_host *host,
 			       struct platform_device *pdev, int phy_index);
 void sunxi_mmc_init_priv_v4p6x(struct sunxi_mmc_host *host,
