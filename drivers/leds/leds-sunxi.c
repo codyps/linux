@@ -1194,15 +1194,15 @@ static int sunxi_ledc_complete(struct sunxi_led *led)
 	unsigned long flags = 0;
 	unsigned long timeout = 0;
 
-	timeout = wait_event_timeout(led->wait, led->result, 5*HZ);
+	timeout = wait_event_timeout(led->wait, led->result, HZ);
 	if (timeout == 0) {
-		LED_ERR("led xfer timeout\n");
+		SUNXI_LED_STOCK_ERR(1212, "led xfer timeout\n");
 		return -ETIME;
 	} else if (led->result == RESULT_ERR) {
 		return -ECOMM;
 	}
 
-	dprintk(DEBUG_INFO, "xfer complete\n");
+	SUNXI_LED_STOCK_LOG(1218, DEBUG_INFO, "xfer complete\n");
 
 	spin_lock_irqsave(&led->lock, flags);
 	led->result = 0;

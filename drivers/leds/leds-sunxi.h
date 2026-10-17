@@ -25,6 +25,15 @@
 #define RESULT_COMPLETE	1
 #define RESULT_ERR	2
 
+/* Retain decoded TG3040 #860 diagnostic arguments without synthetic #line
+ * locations. Definitions live here so comments do not shift the .c sites. */
+#define SUNXI_LED_STOCK_ERR(line, fmt, arg...) \
+	pr_err("%s()%d - "fmt, __func__, line, ##arg)
+#define SUNXI_LED_STOCK_LOG(line, level_mask, fmt, arg...) do { \
+	if (unlikely(debug_mask & level_mask)) \
+		pr_warn("%s()%d - "fmt, __func__, line, ##arg); \
+} while (0)
+
 #define SUNXI_LEDC_REG_BASE_ADDR 0x06700000
 
 #define SUNXI_MAX_LED_COUNT 1024
