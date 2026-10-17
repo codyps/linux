@@ -22,6 +22,9 @@ struct __lcd_panel {
 };
 
 extern struct __lcd_panel *panel_array[];
+#ifdef CONFIG_LCD_SUPPORT_OTM1289A
+extern struct __lcd_panel otm1289a_panel;
+#endif
 
 struct sunxi_lcd_drv {
 	struct sunxi_disp_source_ops src_ops;

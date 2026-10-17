@@ -74,3 +74,5 @@ disp-objs += lcd/panels.o lcd/lcd_source.o lcd/default_panel.o \
 		lcd/WilliamLcd.o lcd/bp101wx1-206.o lcd/k101im2qa04.o \
 		lcd/lt9611.o
 disp-objs += $(obj_low)
+
+disp-$(CONFIG_LCD_SUPPORT_OTM1289A) += lcd/otm1289a.o

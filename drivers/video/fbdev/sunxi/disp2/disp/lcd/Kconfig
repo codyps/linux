@@ -186,3 +186,7 @@ config LCD_SUPPORT_LT9611
 	default y
 	---help---
 		If you want to support lt9611 bridge panel for display driver, select it.
+
+config LCD_SUPPORT_OTM1289A
+	bool "TrimUI multi-panel driver recovered from Brick #860"
+	default n
