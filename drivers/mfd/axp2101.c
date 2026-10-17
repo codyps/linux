@@ -1609,18 +1609,7 @@ static struct mfd_cell axp2101_cells[] = {
 	{
 		.name = "axp2101-regulator",
 	},
-	{
-		.name = "axp2101-bat-power-supply",
-		.of_compatible = "x-powers,axp2101-bat-power-supply",
-		.resources = axp2101_bat_power_supply_resources,
-		.num_resources = ARRAY_SIZE(axp2101_bat_power_supply_resources),
-	},
-	{
-		.name = "axp2101-usb-power-supply",
-		.of_compatible = "x-powers,axp2101-usb-power-supply",
-		.resources = axp2101_usb_power_supply_resources,
-		.num_resources = ARRAY_SIZE(axp2101_usb_power_supply_resources),
-	},
+	/* Stock #860 uses the combined supply child; no split battery/USB cells. */
 	{
 		.name = "axp2101-power-supply",
 		.of_compatible = "x-powers,axp2101-power-supply",
