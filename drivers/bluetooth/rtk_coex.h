@@ -1,23 +1,3 @@
-/*
-*
-*  Realtek Bluetooth USB driver
-*
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with this program; if not, write to the Free Software
-*  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-*/
 #include <net/bluetooth/hci_core.h>
 #include <linux/list.h>
 
@@ -35,8 +15,6 @@
 #define CONNECT_PORT        30001
 #define CONNECT_PORT_WIFI   30000
 
-#define BTCOEX
-
 #define invite_req          "INVITE_REQ"
 #define invite_rsp          "INVITE_RSP"
 #define attend_req          "ATTEND_REQ"
@@ -49,7 +27,6 @@
 #define HCI_EV_LE_META			                        0x3e
 #define HCI_EV_LE_CONN_COMPLETE		                    0x01
 #define HCI_EV_LE_CONN_UPDATE_COMPLETE	                0x03
-#define HCI_EV_LE_ENHANCED_CONN_COMPLETE    0x0a
 
 //vendor cmd to fw
 #define HCI_VENDOR_ENABLE_PROFILE_REPORT_COMMAND        0xfc18
@@ -128,8 +105,8 @@
 #define HCI_CMD_PREAMBLE_SIZE           3
 #define PAN_PACKET_COUNT                5
 
-#define STREAM_TO_UINT16(u16, p) {u16 = ((uint16_t)(*(p)) + (((uint16_t)(*((p) + 1))) << 8)); (p) += 2;}
-#define UINT16_TO_STREAM(p, u16) {*(p)++ = (uint8_t)(u16); *(p)++ = (uint8_t)((u16) >> 8);}
+#define STREAM_TO_UINT16(u16, p) {u16 = ((uint16_t)(*(p)) + (((uint16_t)(*((p) + 1))) << 8)); (p) += 2; }
+#define UINT16_TO_STREAM(p, u16) {*(p)++ = (uint8_t)(u16); *(p)++ = (uint8_t)((u16) >> 8); }
 
 #define PSM_SDP     0x0001
 #define PSM_RFCOMM  0x0003
@@ -177,8 +154,6 @@ typedef struct rtl_hci_conn {
 	int8_t profile_refcount[8];
 } rtk_conn_prof, *prtk_conn_prof;
 
-#ifdef RTB_SOFTWARE_MAILBOX
-
 struct rtl_btinfo {
 	u8 cmd;
 	u8 len;
@@ -206,7 +181,6 @@ struct rtl_btinfo_ctl {
 	uint8_t polling_time;
 	uint8_t autoreport_enable;
 };
-#endif /* RTB_SOFTWARE_MAILBOX */
 
 #define MAX_LEN_OF_HCI_EV	32
 #define NUM_RTL_HCI_EV		32
@@ -229,25 +203,19 @@ struct rtl_coex_struct {
 	struct list_head conn_hash;	//hash for connections
 	struct list_head profile_list;	//hash for profile info
 	struct hci_dev *hdev;
-#ifdef RTB_SOFTWARE_MAILBOX
 	struct socket *udpsock;
 	struct sockaddr_in addr;
 	struct sockaddr_in wifi_addr;
 	struct timer_list polling_timer;
-#endif
 	struct timer_list a2dp_count_timer;
 	struct timer_list pan_count_timer;
 	struct timer_list hogp_count_timer;
-#ifdef RTB_SOFTWARE_MAILBOX
 	struct workqueue_struct *sock_wq;
-	struct delayed_work sock_work;
-#endif
 	struct workqueue_struct *fw_wq;
+	struct delayed_work sock_work;
 	struct delayed_work fw_work;
 	struct delayed_work l2_work;
-#ifdef RTB_SOFTWARE_MAILBOX
 	struct sock *sk;
-#endif
 	struct urb *urb;
 	spinlock_t spin_lock_sock;
 	spinlock_t spin_lock_profile;
@@ -261,7 +229,6 @@ struct rtl_coex_struct {
 	uint8_t ispairing;
 	uint8_t isinquirying;
 	uint8_t ispaging;
-#ifdef RTB_SOFTWARE_MAILBOX
 	uint8_t wifi_state;
 	uint8_t autoreport;
 	uint8_t polling_enable;
@@ -269,13 +236,10 @@ struct rtl_coex_struct {
 	uint8_t piconet_id;
 	uint8_t mode;
 	uint8_t afh_map[10];
-#endif
 	uint16_t hci_reversion;
 	uint16_t lmp_subversion;
-#ifdef RTB_SOFTWARE_MAILBOX
 	uint8_t wifi_on;
 	uint8_t sock_open;
-#endif
 	unsigned long cmd_last_tx;
 
 	/* hci ev buff */

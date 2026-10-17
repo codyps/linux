@@ -14,7 +14,6 @@ obj-$(CONFIG_BT_HCIBTUART)	+= btuart_cs.o
 
 obj-$(CONFIG_BT_HCIBTUSB)	+= btusb.o
 obj-$(CONFIG_BT_RTKBTUSB)	+= rtk_btusb.o
-obj-$(CONFIG_BT_RTKBTUSB)	+= rtk_coex.o
 obj-$(CONFIG_BT_HCIBTSDIO)	+= btsdio.o
 
 obj-$(CONFIG_BT_INTEL)		+= btintel.o
@@ -49,8 +48,8 @@ hci_uart-$(CONFIG_BT_HCIUART_AG6XX)	+= hci_ag6xx.o
 hci_uart-$(CONFIG_BT_HCIUART_MRVL)	+= hci_mrvl.o
 hci_uart-objs				:= $(hci_uart-y)
 
+hci_uart-y += rtk_coex.o
 hci_uart-$(CONFIG_BT_HCIUART_RTL3WIRE) += hci_rtk_h5.o
-hci_uart-$(CONFIG_BT_HCIUART_RTL3WIRE) += rtk_coex.o
 ccflags-y += -D__CHECK_ENDIAN__
 ccflags-y += -Wno-discarded-qualifiers
 ccflags-y += -Wno-unused-function
