@@ -48,7 +48,7 @@ Source provenance
 * pocketforge-os/gpu-km-tsp fbb38f3f712a9b151f7482450bafd939b8269ae8:
   DDK 1.19 port; retain modules/gpu/img-rgx-1.19/PROVENANCE.md.
 * licy007/myir-semidrive-linux c96cc8f345885b92d84ac52fc917b4329f8ee791:
-  related DDK 1.18 display-class component and generated Configure2 bridge.
+  related DDK 1.18 display-class, generic-handle and command-queue components.
   This component's private ABI matches stock; the stock module reports 1.19.
 
 Reconstruction evidence
@@ -76,7 +76,16 @@ Reconstruction evidence
 * GPU reconstruction restores the generic handle backend, memory tests,
   display-class ABI, Configure2 bridge and 63-byte annotation limit. All 141
   sampled display-class and 133 sampled memory layouts match stock DWARF.
-  1904 of 2063 comparable pvrsrvkm function bodies match; work remains.
+  Recovered A133 platform, DVFS, DMA, heap configuration, command-queue context,
+  memory mapping and client-connect initialization. 1953 of 2063 comparable
+  pvrsrvkm bodies and all 18 dc_sunxi bodies match raw code/relocations.
+  Separate emulated checks cover configuration, power and memory lifecycles;
+  compiler/diagnostic differences and unverified GPU code remain.
+* Video capture now matches all 86 vin_io and 554 vin_v4l2 comparable bodies.
+  Four format tables match recursively, including RGB888/BGR888 descriptors.
+* Wi-Fi serial-derived MAC addressing and AP restart diagnostics are restored.
+  1060 emulated MAC cases and 8336 arithmetic/CMAC/spill cases match stock.
+  The CMAC checks use a cipher stub and do not verify the AES primitive.
 * Public exFAT matches every uniquely comparable function body after restoring
   inode layout. Static comparison accounts for address relocation instructions;
   it does not establish equality of every referenced data object.
@@ -93,7 +102,9 @@ but reorganizes implementation and private AES routines. LED arrays and effect
 lengths are bounded for oversized inputs, regulator errors are checked, and
 teardown releases resources. Valid tested sysfs outputs preserve stock behavior.
 
-Some Wi-Fi, GPU, video-capture and other kernel code/data differences remain.
+Some GPU and other kernel code/data differences remain. Wi-Fi instruction
+residuals are separately classified and tested; whole-driver equivalence and
+every referenced video-capture object have not been established.
 Camera sensor and PMIC checks above cover selected functions and tables, not
 every referenced object. Stock battery SOC handling after a failed voltage
 sample can read uninitialized values; that undefined case is excluded from the

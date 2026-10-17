@@ -114,3 +114,31 @@ DC files are adapted to this tree's PhysHeapAcquireByID and void PMR-finalize
 interfaces. Restoring the callback signatures also removes the extra heap-ID
 argument from the Sunxi buffer-allocation callback. All 141 shared layouts
 compared in the DC compilation unit match the stock module's DWARF.
+
+
+Further TG3040 comparisons recover client-connect device initialization, the
+stock module power lifecycle, two A133 clocks (PLL/core), a value-taking DVFS
+frequency callback, a 48-bit DMA mask, and two dynamically allocated physical
+heaps. The platform layer was restored from the related Creality source and
+adapted to the DDK 1.19 callback API; the heap/configuration initialization was
+reconstructed from stock ARM64 code. The unusual static gsDevices platform
+back-pointer is preserved because the shipped relocations identify that object.
+
+The private SCP_CONTEXT has a trailing synchronization-requester ID in stock.
+The matching scp.c from the same pinned Semidrive tree restores the 48-byte
+context and its allocation/error paths. This is another component import, not
+a change to the reported DDK version. Original file hashes are retained in the
+companion workbench's semidrive-gpu-source.json.
+
+Stock uses vm_map_ram/vm_unmap_ram, non-NULL device DMA-mask accesses, a live
+RGXSetComputeContextProperty bridge implementation, RGB565 enum 86, and bounded
+one/two-buffer allocation in the Sunxi display driver. The port's TRACK_FW_BOOT
+option is absent in stock. Whole-union zero-initializers in six power-command
+routines are also absent; the recovered code writes the active command fields
+and leaves unused bytes unspecified, as the shipped implementation does.
+
+After these changes, 1953/2063 comparable pvrsrvkm function bodies and all 18
+comparable dc_sunxi bodies match raw code/relocations. The companion workbench
+separates diagnostic-line/address differences, differential execution checks,
+and unresolved code differences. Matching instruction bodies does not establish
+all referenced-data, firmware or physical hardware behavior.
