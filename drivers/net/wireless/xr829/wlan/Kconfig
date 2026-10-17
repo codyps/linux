@@ -64,13 +64,6 @@ config XRADIO_NOMAL_SUSPEND_FORCE
 	  but need to check it is support on your platform.
 	  If unsure, say N.
 
-config XRADIO_CFG80211
-	bool "Use special cfg80211 for xradio"
-	depends on XRADIO
-	default y
-	---help---
-	  Say Y if you want to use special cfg80211 for xradio
-
 menu "Driver debug features"
 	depends on XRADIO
 

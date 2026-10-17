@@ -6,6 +6,12 @@ menuconfig XRMAC
 
 if XRMAC
 
+config XRMAC_RC_DEFAULT
+	string "Default XRadio rate control algorithm"
+	default "minstrel_ht"
+	help
+	  Built-in fallback rate control algorithm for the XRadio MAC.
+
 config XRMAC_RC_PID
 	bool "XRMAC_RC_PID"
 	depends on XRMAC

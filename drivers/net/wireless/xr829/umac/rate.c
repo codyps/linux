@@ -24,7 +24,7 @@ struct rate_control_alg {
 static LIST_HEAD(rate_ctrl_algs);
 static DEFINE_MUTEX(rate_ctrl_mutex);
 
-static char *ieee80211_default_rc_algo = "minstrel_ht";
+static char *ieee80211_default_rc_algo = CONFIG_XRMAC_RC_DEFAULT;
 module_param(ieee80211_default_rc_algo, charp, 0644);
 MODULE_PARM_DESC(ieee80211_default_rc_algo,
 		 "Default rate control algorithm for mac80211 to use");
@@ -120,8 +120,8 @@ ieee80211_rate_control_ops_get(const char *name)
 		ops = ieee80211_try_rate_control_ops_get(ieee80211_default_rc_algo);
 
 	/* try built-in one if specific alg requested but not found */
-	if (!ops && strlen("minstrel_ht"))
-		ops = ieee80211_try_rate_control_ops_get("minstrel_ht");
+	if (!ops && strlen(CONFIG_XRMAC_RC_DEFAULT))
+		ops = ieee80211_try_rate_control_ops_get(CONFIG_XRMAC_RC_DEFAULT);
 	kernel_param_unlock(THIS_MODULE);
 
 	return ops;
