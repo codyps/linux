@@ -236,51 +236,6 @@ static int gpu_pd_power_off(struct generic_pm_domain *domain)
 	return 0;
 }
 
-static inline int sunxi_get_ic_version(char *version)
-{
-#define SYS_CFG_BASE 0x03000000
-#define VER_REG_OFFS 0x00000024
-	void __iomem *io = NULL;
-	static char ver = 0xff;
-	/* IC version:
-	 * A/B/C: 0
-	 *     D: 3
-	 *     E: 4
-	 *     F: 5
-	 *        6/7/1/2 to be used in future.
-	 */
-	*version = 0;
-	if (ver == 0xff) {
-		io = ioremap(SYS_CFG_BASE, 0x100);
-		if (io == NULL) {
-			pr_err("%s: ioremap of sys_cfg register failed!\n",
-				__func__);
-			return -1;
-		}
-		*version = (char)(readl(io + VER_REG_OFFS) & 0x7);
-		iounmap(io);
-		ver = *version;
-	} else {
-		*version = ver;
-	}
-	return 0;
-}
-
-static bool sunxi_ic_version_ctrl(void)
-{
-	char ic_version = 0;
-	sunxi_get_ic_version(&ic_version);
-	/*
-	 * The flow of jtag reset before gpu reset will cause MIPS crash, so we
-	 * will put the domainA, domainB and gpu reset operations to boot0
-	 * stage. And in kernel stage, we will always keep domainA poweron.
-	 */
-	if (ic_version == 0 || ic_version == 3 || ic_version == 4 ||
-		ic_version == 5)
-		return false;
-	return true;
-}
-
 static const struct of_device_id gpu_pm_domain_of_match[] __initconst = {
 	{
 		.compatible = "allwinner,gpu-pd",
@@ -322,17 +277,11 @@ static __init int gpu_pm_init_power_domain(void)
 		goto err_regmap;
 	}
 
-	/*
-	 * Gpu driver will not set and unset ppu runtime counter, it
-	 * can make sure the poweron and poweroff function of ppu
-	 * must not be called by kernel stage.
-	 * Besides the ppu driver will only recept event to control domain B
-	 * power status in kernel stage.
+	/* #860 installs both callbacks without consulting the silicon revision.
+	 * TODO: newer BSPs suppress these reset flows for a GPU/MIPS erratum.
 	 */
-	if (sunxi_ic_version_ctrl()) {
-		pd->genpd.power_off = gpu_pd_power_off;
-		pd->genpd.power_on = gpu_pd_power_on;
-	}
+	pd->genpd.power_off = gpu_pd_power_off;
+	pd->genpd.power_on = gpu_pd_power_on;
 	pd->genpd.flags = GENPD_FLAG_PM_CLK;
 	pd->irq = of_irq_get(np, 0);
 	if (pd->irq == -EPROBE_DEFER) {
@@ -357,12 +306,14 @@ static __init int gpu_pm_init_power_domain(void)
 		goto err_irq;
 	}
 
+	/* TODO: stock ignores clock prepare/enable errors and continues setup. */
 	clk_prepare_enable(pd->clk);
 	spin_lock_init(&ppu_lock);
 
 	regmap_write(pd->regmap, PPU_CFG_REG, POWER_CTRL_MODE_SW);
 	regmap_write(pd->regmap, PPU_IRQ_MASK_REG, 0x1);
 
+	/* TODO: stock also ignores register writes and domain/provider errors. */
 	pm_genpd_init(&pd->genpd, NULL, true);
 	of_genpd_add_provider_simple(np, &pd->genpd);
 
