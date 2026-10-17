@@ -20,6 +20,20 @@
 #ifndef _CEDAR_VE_H_
 #define _CEDAR_VE_H_
 
+/* Stock A133 probe leaves regs_csi NULL, yet ioctl 0x710 reads it. The
+ * CSI helper also divides byte offsets by pointer size while indexing u32
+ * registers, halving offsets on arm64. Keep both shipped behaviors.
+ * TODO: map/validate CSI registers and use a 32-bit stride in a separate fix.
+ * The probe wrapper ignores init failures; removal only unprepares its clock.
+ * TODO: propagate failures and review cleanup/clock balancing separately.
+ */
+
+enum VE_INTERRUPT_RESULT_TYPE {
+	VE_INT_RESULT_TYPE_TIMEOUT = 0,
+	VE_INT_RESULT_TYPE_NORMAL = 1,
+	VE_INT_RESULT_TYPE_CSI_RESET = 2,
+};
+
 enum IOCTL_CMD {
 	IOCTL_UNKOWN = 0x100,
 	IOCTL_GET_ENV_INFO,
@@ -71,7 +85,19 @@ enum IOCTL_CMD {
 	IOCTL_PROC_INFO_STOP,
 	IOCTL_POWER_SETUP = 0x700,
 	IOCTL_POWER_SHUTDOWN,
+
+	IOCTL_GET_CSI_ONLINE_INFO = 0x710,
+	IOCTL_CLEAR_EN_INT_FLAG = 0x711,
 };
+
+typedef struct CsiOnlineRelatedInfo {
+	unsigned int csi_frame_start_cnt;
+	unsigned int csi_frame_done_cnt;
+	unsigned int csi_cur_frame_addr;
+	unsigned int csi_pre_frame_addr;
+	unsigned int csi_line_start_cnt;
+	unsigned int csi_line_done_cnt;
+} CsiOnlineRelatedInfo;
 
 #define VE_LOCK_VDEC        0x01
 #define VE_LOCK_VENC        0x02

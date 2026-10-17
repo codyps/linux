@@ -20,6 +20,11 @@
 #ifndef _CEDAR_VE_H_
 #define _CEDAR_VE_H_
 
+/* Stock ioctl 0x710 is unsafe on an A133 with no CSI mapping. Keep the
+ * recovered command/structure ABI; TODO: validate the mapping in a separate
+ * driver behavior fix before exposing this ioctl to untrusted callers.
+ */
+
 enum IOCTL_CMD {
 	IOCTL_UNKOWN = 0x100,
 	IOCTL_GET_ENV_INFO,
@@ -71,7 +76,25 @@ enum IOCTL_CMD {
 	IOCTL_PROC_INFO_STOP,
 	IOCTL_POWER_SETUP = 0x700,
 	IOCTL_POWER_SHUTDOWN,
+
+	IOCTL_GET_CSI_ONLINE_INFO = 0x710,
+	IOCTL_CLEAR_EN_INT_FLAG = 0x711,
 };
+
+enum VE_INTERRUPT_RESULT_TYPE {
+	VE_INT_RESULT_TYPE_TIMEOUT = 0,
+	VE_INT_RESULT_TYPE_NORMAL = 1,
+	VE_INT_RESULT_TYPE_CSI_RESET = 2,
+};
+
+typedef struct CsiOnlineRelatedInfo {
+	unsigned int csi_frame_start_cnt;
+	unsigned int csi_frame_done_cnt;
+	unsigned int csi_cur_frame_addr;
+	unsigned int csi_pre_frame_addr;
+	unsigned int csi_line_start_cnt;
+	unsigned int csi_line_done_cnt;
+} CsiOnlineRelatedInfo;
 
 #define VE_LOCK_VDEC        0x01
 #define VE_LOCK_VENC        0x02

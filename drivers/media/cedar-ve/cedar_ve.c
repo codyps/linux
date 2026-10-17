@@ -88,7 +88,7 @@ struct regulator *regu;
 #endif
 
 /* #define CEDAR_DEBUG */
-#define cedar_ve_printk(level, msg...) printk(level "cedar_ve: " msg)
+#define cedar_ve_printk(level, msg...) printk(level "VE: " msg)
 
 #define VE_LOGD(fmt, arg...) printk(KERN_DEBUG"VE: "fmt"\n", ##arg)
 #define VE_LOGI(fmt, arg...) printk(KERN_INFO"VE: "fmt"\n", ##arg)
@@ -193,7 +193,9 @@ struct clk *ve_power_gating;
 
 struct iomap_para {
 	volatile char *regs_macc;
-	volatile char *regs_avs;
+	volatile char *regs_sys_cfg;
+	volatile unsigned int *regs_ccmu;
+	volatile unsigned int *regs_csi;
 };
 
 static DECLARE_WAIT_QUEUE_HEAD(wait_ve);
@@ -216,7 +218,7 @@ struct cedar_dev {
 	u32 de_irq_flag;					/* flag of video decoder engine irq generated */
 	u32 de_irq_value;					/* value of video decoder engine irq		  */
 	u32 en_irq_flag;					/* flag of video encoder engine irq generated */
-	u32 en_irq_value;					/* value of video encoder engine irq		  */
+	enum VE_INTERRUPT_RESULT_TYPE en_irq_value;					/* value of video encoder engine irq		  */
 	u32 irq_has_enable;
 	u32 ref_count;
 	int last_min_freq;
@@ -224,8 +226,6 @@ struct cedar_dev {
 	u32 jpeg_irq_flag;					  /* flag of video jpeg dec irq generated */
 	u32 jpeg_irq_value;					  /* value of video jpeg dec  irq */
 
-	volatile unsigned int *sram_bass_vir;
-	volatile unsigned int *clk_bass_vir;
 
 	unsigned int *prcm_bass_vir;/*  PRCM: power reset clock management*/
 
@@ -288,24 +288,28 @@ static irqreturn_t VideoEngineInterupt(int irq, void *dev)
 	volatile int val;
 	int modual_sel;
 	unsigned int interrupt_enable;
-	struct iomap_para addrs = cedar_devp->iomap_addrs;
+	unsigned int isp_error_interrupt_en = 0; /*online mode: csi reset/overwrite interrupt enable*/
+	struct iomap_para addrs		    = cedar_devp->iomap_addrs;
+	unsigned long isp_ctrl_reg;
+	unsigned int isp_ctrl_values = 0;
+	unsigned int isp_status      = 0;
 
 	modual_sel = readl(addrs.regs_macc + 0);
 #ifdef CONFIG_ARCH_SUN3IW1P1
-	if (modual_sel&0xa) {
-		if ((modual_sel&0xb) == 0xb) {
+	if (modual_sel & 0xa) {
+		if ((modual_sel & 0xb) == 0xb) {
 			/*jpg enc*/
 			ve_int_status_reg = (unsigned long)(addrs.regs_macc + 0xb00 + 0x1c);
-			ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0xb00 + 0x14);
-			interrupt_enable = readl((void *)ve_int_ctrl_reg) & (0x7);
-			status = readl((void *)ve_int_status_reg);
+			ve_int_ctrl_reg   = (unsigned long)(addrs.regs_macc + 0xb00 + 0x14);
+			interrupt_enable  = readl((void *)ve_int_ctrl_reg) & (0x7);
+			status		  = readl((void *)ve_int_status_reg);
 			status &= 0xf;
 		} else {
 			/*isp*/
 			ve_int_status_reg = (unsigned long)(addrs.regs_macc + 0xa00 + 0x10);
-			ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0xa00 + 0x08);
-			interrupt_enable = readl((void *)ve_int_ctrl_reg) & (0x1);
-			status = readl((void *)ve_int_status_reg);
+			ve_int_ctrl_reg   = (unsigned long)(addrs.regs_macc + 0xa00 + 0x08);
+			interrupt_enable  = readl((void *)ve_int_ctrl_reg) & (0x1);
+			status		  = readl((void *)ve_int_status_reg);
 			status &= 0x1;
 		}
 
@@ -313,55 +317,73 @@ static irqreturn_t VideoEngineInterupt(int irq, void *dev)
 			/*disable interrupt*/
 			if ((modual_sel & 0xb) == 0xb) {
 				ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0xb00 + 0x14);
-				val = readl((void *)ve_int_ctrl_reg);
+				val		= readl((void *)ve_int_ctrl_reg);
 				writel(val & (~0x7), (void *)ve_int_ctrl_reg);
-			} else{
+			} else {
 				ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0xa00 + 0x08);
-				val = readl((void *)ve_int_ctrl_reg);
+				val		= readl((void *)ve_int_ctrl_reg);
 				writel(val & (~0x1), (void *)ve_int_ctrl_reg);
 			}
 
-			cedar_devp->en_irq_value = 1;	/*hx modify 2011-8-1 16:08:47*/
-			cedar_devp->en_irq_flag = 1;
+			cedar_devp->en_irq_value = 1; /*hx modify 2011-8-1 16:08:47*/
+			cedar_devp->en_irq_flag  = 1;
 			/*any interrupt will wake up wait queue*/
-			wake_up(&wait_ve);		  /*ioctl*/
+			wake_up(&wait_ve); /*ioctl*/
 		}
 	}
 #else
-	if (modual_sel&(3<<6)) {
-		if (modual_sel&(1<<7)) {
+	/*tmp_cnt++;*/
+	/*cedar_ve_printk(KERN_WARNING, "enc_modual = %d, cnt = %d\n", modual_sel&(3<<6), tmp_cnt);*/
+	if (modual_sel & (3 << 6)) {
+		if (modual_sel & (1 << 7)) {
 			/*avc enc*/
 			ve_int_status_reg = (unsigned long)(addrs.regs_macc + 0xb00 + 0x1c);
-			ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0xb00 + 0x14);
-			interrupt_enable = readl((void *)ve_int_ctrl_reg) & (0x7);
-			status = readl((void *)ve_int_status_reg);
+			ve_int_ctrl_reg   = (unsigned long)(addrs.regs_macc + 0xb00 + 0x14);
+			interrupt_enable  = readl((void *)ve_int_ctrl_reg) & (0x7);
+			status		  = readl((void *)ve_int_status_reg);
 			status &= 0xf;
+
+			isp_ctrl_reg    = (unsigned long)(addrs.regs_macc + 0xa00 + 0x08);
+			isp_ctrl_values = readl((void *)isp_ctrl_reg);
+			/* bit06 */
+			isp_error_interrupt_en = (isp_ctrl_values >> 6) & 0x1;
+
+			ve_int_status_reg = (unsigned long)(addrs.regs_macc + 0xa00 + 0x10);
+			isp_status	= readl((void *)ve_int_status_reg);
+			isp_status &= 0x10;
 		} else {
 			/*isp*/
 			ve_int_status_reg = (unsigned long)(addrs.regs_macc + 0xa00 + 0x10);
-			ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0xa00 + 0x08);
-			interrupt_enable = readl((void *)ve_int_ctrl_reg) & (0x1);
-			status = readl((void *)ve_int_status_reg);
+			ve_int_ctrl_reg   = (unsigned long)(addrs.regs_macc + 0xa00 + 0x08);
+			interrupt_enable  = readl((void *)ve_int_ctrl_reg) & (0x1);
+			status		  = readl((void *)ve_int_status_reg);
 			status &= 0x1;
 		}
-
+		/*cedar_ve_printk(KERN_WARNING, "ve_status = %d, int_en = %d,isp_status = %d, int_en = %d , cnt = %d\n",status, interrupt_enable, isp_status, isp_error_interrupt_en, tmp_cnt);*/
 		/*modify by fangning 2013-05-22*/
-		if (status && interrupt_enable) {
+		if ((status && interrupt_enable) || (isp_status && isp_error_interrupt_en)) {
 			/*disable interrupt*/
 			/*avc enc*/
-			if (modual_sel&(1<<7)) {
+			if (isp_status && isp_error_interrupt_en) {
+				isp_ctrl_reg = (unsigned long)(addrs.regs_macc + 0xa00 + 0x08);
+				val	  = readl((void *)isp_ctrl_reg);
+				writel(val & (~0x40), (void *)isp_ctrl_reg);
+				val = readl((void *)isp_ctrl_reg);
+			}
+
+			if (modual_sel & (1 << 7)) {
 				ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0xb00 + 0x14);
-				val = readl((void *)ve_int_ctrl_reg);
+				val		= readl((void *)ve_int_ctrl_reg);
 				writel(val & (~0x7), (void *)ve_int_ctrl_reg);
 			} else {
 				/*isp*/
 				ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0xa00 + 0x08);
-				val = readl((void *)ve_int_ctrl_reg);
+				val		= readl((void *)ve_int_ctrl_reg);
 				writel(val & (~0x1), (void *)ve_int_ctrl_reg);
 			}
 			/*hx modify 2011-8-1 16:08:47*/
 			cedar_devp->en_irq_value = 1;
-			cedar_devp->en_irq_flag = 1;
+			cedar_devp->en_irq_flag  = 1;
 			/*any interrupt will wake up wait queue*/
 			wake_up(&wait_ve);
 		}
@@ -369,22 +391,21 @@ static irqreturn_t VideoEngineInterupt(int irq, void *dev)
 #endif
 
 #if ((defined CONFIG_ARCH_SUN8IW8P1) || (defined CONFIG_ARCH_SUN50I) || \
-	(defined CONFIG_ARCH_SUN8IW12P1) || (defined CONFIG_ARCH_SUN8IW17P1) \
-	|| (defined CONFIG_ARCH_SUN8IW16P1) || (defined CONFIG_ARCH_SUN8IW19P1))
-	if (modual_sel&(0x20)) {
+     (defined CONFIG_ARCH_SUN8IW12P1) || (defined CONFIG_ARCH_SUN8IW17P1) || (defined CONFIG_ARCH_SUN8IW16P1) || (defined CONFIG_ARCH_SUN8IW19P1))
+	if (modual_sel & (0x20)) {
 		ve_int_status_reg = (unsigned long)(addrs.regs_macc + 0xe00 + 0x1c);
-		ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0xe00 + 0x14);
-		interrupt_enable = readl((void *)ve_int_ctrl_reg) & (0x38);
+		ve_int_ctrl_reg   = (unsigned long)(addrs.regs_macc + 0xe00 + 0x14);
+		interrupt_enable  = readl((void *)ve_int_ctrl_reg) & (0x38);
 
 		status = readl((void *)ve_int_status_reg);
 
-		if ((status&0x7) && interrupt_enable) {
+		if ((status & 0x7) && interrupt_enable) {
 			/*disable interrupt*/
 			val = readl((void *)ve_int_ctrl_reg);
 			writel(val & (~0x38), (void *)ve_int_ctrl_reg);
 
 			cedar_devp->jpeg_irq_value = 1;
-			cedar_devp->jpeg_irq_flag = 1;
+			cedar_devp->jpeg_irq_flag  = 1;
 
 			/*any interrupt will wake up wait queue*/
 			wake_up(&wait_ve);
@@ -397,49 +418,47 @@ static irqreturn_t VideoEngineInterupt(int irq, void *dev)
 		/*estimate Which video format*/
 		switch (modual_sel) {
 		case 0: /*mpeg124*/
-			ve_int_status_reg = (unsigned long)
-				(addrs.regs_macc + 0x100 + 0x1c);
-			ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0x100 + 0x14);
-			interrupt_enable = readl((void *)ve_int_ctrl_reg) & (0x7c);
+			ve_int_status_reg = (unsigned long)(addrs.regs_macc + 0x100 + 0x1c);
+			ve_int_ctrl_reg   = (unsigned long)(addrs.regs_macc + 0x100 + 0x14);
+			interrupt_enable  = readl((void *)ve_int_ctrl_reg) & (0x7c);
 			break;
 		case 1: /*h264*/
-			ve_int_status_reg = (unsigned long)
-				(addrs.regs_macc + 0x200 + 0x28);
-			ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0x200 + 0x20);
-			interrupt_enable = readl((void *)ve_int_ctrl_reg) & (0xf);
+			ve_int_status_reg = (unsigned long)(addrs.regs_macc + 0x200 + 0x28);
+			ve_int_ctrl_reg   = (unsigned long)(addrs.regs_macc + 0x200 + 0x20);
+			interrupt_enable  = readl((void *)ve_int_ctrl_reg) & (0xf);
 			break;
 		case 2: /*vc1*/
 			ve_int_status_reg = (unsigned long)(addrs.regs_macc +
-				0x300 + 0x2c);
-			ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0x300 + 0x24);
+							    0x300 + 0x2c);
+			ve_int_ctrl_reg  = (unsigned long)(addrs.regs_macc + 0x300 + 0x24);
 			interrupt_enable = readl((void *)ve_int_ctrl_reg) & (0xf);
 			break;
 		case 3: /*rv*/
-			ve_int_status_reg = (unsigned long)
-				(addrs.regs_macc + 0x400 + 0x1c);
-			ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0x400 + 0x14);
-			interrupt_enable = readl((void *)ve_int_ctrl_reg) & (0xf);
+			ve_int_status_reg = (unsigned long)(addrs.regs_macc + 0x400 + 0x1c);
+			ve_int_ctrl_reg   = (unsigned long)(addrs.regs_macc + 0x400 + 0x14);
+			interrupt_enable  = readl((void *)ve_int_ctrl_reg) & (0xf);
 			break;
 
 		case 4: /*hevc*/
-			ve_int_status_reg = (unsigned long)
-				(addrs.regs_macc + 0x500 + 0x38);
-			ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0x500 + 0x30);
-			interrupt_enable = readl((void *)ve_int_ctrl_reg) & (0xf);
+			ve_int_status_reg = (unsigned long)(addrs.regs_macc + 0x500 + 0x38);
+			ve_int_ctrl_reg   = (unsigned long)(addrs.regs_macc + 0x500 + 0x30);
+			interrupt_enable  = readl((void *)ve_int_ctrl_reg) & (0xf);
 			break;
 
 		default:
 			ve_int_status_reg = (unsigned long)(addrs.regs_macc + 0x100 + 0x1c);
-			ve_int_ctrl_reg = (unsigned long)(addrs.regs_macc + 0x100 + 0x14);
-			interrupt_enable = readl((void *)ve_int_ctrl_reg) & (0xf);
-			cedar_ve_printk(KERN_WARNING, "ve mode :%x " "not defined!\n", modual_sel);
+			ve_int_ctrl_reg   = (unsigned long)(addrs.regs_macc + 0x100 + 0x14);
+			interrupt_enable  = readl((void *)ve_int_ctrl_reg) & (0xf);
+			cedar_ve_printk(KERN_WARNING, "ve mode :%x "
+						      "not defined!\n",
+					modual_sel);
 			break;
 		}
 
 		status = readl((void *)ve_int_status_reg);
 
 		/*modify by fangning 2013-05-22*/
-		if ((status&0xf) && interrupt_enable) {
+		if ((status & 0xf) && interrupt_enable) {
 			/*disable interrupt*/
 			if (modual_sel == 0) {
 				val = readl((void *)ve_int_ctrl_reg);
@@ -450,7 +469,7 @@ static irqreturn_t VideoEngineInterupt(int irq, void *dev)
 			}
 
 			cedar_devp->de_irq_value = 1;
-			cedar_devp->de_irq_flag = 1;
+			cedar_devp->de_irq_flag  = 1;
 			/*any interrupt will wake up wait queue*/
 			wake_up(&wait_ve);
 		}
@@ -684,34 +703,34 @@ static int setVeFreqByReg(int fq)
 	int dst_freq = fq;
 	unsigned int offset = (0x58/sizeof(unsigned int *));
 
-	reg = readl(cedar_devp->clk_bass_vir + offset);
+	reg = readl(cedar_devp->iomap_addrs.regs_ccmu + offset);
 
 	/*set VE freq*/
-	reg = readl(cedar_devp->clk_bass_vir + offset);
+	reg = readl(cedar_devp->iomap_addrs.regs_ccmu + offset);
 	reg &= 0x7ffa0000;
 	fq = (fq/6) - 1;
 
 	/* step 0  lock enable write 0  */
 	reg = reg & (~(1 << 29));
-	writel(reg, cedar_devp->clk_bass_vir + offset);
+	writel(reg, cedar_devp->iomap_addrs.regs_ccmu + offset);
 
 	/* step 1 write clock parameter*/
-	reg = readl(cedar_devp->clk_bass_vir + offset);
+	reg = readl(cedar_devp->iomap_addrs.regs_ccmu + offset);
 	reg = reg | (fq<<8) | (1<<1) | (1<<0);
 
-	writel(reg, cedar_devp->clk_bass_vir + offset);
+	writel(reg, cedar_devp->iomap_addrs.regs_ccmu + offset);
 
 	/* step 2 write PLL enable */
-	reg = readl(cedar_devp->clk_bass_vir + offset);
+	reg = readl(cedar_devp->iomap_addrs.regs_ccmu + offset);
 	reg = reg | (1<<31);
-	writel(reg, cedar_devp->clk_bass_vir + offset);
+	writel(reg, cedar_devp->iomap_addrs.regs_ccmu + offset);
 
 	/* step 3  lock enable write 1 */
-	reg = readl(cedar_devp->clk_bass_vir + offset);
+	reg = readl(cedar_devp->iomap_addrs.regs_ccmu + offset);
 	reg = reg | (1<<29);
-	writel(reg, cedar_devp->clk_bass_vir + offset);
+	writel(reg, cedar_devp->iomap_addrs.regs_ccmu + offset);
 
-	reg = readl(cedar_devp->clk_bass_vir + offset);
+	reg = readl(cedar_devp->iomap_addrs.regs_ccmu + offset);
 
 	/* step 4  check bit28(lock) is 1 or not  */
 	do {
@@ -721,11 +740,11 @@ static int setVeFreqByReg(int fq)
 			break;
 		}
 		udelay(5);
-		reg = readl(cedar_devp->clk_bass_vir + offset);
+		reg = readl(cedar_devp->iomap_addrs.regs_ccmu + offset);
 		reg = reg & (1 << 28);
 	} while (reg == 0);
 
-	reg = readl(cedar_devp->clk_bass_vir + offset);
+	reg = readl(cedar_devp->iomap_addrs.regs_ccmu + offset);
 
 	VE_LOGW("ve freq reg = %x, dstFq = %d MHz, cout = %d, max = %d\n",
 			reg, dst_freq, count, max_count);
@@ -836,6 +855,34 @@ static int ve_power_manage_shutdown(void)
 
 #endif
 
+static int get_csi_online_related_info(CsiOnlineRelatedInfo *pcsi_info)
+{
+	unsigned long flags;
+	unsigned int reg_value = 0;
+	unsigned int ptr_len   = sizeof(unsigned int *);
+
+	spin_lock_irqsave(&cedar_spin_lock, flags);
+
+	reg_value		       = readl(cedar_devp->iomap_addrs.regs_csi + 0x50 / ptr_len);
+	pcsi_info->csi_frame_start_cnt = reg_value & 0xFF;
+	pcsi_info->csi_frame_done_cnt  = (reg_value & 0xFF0000) >> 16;
+
+	reg_value		      = 0;
+	reg_value		      = readl(cedar_devp->iomap_addrs.regs_csi + 0x54 / ptr_len);
+	pcsi_info->csi_line_start_cnt = reg_value & 0x3FFF; /* [0:13] */
+	pcsi_info->csi_line_done_cnt  = (reg_value & 0x3FFF0000) >> 16; /* [16:29] */
+
+	pcsi_info->csi_cur_frame_addr = readl(cedar_devp->iomap_addrs.regs_csi + 0x58 / ptr_len);
+	pcsi_info->csi_pre_frame_addr = readl(cedar_devp->iomap_addrs.regs_csi + 0x5C / ptr_len);
+
+	spin_unlock_irqrestore(&cedar_spin_lock, flags);
+
+	pcsi_info->csi_cur_frame_addr = pcsi_info->csi_cur_frame_addr << 2;
+	pcsi_info->csi_pre_frame_addr = pcsi_info->csi_pre_frame_addr << 2;
+
+	return 0;
+}
+
 static long compat_cedardev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	long  ret = 0;
@@ -848,10 +895,26 @@ static long compat_cedardev_ioctl(struct file *filp, unsigned int cmd, unsigned 
 #endif
 	unsigned long flags;
 	struct ve_info *info;
+	u32 cur_irq_value = 0;
 
 	info = filp->private_data;
 
 	switch (cmd) {
+	case IOCTL_GET_CSI_ONLINE_INFO: {
+		CsiOnlineRelatedInfo mCsiInfo;
+
+		memset(&mCsiInfo, 0, sizeof(CsiOnlineRelatedInfo));
+
+		get_csi_online_related_info(&mCsiInfo);
+
+		if (copy_to_user((void __user *)arg, &mCsiInfo, sizeof(struct CsiOnlineRelatedInfo))) {
+			VE_LOGE("get csi online info: copy_to_user error\n");
+			return -EFAULT;
+		}
+
+		break;
+	}
+
 	case IOCTL_PROC_INFO_COPY:
 	{
 		int i = 0;
@@ -1106,20 +1169,25 @@ static long compat_cedardev_ioctl(struct file *filp, unsigned int cmd, unsigned 
 
 			return cedar_devp->de_irq_value;
 
-		case IOCTL_WAIT_VE_EN:
+	case IOCTL_CLEAR_EN_INT_FLAG:
+		spin_lock_irqsave(&cedar_spin_lock, flags);
+		cedar_devp->en_irq_flag  = 0;
+		cedar_devp->en_irq_value = VE_INT_RESULT_TYPE_TIMEOUT;
+		spin_unlock_irqrestore(&cedar_spin_lock, flags);
+		/*cedar_ve_printk(KERN_WARNING, "*** clean encder irq flag: %d, %d ***\n", */
+		/*		cedar_devp->en_irq_flag, cedar_devp->en_irq_value);*/
+		return 0;
 
-			ve_timeout = (int)arg;
-			cedar_devp->en_irq_value = 0;
+	case IOCTL_WAIT_VE_EN:
 
-			spin_lock_irqsave(&cedar_spin_lock, flags);
-			if (cedar_devp->en_irq_flag)
-				cedar_devp->en_irq_value = 1;
-			spin_unlock_irqrestore(&cedar_spin_lock, flags);
+		ve_timeout = (int)arg;
+		wait_event_timeout(wait_ve, cedar_devp->en_irq_flag, ve_timeout * HZ);
 
-			wait_event_timeout(wait_ve, cedar_devp->en_irq_flag, ve_timeout*HZ);
-			cedar_devp->en_irq_flag = 0;
+		cur_irq_value		 = cedar_devp->en_irq_value;
+		cedar_devp->en_irq_flag  = 0;
+		cedar_devp->en_irq_value = VE_INT_RESULT_TYPE_TIMEOUT;
 
-			return cedar_devp->en_irq_value;
+		return cur_irq_value;
 
 #if ((defined CONFIG_ARCH_SUN8IW8P1) || (defined CONFIG_ARCH_SUN50I) || \
 	(defined CONFIG_ARCH_SUN8IW12P1) || (defined CONFIG_ARCH_SUN8IW17P1) \
@@ -1171,48 +1239,39 @@ static long compat_cedardev_ioctl(struct file *filp, unsigned int cmd, unsigned 
 			break;
 		}
 
-		case IOCTL_SET_VE_FREQ:
-			{
-				int arg_rate = (int)arg;
+	case IOCTL_SET_VE_FREQ: {
+		int arg_rate = (int)arg;
+		unsigned long ve_parent_clk_rate;
 
-				if (cedar_devp->last_min_freq == 0) {
-					cedar_devp->last_min_freq = arg_rate;
+		/*
+			if (cedar_devp->last_min_freq == 0) {
+				cedar_devp->last_min_freq = arg_rate;
+			} else {
+				if (arg_rate > cedar_devp->last_min_freq) {
+					arg_rate = cedar_devp->last_min_freq;
 				} else {
-					if (arg_rate > cedar_devp->last_min_freq) {
-						arg_rate = cedar_devp->last_min_freq;
-					} else {
-						cedar_devp->last_min_freq = arg_rate;
-					}
+					cedar_devp->last_min_freq = arg_rate;
 				}
-
-				if (arg_rate >= VE_CLK_LOW_WATER &&
-						arg_rate <= VE_CLK_HIGH_WATER &&
-						clk_get_rate(ve_moduleclk)/1000000 != arg_rate) {
-
-				#if defined(CONFIG_ARCH_SUN8IW19P1)
-					if (clk_set_rate(ve_moduleclk,  arg_rate*1000000))
-						VE_LOGW("set clock failed\n");
-				#else
-					unsigned long ve_parent_clk_rate = 300000000;
-					ret = clk_set_rate(ve_parent_pll_clk,
-						arg_rate*1000000);
-
-					if (!ret) {
-						ve_parent_clk_rate = clk_get_rate(ve_parent_pll_clk);
-						if (clk_set_rate(ve_moduleclk, ve_parent_clk_rate)) {
-						VE_LOGW("set clock failed\n");
-						}
-
-					} else {
-					    cedar_ve_printk(KERN_WARNING,
-										"set pll4 clock failed\n");
-					}
-				#endif
-				}
-				ret = clk_get_rate(ve_moduleclk);
-				cedar_ve_printk(KERN_WARNING, "VE real_fre=%ld\n", ret);
-				break;
 			}
+			*/
+		ret = clk_get_rate(ve_moduleclk);
+		cedar_ve_printk(KERN_INFO, "before freq=%ld\n", ret);
+		if (arg_rate >= VE_CLK_LOW_WATER && arg_rate <= VE_CLK_HIGH_WATER) {
+			if (clk_set_rate(ve_moduleclk, arg_rate * 1000000)) {
+				VE_LOGW("set clock failed, we set pll clock!\n");
+				ret = clk_set_rate(ve_parent_pll_clk, arg_rate * 1000000);
+				if (!ret) {
+					ve_parent_clk_rate = clk_get_rate(ve_parent_pll_clk);
+					if (clk_set_rate(ve_moduleclk, ve_parent_clk_rate))
+						VE_LOGW("set pll clock ok but ve clock failed\n");
+				} else
+					cedar_ve_printk(KERN_WARNING, "set pll clock failed\n");
+			}
+		}
+		ret = clk_get_rate(ve_moduleclk);
+		cedar_ve_printk(KERN_INFO, "real freq=%ld\n", ret);
+		break;
+	}
 		case IOCTL_GETVALUE_AVS2:
 		case IOCTL_ADJUST_AVS2:
 		case IOCTL_ADJUST_AVS2_ABS:
@@ -2011,12 +2070,36 @@ void sunxi_ve_debug_unregister_driver(void)
 	ve_debugfs_root = NULL;
 }
 
+static __always_inline void remap_sram_to_ve(void)
+{
+	unsigned int val;
+
+	if (cedar_devp->iomap_addrs.regs_sys_cfg == NULL) {
+		VE_LOGW("sys config regs addr is null");
+		return;
+	}
+
+#if (defined CONFIG_ARCH_SUN8IW21P1)
+	/* no need remap sram to ve */
+	return;
+#endif
+
+	// remapping SRAM to MACC for codec test
+	val = readl(cedar_devp->iomap_addrs.regs_sys_cfg);
+	val &= 0xfffffffe;
+	writel(val, cedar_devp->iomap_addrs.regs_sys_cfg);
+	//clear bootmode bit for give sram to ve
+	val = readl((cedar_devp->iomap_addrs.regs_sys_cfg + 0x4));
+	val &= 0xfeffffff;
+	writel(val, (cedar_devp->iomap_addrs.regs_sys_cfg + 0x4));
+}
+
 static int cedardev_init(struct platform_device *pdev)
 {
 	int ret = 0;
 	int i = 0;
 	int devno;
-	unsigned int val;
+	unsigned int val __maybe_unused;
 
 #if defined(CONFIG_OF)
 	struct device_node *node;
@@ -2083,13 +2166,13 @@ static int cedardev_init(struct platform_device *pdev)
 	if (!cedar_devp->iomap_addrs.regs_macc)
 		cedar_ve_printk(KERN_WARNING, "ve Can't map registers");
 
-	cedar_devp->sram_bass_vir = (unsigned int *)of_iomap(node, 1);
-	if (!cedar_devp->sram_bass_vir)
-		cedar_ve_printk(KERN_WARNING, "ve Can't map sram_bass_vir registers");
+	cedar_devp->iomap_addrs.regs_sys_cfg = (unsigned char *)of_iomap(node, 1);
+	if (!cedar_devp->iomap_addrs.regs_sys_cfg)
+		cedar_ve_printk(KERN_WARNING, "ve Can't map sys cfg registers, maybe ok, please check!");
 
-	cedar_devp->clk_bass_vir = (unsigned int *)of_iomap(node, 2);
-	if (!cedar_devp->clk_bass_vir)
-		cedar_ve_printk(KERN_WARNING, "ve Can't map clk_bass_vir registers");
+	cedar_devp->iomap_addrs.regs_ccmu = (unsigned int *)of_iomap(node, 2);
+	if (!cedar_devp->iomap_addrs.regs_ccmu)
+		cedar_ve_printk(KERN_WARNING, "ve Can't map ccmu registers, maybe ok, please check!");
 
 #if VE_POWER_MANAGE_VALID
 	cedar_devp->prcm_bass_vir = (unsigned int *)of_iomap(node, 3);
@@ -2098,94 +2181,97 @@ static int cedardev_init(struct platform_device *pdev)
 #endif
 #endif
 
+#if defined(CONFIG_ARCH_SUN50IW10P1)
+	remap_sram_to_ve();
+#else
 #if (defined CONFIG_ARCH_SUNIVW1P1) /*for 1663*/
-	val = readl(cedar_devp->clk_bass_vir+6);
+	val = readl(cedar_devp->iomap_addrs.regs_ccmu+6);
 	val &= 0x7fff80f0;
 	val = val | (1<<31) | (8<<8);
-	writel(val, cedar_devp->clk_bass_vir+6);
+	writel(val, cedar_devp->iomap_addrs.regs_ccmu+6);
 
 	/*set VE clock dividor*/
-	val = readl(cedar_devp->clk_bass_vir+79);
+	val = readl(cedar_devp->iomap_addrs.regs_ccmu+79);
 	val |= (1<<31);
-	writel(val, cedar_devp->clk_bass_vir+79);
+	writel(val, cedar_devp->iomap_addrs.regs_ccmu+79);
 
 	/*Active AHB bus to MACC*/
-	val = readl(cedar_devp->clk_bass_vir+25);
+	val = readl(cedar_devp->iomap_addrs.regs_ccmu+25);
 	val |= (1<<0);
-	writel(val, cedar_devp->clk_bass_vir+25);
+	writel(val, cedar_devp->iomap_addrs.regs_ccmu+25);
 
 	/*Power on and release reset ve*/
-	val = readl(cedar_devp->clk_bass_vir+177);
+	val = readl(cedar_devp->iomap_addrs.regs_ccmu+177);
 	val &= ~(1<<0); /*reset ve*/
-	writel(val, cedar_devp->clk_bass_vir+177);
+	writel(val, cedar_devp->iomap_addrs.regs_ccmu+177);
 
-	val = readl(cedar_devp->clk_bass_vir+177);
+	val = readl(cedar_devp->iomap_addrs.regs_ccmu+177);
 	val |= (1<<0);
-	writel(val, cedar_devp->clk_bass_vir+177);
+	writel(val, cedar_devp->iomap_addrs.regs_ccmu+177);
 
 	/*gate on the bus to SDRAM*/
-	val = readl(cedar_devp->clk_bass_vir+64);
+	val = readl(cedar_devp->iomap_addrs.regs_ccmu+64);
 	val |= (1<<0);
-	writel(val, cedar_devp->clk_bass_vir+64);
+	writel(val, cedar_devp->iomap_addrs.regs_ccmu+64);
 
 	/*VE_SRAM mapping to AC320*/
-	val = readl(cedar_devp->sram_bass_vir);
+	val = readl(cedar_devp->iomap_addrs.regs_sys_cfg);
 	val &= 0x80000000;
-	writel(val, cedar_devp->sram_bass_vir);
+	writel(val, cedar_devp->iomap_addrs.regs_sys_cfg);
 
 	/*remapping SRAM to MACC for codec test*/
-	val = readl(cedar_devp->sram_bass_vir);
+	val = readl(cedar_devp->iomap_addrs.regs_sys_cfg);
 	val |= 0x7fffffff;
-	writel(val, cedar_devp->sram_bass_vir);
+	writel(val, cedar_devp->iomap_addrs.regs_sys_cfg);
 
 	/*clear bootmode bit for give sram to ve*/
-	val = readl((cedar_devp->sram_bass_vir + 1));
+	val = readl((cedar_devp->iomap_addrs.regs_sys_cfg + 4));
 	val &= 0xefffffff;
-	writel(val, (cedar_devp->sram_bass_vir + 1));
+	writel(val, (cedar_devp->iomap_addrs.regs_sys_cfg + 4));
 #elif (defined CONFIG_ARCH_SUN3IW1P1)
-	val = readl(cedar_devp->clk_bass_vir+6);
+	val = readl(cedar_devp->iomap_addrs.regs_ccmu+6);
 	val &= 0x7fff80f0;
 	val = val | (1<<31) | (49<<8) | (3<<0);
-	writel(val, cedar_devp->clk_bass_vir+6);
+	writel(val, cedar_devp->iomap_addrs.regs_ccmu+6);
 
 	/*set VE clock dividor*/
-	val = readl(cedar_devp->clk_bass_vir+79);
+	val = readl(cedar_devp->iomap_addrs.regs_ccmu+79);
 	val |= (1<<31);
-	writel(val, cedar_devp->clk_bass_vir+79);
+	writel(val, cedar_devp->iomap_addrs.regs_ccmu+79);
 
 	/*Active AHB bus to MACC*/
-	val = readl(cedar_devp->clk_bass_vir+25);
+	val = readl(cedar_devp->iomap_addrs.regs_ccmu+25);
 	val |= (1<<0);
-	writel(val, cedar_devp->clk_bass_vir+25);
+	writel(val, cedar_devp->iomap_addrs.regs_ccmu+25);
 
 	/*Power on and release reset ve*/
-	val = readl(cedar_devp->clk_bass_vir+177);
+	val = readl(cedar_devp->iomap_addrs.regs_ccmu+177);
 	val &= ~(1<<0); /*reset ve*/
-	writel(val, cedar_devp->clk_bass_vir+177);
+	writel(val, cedar_devp->iomap_addrs.regs_ccmu+177);
 
-	val = readl(cedar_devp->clk_bass_vir+177);
+	val = readl(cedar_devp->iomap_addrs.regs_ccmu+177);
 	val |= (1<<0);
-	writel(val, cedar_devp->clk_bass_vir+177);
+	writel(val, cedar_devp->iomap_addrs.regs_ccmu+177);
 
 	/*gate on the bus to SDRAM*/
-	val = readl(cedar_devp->clk_bass_vir+64);
+	val = readl(cedar_devp->iomap_addrs.regs_ccmu+64);
 	val |= (1<<0);
-	writel(val, cedar_devp->clk_bass_vir+64);
+	writel(val, cedar_devp->iomap_addrs.regs_ccmu+64);
 
 	/*VE_SRAM mapping to AC320*/
-	val = readl(cedar_devp->sram_bass_vir);
+	val = readl(cedar_devp->iomap_addrs.regs_sys_cfg);
 	val &= 0x80000000;
-	writel(val, cedar_devp->sram_bass_vir);
+	writel(val, cedar_devp->iomap_addrs.regs_sys_cfg);
 
 	/*remapping SRAM to MACC for codec test*/
-	val = readl(cedar_devp->sram_bass_vir);
+	val = readl(cedar_devp->iomap_addrs.regs_sys_cfg);
 	val |= 0x7fffffff;
-	writel(val, cedar_devp->sram_bass_vir);
+	writel(val, cedar_devp->iomap_addrs.regs_sys_cfg);
 
 	/*switch to normal mode from boot mode*/
-	val = readl(cedar_devp->sram_bass_vir+1);
+	val = readl(cedar_devp->iomap_addrs.regs_sys_cfg+4);
 	val &= 0xefffffff;
-	writel(val, cedar_devp->sram_bass_vir+1);
+	writel(val, cedar_devp->iomap_addrs.regs_sys_cfg+4);
 #else
 	#if (defined CONFIG_ARCH_SUN8IW12P1 || defined CONFIG_ARCH_SUN8IW17P1 \
 		|| defined CONFIG_ARCH_SUN8IW15P1 \
@@ -2196,49 +2282,49 @@ static int cedardev_init(struct platform_device *pdev)
 		VE_LOGW("line 1811 set the sram data\n");
 
 		/*remapping SRAM to MACC for codec test*/
-		val = readl(cedar_devp->sram_bass_vir);
+		val = readl(cedar_devp->iomap_addrs.regs_sys_cfg);
 		val |= 0x7fffffff;
-		writel(val, cedar_devp->sram_bass_vir);
+		writel(val, cedar_devp->iomap_addrs.regs_sys_cfg);
 
 		/*VE_SRAM mapping to AC320*/
-		val = readl(cedar_devp->sram_bass_vir);
+		val = readl(cedar_devp->iomap_addrs.regs_sys_cfg);
 		val &= 0x80000000;
-		writel(val, cedar_devp->sram_bass_vir);
+		writel(val, cedar_devp->iomap_addrs.regs_sys_cfg);
 	#else
 		/*VE_SRAM mapping to AC320*/
-		val = readl(cedar_devp->sram_bass_vir);
+		val = readl(cedar_devp->iomap_addrs.regs_sys_cfg);
 		val &= 0x80000000;
-		writel(val, cedar_devp->sram_bass_vir);
+		writel(val, cedar_devp->iomap_addrs.regs_sys_cfg);
 
 		/*remapping SRAM to MACC for codec test*/
-		val = readl(cedar_devp->sram_bass_vir);
+		val = readl(cedar_devp->iomap_addrs.regs_sys_cfg);
 		val |= 0x7fffffff;
-		writel(val, cedar_devp->sram_bass_vir);
+		writel(val, cedar_devp->iomap_addrs.regs_sys_cfg);
 	#endif
 
 	/*clear bootmode bit for give sram to ve*/
-	val = readl((cedar_devp->sram_bass_vir + 1));
+	val = readl((cedar_devp->iomap_addrs.regs_sys_cfg + 4));
 	val &= 0xfeffffff;
-	writel(val, (cedar_devp->sram_bass_vir + 1));
+	writel(val, (cedar_devp->iomap_addrs.regs_sys_cfg + 4));
 #endif
 
+#endif
 
 #if defined(CONFIG_OF)
-	ve_parent_pll_clk = of_clk_get(node, 0);
-	if ((!ve_parent_pll_clk) || IS_ERR(ve_parent_pll_clk)) {
-		cedar_ve_printk(KERN_WARNING, "try to get ve_parent_pll_clk fail\n");
-		return -EINVAL;
-	}
-
 	ve_moduleclk = of_clk_get(node, 1);
 	if (!ve_moduleclk || IS_ERR(ve_moduleclk)) {
 		cedar_ve_printk(KERN_WARNING, "get ve_moduleclk failed;\n");
+		return -EINVAL;
 	}
 
-	#if defined(CONFIG_ARCH_SUN8IW19P1)
-		if (clk_set_parent(ve_moduleclk,  ve_parent_pll_clk))
-			cedar_ve_printk(KERN_WARNING, "set ve clk and parent clk failed;\n");
-	#endif
+	ve_parent_pll_clk = of_clk_get(node, 0);
+	if ((!ve_parent_pll_clk) || IS_ERR(ve_parent_pll_clk))
+		cedar_ve_printk(KERN_WARNING, "get ve_parent_pll_clk fail, maybe ok!\n");
+
+#if defined(CONFIG_ARCH_SUN8IW19P1) || defined (CONFIG_ARCH_SUN8IW21P1)
+	if (clk_set_parent(ve_moduleclk, ve_parent_pll_clk))
+		cedar_ve_printk(KERN_WARNING, "set ve clk and parent clk failed;\n");
+#endif
 #endif
 
 	/*no reset ve module*/
@@ -2275,7 +2361,7 @@ static int cedardev_init(struct platform_device *pdev)
 
 	ret = sunxi_ve_debug_register_driver();
 	if (ret) {
-		VE_LOGW("sunxi ve debug register driver failed!\n");
+		VE_LOGW("sunxi ve debug register driver failed, maybe ok, please check\n");
 	} else {
 		memset(&ve_debug_proc_info, 0,
 				sizeof(struct ve_debugfs_buffer));
@@ -2322,7 +2408,7 @@ static void cedardev_exit(void)
 	if (NULL == ve_moduleclk || IS_ERR(ve_moduleclk)) {
 		cedar_ve_printk(KERN_WARNING, "ve_moduleclk handle is invalid,just return!\n");
 	} else {
-		clk_disable_unprepare(ve_moduleclk);
+		clk_unprepare(ve_moduleclk);
 		clk_put(ve_moduleclk);
 		ve_moduleclk = NULL;
 	}
