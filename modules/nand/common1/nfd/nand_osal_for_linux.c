@@ -13,8 +13,8 @@
 #include "nand_panic.h"
 
 #define NAND_DRV_VERSION_0 0x03
-#define NAND_DRV_VERSION_1 0x7000
-#define NAND_DRV_DATE 0x20190907
+#define NAND_DRV_VERSION_1 0x7001
+#define NAND_DRV_DATE 0x20210113
 #define NAND_DRV_TIME 0x18231431
 
 /**

@@ -639,7 +639,7 @@ int nand_drangonboard_compat(struct block_device *bdev, fmode_t mode,
 	return 0;
 }
 
-int nand_securestorage_compat(struct block_device *bdev, fmode_t mode,
+static int nand_securestorage_compat(struct block_device *bdev, fmode_t mode,
 			      unsigned int cmd,
 			      struct secblc_op_t32 __user *arg)
 {
