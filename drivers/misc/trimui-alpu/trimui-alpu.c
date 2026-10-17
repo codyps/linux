@@ -7,7 +7,7 @@
 #include "arelink.h"
 
 u8 gTrimuiSerialNumber[5];
-EXPORT_SYMBOL(gTrimuiSerialNumber);
+EXPORT_SYMBOL_GPL(gTrimuiSerialNumber);
 static char serial_text[32];
 
 char *get_trimui_serialno(void)
@@ -17,13 +17,11 @@ char *get_trimui_serialno(void)
 		get_unaligned_le32(gTrimuiSerialNumber) + 0x3c14dc00U);
 	return serial_text;
 }
-EXPORT_SYMBOL(get_trimui_serialno);
 
 void faaes128_decode(const u8 *input, u8 *output)
 {
 	arelink_req_enc_dec(input, output, 1);
 }
-EXPORT_SYMBOL(faaes128_decode);
 
 void are_enc_path256(const u8 *input, u8 *output)
 {
@@ -38,7 +36,6 @@ void are_enc_path256(const u8 *input, u8 *output)
 			pr_info("ret:%d\n", result);
 	}
 }
-EXPORT_SYMBOL(are_enc_path256);
 
 void are_dec_path256(const u8 *input, u8 *output)
 {
@@ -53,7 +50,6 @@ void are_dec_path256(const u8 *input, u8 *output)
 			pr_info("ret:%d\n", result);
 	}
 }
-EXPORT_SYMBOL(are_dec_path256);
 
 void arelink_main(void)
 {

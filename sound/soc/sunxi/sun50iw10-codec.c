@@ -590,9 +590,7 @@ static const struct soc_enum sunxi_codec_adcswap_func_enum[] = {
 /* Board controls recovered from TG3040 #860. */
 static struct sunxi_codec_info *trimui_codec;
 int trimui_headphone_present;
-EXPORT_SYMBOL(trimui_headphone_present);
 int trimui_speaker_mute;
-EXPORT_SYMBOL(trimui_speaker_mute);
 
 int trimui_set_speaker_enable(int enable)
 {
@@ -607,7 +605,6 @@ int trimui_set_speaker_enable(int enable)
 	gpio_set_value(spk->spk_gpio, enable ? spk->pa_level : !spk->pa_level);
 	return 0;
 }
-EXPORT_SYMBOL(trimui_set_speaker_enable);
 
 static int sunxi_codec_hpspeaker_event(struct snd_soc_dapm_widget *w,
 				struct snd_kcontrol *k, int event)

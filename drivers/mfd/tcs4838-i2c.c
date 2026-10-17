@@ -19,13 +19,14 @@ static const struct regmap_access_table tcs4838_volatile_table = {
 	.yes_ranges = tcs4838_yes_ranges,
 	.n_yes_ranges = ARRAY_SIZE(tcs4838_yes_ranges),
 };
-static const struct regmap_config tcs4838_regmap_config = {
+const struct regmap_config tcs4838_regmap_config = {
 	.reg_bits = 8,
 	.val_bits = 8,
 	.volatile_table = &tcs4838_volatile_table,
 	.max_register = TCS4838_PGOOD,
 	.cache_type = REGCACHE_NONE,
 };
+EXPORT_SYMBOL_GPL(tcs4838_regmap_config);
 
 static const struct of_device_id tcs4838_i2c_of_match_table[] = {
 	{ .compatible = "ti,tcs4838" },
