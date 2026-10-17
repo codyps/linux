@@ -1184,10 +1184,8 @@ _GetGFPFlags(IMG_BOOL bZero,
 
 	PVR_UNREFERENCED_PARAMETER(psDev);
 #else
-	/* dma_mask is a POINTER field; guard it like OSPhyContigPagesAlloc does
-	 * (tsp-mc9m.9): an unwired mask must fall back to the default flags,
-	 * never fault. */
-	if (psDev && psDev->dma_mask)
+	/* Stock device setup supplies the DMA-mask pointer. */
+	if (psDev)
 	{
 #if defined(CONFIG_64BIT) || defined(CONFIG_ARM_LPAE) || defined(CONFIG_X86_PAE)
 		if (*psDev->dma_mask > DMA_BIT_MASK(32))
@@ -1353,12 +1351,7 @@ _AllocOSPageArray(PVRSRV_DEVICE_NODE *psDevNode,
 	if (psDevNode->psDevConfig && psDevNode->psDevConfig->pvOSDevice)
 	{
 		struct device *psDev = psDevNode->psDevConfig->pvOSDevice;
-		/* Same guard as _GetGFPFlags/OSPhyContigPagesAlloc: dma_mask can be
-		 * unwired — round-3 (tsp-mc9m.9) faulted HERE at VA 0xffffffff with
-		 * the mask VALUE sitting in the pointer field. ui64DmaMask keeps its
-		 * initialized default when unavailable. */
-		if (psDev->dma_mask)
-			ui64DmaMask = *psDev->dma_mask;
+		ui64DmaMask = *psDev->dma_mask;
 	}
 
 	/* Init metadata */
