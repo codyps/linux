@@ -11,6 +11,9 @@
 #ifndef __DE_CSC_H__
 #define __DE_CSC_H__
 
+/* Stock de_ccsc_init() publishes an unchecked ICcsc allocation result.
+ * TODO: check that allocation before publishing/using it in a separate fix. */
+
 #include "de_rtmx.h"
 
 int de_dcsc_apply(unsigned int sel, struct disp_csc_config *config);

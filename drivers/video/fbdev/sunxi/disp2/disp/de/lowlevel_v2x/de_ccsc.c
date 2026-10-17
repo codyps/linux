@@ -24,6 +24,7 @@
 #include "de_csc.h"
 #include "de_enhance.h"
 
+
 #define CCSC00_OFST	0xAA050
 /* device0 channel0 (or device1 channel0 support vep) */
 #define CCSC01_OFST 0xFA000 /* non-ncat 0xFA050 */
@@ -35,6 +36,8 @@
 #define ICSC0_OFST  0xA0040
 #define ICSC1_OFST  0xF0040
 
+#define FCM_OFST 0xAA000
+#define FCM_CSC_OFST 0x3000
 static volatile struct __csc_reg_t *ccsc_dev[DE_NUM][CHN_NUM];
 static volatile struct __icsc_reg_t *icsc_dev[DE_NUM][CHN_NUM];
 static struct de_reg_blocks csc_block[DE_NUM][CHN_NUM];
@@ -154,7 +157,8 @@ int de_ccsc_init(struct disp_bsp_init_para *para)
 	for (screen_id = 0; screen_id < device_num; screen_id++)
 		for (ch_id = 0; ch_id < vi_num[screen_id]; ch_id++) {
 			vep_support[screen_id][ch_id] =
-			    de_feat_is_support_vep_by_chn(screen_id, ch_id);
+			    de_feat_is_support_vep_by_chn(screen_id, ch_id) &
+			    !de_feat_is_support_fcm_by_chn(screen_id, ch_id);
 
 			if (screen_id == 0) {
 				base_ofst =
@@ -168,6 +172,8 @@ int de_ccsc_init(struct disp_bsp_init_para *para)
 					    CCSC10_OFST : CCSC11_OFST;
 				}
 			}
+			if (de_feat_is_support_fcm_by_chn(screen_id, ch_id))
+				base_ofst = FCM_OFST + FCM_CSC_OFST;
 
 #if defined(CONFIG_INDEPENDENT_DE)
 			base = para->reg_base[DISP_MOD_DE + screen_id] + (screen_id + 1)
@@ -178,6 +184,7 @@ int de_ccsc_init(struct disp_bsp_init_para *para)
 			base = para->reg_base[DISP_MOD_DE] + (screen_id + 1)
 				* 0x00100000 + base_ofst;
 #endif
+
 			memory =
 			    kmalloc(sizeof(struct __csc_reg_t),
 					    GFP_KERNEL | __GFP_ZERO);
@@ -187,7 +194,6 @@ int de_ccsc_init(struct disp_bsp_init_para *para)
 				     (unsigned int)sizeof(struct __csc_reg_t));
 				return -1;
 			}
-
 			csc_block[screen_id][ch_id].off = base;
 			csc_block[screen_id][ch_id].val = memory;
 			csc_block[screen_id][ch_id].size = 0x40;
@@ -242,7 +248,8 @@ int de_ccsc_exit(void)
 	for (screen_id = 0; screen_id < device_num; screen_id++) {
 		for (ch_id = 0; ch_id < vi_num[screen_id]; ch_id++) {
 			vep_support[screen_id][ch_id] =
-			    de_feat_is_support_vep_by_chn(screen_id, ch_id);
+			    de_feat_is_support_vep_by_chn(screen_id, ch_id) &
+			    !de_feat_is_support_fcm_by_chn(screen_id, ch_id);
 			kfree(csc_block[screen_id][ch_id].val);
 
 			/* input csc */
