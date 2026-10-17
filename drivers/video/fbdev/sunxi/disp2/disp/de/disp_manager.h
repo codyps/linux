@@ -17,8 +17,15 @@ s32 disp_init_mgr(struct disp_bsp_init_para *para);
 
 #if defined(CONFIG_SUNXI_IOMMU)
 #define DE_MASTOR_ID 0
+/* TG3040 #860 disp_init_mgr assigns 0 to DE0 and 1 to DE1. */
+#define IOMMU_DE0_MASTOR_ID 0
+#define IOMMU_DE1_MASTOR_ID 1
 extern void sunxi_enable_device_iommu(unsigned int mastor_id, bool flag);
 #endif
+
+/* Stock disp_mgr_enable_iommu() dereferences the private-state result even
+ * when a NULL manager makes disp_mgr_get_priv() return NULL.
+ * TODO: validate this result in a separate corrective change. */
 
 extern s32 __disp_config_transfer2inner(
 	struct disp_layer_config_inner *config_inner,
