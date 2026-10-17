@@ -745,6 +745,7 @@ extern int axp_debug_mask;
 #define AXP2202_COMM_FAULT          (0x08)
 #define AXP2202_ICO_CFG             (0x0a)
 #define AXP2202_CLK_EN              (0x0b)
+#define AXP2202_CURVE_CHECK         (0x0c)
 #define AXP2202_VBUS_TYPE           (0x0f)
 
 #define AXP2202_COMM_CFG            (0x10)

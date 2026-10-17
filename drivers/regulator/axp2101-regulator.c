@@ -157,6 +157,8 @@ struct regulator_delay {
 	u32 final;
 };
 
+static struct regulator_dev *trimui_drivevbus;
+
 int regulator_is_enabled_regmap_axp2202_c_drivevbus(struct regulator_dev *rdev)
 {
 	unsigned int val[2];
@@ -184,6 +186,20 @@ int regulator_enable_regmap_axp2202_c_drivevbus(struct regulator_dev *rdev)
 	ret = regmap_update_bits(rdev->regmap, AXP2202_MODULE_EN, BIT(4), BIT(4));
 
 	return ret;
+}
+
+/* Recovered stock #860 wrappers at ffffff800834f0f8 / ffffff800834f114. */
+int trimui_get_axp_5v_enable(void)
+{
+	return regulator_is_enabled_regmap_axp2202_c_drivevbus(trimui_drivevbus);
+}
+
+void trimui_set_axp_5v_enable(int enable)
+{
+	if (enable)
+		regulator_enable_regmap_axp2202_c_drivevbus(trimui_drivevbus);
+	else
+		regulator_disable_regmap_axp2202_c_drivevbus(trimui_drivevbus);
 }
 
 int regulator_disable_regmap_axp2202_c_drivevbus(struct regulator_dev *rdev)
@@ -1340,6 +1356,8 @@ static int axp2101_regulator_probe(struct platform_device *pdev)
 			dev_err(&pdev->dev, "Failed to register drivevbus\n");
 			return PTR_ERR(rdev);
 		}
+		if (axp20x->variant == AXP2202_ID)
+			trimui_drivevbus = rdev;
 	}
 
 	return 0;

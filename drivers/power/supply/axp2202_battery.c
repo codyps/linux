@@ -65,6 +65,34 @@ static enum power_supply_property axp2202_bat_props[] = {
 	POWER_SUPPLY_PROP_CHARGE_FULL,
 };
 
+/* Recovered stock #860 helper at ffffff8008501f60. */
+static struct axp2202_bat_power *trimui_bat_power;
+
+int trimui_axp2202_get_bat_cap(void)
+{
+	unsigned int capacity;
+	int ret;
+	struct regmap *regmap;
+
+	if (!trimui_bat_power)
+		return -1;
+	regmap = trimui_bat_power->regmap;
+	ret = regmap_read(regmap, AXP2202_CURVE_CHECK, &capacity);
+	if (ret < 0)
+		return ret;
+	if (capacity & BIT(7)) {
+		ret = regmap_read(regmap, AXP2202_CURVE_CHECK, &capacity);
+		capacity &= 0x7f;
+	} else {
+		ret = regmap_read(regmap, AXP2202_GAUGE_SOC, &capacity);
+	}
+	if (ret < 0)
+		return ret;
+	if (capacity > 100)
+		capacity = 100;
+	return capacity;
+}
+
 static int axp2202_get_vbat_vol(struct power_supply *ps,
 			     union power_supply_propval *val)
 {
@@ -1493,6 +1521,7 @@ static int axp2202_battery_probe(struct platform_device *pdev)
 	bat_power->name = "axp2202_battery";
 	bat_power->dev = &pdev->dev;
 	bat_power->regmap = axp_dev->regmap;
+	trimui_bat_power = bat_power;
 
 	/* for device tree parse */
 	axp2202_bat_parse_device_tree(bat_power);
