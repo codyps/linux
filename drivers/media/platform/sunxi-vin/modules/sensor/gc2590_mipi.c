@@ -347,7 +347,7 @@ static int sensor_detect(struct v4l2_subdev *sd)
 	data_type val;
 	int cnt = 0;
 
-	p rintk("hhz sensor_detect 0202 \n");
+	printk("hhz sensor_detect 0202 \n");
 	sensor_read(sd, 0x0000, &val);
 	SENSOR_ID |= (val << 8);
 	sensor_read(sd, 0x0001, &val);
