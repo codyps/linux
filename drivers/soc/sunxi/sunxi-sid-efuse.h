@@ -362,5 +362,11 @@ static struct efuse_key_map key_maps[] = {
 
 #endif
 
+/* Recovered stock #860 diagnostic arguments, independent of reconstructed
+ * source positions. Keep the original levels, function names and format text.
+ */
+#define SID_STOCK_ERR(line, fmt, arg...) pr_err("%s()%d - "fmt, __func__, line, ##arg)
+#define SID_STOCK_WARN(line, fmt, arg...) pr_warn("%s()%d - "fmt, __func__, line, ##arg)
+
 #endif /* end of __SUNXI_SID_EFUSE_H__ */
 

@@ -347,13 +347,13 @@ static s32 sid_get_vir_base(struct device_node **pnode, void __iomem **base,
 {
 	*pnode = of_find_compatible_node(NULL, NULL, compatible);
 	if (IS_ERR_OR_NULL(*pnode)) {
-		SID_ERR("Failed to find \"%s\" in dts.\n", compatible);
+		SID_STOCK_ERR(356, "Failed to find \"%s\" in dts.\n", compatible);
 		return -ENXIO;
 	}
 
 	*base = of_iomap(*pnode, 0); /* reg[0] must be accessible. */
 	if (*base == NULL) {
-		SID_ERR("Unable to remap IO\n");
+		SID_STOCK_ERR(362, "Unable to remap IO\n");
 		return -ENXIO;
 	}
 	SID_DBG("Base addr of \"%s\" is %p\n", compatible, *base);
@@ -367,12 +367,12 @@ static s32  sid_get_phy_base(struct device_node **pnode, phys_addr_t **base,
 
 	*pnode = of_find_compatible_node(NULL, NULL, compatible);
 	if (IS_ERR_OR_NULL(*pnode)) {
-		SID_ERR("Failed to find \"%s\" in dts.\n", compatible);
+		SID_STOCK_ERR(376, "Failed to find \"%s\" in dts.\n", compatible);
 		return -ENXIO;
 	}
 
 	if (of_address_to_resource(*pnode, 0, &res)) {
-		SID_ERR("Failed to get \"%s\"  base address\n", compatible);
+		SID_STOCK_ERR(381, "Failed to get \"%s\"  base address\n", compatible);
 		return -ENXIO;
 	}
 	*base = (phys_addr_t *)res.start;
@@ -468,7 +468,7 @@ void sid_rd_ver_reg(u32 id)
 	ver = sid_rd_bits(reg->compatile, reg->offset,
 		reg->shift, reg->mask, 0);
 	if (ver >= SUNXI_VER_MAX_NUM/2)
-		SID_WARN("ver >= %d, soc ver:%d\n", SUNXI_VER_MAX_NUM/2, ver);
+		SID_STOCK_WARN(498, "ver >= %d, soc ver:%d\n", SUNXI_VER_MAX_NUM/2, ver);
 
 	sunxi_soc_ver = soc_ver[0].rev[0] | ver;
 
@@ -799,14 +799,14 @@ int sid_efuse_key_is_readable(struct efuse_key_map *key_map)
 	value = sid_rd_bits(EFUSE_CHIPID_BASE, key_map_rd_pro.offset,
 			0, 0xFFFFFFFF, sunxi_soc_is_secure());
 	if ((value >> key_map->read_flag_shift) & 1) {
-		SID_ERR("The key %s is unreadable!\n", key_map->name);
+		SID_STOCK_ERR(830, "The key %s is unreadable!\n", key_map->name);
 		return 0;
 	}
 
 	value = sid_rd_bits(EFUSE_CHIPID_BASE, key_map_wr_pro.offset,
 			0, 0xFFFFFFFF, sunxi_soc_is_secure());
 	if (((value >> key_map->burn_flag_shift) & 1) == 0)
-		SID_WARN("The key %s write protect bit not burned!\n",
+		SID_STOCK_WARN(838, "The key %s write protect bit not burned!\n",
 			key_map->name);
 #endif
 	return 1;
@@ -847,7 +847,7 @@ s32 sunxi_efuse_readn(void *key_name, void *buf, u32 n)
 
 	if ((key_name == NULL) || (*(s8 *)key_name == 0)
 			|| (n == 0) || (buf == NULL)) {
-		SID_ERR("Invalid parameter. name: %p, read_buf: %p, size: %d\n",
+		SID_STOCK_ERR(879, "Invalid parameter. name: %p, read_buf: %p, size: %d\n",
 				key_name, buf, n);
 		return -EINVAL;
 	}
@@ -868,7 +868,7 @@ s32 sunxi_efuse_readn(void *key_name, void *buf, u32 n)
 	}
 
 	if (key_map->name[0] == 0) {
-		SID_ERR("The key %s is unavailable.\n", (s8 *)key_name);
+		SID_STOCK_ERR(899, "The key %s is unavailable.\n", (s8 *)key_name);
 		return -1;
 	}
 
