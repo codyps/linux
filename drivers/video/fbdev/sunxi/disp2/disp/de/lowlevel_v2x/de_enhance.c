@@ -21,6 +21,7 @@
 #include "de_rtmx.h"
 #include "de_enhance.h"
 #include "de_feat.h"
+#include "de_fcm.h"
 #ifdef CONFIG_DISP2_SUNXI_SUPPORT_ENAHNCE
 #include "de_vep_table.h"
 
@@ -195,7 +196,7 @@ int de_enhance_apply(unsigned int screen_id,
 
 	data = kmalloc(sizeof(struct vep_config_data), GFP_KERNEL | __GFP_ZERO);
 	if (!data) {
-		__wrn("kmalloc fail!\n");
+		DISP_STOCK_WRN(198, "kmalloc fail!\n");
 		goto err;
 	}
 	chno = vep_num[screen_id];
@@ -215,6 +216,11 @@ int de_enhance_apply(unsigned int screen_id,
 		/* disp_enhance_info -> vep_config_data */
 		de_enhance_info2data(&config[0], data,
 				     g_size_bypass[screen_id]);
+		if (de_feat_is_support_fcm_by_chn(screen_id, ch_id)) {
+			/* TODO: stock forces FCM on even for a disabled configuration. */
+			de_fcm_enable(screen_id, ch_id, 1);
+			continue;
+		}
 		/* FIXME: Update according to dirty flag */
 		/* fce */
 		de_hist_apply(screen_id, ch_id, data->fce_para.hist_en,
@@ -254,6 +260,7 @@ int de_enhance_apply(unsigned int screen_id,
 
 	kfree(data);
 err:
+	/* TODO: stock reports success even when the allocation above failed. */
 	return 0;
 }
 
@@ -282,6 +289,12 @@ int de_enhance_set_size(unsigned int screen_id, struct disp_rect *size)
 			tmp_win.h = size[ch_id].height;
 		}
 
+		if (de_feat_is_support_fcm_by_chn(screen_id, ch_id)) {
+			de_fcm_set_size(screen_id, ch_id, size[ch_id].width,
+				       size[ch_id].height);
+			de_fcm_set_window(screen_id, ch_id, demo_enable, tmp_win);
+			continue;
+		}
 		/* fce */
 		de_fce_set_size(screen_id, ch_id, size[ch_id].width,
 				size[ch_id].height);
@@ -349,6 +362,9 @@ int de_enhance_tasklet(unsigned int screen_id)
 	chno = vep_num[screen_id];
 
 	for (ch_id = 0; ch_id < chno; ch_id++) {
+		/* Stock leaves the per-screen frame counter unchanged for FCM. */
+		if (de_feat_is_support_fcm_by_chn(screen_id, ch_id))
+			continue;
 		/* hist */
 		de_hist_tasklet(screen_id, ch_id, frame_cnt[screen_id]);
 
@@ -365,6 +381,10 @@ int de_enhance_update_regs(unsigned int screen_id)
 
 	chno = vep_num[screen_id];
 	for (ch_id = 0; ch_id < chno; ch_id++) {
+		if (de_feat_is_support_fcm_by_chn(screen_id, ch_id)) {
+			de_fcm_update_regs(screen_id, ch_id);
+			continue;
+		}
 		de_fce_update_regs(screen_id, ch_id);
 #ifdef LTI_EXIST
 		de_lti_update_regs(screen_id, ch_id);
@@ -391,6 +411,19 @@ int de_enhance_init(struct disp_bsp_init_para *para)
 
 	for (screen_id = 0; screen_id < device_num; screen_id++)
 		for (ch_id = 0; ch_id < vep_num[screen_id]; ch_id++) {
+#if defined(CONFIG_INDEPENDENT_DE)
+			if (de_feat_is_support_fcm_by_chn(screen_id, ch_id)) {
+				de_fcm_init(screen_id, ch_id,
+					    para->reg_base[DISP_MOD_DE + screen_id]);
+				continue;
+			}
+#else
+			if (de_feat_is_support_fcm_by_chn(screen_id, ch_id)) {
+				de_fcm_init(screen_id, ch_id,
+					    para->reg_base[DISP_MOD_DE]);
+				continue;
+			}
+#endif
 #if defined(CONFIG_INDEPENDENT_DE)
 			de_fce_init(screen_id, ch_id,
 				    para->reg_base[DISP_MOD_DE + screen_id]);
@@ -446,6 +479,10 @@ int de_enhance_exit(void)
 
 	for (screen_id = 0; screen_id < device_num; screen_id++)
 		for (ch_id = 0; ch_id < vep_num[screen_id]; ch_id++) {
+			if (de_feat_is_support_fcm_by_chn(screen_id, ch_id)) {
+				de_fcm_exit(screen_id, ch_id);
+				continue;
+			}
 			de_fce_exit(screen_id, ch_id);
 #ifdef LTI_EXIST
 			de_lti_exit(screen_id, ch_id);
