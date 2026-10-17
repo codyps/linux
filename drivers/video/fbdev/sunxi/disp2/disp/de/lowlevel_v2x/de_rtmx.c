@@ -548,7 +548,7 @@ int de_rtmx_set_lay_cfg(unsigned int sel, unsigned int chno, unsigned int layno,
 	} else {
 		if (cfg->fmt == DE_FORMAT_YUV422_I_VYUY) {
 			ui_sel = 0x0;
-			fmt = 0x3;
+			fmt = 0x0;
 		} else if (cfg->fmt == DE_FORMAT_YUV422_I_YVYU) {
 			ui_sel = 0x0;
 			fmt = 0x1;
@@ -557,7 +557,7 @@ int de_rtmx_set_lay_cfg(unsigned int sel, unsigned int chno, unsigned int layno,
 			fmt = 0x2;
 		} else if (cfg->fmt == DE_FORMAT_YUV422_I_YUYV) {
 			ui_sel = 0x0;
-			fmt = 0x0;
+			fmt = 0x3;
 		} else if (cfg->fmt == DE_FORMAT_YUV422_SP_VUVU) {
 			ui_sel = 0x0;
 			fmt = 0x5;
@@ -2149,13 +2149,13 @@ int de_rtmx_get_lay_format(unsigned int sel, unsigned int chno,
 		    de200_rtmx[sel].vi_ovl[chno]->vi_lay_cfg[layno].lay_attr.
 		    bits.lay_fmt;
 
-		if (fmt == 3)
+		if (fmt == 0)
 			fmt = DE_FORMAT_YUV422_I_VYUY;
 		else if (fmt == 1)
 			fmt = DE_FORMAT_YUV422_I_YVYU;
 		else if (fmt == 2)
 			fmt = DE_FORMAT_YUV422_I_UYVY;
-		else if (fmt == 0)
+		else if (fmt == 3)
 			fmt = DE_FORMAT_YUV422_I_YUYV;
 		else if (fmt == 4)
 			fmt = DE_FORMAT_YUV422_SP_UVUV;
