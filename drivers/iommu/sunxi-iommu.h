@@ -451,3 +451,7 @@ void sunxi_set_prefetch_mode(void);
 extern struct iommu_domain *global_iommu_domain;
 
 
+
+/* Preserve the diagnostic location emitted by the shipped allocator. */
+#define SUNXI_IOMMU_STOCK_ERR(line, fmt, func, source_line) \
+	pr_err(fmt, func, line)

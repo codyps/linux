@@ -297,7 +297,7 @@ static int sunxi_alloc_iopte(u32 *sent, int prot)
 	pent = kmem_cache_zalloc(iopte_cache, GFP_ATOMIC);
 	WARN_ON((unsigned long)pent & (PT_SIZE - 1));
 	if (!pent) {
-		pr_err("%s, %d, malloc failed!\n", __func__, __LINE__);
+		SUNXI_IOMMU_STOCK_ERR(299, "%s, %d, malloc failed!\n", __func__, __LINE__);
 		return 0;
 	}
 	*sent = __pa(pent) | DENT_VALID;
