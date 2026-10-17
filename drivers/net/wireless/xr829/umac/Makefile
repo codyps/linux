@@ -1,6 +1,7 @@
 obj-$(CONFIG_XRMAC) += xradio_mac.o
 
 ldflags-y += --strip-debug
+
 # xradio_mac objects
 xradio_mac-y := \
 	main.o status.o \
@@ -69,3 +70,7 @@ ccflags-y += -DPROBE_RESP_EXTRA_IE
 ccflags-y += -DIPV6_FILTERING
 #ccflags-y += -DCONFIG_XRMAC_XR_ROAMING_CHANGES
 ccflags-y += -DUSE_RSSI_SMOOTH
+ccflags-y += -DSUPPORT_STA_AP_COEX
+
+#This is use for old p2p mode, say yes to add P2P0 interface
+#ccflags-y += -DOLD_P2P_MODE

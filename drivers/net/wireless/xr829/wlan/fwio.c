@@ -97,16 +97,22 @@ static int xradio_parse_sdd(struct xradio_common *hw_priv, u32 *dpll)
 	switch (hw_priv->hw_revision) {
 	case XR829_HW_REV0:
 		sdd_path = XR829_SDD_FILE;
-#ifdef CONFIG_XRADIO_ETF
-		if (etf_is_connect())
-			sdd_path = etf_get_sddpath();
-#endif
 		break;
 	default:
 		xradio_dbg(XRADIO_DBG_ERROR,
 			   "%s: unknown hardware version.\n", __func__);
 		return ret;
 	}
+
+#ifdef CONFIG_XRADIO_ETF
+	if (etf_is_connect()) {
+		const char *etf_sdd = etf_get_sddpath();
+		if (etf_sdd != NULL)
+			sdd_path = etf_sdd;
+		else
+			etf_set_sddpath(sdd_path);
+	}
+#endif
 
 #ifdef USE_VFS_FIRMWARE
 	hw_priv->sdd = xr_request_file(sdd_path);
@@ -224,7 +230,7 @@ int xradio_update_dpllctrl(struct xradio_common *hw_priv, u32 dpll_update)
 					__func__, dpll_read);
 				break;
 			} else {
-				xradio_dbg(XRADIO_DBG_ERROR, "%s: dpll is incorrect," \
+				xradio_dbg(XRADIO_DBG_ERROR, "%s: dpll is incorrect, " \
 						"dpll_read=0x%08x, dpll_update=0x%08x.\n",
 					__func__, dpll_read, dpll_update);
 				/*dpll_ctrl need to be corrected it by follow procedure.*/
@@ -284,8 +290,15 @@ static int xradio_firmware(struct xradio_common *hw_priv)
 	case XR829_HW_REV0:
 		fw_path = XR829_FIRMWARE;
 #ifdef CONFIG_XRADIO_ETF
-		if (etf_is_connect())
-			fw_path = etf_get_fwpath();
+		if (etf_is_connect()) {
+			const char *etf_fw = etf_get_fwpath();
+			if (etf_fw != NULL)
+				fw_path = etf_fw;
+			else {
+				fw_path = XR829_ETF_FIRMWARE;
+				etf_set_fwpath(fw_path);
+			}
+		}
 #endif
 		break;
 	default:
@@ -303,10 +316,10 @@ static int xradio_firmware(struct xradio_common *hw_priv)
 
 	/* Release CPU from RESET */
 	xradio_reg_bit_operate(hw_priv, HIF_CONFIG_REG_ID,
-							0, HIF_CONFIG_CPU_RESET_BIT);
+						0, HIF_CONFIG_CPU_RESET_BIT);
 	/* Enable Clock */
 	xradio_reg_bit_operate(hw_priv, HIF_CONFIG_REG_ID,
-							0, HIF_CONFIG_CPU_CLK_DIS_BIT);
+						0, HIF_CONFIG_CPU_CLK_DIS_BIT);
 
 	/* Load a firmware file */
 #ifdef USE_VFS_FIRMWARE
@@ -512,13 +525,13 @@ static int xradio_bootloader(struct xradio_common *hw_priv)
 	/* Down bootloader. */
 	data = (u32 *)bootloader->data;
 	for (i = 0; i < (bootloader->size)/4; i++) {
-		ret = xradio_ahb_write_32(hw_priv, addr, data[i]);
-		if (ret < 0) {
-			sbus_printk(XRADIO_DBG_ERROR, "%s: xradio_ahb_write failed.\n", __func__);
-			goto error;
-		}
-		if (i == 100 || i == 200 || i == 300 || i == 400 || i == 500 || i == 600)
-			xradio_dbg(XRADIO_DBG_NIY, "%s: addr = 0x%x,data = 0x%x\n", __func__, addr, data[i]);
+	ret = xradio_ahb_write_32(hw_priv, addr, data[i]);
+	if (ret < 0) {
+		sbus_printk(XRADIO_DBG_ERROR, "%s: xradio_ahb_write failed.\n", __func__);
+		goto error;
+	}
+	if (i == 100 || i == 200 || i == 300 || i == 400 || i == 500 || i == 600)
+		xradio_dbg(XRADIO_DBG_NIY, "%s: addr = 0x%x, data = 0x%x\n", __func__, addr, data[i]);
 		addr += 4;
 	}
 	xradio_dbg(XRADIO_DBG_ALWY, "Bootloader complete\n");
@@ -536,11 +549,11 @@ error:
 
 #if (DBG_XRADIO_HIF)
 
-extern u16 	hif_test_rw; /*0: nothing to do; 1: write only; 2: write and read*/
-extern u16 	hif_test_data_mode; /* hif test data mode, such as 0x55, 0xff etc*/
-extern u16 	hif_test_data_len; /* hif test data len, every data len pre round*/
+extern u16	hif_test_rw; /*0: nothing to do; 1: write only; 2: write and read*/
+extern u16	hif_test_data_mode; /* hif test data mode, such as 0x55, 0xff etc*/
+extern u16	hif_test_data_len; /* hif test data len, every data len pre round*/
 extern u16	hif_test_data_round;
-extern u16 	hif_test_oper_delta; /* hif test operation delta time, give more time to analyze data tranx*/
+extern u16	hif_test_oper_delta; /* hif test operation delta time, give more time to analyze data tranx*/
 int HIF_R_W_TEST(struct xradio_common *hw_priv)
 {
 	int time;
@@ -605,142 +618,6 @@ err:
 	return 1;
 }
 
-#endif
-
-#if (DBG_PAS_RAM)
-int pas_ram_check(struct xradio_common *hw_priv)
-{
-	int ret;
-	int count = 0;
-	int time;
-	int i;
-	bool error = false;
-	unsigned char write_value[4] = {0x0, 0x55, 0xaa, 0xff};
-	struct timeval start;
-	struct timeval end;
-	unsigned int addr;
-	unsigned char *write_buf;
-	unsigned char *read_buf;
-	write_buf = kmalloc(WRITE_READ_MAX_LEN, GFP_KERNEL);
-	if (!write_buf)
-		return 0xff;
-	read_buf = kmalloc(WRITE_READ_MAX_LEN, GFP_KERNEL);
-	if (!read_buf) {
-		kfree(write_buf);
-		return 0xff;
-	}
-
-	printk(KERN_ERR "[PAS_RAM_TEST begin] start address = 0x%08x, end address = 0x%08x\n", PAS_RAM_START_ADDR, PAS_RAM_END_ADDR);
-	do_gettimeofday(&start);
-	for (i = 0;i < 4;i++) {
-		addr = PAS_RAM_START_ADDR;
-		memset(write_buf, write_value[i], WRITE_READ_MAX_LEN);
-		while (addr + WRITE_READ_MAX_LEN <= PAS_RAM_END_ADDR + 1) {
-			if (xradio_apb_write(hw_priv, addr, write_buf, WRITE_READ_MAX_LEN))
-				goto err;
-			if (xradio_apb_read(hw_priv, addr, read_buf, WRITE_READ_MAX_LEN))
-				goto err;
-			ret = memcmp(write_buf, read_buf, WRITE_READ_MAX_LEN);
-			count++;
-			if (ret) {
-				unsigned char *check_addr = read_buf;
-				while (check_addr < read_buf + WRITE_READ_MAX_LEN) {
-					if (*check_addr != write_value[i]) {
-						printk(KERN_ERR "[pas_ram err]:error address:0x%08x, write value:0x%02x, but read value:0x%02x\n",
-								addr + check_addr - read_buf, write_value[i], *check_addr);
-					}
-					check_addr++;
-				}
-				error = true;
-			} else {
-				/* printk(KERN_ERR "pas_ram test: %d finish, writing value:0x%02x, there are no error\n", count, write_value[i]); */
-			}
-			addr += WRITE_READ_MAX_LEN;
-		}
-	}
-	do_gettimeofday(&end);
-	time = 1000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000;
-	printk(KERN_ERR "[PAS_RAM_TEST end] used time:%dms\n", time);
-	kfree(write_buf);
-	kfree(read_buf);
-	if (error)
-		return 1;
-	else
-		return 0;
-err:
-	printk(KERN_ERR "fail to read or write!\n");
-	kfree(write_buf);
-	kfree(read_buf);
-	return 0xff;
-}
-
-extern u8 dbg_pas_ram;
-#endif
-
-
-#if (DBG_AHB_RAM)
-int ahb_ram_check(struct xradio_common *hw_priv)
-{
-	int count = 0;
-	int time;
-	int i;
-	bool error = false;
-	unsigned char write_value[4] = {0x0, 0x55, 0xaa, 0xff};
-	struct timeval start;
-	struct timeval end;
-	unsigned int addr;
-	unsigned char *write_buf;
-	u32 val_read;
-	u32 val_expected;
-
-	write_buf = kmalloc(AHB_WRITE_MAX_LEN, GFP_KERNEL);
-	if (!write_buf)
-		return 0xff;
-
-	printk(KERN_ERR "[AHB_RAM_TEST begin] start address = 0x%08x, end address = 0x%08x\n", AHB_RAM_START_ADDR, AHB_RAM_END_ADDR);
-	do_gettimeofday(&start);
-	for (i = 0;i < 4;i++) {
-		/* ahb write*/
-		addr = AHB_RAM_START_ADDR;
-		memset(write_buf, write_value[i], AHB_WRITE_MAX_LEN);
-		while (addr + AHB_WRITE_MAX_LEN <= AHB_RAM_END_ADDR + 1) {
-			if (xradio_ahb_write(hw_priv, addr, write_buf, AHB_WRITE_MAX_LEN))
-				goto err;
-			addr += AHB_WRITE_MAX_LEN;
-		}
-
-		/* ahb read*/
-		addr = AHB_RAM_START_ADDR;
-		memset(&val_expected, write_value[i], AHB_READ_MAX_LEN);
-		while (addr + AHB_READ_MAX_LEN <= AHB_RAM_END_ADDR + 1) {
-			if (xradio_ahb_read_32(hw_priv, addr, &val_read))
-				goto err;
-			count++;
-			if (val_read != val_expected) {
-				printk(KERN_ERR "[ahb_ram err]:error address:0x%08x, write value:0x%08x, but read value:0x%08x\n",
-								addr, val_expected, val_read);
-				error = true;
-			} else {
-				/* printk(KERN_ERR "ahb_ram test: %d finish, writing value:0x%02x, there are no error\n", count, write_value[i]); */
-			}
-			addr += AHB_READ_MAX_LEN;
-		}
-	}
-	do_gettimeofday(&end);
-	time = 1000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000;
-	printk(KERN_ERR "[AHB_RAM_TEST end] used time:%dms\n", time);
-	kfree(write_buf);
-	if (error)
-		return 1;
-	else
-		return 0;
-err:
-	printk(KERN_ERR "fail to read or write!\n");
-	kfree(write_buf);
-	return 0xff;
-}
-
-extern u8 dbg_ahb_ram;
 #endif
 
 int xradio_load_firmware(struct xradio_common *hw_priv)
@@ -816,6 +693,7 @@ int xradio_load_firmware(struct xradio_common *hw_priv)
 	ret = xradio_reg_bit_operate(hw_priv, HIF_CONTROL_REG_ID, HIF_CTRL_WUP_BIT, 0);
 	if (ret < 0) {
 		xradio_dbg(XRADIO_DBG_ERROR, "%s: device wake up failed.\n", __func__);
+		hw_priv->hw_cant_wakeup = true;
 		goto out;
 	}
 
@@ -835,6 +713,7 @@ int xradio_load_firmware(struct xradio_common *hw_priv)
 	if ((val16 & HIF_CTRL_RDY_BIT) == 0) {
 		xradio_dbg(XRADIO_DBG_ERROR, "%s: Wait for wakeup:"
 			   "device is not responding.\n", __func__);
+		hw_priv->hw_cant_wakeup = true;
 #ifdef BOOT_NOT_READY_FIX
 		hw_priv->boot_not_ready_cnt++;
 		hw_priv->boot_not_ready = 1;
@@ -842,8 +721,8 @@ int xradio_load_firmware(struct xradio_common *hw_priv)
 			hw_priv->boot_not_ready_cnt);
 	#ifdef ERROR_HANG_DRIVER
 		if (hw_priv->boot_not_ready_cnt >= 6) {
-			xradio_dbg(XRADIO_DBG_ERROR, "Boot not ready and device restart "
-				"more than 6, hang the driver.\n");
+			xradio_dbg(XRADIO_DBG_ERROR, "Boot not ready and device restart \
+				more than 6, hang the driver.\n");
 			error_hang_driver = 1;
 		}
 	#endif
@@ -852,6 +731,7 @@ int xradio_load_firmware(struct xradio_common *hw_priv)
 		goto out;
 	} else {
 		xradio_dbg(XRADIO_DBG_NIY, "WLAN device is ready.\n");
+		hw_priv->hw_cant_wakeup = false;
 	}
 
 	/* Checking for access mode and download firmware. */
@@ -862,6 +742,13 @@ int xradio_load_firmware(struct xradio_common *hw_priv)
 			   "can't read config register.\n", __func__);
 		goto out;
 	}
+
+#ifdef SUPPORT_DPLL_CHECK
+	/*Checking DPLL value and correct it if need.*/
+	xradio_update_dpllctrl(hw_priv, xradio_dllctrl_convert(dpll));
+#else
+	xradio_dbg(XRADIO_DBG_ALWY, "%s: not need check dpll.\n", __func__);
+#endif
 
 #if (DBG_XRADIO_HIF)
 
@@ -876,47 +763,6 @@ int xradio_load_firmware(struct xradio_common *hw_priv)
 		}
 	}
 
-#endif
-
-#if (DBG_PAS_RAM)
-	/*test PAS_RAM*/
-	if (dbg_pas_ram == 1) {
-		int ret = pas_ram_check(hw_priv);
-		if (ret == 0) {
-			dbg_pas_ram = 2;
-			printk(KERN_ERR "PAS_RAM_Test: all are right\n");
-		} else if (ret == 1){
-			dbg_pas_ram = 3;
-			printk(KERN_ERR "PAS_RAM_Test: error write/read in some address\n");
-		} else {
-			dbg_pas_ram = 4;
-			printk(KERN_ERR "PAS_RAM_Test: unable to test the chip\n");
-		}
-	}
-#endif
-
-#if (DBG_AHB_RAM)
-	/*test AHB_RAM*/
-	if (dbg_ahb_ram == 1) {
-		int ret = ahb_ram_check(hw_priv);
-		if (ret == 0) {
-			dbg_ahb_ram = 2;
-			printk(KERN_ERR "AHB_RAM_Test: all are right\n");
-		} else if (ret == 1){
-			dbg_ahb_ram = 3;
-			printk(KERN_ERR "AHB_RAM_Test: error write/read in some address\n");
-		} else {
-			dbg_ahb_ram = 4;
-			printk(KERN_ERR "AHB_RAM_Test: unable to test the chip\n");
-		}
-	}
-#endif
-
-#ifdef SUPPORT_DPLL_CHECK
-	/*Checking DPLL value and correct it if need.*/
-	xradio_update_dpllctrl(hw_priv, xradio_dllctrl_convert(dpll));
-#else
-	xradio_dbg(XRADIO_DBG_ALWY, "%s: not need check dpll.\n", __func__);
 #endif
 
 	/* Down bootloader. */
@@ -965,7 +811,7 @@ int xradio_load_firmware(struct xradio_common *hw_priv)
 
 	/* Configure device for MESSSAGE MODE */
 	ret = xradio_reg_bit_operate(hw_priv, HIF_CONFIG_REG_ID,
-									0, HIF_CONFIG_ACCESS_MODE_BIT);
+								0, HIF_CONFIG_ACCESS_MODE_BIT);
 	if (ret < 0) {
 		xradio_dbg(XRADIO_DBG_ERROR, "%s: set_mode: can't read config register.\n",
 					__func__);

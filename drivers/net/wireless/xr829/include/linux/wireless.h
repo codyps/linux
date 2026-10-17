@@ -967,7 +967,7 @@ struct	iw_range {
 	__u8		old_num_frequency;
 
 	/* Scan capabilities */
-	__u8		scan_capa; 	/* IW_SCAN_CAPA_* bit field */
+	__u8		scan_capa;	/* IW_SCAN_CAPA_* bit field */
 
 	/* Wireless event capability bitmasks */
 	__u32		event_capa[6];

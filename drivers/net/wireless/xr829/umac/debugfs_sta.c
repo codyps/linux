@@ -23,7 +23,7 @@ static ssize_t sta_ ##name## _read(struct file *file,			\
 				   size_t count, loff_t *ppos)		\
 {									\
 	struct sta_info *sta = file->private_data;			\
-	return xrmac_format_buffer(userbuf, count, ppos, 		\
+	return xrmac_format_buffer(userbuf, count, ppos,		\
 				      format_string, sta->field);	\
 }
 #define STA_READ_D(name, field) STA_READ(name, field, "%d\n")

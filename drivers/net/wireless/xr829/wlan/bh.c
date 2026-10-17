@@ -664,7 +664,6 @@ static inline int xradio_bh_get(struct xradio_common *hw_priv, u8 **data,
 struct timeval bh_put_time;
 #endif
 
-#define PROC_WAKE_CACHE 1
 static inline int xradio_bh_put(struct xradio_common *hw_priv,
 		struct sk_buff **skb_p, u8 flags)
 {
@@ -698,13 +697,11 @@ static inline int xradio_bh_put(struct xradio_common *hw_priv,
 			list_move_tail(&item->head, &hw_priv->proc.bh_rx);
 		spin_unlock(&hw_priv->proc.lock);
 		PERF_INFO_STAMP_UPDATE(&bh_put_time, &get_item, 0);
-
-		if (atomic_add_return(1, &hw_priv->proc.rx_queued) == PROC_WAKE_CACHE) {
+		if (atomic_add_return(1, &hw_priv->proc.rx_queued) == 1) {
 			wake_up(&hw_priv->proc.proc_wq);
-			PERF_INFO_STAMP(&bh_put_time, &wake_proc, 0);
 		}
-
 		*skb_p = NULL;
+		PERF_INFO_STAMP(&bh_put_time, &wake_proc, 0);
 	} else {
 		bh_printk(XRADIO_DBG_ERROR,
 			"%s pool is empty!\n", __func__);
@@ -1197,6 +1194,7 @@ static int xradio_device_wakeup(struct xradio_common *hw_priv, u16 *ctrl_reg_ptr
 	} else {
 		bh_printk(XRADIO_DBG_ERROR, "Device cannot wakeup in %dms.\n",
 				DEV_WAKEUP_MAX_TIME*1000/HZ);
+		hw_priv->hw_cant_wakeup = true;
 		return -1;
 	}
 }
@@ -1254,7 +1252,6 @@ u32  tx_limit_cnt3;
 u32  tx_limit_cnt4;
 u32  tx_limit_cnt5;
 u32  tx_limit_cnt6;
-
 
 static int xradio_bh(void *arg)
 {
@@ -1971,8 +1968,21 @@ tx:
 				tx = 1;
 				goto data_proc;
 			}
+		} else {
+			PERF_INFO_GETTIME(&sdio_reg_time);
+			atomic_xchg(&hw_priv->bh_rx, 0);
+			xradio_bh_read_ctrl_reg(hw_priv, &ctrl_reg);
+			++reg_read;
+			++sdio_reg_cnt1;
+			PERF_INFO_STAMP(&sdio_reg_time, &sdio_reg, 4);
+			if (ctrl_reg & HIF_CTRL_NEXT_LEN_MASK) {
+				DBG_INT_ADD(fix_miss_cnt);
+				rx = 1;
+				goto data_proc;
+			} else {
+				++sdio_reg_cnt5;
+			}
 		}
-
 
 #if 0
 		/*One more to check rx if reg has not be read. */

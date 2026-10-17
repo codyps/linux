@@ -43,7 +43,7 @@ static ssize_t name## _read(struct file *file, char __user *userbuf,	\
 {									\
 	struct ieee80211_local *local = file->private_data;		\
 									\
-	return xrmac_format_buffer(userbuf, count, ppos, 		\
+	return xrmac_format_buffer(userbuf, count, ppos,		\
 				      fmt "\n", ##value);		\
 }
 

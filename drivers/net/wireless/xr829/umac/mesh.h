@@ -27,9 +27,9 @@
  * @MESH_PATH_ACTIVE: the mesh path can be used for forwarding
  * @MESH_PATH_RESOLVING: the discovery process is running for this mesh path
  * @MESH_PATH_SN_VALID: the mesh path contains a valid destination sequence
- * 	number
+ *	number
  * @MESH_PATH_FIXED: the mesh path has been manually set and should not be
- * 	modified
+ *	modified
  * @MESH_PATH_RESOLVED: the mesh path can has been resolved
  *
  * MESH_PATH_RESOLVED is used by the mesh path timer to
@@ -68,16 +68,16 @@ enum mesh_deferred_task_flags {
  * @dst: mesh path destination mac address
  * @sdata: mesh subif
  * @next_hop: mesh neighbor to which frames for this destination will be
- * 	forwarded
+ *	forwarded
  * @timer: mesh path discovery timer
  * @frame_queue: pending queue for frames sent to this destination while the
- * 	path is unresolved
+ *	path is unresolved
  * @sn: target sequence number
  * @metric: current metric to this destination
  * @hop_count: hops to destination
  * @exp_time: in jiffies, when the path will expire or when it expired
  * @discovery_timeout: timeout (lapse in jiffies) used for the last discovery
- * 	retry
+ *	retry
  * @discovery_retries: number of discovery retries
  * @flags: mesh path flags, as specified on &enum mesh_path_flags
  * @state_lock: mesh path state lock used to protect changes to the
@@ -178,7 +178,7 @@ struct mesh_rmc {
 #define IEEE80211_MESH_PEER_INACTIVITY_LIMIT (1800 * HZ)
 #define IEEE80211_MESH_HOUSEKEEPING_INTERVAL (60 * HZ)
 
-#define MESH_DEFAULT_BEACON_INTERVAL		1000 	/* in 1024 us units */
+#define MESH_DEFAULT_BEACON_INTERVAL		1000	/* in 1024 us units */
 
 #define MESH_PATH_EXPIRE (600 * HZ)
 

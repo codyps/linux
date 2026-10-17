@@ -16,10 +16,12 @@
 #define XR829_BOOTLOADER    ("/lib/firmware/boot_xr829.bin")
 #define XR829_FIRMWARE      ("/lib/firmware/fw_xr829.bin")
 #define XR829_SDD_FILE      ("/lib/firmware/sdd_xr829.bin")
+#define XR829_ETF_FIRMWARE   ("/lib/firmware/etf_xr829.bin")
 #else
 #define XR829_BOOTLOADER    ("boot_xr829.bin")
 #define XR829_FIRMWARE      ("fw_xr829.bin")
 #define XR829_SDD_FILE      ("sdd_xr829.bin")
+#define XR829_ETF_FIRMWARE  ("etf_xr829.bin")
 #endif
 
 #define SDD_PTA_CFG_ELT_ID              0xEB

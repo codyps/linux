@@ -122,7 +122,6 @@ void mac80211_stop_rx_ba_session(struct ieee80211_vif *vif, u16 ba_rx_bitmap,
 	mac80211_queue_work(&sta->local->hw, &sta->ampdu_mlme.work);
 	rcu_read_unlock();
 }
-EXPORT_SYMBOL(mac80211_stop_rx_ba_session);
 
 /*
  * After accepting the AddBA Request we activated a timer,
@@ -191,7 +190,7 @@ static void ieee80211_send_addba_resp(struct ieee80211_sub_if_data *sdata, u8 *d
 	mgmt->u.action.u.addba_resp.dialog_token = dialog_token;
 
 	capab = (u16)(policy << 1);	/* bit 1 aggregation policy */
-	capab |= (u16)(tid << 2); 	/* bit 5:2 TID number */
+	capab |= (u16)(tid << 2);	/* bit 5:2 TID number */
 	capab |= (u16)(buf_size << 6);	/* bit 15:6 max size of aggregation */
 
 	mgmt->u.action.u.addba_resp.capab = cpu_to_le16(capab);

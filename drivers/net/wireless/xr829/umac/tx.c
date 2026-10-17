@@ -2071,7 +2071,7 @@ netdev_tx_t mac80211_subif_start_xmit(struct sk_buff *skb,
 
 	return ret;
 }
-
+EXPORT_SYMBOL(mac80211_subif_start_xmit);
 
 /*
  * mac80211_clear_tx_pending may not be called in a context where
@@ -2660,7 +2660,6 @@ void mac80211_rts_get(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	memcpy(rts->ra, hdr->addr1, sizeof(rts->ra));
 	memcpy(rts->ta, hdr->addr2, sizeof(rts->ta));
 }
-EXPORT_SYMBOL(mac80211_rts_get);
 
 void mac80211_ctstoself_get(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 			     const void *frame, size_t frame_len,
@@ -2675,7 +2674,6 @@ void mac80211_ctstoself_get(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 						     frame_len, frame_txctl);
 	memcpy(cts->ra, hdr->addr1, sizeof(cts->ra));
 }
-EXPORT_SYMBOL(mac80211_ctstoself_get);
 
 struct sk_buff *
 mac80211_get_buffered_bc(struct ieee80211_hw *hw,
@@ -2735,7 +2733,6 @@ mac80211_get_buffered_bc(struct ieee80211_hw *hw,
 
 	return skb;
 }
-EXPORT_SYMBOL(mac80211_get_buffered_bc);
 
 void ieee80211_tx_skb(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb)
 {

@@ -446,9 +446,9 @@ struct ieee80211_bss_conf {
  *	hardware queue.
  * @IEEE80211_TX_STAT_ACK: Frame was acknowledged
  * @IEEE80211_TX_STAT_AMPDU: The frame was aggregated, so status
- * 	is for the whole aggregation.
+ *	is for the whole aggregation.
  * @IEEE80211_TX_STAT_AMPDU_NO_BACK: no block ack was returned,
- * 	so consider using block ack request (BAR).
+ *	so consider using block ack request (BAR).
  * @IEEE80211_TX_CTL_RATE_CTRL_PROBE: internal to mac80211, can be
  *	set by rate control algorithms to indicate probe rate, will
  *	be cleared for fragmented frames (except on the last fragment)
@@ -644,9 +644,9 @@ struct ieee80211_tx_rate {
  * @status: union for status data
  * @driver_data: array of driver_data pointers
  * @ampdu_ack_len: number of acked aggregated frames.
- * 	relevant only if IEEE80211_TX_STAT_AMPDU was set.
+ *	relevant only if IEEE80211_TX_STAT_AMPDU was set.
  * @ampdu_len: number of aggregated frames.
- * 	relevant only if IEEE80211_TX_STAT_AMPDU was set.
+ *	relevant only if IEEE80211_TX_STAT_AMPDU was set.
  * @ack_signal: signal strength of the ACK frame
  */
 struct ieee80211_tx_info {
@@ -793,6 +793,7 @@ enum mac80211_rx_flags {
 	RX_FLAG_HT		= 1<<9,
 	RX_FLAG_40MHZ		= 1<<10,
 	RX_FLAG_SHORT_GI	= 1<<11,
+	RX_FLAG_ARP_RESP	= 1<<12,
 };
 
 /**
@@ -803,7 +804,7 @@ enum mac80211_rx_flags {
  * frame, in the skb's control buffer (cb).
  *
  * @mactime: value in microseconds of the 64-bit Time Synchronization Function
- * 	(TSF) timer when the first data symbol (MPDU) arrived at the hardware.
+ *	(TSF) timer when the first data symbol (MPDU) arrived at the hardware.
  * @band: the active band when this frame was received
  * @freq: frequency the radio was tuned to when receiving this frame, in MHz
  * @signal: signal strength when receiving this frame, either in dBm, in dB or
@@ -1047,10 +1048,10 @@ enum ieee80211_key_flags {
  * @keyidx: the key index (0-3)
  * @keylen: key material length
  * @key: key material. For ALG_TKIP the key is encoded as a 256-bit (32 byte)
- * 	data block:
- * 	- Temporal Encryption Key (128 bits)
- * 	- Temporal Authenticator Tx MIC Key (64 bits)
- * 	- Temporal Authenticator Rx MIC Key (64 bits)
+ *	data block:
+ *	- Temporal Encryption Key (128 bits)
+ *	- Temporal Authenticator Tx MIC Key (64 bits)
+ *	- Temporal Authenticator Rx MIC Key (64 bits)
  * @icv_len: The ICV length for this key type
  * @iv_len: The IV length for this key type
  */
@@ -1179,8 +1180,8 @@ enum sta_notify_cmd {
  *	between different devices. @max_signal does not need to be set.
  *
  * @IEEE80211_HW_SPECTRUM_MGMT:
- * 	Hardware supports spectrum management defined in 802.11h
- * 	Measurement, Channel Switch, Quieting, TPC
+ *	Hardware supports spectrum management defined in 802.11h
+ *	Measurement, Channel Switch, Quieting, TPC
  *
  * @IEEE80211_HW_AMPDU_AGGREGATION:
  *	Hardware supports 11n A-MPDU aggregation.
@@ -1865,12 +1866,12 @@ ieee80211_get_alt_retry_rate(const struct ieee80211_hw *hw,
  *	honour this flag if possible.
  *
  * @FIF_CONTROL: pass control frames (except for PS Poll), if PROMISC_IN_BSS
- * 	is not set then only those addressed to this station.
+ *	is not set then only those addressed to this station.
  *
  * @FIF_OTHER_BSS: pass frames destined to other BSSes
  *
  * @FIF_PSPOLL: pass PS Poll frames, if PROMISC_IN_BSS is not set then only
- * 	those addressed to this station.
+ *	those addressed to this station.
  *
  * @FIF_PROBE_REQ: pass probe request frames
  */
@@ -2054,7 +2055,7 @@ enum ieee80211_frame_release_type {
  *	This callback must be implemented and can sleep.
  *
  * @set_tim: Set TIM bit. mac80211 calls this function when a TIM bit
- * 	must be set or cleared for a given STA. Must be atomic.
+ *	must be set or cleared for a given STA. Must be atomic.
  *
  * @set_key: See the section "Hardware crypto acceleration"
  *	This callback is only called between add_interface and
@@ -2064,8 +2065,8 @@ enum ieee80211_frame_release_type {
  *	The callback can sleep.
  *
  * @update_tkip_key: See the section "Hardware crypto acceleration"
- * 	This callback will be called in the context of Rx. Called for drivers
- * 	which set IEEE80211_KEY_FLAG_TKIP_REQ_RX_P1_KEY.
+ *	This callback will be called in the context of Rx. Called for drivers
+ *	which set IEEE80211_KEY_FLAG_TKIP_REQ_RX_P1_KEY.
  *	The callback must be atomic.
  *
  * @set_rekey_data: If the device supports GTK rekeying, for example while the
@@ -2113,7 +2114,7 @@ enum ieee80211_frame_release_type {
  *	The callback can sleep.
  *
  * @get_stats: Return low-level statistics.
- * 	Returns zero if statistics are available.
+ *	Returns zero if statistics are available.
  *	The callback can sleep.
  *
  * @get_tkip_seq: If your device implements TKIP encryption in hardware this
@@ -2168,11 +2169,11 @@ enum ieee80211_frame_release_type {
  *	The callback can sleep.
  *
  * @ampdu_action: Perform a certain A-MPDU action
- * 	The RA/TID combination determines the destination and TID we want
- * 	the ampdu action to be performed for. The action is defined through
- * 	ieee80211_ampdu_mlme_action. Starting sequence number (@ssn)
- * 	is the first frame we expect to perform the action on. Notice
- * 	that TX/RX_STOP can pass NULL for this parameter.
+ *	The RA/TID combination determines the destination and TID we want
+ *	the ampdu action to be performed for. The action is defined through
+ *	ieee80211_ampdu_mlme_action. Starting sequence number (@ssn)
+ *	is the first frame we expect to perform the action on. Notice
+ *	that TX/RX_STOP can pass NULL for this parameter.
  *	The @buf_size parameter is only valid when the action is set to
  *	%IEEE80211_AMPDU_TX_OPERATIONAL and indicates the peer's reorder
  *	buffer size (number of subframes) for this session -- the driver
@@ -3835,7 +3836,7 @@ static inline int rate_supported(struct ieee80211_sta *sta,
  * rate for multicast/broadcast frames may choose to not use this.
  *
  * @sta: &struct ieee80211_sta pointer to the target destination. Note
- * 	that this may be null.
+ *	that this may be null.
  * @priv_sta: private rate control structure. This may be null.
  * @txrc: rate control information we sholud populate for mac80211.
  */

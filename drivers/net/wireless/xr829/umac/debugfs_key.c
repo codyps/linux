@@ -21,7 +21,7 @@ static ssize_t key_##name##_read(struct file *file,			\
 				 size_t count, loff_t *ppos)		\
 {									\
 	struct ieee80211_key *key = file->private_data;			\
-	return xrmac_format_buffer(userbuf, count, ppos, 		\
+	return xrmac_format_buffer(userbuf, count, ppos,		\
 				      format_string, key->prop);	\
 }
 #define KEY_READ_D(name) KEY_READ(name, name, "%d\n")

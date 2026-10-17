@@ -126,9 +126,9 @@ struct regulatory_request {
  *	based on the ISO3166-alpha2 from country IE provided through
  *	regulatory_hint_country_ie()
  * @REGULATORY_COUNTRY_IE_IGNORE: for devices that have a preference to ignore
- * 	all country IE information processed by the regulatory core. This will
- * 	override %REGULATORY_COUNTRY_IE_FOLLOW_POWER as all country IEs will
- * 	be ignored.
+ *	all country IE information processed by the regulatory core. This will
+ *	override %REGULATORY_COUNTRY_IE_FOLLOW_POWER as all country IEs will
+ *	be ignored.
  * @REGULATORY_ENABLE_RELAX_NO_IR: for devices that wish to allow the
  *      NO_IR relaxation, which enables transmissions on channels on which
  *      otherwise initiating radiation is not allowed. This will enable the

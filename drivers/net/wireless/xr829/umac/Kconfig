@@ -1,5 +1,5 @@
 menuconfig XRMAC
-	tristate "XR829 MAC features"
+	tristate "XRadio MAC features"
 	default m
 	---help---
 	  To compile this code as a module, choose M here.
@@ -7,10 +7,9 @@ menuconfig XRMAC
 if XRMAC
 
 config XRMAC_RC_DEFAULT
-	string "Default XRadio rate control algorithm"
+	string "XRMAC_RC_DEFAULT"
 	default "minstrel_ht"
-	help
-	  Built-in fallback rate control algorithm for the XRadio MAC.
+	---help---
 
 config XRMAC_RC_PID
 	bool "XRMAC_RC_PID"

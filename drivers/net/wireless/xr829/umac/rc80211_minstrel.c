@@ -576,4 +576,3 @@ xrmac_rc80211_minstrel_exit(void)
 {
 	mac80211_rate_control_unregister(&xrmac_minstrel);
 }
-

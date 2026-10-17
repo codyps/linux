@@ -18,6 +18,7 @@
 #include <linux/sched.h>
 #include <linux/atomic.h>
 #include <net/mac80211.h>
+#include <asm/bitops.h>
 
 /*Macroses for Driver parameters.*/
 #define XRWL_MAX_QUEUE_SZ    (128)
@@ -61,7 +62,7 @@
 
 #ifdef BH_PROC_THREAD
 /*process tx in proc thread*/
-#define BH_PROC_TX       0
+#define BH_PROC_TX       1
 /*process rx in proc thread*/
 #define BH_PROC_RX       1
 /*Dynamic priority adjust*/
@@ -137,7 +138,8 @@
 #define XRADIO_PLAT_DEVICE   "xradio_device"
 #define XRADIO_WORKQUEUE   "xradio_wq"
 #define XRADIO_SPARE_WORKQUEUE   "xradio_spare_wq"
-#define WIFI_CONF_PATH    "/etc/wifi/xr_wifi.conf"
+#define WIFI_CONF_PATH    "/data/misc/wifi/xr_wifi.conf"
+#define XRADIO_HWINFO_FILE  "/data/misc/wifi/hwinfo.bin"
 
 extern char *drv_version;
 extern char *drv_buildtime;
@@ -266,11 +268,11 @@ struct xradio_common {
 	/* some works can not push into a same workqueue, so create a
 	 * spare workqueue to separate them.
 	 */
-	struct workqueue_struct 	*spare_workqueue;
+	struct workqueue_struct		*spare_workqueue;
 
 	const struct sbus_ops		*sbus_ops;
 	struct sbus_priv		*sbus_priv;
-	int 			driver_ready;
+	int			driver_ready;
 
 	/* HW/FW type (HIF_...) */
 	int				hw_type;
@@ -360,11 +362,13 @@ struct xradio_common {
 	 * FW issue with sleeping/waking up. */
 	atomic_t            recent_scan;
 	atomic_t            suspend_state;
+	atomic_t            suspend_lock_state;
 	wait_queue_head_t		wsm_wakeup_done;
 #ifdef HW_RESTART
 	bool                exit_sync;
 	int			hw_restart_work_running;
 	bool                hw_restart;
+	bool				hw_cant_wakeup;
 	struct work_struct  hw_restart_work;
 #endif
 
@@ -452,9 +456,9 @@ struct xradio_common {
 	u8				num_2g_channels;
 	u8				num_5g_channels;
 	struct wsm_scan_ch		scan_channels[48];
-	struct sk_buff 			*beacon;
-	struct sk_buff 			*beacon_bkp;
-	struct xradio_testframe 	testframe;
+	struct sk_buff			*beacon;
+	struct sk_buff			*beacon_bkp;
+	struct xradio_testframe		testframe;
 #endif /*ROAM_OFFLOAD*/
 #ifdef CONFIG_XRADIO_TESTMODE
 	struct xradio_testframe test_frame;
@@ -520,7 +524,7 @@ struct xradio_vif {
 	bool				disable_beacon_filter;
 	struct wsm_arp_ipv4_filter      filter4;
 #ifdef IPV6_FILTERING
-	struct wsm_ndp_ipv6_filter 	filter6;
+	struct wsm_ndp_ipv6_filter	filter6;
 #endif /*IPV6_FILTERING*/
 	struct work_struct		update_filtering_work;
 	struct work_struct		set_beacon_wakeup_period_work;
@@ -550,7 +554,7 @@ struct xradio_vif {
 	s8			wep_default_key_id;
 	struct work_struct	wep_key_work;
 	unsigned long           rx_timestamp;
-	u32                     cipherType;
+	u32                     unicast_cipher_type;
 
 
 	/* AP powersave */
@@ -613,8 +617,12 @@ struct xradio_vif {
 #endif
 
 #ifdef AP_ARP_COMPAT_FIX
+	unsigned long arp_compat_time;
 	u16    arp_compat_cnt;
+	u8  ap_mac_addr[ETH_ALEN];
+	u8  ap_ip_addr[4];
 #endif
+	bool	is_mfp_connect;
 };
 struct xradio_sta_priv {
 	int link_id;

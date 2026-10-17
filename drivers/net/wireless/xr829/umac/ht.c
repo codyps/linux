@@ -208,8 +208,8 @@ void mac80211_send_delba(struct ieee80211_sub_if_data *sdata,
 
 	mgmt->u.action.category = WLAN_CATEGORY_BACK;
 	mgmt->u.action.u.delba.action_code = WLAN_ACTION_DELBA;
-	params = (u16)(initiator << 11); 	/* bit 11 initiator */
-	params |= (u16)(tid << 12); 		/* bit 15:12 TID number */
+	params = (u16)(initiator << 11);	/* bit 11 initiator */
+	params |= (u16)(tid << 12);		/* bit 15:12 TID number */
 
 	mgmt->u.action.u.delba.params = cpu_to_le16(params);
 	mgmt->u.action.u.delba.reason_code = cpu_to_le16(reason_code);
@@ -318,4 +318,3 @@ void mac80211_request_smps(struct ieee80211_vif *vif,
 			     &sdata->u.mgd.request_smps_work);
 }
 /* this might change ... don't want non-open drivers using it */
-EXPORT_SYMBOL_GPL(mac80211_request_smps);

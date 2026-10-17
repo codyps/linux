@@ -30,23 +30,28 @@ static struct wireless_dev *ieee80211_add_iface(struct wiphy *wiphy,
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 	struct net_device *dev;
-	struct wireless_dev *wdev;
+	static struct wireless_dev *wdev;
 	struct ieee80211_sub_if_data *sdata;
 	int err;
+	(void)dev;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
-		err = mac80211_if_add(local, name, name_assign_type, &dev, type, params);
+	err = mac80211_if_add(local, name, name_assign_type, &wdev, type, params);
+	if (err)
+		return ERR_PTR(err);
+	sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
 #else
-		err = mac80211_if_add(local, name, &dev, type, params);
-#endif
-
+	err = mac80211_if_add(local, name, &dev, type, params);
 	if (err)
 		return ERR_PTR(err);
 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+	wdev = &sdata->wdev;
+#endif
+
 	if (type == NL80211_IFTYPE_MONITOR && flags) {
 		sdata->u.mntr_flags = *flags;
 	}
-	wdev = &sdata->wdev;
+
 	return wdev;
 }
 
@@ -116,6 +121,18 @@ static int ieee80211_change_iface(struct wiphy *wiphy,
 	}
 
 	return 0;
+}
+
+static int ieee80211_start_p2p_device(struct wiphy *wiphy,
+				      struct wireless_dev *wdev)
+{
+	return ieee80211_do_open(wdev, true);
+}
+
+static void ieee80211_stop_p2p_device(struct wiphy *wiphy,
+				      struct wireless_dev *wdev)
+{
+	ieee80211_sdata_stop(IEEE80211_WDEV_TO_SUB_IF(wdev));
 }
 
 static int ieee80211_add_key(struct wiphy *wiphy, struct net_device *dev,
@@ -670,7 +687,7 @@ static int ieee80211_change_config_beacon(struct ieee80211_sub_if_data *sdata,
 	/* sorry, no way to start beaconing without dtim period */
 	/*
 	 if (!params->dtim_period && !old)
-	 	return err;
+		return err;
 	*/
 	/* new or old head? */
 	if (params->head)
@@ -2772,10 +2789,10 @@ static int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 		is_offchan = true;
 
     /*
-    if (channel_type_valid &&
-	    (channel_type != chan_state->tmp_channel_type &&
-	     channel_type != chan_state->_oper_channel_type))
-		is_offchan = true;
+	if (channel_type_valid &&
+		(channel_type != chan_state->tmp_channel_type &&
+		 channel_type != chan_state->_oper_channel_type))
+		 is_offchan = true;
 	*/
 
 	if (params->chan == local->hw_roc_channel) {
@@ -2807,6 +2824,7 @@ static int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 		break;
 	case NL80211_IFTYPE_STATION:
 	case NL80211_IFTYPE_P2P_CLIENT:
+	case NL80211_IFTYPE_P2P_DEVICE:
 		break;
 	default:
 		return -EOPNOTSUPP;
@@ -3323,6 +3341,8 @@ struct cfg80211_ops xrmac_config_ops = {
 	.add_virtual_intf = ieee80211_add_iface,
 	.del_virtual_intf = ieee80211_del_iface,
 	.change_virtual_intf = ieee80211_change_iface,
+	.start_p2p_device = ieee80211_start_p2p_device,
+	.stop_p2p_device = ieee80211_stop_p2p_device,
 	.add_key = ieee80211_add_key,
 	.del_key = ieee80211_del_key,
 	.get_key = ieee80211_get_key,

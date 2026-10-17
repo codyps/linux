@@ -198,8 +198,8 @@ struct rc_pid_sta_info {
 	 * err_avg_scaled = err_avg_old_scaled - err_avg_old + err
 	 *
 	 * where:
-	 * 	err_avg_scaled = err * RC_PID_SMOOTHING
-	 * 	err_avg_old_scaled = err_avg_old * RC_PID_SMOOTHING
+	 *	err_avg_scaled = err * RC_PID_SMOOTHING
+	 *	err_avg_old_scaled = err_avg_old * RC_PID_SMOOTHING
 	 *
 	 * This avoids floating point numbers and the per_failed_old value can
 	 * easily be obtained by shifting per_failed_old_scaled right by

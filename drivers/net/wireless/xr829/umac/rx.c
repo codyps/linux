@@ -683,6 +683,10 @@ static void ieee80211_sta_reorder_release(struct ieee80211_hw *hw,
  * rcu_read_lock protection. It returns false if the frame
  * can be processed immediately, true if it was consumed.
  */
+
+static u16 last_head_seq_num;
+static u16 same_counter;
+
 static bool ieee80211_sta_manage_reorder_buf(struct ieee80211_hw *hw,
 					     struct tid_ampdu_rx *tid_agg_rx,
 					     struct sk_buff *skb)
@@ -704,8 +708,31 @@ static bool ieee80211_sta_manage_reorder_buf(struct ieee80211_hw *hw,
 
 	/* frame with out of date sequence number */
 	if (seq_less(mpdu_seq_num, head_seq_num)) {
-		dev_kfree_skb(skb);
-		goto out;
+#if 1
+		/*workaround begin*/
+		if (last_head_seq_num == head_seq_num)
+			same_counter++;
+		else
+			same_counter = 0;
+		last_head_seq_num = head_seq_num;
+		/*workaround end*/
+#endif
+
+#if 1
+		/*workaround begin*/
+		if (same_counter == 32) {
+			ieee80211_release_reorder_frames(hw, tid_agg_rx, mpdu_seq_num);
+			tid_agg_rx->head_seq_num = mpdu_seq_num;
+			head_seq_num = tid_agg_rx->head_seq_num;
+			same_counter = 0;
+		} else {
+		/*workaround end*/
+#endif
+			dev_kfree_skb(skb);
+			goto out;
+#if 1
+		}
+#endif
 	}
 
 	/*
@@ -1769,6 +1796,7 @@ static bool ieee80211_frame_allowed(struct ieee80211_rx_data *rx, __le16 fc)
 /*
  * requires that rx->skb is a frame with ethernet header
  */
+extern int xradio_arp_updata(u8 *mac_addr, u8 *ip_addr, struct sk_buff *skb);
 static void
 ieee80211_deliver_skb(struct ieee80211_rx_data *rx)
 {
@@ -2920,8 +2948,7 @@ static int prepare_for_handlers(struct ieee80211_rx_data *rx,
 			if (compare_ether_addr(sdata->vif.addr,
 					       hdr->addr1))
 				return 0;
-		} else if (!ieee80211_bssid_match(bssid,
-					sdata->vif.addr)) {
+		} else if (!ieee80211_bssid_match(bssid, sdata->vif.addr)) {
 			if (ieee80211_is_beacon(hdr->frame_control))
 				status->rx_flags |= IEEE80211_RX_ERP_BEACON;
 			else if (!(status->rx_flags & IEEE80211_RX_IN_SCAN) &&
@@ -2938,6 +2965,15 @@ static int prepare_for_handlers(struct ieee80211_rx_data *rx,
 			return 0;
 		if (compare_ether_addr(sdata->u.wds.remote_addr, hdr->addr2))
 			return 0;
+		break;
+	case NL80211_IFTYPE_P2P_DEVICE:
+		if (!ieee80211_is_public_action(hdr, skb->len) &&
+		    !ieee80211_is_probe_req(hdr->frame_control) &&
+		    !ieee80211_is_probe_resp(hdr->frame_control) &&
+		    !ieee80211_is_beacon(hdr->frame_control))
+			return 0;
+		if (!multicast && !ether_addr_equal(sdata->vif.addr, hdr->addr1))
+			status->rx_flags &= ~IEEE80211_RX_RA_MATCH;
 		break;
 	default:
 		/* should never get here */
@@ -3125,6 +3161,10 @@ void mac80211_rx(struct ieee80211_hw *hw, struct sk_buff *skb)
 	 * driver callbacks be invoked.
 	 */
 	if (unlikely(local->quiescing || local->suspended))
+		goto drop;
+
+	/* We might be during a HW reconfig, prevent Rx for the same reason */
+	if (unlikely(local->in_reconfig))
 		goto drop;
 
 	/*

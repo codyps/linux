@@ -430,7 +430,7 @@ struct sta_info *ieee80211_ibss_add_sta(struct ieee80211_sub_if_data *sdata,
 
 	/*
 	 * XXX: Consider removing the least recently used entry and
-	 * 	allow new one to be added.
+	 *	allow new one to be added.
 	 */
 	if (local->num_sta >= IEEE80211_IBSS_MAX_STA_ENTRIES) {
 		if (net_ratelimit())

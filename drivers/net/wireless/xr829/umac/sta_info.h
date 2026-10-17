@@ -445,7 +445,7 @@ void for_each_sta_info_type_check(struct ieee80211_local *local,
 				 struct sta_info *nxt) {
 }
 
-#define for_each_sta_info(local, _addr, _sta, nxt) 			\
+#define for_each_sta_info(local, _addr, _sta, nxt)			\
 	for (/* initialise loop */					\
 		_sta = rcu_dereference(local->sta_hash[STA_HASH(_addr)]), \
 		nxt = _sta ? rcu_dereference(_sta->hnext) : NULL;	\

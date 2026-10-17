@@ -61,10 +61,10 @@ static inline u32 u16_field_get(u8 *preq_elem, int offset, bool ae)
 #define PREQ_IE_ORIG_ADDR(x)	(x + 7)
 #define PREQ_IE_ORIG_SN(x)	u32_field_get(x, 13, 0)
 #define PREQ_IE_LIFETIME(x)	u32_field_get(x, 17, AE_F_SET(x))
-#define PREQ_IE_METRIC(x) 	u32_field_get(x, 21, AE_F_SET(x))
+#define PREQ_IE_METRIC(x)	u32_field_get(x, 21, AE_F_SET(x))
 #define PREQ_IE_TARGET_F(x)	(*(AE_F_SET(x) ? x + 32 : x + 26))
-#define PREQ_IE_TARGET_ADDR(x) 	(AE_F_SET(x) ? x + 33 : x + 27)
-#define PREQ_IE_TARGET_SN(x) 	u32_field_get(x, 33, AE_F_SET(x))
+#define PREQ_IE_TARGET_ADDR(x)	(AE_F_SET(x) ? x + 33 : x + 27)
+#define PREQ_IE_TARGET_SN(x)	u32_field_get(x, 33, AE_F_SET(x))
 
 
 #define PREP_IE_FLAGS(x)	PREQ_IE_FLAGS(x)

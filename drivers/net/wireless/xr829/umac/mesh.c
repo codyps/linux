@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2008, 2009 open80211s Ltd.
  * Authors:    Luis Carlos Cobo <luisca@cozybit.com>
- * 	       Javier Cardona <javier@cozybit.com>
+ *	       Javier Cardona <javier@cozybit.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -387,7 +387,7 @@ void mac80211_mesh_root_setup(struct ieee80211_if_mesh *ifmsh)
 
 /**
  * mac80211_fill_mesh_addresses - fill addresses of a locally originated mesh frame
- * @hdr:    	802.11 frame header
+ * @hdr:	802.11 frame header
  * @fc:		frame control field
  * @meshda:	destination address in the mesh
  * @meshsa:	source address address in the mesh.  Same as TA, as frame is

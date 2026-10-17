@@ -11,6 +11,7 @@ xradio_core-y := \
 	ap.o \
 	scan.o \
 	platform.o \
+	vendor.o \
 	fw_dbg_inf.o
 
 xradio_core-$(CONFIG_PM)            += pm.o
@@ -26,7 +27,7 @@ xradio_wlan-y := wlan_init.o
 obj-$(CONFIG_XRADIO) += xradio_core.o
 obj-m += xradio_wlan.o
 
-##=======  User Options ======= 
+##=======  User Options =======
 ## Use vfs for firmware load when request_firmware
 # can't work on other platform.
 ccflags-y += -DUSE_VFS_FIRMWARE
@@ -75,6 +76,10 @@ ccflags-y += -DSUPPORT_EPTA
 ccflags-y += -DSUPPORT_DPLL_CHECK
 #ccflags-y += -DSUPPORT_NON_HT40_CHIP
 ccflags-y += -DBOOT_NOT_READY_FIX
+ccflags-y += -DSUPPORT_STA_AP_COEX
+
+#This is use for old p2p mode, say yes to add P2P0 interface
+#ccflags-y += -DOLD_P2P_MODE
 
 ## for interal debug.
 ccflags-y += -DSUPPORT_FW_DBG_INF
@@ -86,6 +91,3 @@ ccflags-y += -DDEBUG_P2P_SETTING_CRASH
 #Solve __DATA__ and __TIME__ error
 EXTRA_CFLAGS += -Wno-error=date-time
 EXTRA_CFLAGS +=-Wno-date-time
-
-
-

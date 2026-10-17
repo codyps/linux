@@ -94,12 +94,12 @@ enum ieee80211_band {
  *
  * @IEEE80211_CHAN_DISABLED: This channel is disabled.
  * @IEEE80211_CHAN_NO_IR: do not initiate radiation, this includes
- * 	sending probe requests or beaconing.
+ *	sending probe requests or beaconing.
  * @IEEE80211_CHAN_RADAR: Radar detection is required on this channel.
  * @IEEE80211_CHAN_NO_HT40PLUS: extension channel above this channel
- * 	is not permitted.
+ *	is not permitted.
  * @IEEE80211_CHAN_NO_HT40MINUS: extension channel below this channel
- * 	is not permitted.
+ *	is not permitted.
  * @IEEE80211_CHAN_NO_OFDM: OFDM is not allowed on this channel.
  * @IEEE80211_CHAN_NO_80MHZ: If the driver supports 80 MHz on the band,
  *	this flag indicates that an 80 MHz channel cannot use this
@@ -120,14 +120,14 @@ enum ieee80211_band {
  *
  */
 enum ieee80211_channel_flags {
-	IEEE80211_CHAN_DISABLED 	= 1<<0,
+	IEEE80211_CHAN_DISABLED		= 1<<0,
 	IEEE80211_CHAN_PASSIVE_SCAN = 1<<1,
 	IEEE80211_CHAN_NO_IBSS		= 1<<2,
 	IEEE80211_CHAN_RADAR		= 1<<3,
 	IEEE80211_CHAN_NO_HT40PLUS	= 1<<4,
 	IEEE80211_CHAN_NO_HT40MINUS = 1<<5,
 	IEEE80211_CHAN_NO_OFDM		= 1<<6,
-	IEEE80211_CHAN_NO_80MHZ 	= 1<<7,
+	IEEE80211_CHAN_NO_80MHZ		= 1<<7,
 	IEEE80211_CHAN_NO_160MHZ	= 1<<8,
 };
 
@@ -1321,7 +1321,7 @@ struct mpath_info {
  * @basic_rates_len: number of basic rates
  * @ap_isolate: do not forward packets between connected stations
  * @ht_opmode: HT Operation mode
- * 	(u16 = opmode, -1 = do not change)
+ *	(u16 = opmode, -1 = do not change)
  * @p2p_ctwindow: P2P CT Window (-1 = no change)
  * @p2p_opp_ps: P2P opportunistic PS (-1 = no change)
  */
@@ -1661,8 +1661,8 @@ struct cfg80211_sched_scan_plan {
  * @ie_len: length of ie in octets
  * @flags: bit field of flags controlling operation
  * @match_sets: sets of parameters to be matched for a scan result
- * 	entry to be considered valid and to be passed to the host
- * 	(others are filtered out).
+ *	entry to be considered valid and to be passed to the host
+ *	(others are filtered out).
  *	If ommited, all results are passed.
  * @n_match_sets: number of match sets
  * @wiphy: the wiphy this was for
@@ -3376,7 +3376,7 @@ struct wiphy_iftype_ext_capab {
  *	note that if your driver uses wiphy_apply_custom_regulatory()
  *	the reg_notifier's request can be passed as NULL
  * @regd: the driver's regulatory domain, if one was requested via
- * 	the regulatory_hint() API. This can be used by the driver
+ *	the regulatory_hint() API. This can be used by the driver
  *	on the reg_notifier() if it chooses to ignore future
  *	regulatory domain changes caused by other drivers.
  * @signal_type: signal type reported in &struct cfg80211_bss.
@@ -4275,9 +4275,9 @@ const u8 *cfg80211_find_vendor_ie(unsigned int oui, int oui_type,
  * @wiphy: the wireless device giving the hint (used only for reporting
  *	conflicts)
  * @alpha2: the ISO/IEC 3166 alpha2 the driver claims its regulatory domain
- * 	should be in. If @rd is set this should be NULL. Note that if you
- * 	set this to NULL you should still set rd->alpha2 to some accepted
- * 	alpha2.
+ *	should be in. If @rd is set this should be NULL. Note that if you
+ *	set this to NULL you should still set rd->alpha2 to some accepted
+ *	alpha2.
  *
  * Wireless drivers can use this function to hint to the wireless core
  * what it believes should be the current regulatory domain by
