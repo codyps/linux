@@ -1667,8 +1667,15 @@ led_show(struct class *class, struct class_attribute *attr, char *buf)
 	return 0;
 }
 
+#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
+#include "leds-trimui-board.h"
+#endif
+
 static struct class_attribute led_class_attrs[] = {
 	__ATTR(light, 0644, led_show, NULL),
+#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
+	__ATTR(tg5040_exterme_brightness, 0664, trimui_led_attr_show, trimui_led_attr_store),
+#endif
 	__ATTR_NULL,
 };
 
@@ -1779,6 +1786,13 @@ static int sunxi_led_probe(struct platform_device *pdev)
 		goto eclass;
 	}
 
+#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
+	ret = trimui_board_init();
+	if (ret) {
+		class_unregister(&led_class);
+		goto eclass;
+	}
+#endif
 	dprintk(DEBUG_INIT, "finish\n");
 
 	return 0;
@@ -1818,6 +1832,9 @@ static int sunxi_led_remove(struct platform_device *pdev)
 {
 	struct sunxi_led *led = platform_get_drvdata(pdev);
 
+#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
+	trimui_board_exit();
+#endif
 	class_unregister(&led_class);
 
 	sunxi_led_remove_debugfs(led);
@@ -1898,6 +1915,11 @@ static int sunxi_led_suspend_noirq(struct device *dev)
 	struct platform_device *pdev = to_platform_device(dev);
 	struct sunxi_led *led = platform_get_drvdata(pdev);
 
+#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
+	trimui_suspended = 1;
+	gpio_direction_output(107, 0);
+	commit_static_frame();
+#endif
 	sunxi_clk_disable(led);
 	led_select_gpio_state(led->pctrl, PINCTRL_STATE_SLEEP);
 	led_regulator_disable(led);
@@ -1912,6 +1934,11 @@ static int sunxi_led_resume_noirq(struct device *dev)
 	struct platform_device *pdev = to_platform_device(dev);
 	struct sunxi_led *led = platform_get_drvdata(pdev);
 
+#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
+	trimui_suspended = 0;
+	gpio_direction_output(107, 1);
+	check_battery();
+#endif
 	led_regulator_enable(led);
 	led_select_gpio_state(led->pctrl, PINCTRL_STATE_DEFAULT);
 	sunxi_clk_enable(led);
