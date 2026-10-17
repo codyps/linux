@@ -17,6 +17,16 @@
 #ifndef _FB_G2D_ROT_H
 #define _FB_G2D_ROT_H
 
+/* Preserve stock framebuffer diagnostic locations without synthetic #line. */
+#define FB_STOCK_WRN(line, msg...) do { \
+	pr_warn("[DISP] %s,line:%d:", __func__, line); \
+	pr_warn(msg); \
+} while (0)
+
+/* The stock callback takes the pending pan offset explicitly. Its initial
+ * display layer is at zorder 16; it must not inherit the public BSP value 0.
+ */
+
 #include "disp_sys_intf.h"
 #include <linux/g2d_driver.h>
 #include "de/disp_features.h"
@@ -40,7 +50,7 @@ struct fb_g2d_rot_t {
 	struct fb_info *fb;
 	int switch_buffer_flag;
 	int (*apply)(struct fb_g2d_rot_t *inst,
-		     struct disp_layer_config *config);
+		     struct disp_layer_config *config, unsigned int yoffset);
 	int (*free)(struct fb_g2d_rot_t *inst);
 	int (*set_degree)(struct fb_g2d_rot_t *inst,
 		      struct disp_layer_config *config, unsigned int degree);

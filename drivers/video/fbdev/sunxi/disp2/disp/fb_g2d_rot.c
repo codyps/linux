@@ -127,7 +127,8 @@ int fb_g2d_set_degree(struct fb_g2d_rot_t *inst,
 	return 0;
 }
 
-int fb_g2d_rot_apply(struct fb_g2d_rot_t *inst, struct disp_layer_config *config)
+int fb_g2d_rot_apply(struct fb_g2d_rot_t *inst, struct disp_layer_config *config,
+		     unsigned int yoffset)
 {
 	int ret = -1;
 
@@ -158,7 +159,7 @@ int fb_g2d_rot_apply(struct fb_g2d_rot_t *inst, struct disp_layer_config *config
 	}
 	inst->info.src_image_h.laddr[0] =
 	    inst->fb->fix.smem_start +
-	    inst->fb->fix.line_length * inst->fb->var.yoffset;
+	    inst->fb->fix.line_length * yoffset;
 
 
 	g2d_ioctl_mutex_lock();

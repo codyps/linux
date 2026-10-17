@@ -736,12 +736,12 @@ static int sunxi_fb_pan_display(struct fb_var_screeninfo *var,
 #endif
 #if defined(CONFIG_SUNXI_DISP2_FB_HW_ROTATION_SUPPORT)
 				if (g_fbi.fb_rot[sel])
-					g_fbi.fb_rot[sel]->apply(g_fbi.fb_rot[sel], &config);
+					g_fbi.fb_rot[sel]->apply(g_fbi.fb_rot[sel], &config, var->yoffset);
 #endif
 				if (mgr->set_layer_config(mgr, &config, 1)
 				    != 0) {
-					__wrn
-					    ("fb%d,set_lyr_cfg(%d,%d,%d)fail\n",
+					FB_STOCK_WRN
+					    (746, "fb%d,set_lyr_cfg(%d,%d,%d)fail\n",
 					     info->node, sel, chan, layer_id);
 					return -1;
 				}
@@ -1383,7 +1383,7 @@ static int sunxi_fb_ioctl(struct fb_info *info, unsigned int cmd,
 
 			if ((!g_fbi.fb_enable[fb_id])
 			    || (fbinfo != info)) {
-				__wrn("%s, fb%d already release ? or fb_info mismatch: fbinfo=0x%p, info=0x%p\n",
+				FB_STOCK_WRN(1388, "%s, fb%d already release ? or fb_info mismatch: fbinfo=0x%p, info=0x%p\n",
 				      __func__, fb_id, fbinfo, info);
 				return -1;
 			}
@@ -1411,7 +1411,7 @@ static int sunxi_fb_ioctl(struct fb_info *info, unsigned int cmd,
 
 			if (g_fbi.fb_enable[fb_id]
 			    || (fbinfo != info)) {
-				__wrn("%s, fb%d already enable ? or fb_info mismatch: fbinfo=0x%p, info=0x%p\n",
+				FB_STOCK_WRN(1416, "%s, fb%d already enable ? or fb_info mismatch: fbinfo=0x%p, info=0x%p\n",
 				      __func__, fb_id, fbinfo, info);
 				return -1;
 			}
@@ -1485,7 +1485,7 @@ static int sunxi_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		}
 
 		if (copy_to_user(argp, &k_ret, sizeof(struct fb_dmabuf_export))) {
-			__wrn("%s, copy to user err\n", __func__);
+			FB_STOCK_WRN(1489, "%s, copy to user err\n", __func__);
 		}
 		ret = 0;
 		break;
@@ -1558,7 +1558,7 @@ static int Fb_copy_boot_fb(u32 sel, struct fb_info *info)
 	unsigned long map_offset;
 
 	if (info == NULL) {
-		__wrn("%s,%d: null pointer\n", __func__, __LINE__);
+		FB_STOCK_WRN(1562, "%s,%d: null pointer\n", __func__, 1562);
 		return -1;
 	}
 
@@ -1569,7 +1569,7 @@ static int Fb_copy_boot_fb(u32 sel, struct fb_info *info)
 		int len = strlen(boot_fb_str);
 
 		if (sizeof(boot_fb) - 1 < len) {
-			__wrn("need bigger array size[%d] for boot_fb\n", len);
+			FB_STOCK_WRN(1573, "need bigger array size[%d] for boot_fb\n", len);
 			return -1;
 		}
 		memcpy((void *)boot_fb, (void *)boot_fb_str, len);
@@ -1626,7 +1626,7 @@ static int Fb_copy_boot_fb(u32 sel, struct fb_info *info)
 			boot_fb_str = p + 1;
 		}
 	} else {
-		__wrn("no boot_fb0\n");
+		FB_STOCK_WRN(1630, "no boot_fb0\n");
 		return -1;
 	}
 
@@ -1647,8 +1647,8 @@ static int Fb_copy_boot_fb(u32 sel, struct fb_info *info)
 	    || (dst_stride <= 0)
 	    || (dst_bpp <= 0)
 	    || (src_bpp != dst_bpp)) {
-		__wrn
-		    ("wrong para: src[phy_addr=%p,w=%d,h=%d,bpp=%d,stride=%d], dst[addr=%p,w=%d,h=%d,bpp=%d,stride=%d]\n",
+		FB_STOCK_WRN
+		    (1655, "wrong para: src[phy_addr=%p,w=%d,h=%d,bpp=%d,stride=%d], dst[addr=%p,w=%d,h=%d,bpp=%d,stride=%d]\n",
 		     src_phy_addr,
 		     src_width, src_height, src_bpp, src_stride, dst_addr,
 		     dst_width, dst_height, dst_bpp, dst_stride);
@@ -1662,7 +1662,7 @@ static int Fb_copy_boot_fb(u32 sel, struct fb_info *info)
 					       src_stride * src_height +
 					       map_offset);
 	if (src_addr == NULL) {
-		__wrn("Fb_map_kernel_cache for src_addr failed\n");
+		FB_STOCK_WRN(1666, "Fb_map_kernel_cache for src_addr failed\n");
 		return -1;
 	}
 
@@ -1686,7 +1686,7 @@ static int Fb_copy_boot_fb(u32 sel, struct fb_info *info)
 
 		dst_addr += (dst_stride * dst_crop_t);
 	} else if (src_height > dst_height) {
-		__wrn("src_height(%d) > dst_height(%d),please cut the height\n",
+		FB_STOCK_WRN(1692, "src_height(%d) > dst_height(%d),please cut the height\n",
 		      src_height,
 		      dst_height);
 		Fb_unmap_kernel(src_addr);
@@ -1697,7 +1697,7 @@ static int Fb_copy_boot_fb(u32 sel, struct fb_info *info)
 
 		dst_addr += (dst_crop_l * dst_bpp >> 3);
 	} else if (src_width > dst_width) {
-		__wrn("src_width(%d) > dst_width(%d),please cut the width!\n",
+		FB_STOCK_WRN(1703, "src_width(%d) > dst_width(%d),please cut the width!\n",
 		      src_width,
 		      dst_width);
 		Fb_unmap_kernel(src_addr);
@@ -1729,7 +1729,7 @@ static int rgb24_to_rgb32(const void *psrc, struct bmp_header *bmp_header,
 	int i = 0, j = 0;
 
 	if (!psrc || !pdst || !bmp_header || !info) {
-		__wrn("Invalid parameter\n");
+		FB_STOCK_WRN(1733, "Invalid parameter\n");
 		return -1;
 	}
 
@@ -1999,7 +1999,7 @@ static int Fb_map_kernel_logo(u32 sel, struct fb_info *info)
 	offset = paddr & ~PAGE_MASK;
 	vaddr = (void *)Fb_map_kernel(paddr, sizeof(struct bmp_header));
 	if (vaddr == NULL) {
-		__wrn("fb_map_kernel failed, paddr=0x%p,size=0x%x\n",
+		FB_STOCK_WRN(2004, "fb_map_kernel failed, paddr=0x%p,size=0x%x\n",
 		      (void *)paddr, (unsigned int)sizeof(struct bmp_header));
 		return -1;
 	}
@@ -2013,7 +2013,7 @@ static int Fb_map_kernel_logo(u32 sel, struct fb_info *info)
 #if defined(CONFIG_DECOMPRESS_LZMA)
 		return lzma_decode(paddr, info);
 #else
-		__wrn("this is not a bmp picture.\n");
+		FB_STOCK_WRN(2017, "this is not a bmp picture.\n");
 		return -1;
 
 #endif
@@ -2038,7 +2038,7 @@ static int Fb_map_kernel_logo(u32 sel, struct fb_info *info)
 	fb_width = info->var.xres;
 	fb_height = info->var.yres;
 	if ((paddr <= 0) || x <= 1 || y <= 1) {
-		__wrn("kernel logo para error!\n");
+		FB_STOCK_WRN(2042, "kernel logo para error!\n");
 		return -EINVAL;
 	}
 
@@ -2061,7 +2061,7 @@ static int Fb_map_kernel_logo(u32 sel, struct fb_info *info)
 	    (void *)Fb_map_kernel(paddr,
 				  (x * bmp_bpix + zero_num) * y + sizeof(struct bmp_header));
 	if (vaddr == NULL) {
-		__wrn("fb_map_kernel failed, paddr=0x%p,size=0x%x\n",
+		FB_STOCK_WRN(2068, "fb_map_kernel failed, paddr=0x%p,size=0x%x\n",
 		      (void *)paddr,
 		      (unsigned int)(x * y * bmp_bpix +
 		       sizeof(struct bmp_header)));
@@ -2179,7 +2179,7 @@ static s32 display_fb_request(u32 fb_id, struct disp_fb_create_info *fb_para)
 	printk("%s,fb_id:%d\n", __func__, fb_id);
 
 	if (g_fbi.fb_enable[fb_id]) {
-		__wrn("%s, fb%d is already requested!\n", __func__, fb_id);
+		FB_STOCK_WRN(2183, "%s, fb%d is already requested!\n", __func__, fb_id);
 		return -1;
 	}
 	info = g_fbi.fbinfo[fb_id];
@@ -2187,7 +2187,7 @@ static s32 display_fb_request(u32 fb_id, struct disp_fb_create_info *fb_para)
 	xres = fb_para->width;
 	yres = fb_para->height;
 	if ((xres == 0) || (yres == 0) || (info->var.bits_per_pixel == 0)) {
-		__wrn("invalid paras xres(%d), yres(%d) bpp(%d)\n", xres, yres,
+		FB_STOCK_WRN(2192, "invalid paras xres(%d), yres(%d) bpp(%d)\n", xres, yres,
 		      info->var.bits_per_pixel);
 		return -1;
 	}
@@ -2282,7 +2282,7 @@ static s32 display_fb_request(u32 fb_id, struct disp_fb_create_info *fb_para)
 			}
 
 			config.info.mode = LAYER_MODE_BUFFER;
-			config.info.zorder = 0;
+			config.info.zorder = 16;
 			config.info.alpha_mode = 0;
 			config.info.alpha_value = 0xff;
 			config.info.fb.crop.x = ((long long)0) << 32;
@@ -2326,7 +2326,7 @@ static s32 display_fb_request(u32 fb_id, struct disp_fb_create_info *fb_para)
 #if defined(CONFIG_SUNXI_DISP2_FB_HW_ROTATION_SUPPORT)
 			g_fbi.fb_rot[fb_id] = fb_g2d_rot_create(info, fb_id, &config);
 			if (g_fbi.fb_rot[fb_id])
-				g_fbi.fb_rot[fb_id]->apply(g_fbi.fb_rot[fb_id], &config);
+				g_fbi.fb_rot[fb_id]->apply(g_fbi.fb_rot[fb_id], &config, info->var.yoffset);
 #endif
 
 #if defined(CONFIG_ION_SUNXI)
@@ -2394,7 +2394,7 @@ static s32 display_fb_release(u32 fb_id)
 		return 0;
 	}
 
-	__wrn("invalid paras fb_id:%d in %s\n", fb_id, __func__);
+	FB_STOCK_WRN(2410, "invalid paras fb_id:%d in %s\n", fb_id, __func__);
 	return -1;
 }
 
@@ -2494,7 +2494,7 @@ s32 fb_init(struct platform_device *pdev)
 		if (IS_ERR(g_fbi.vsync_task[i])) {
 			s32 err = 0;
 
-			__wrn("Unable to start kernel thread %s.\n",
+			FB_STOCK_WRN(2511, "Unable to start kernel thread %s.\n",
 			      "hdmi proc");
 			err = PTR_ERR(g_fbi.vsync_task[i]);
 			g_fbi.vsync_task[i] = NULL;
