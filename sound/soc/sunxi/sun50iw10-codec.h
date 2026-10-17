@@ -390,6 +390,7 @@ struct codec_spk_config {
 	u32 pa_msleep;
 	bool used;
 	bool pa_level;
+	bool pa_power_always_on;
 };
 
 struct sample_rate {

@@ -32,6 +32,9 @@
 #include "sun50iw10-codec.h"
 #include "sunxi_rw_func.h"
 
+extern int trimui_headphone_present;
+extern int trimui_speaker_mute;
+
 #ifdef CONFIG_SND_SUNXI_SOC_SUN50IW10_JACK
 static int mdata_threshold = 0x10;
 module_param(mdata_threshold, int, 0644);
@@ -143,7 +146,7 @@ static void sunxi_check_hs_plug(struct work_struct *work)
 				(0x1 << HPPA_EN),
 				(0x1 << HPPA_EN));
 
-		if (spk_cfg->used)
+		if (spk_cfg->used && !trimui_speaker_mute)
 			gpio_set_value(spk_cfg->spk_gpio, spk_cfg->pa_level);
 	} else {
 		/*
@@ -303,6 +306,7 @@ static irqreturn_t jack_interrupt(int irq, void *dev_id)
 				snd_soc_read(priv->codec, SUNXI_HMIC_STS));
 
 	jack_state = snd_soc_read(priv->codec, SUNXI_HMIC_STS);
+	trimui_headphone_present = !!(jack_state & 8);
 
 	if (priv->detect_state != PLUG_IN) {
 		if (jack_state & (1 << MIC_DET_ST)) {

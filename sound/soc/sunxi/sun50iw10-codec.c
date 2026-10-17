@@ -587,6 +587,28 @@ static const struct soc_enum sunxi_codec_adcswap_func_enum[] = {
 			sunxi_codec_adcswap_function),
 };
 
+/* Board controls recovered from TG3040 #860. */
+static struct sunxi_codec_info *trimui_codec;
+int trimui_headphone_present;
+EXPORT_SYMBOL(trimui_headphone_present);
+int trimui_speaker_mute;
+EXPORT_SYMBOL(trimui_speaker_mute);
+
+int trimui_set_speaker_enable(int enable)
+{
+	struct codec_spk_config *spk;
+	if (!trimui_codec)
+		return -1;
+	spk = &trimui_codec->spk_config;
+	if (enable && trimui_headphone_present) {
+		pr_info("Headphone exist, skip speaker.\n");
+		return 0;
+	}
+	gpio_set_value(spk->spk_gpio, enable ? spk->pa_level : !spk->pa_level);
+	return 0;
+}
+EXPORT_SYMBOL(trimui_set_speaker_enable);
+
 static int sunxi_codec_hpspeaker_event(struct snd_soc_dapm_widget *w,
 				struct snd_kcontrol *k, int event)
 {
@@ -608,14 +630,16 @@ static int sunxi_codec_hpspeaker_event(struct snd_soc_dapm_widget *w,
 		else if (hw_cfg->dachpf_cfg & DAP_HP_EN)
 			dachpf_enable(codec, 0);
 #endif
-		if (spk_cfg->used) {
-			gpio_set_value(spk_cfg->spk_gpio, spk_cfg->pa_level);
+		if (spk_cfg->used && !spk_cfg->pa_power_always_on) {
+			gpio_set_value(spk_cfg->spk_gpio,
+				(trimui_headphone_present || trimui_speaker_mute) ?
+				!spk_cfg->pa_level : spk_cfg->pa_level);
 			/* time delay to wait spk pa work fine */
 			msleep(spk_cfg->pa_msleep);
 		}
 		break;
 	case	SND_SOC_DAPM_PRE_PMD:
-		if (spk_cfg->used)
+		if (spk_cfg->used && !spk_cfg->pa_power_always_on)
 			gpio_set_value(spk_cfg->spk_gpio, !(spk_cfg->pa_level));
 #ifdef SUNXI_CODEC_DAP_ENABLE
 		if (hw_cfg->dacdrc_cfg & DAP_SPK_EN)
@@ -694,14 +718,15 @@ static int sunxi_codec_lineout_event(struct snd_soc_dapm_widget *w,
 		snd_soc_update_bits(codec, SUNXI_DAC_REG,
 				(0x1 << LINEOUTLEN), (0x1 << LINEOUTLEN));
 
-		if (spk_cfg->used) {
-			gpio_set_value(spk_cfg->spk_gpio, spk_cfg->pa_level);
+		if (spk_cfg->used && !spk_cfg->pa_power_always_on) {
+			if (!trimui_speaker_mute)
+				gpio_set_value(spk_cfg->spk_gpio, spk_cfg->pa_level);
 			/* time delay to wait spk pa work fine */
 			msleep(spk_cfg->pa_msleep);
 		}
 		break;
 	case	SND_SOC_DAPM_PRE_PMD:
-		if (spk_cfg->used)
+		if (spk_cfg->used && !spk_cfg->pa_power_always_on)
 			gpio_set_value(spk_cfg->spk_gpio, !(spk_cfg->pa_level));
 
 		snd_soc_update_bits(codec, SUNXI_DAC_REG,
@@ -1902,6 +1927,9 @@ static int sunxi_internal_codec_probe(struct platform_device *pdev)
 		sunxi_codec->spk_config.pa_msleep = temp_val;
 	}
 
+	ret = of_property_read_u32(np, "pa_power_always_on", &temp_val);
+	sunxi_codec->spk_config.pa_power_always_on = ret < 0 ? false : !!temp_val;
+
 	pr_debug("digital_vol:%d, lineout_vol:%d, mic1gain:%d, mic2gain:%d"
 		" pa_msleep:%d, pa_level:%d, dac_digital_vol:%d\n",
 		sunxi_codec->digital_vol,
@@ -1966,6 +1994,7 @@ static int sunxi_internal_codec_probe(struct platform_device *pdev)
 		goto err_unregister_codec;
 	}
 
+	trimui_codec = sunxi_codec;
 	dev_warn(&pdev->dev, "[%s] codec probe finished.\n", __func__);
 
 	return 0;
@@ -2012,6 +2041,7 @@ static int  __exit sunxi_internal_codec_remove(struct platform_device *pdev)
 
 	devm_iounmap(&pdev->dev, sunxi_codec->digital_base);
 	devm_kfree(&pdev->dev, sunxi_codec);
+	trimui_codec = NULL;
 	platform_set_drvdata(pdev, NULL);
 
 	if (spk_cfg->used) {
