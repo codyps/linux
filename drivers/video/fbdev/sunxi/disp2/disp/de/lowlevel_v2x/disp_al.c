@@ -831,12 +831,19 @@ int disp_al_lcd_cfg(u32 screen_id, struct disp_panel_para *panel,
 
 	tcon_init(screen_id);
 	disp_al_lcd_get_clk_info(screen_id, &info, panel);
+	/* TODO: stock leaves overflow, zero divisors and negative adjustment
+	 * values unchecked, then truncates the result to the hardware byte.
+	 */
+	if (panel->tcon_clk_div_ajust.clk_div_increase_or_decrease == INCREASE)
+		info.tcon_div *= panel->tcon_clk_div_ajust.div_multiple;
+	else if (panel->tcon_clk_div_ajust.clk_div_increase_or_decrease == DECREASE)
+		info.tcon_div /= panel->tcon_clk_div_ajust.div_multiple;
 	tcon0_set_dclk_div(screen_id, info.tcon_div);
 
 #if !defined(TCON1_DRIVE_PANEL)
 	al_priv.tcon_type[screen_id] = 0;
 	if (tcon0_cfg(screen_id, panel) != 0)
-		DE_WRN("lcd cfg fail!\n");
+		DISP_STOCK_WRN(843, "lcd cfg fail!\n");
 	else
 		DE_INF("lcd cfg ok!\n");
 
@@ -847,11 +854,11 @@ int disp_al_lcd_cfg(u32 screen_id, struct disp_panel_para *panel,
 #if defined(SUPPORT_DSI)
 		if (panel->lcd_if == LCD_IF_DSI) {
 			if (dsi_cfg(screen_id, panel) != 0)
-				DE_WRN("dsi %d cfg fail!\n", screen_id);
+				DISP_STOCK_WRN(854, "dsi %d cfg fail!\n", screen_id);
 			if (panel->lcd_tcon_mode == DISP_TCON_DUAL_DSI &&
 			    screen_id + 1 < DEVICE_DSI_NUM) {
 				if (dsi_cfg(screen_id + 1, panel) != 0)
-					DE_WRN("dsi %d cfg fail!\n",
+					DISP_STOCK_WRN(858, "dsi %d cfg fail!\n",
 					       screen_id + 1);
 			}
 		}
