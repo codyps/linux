@@ -52,17 +52,19 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "sync_server.h"
 #include "sync_internal.h"
 #include "rgxhwperf.h"
+
 #include "pvrsrv_sync_server.h"
 
 struct _SCP_CONTEXT_
 {
 	PVRSRV_DEVICE_NODE  *psDevNode;         /*<! Device node reference for SCP layer */
-	void				*pvCCB;	            /*!< Pointer to the command circler buffer*/
+	void				*pvCCB;             /*!< Pointer to the command circler buffer*/
 	volatile IMG_UINT32	ui32DepOffset;      /*!< Dependency offset  */
 	volatile IMG_UINT32	ui32ReadOffset;     /*!< Read offset */
 	volatile IMG_UINT32	ui32WriteOffset;    /*!< Write offset */
 	IMG_UINT32			ui32CCBSize;        /*!< CCB size */
-	POS_LOCK			hLock;				/*!< Lock for this structure */
+	IMG_UINT32			psSyncRequesterID;  /*!< Sync requester ID, used when taking sync operations */
+	POS_LOCK			hLock;              /*!< Lock for this structure */
 };
 
 #define SCP_COMMAND_INVALID     0   /*!< Invalid command */
@@ -100,7 +102,7 @@ typedef struct _SCP_COMMAND_
 #endif
 
 /*****************************************************************************
- *                          Internal functions                               *
+ *                             Internal functions                            *
  *****************************************************************************/
 
 /*************************************************************************/ /*!
@@ -256,16 +258,12 @@ PVRSRV_ERROR _SCPCommandReady(PVRSRV_DEVICE_NODE *psDevNode, SCP_COMMAND *psComm
 		}
 		else
 		{
-			if (eErr != PVRSRV_OK)
-			{
-				PVR_LOG(("%s: Fence wait failed and returned %s", __func__, PVRSRVGetErrorString(eErr)));
-			}
+			PVR_LOG_IF_ERROR(eErr, "SyncFenceWaitKM");
 			/* Release the fence. */
 			SyncFenceReleaseKM(&psCommand->sAcquireFenceObj);
 			SyncClearFenceObj(&psCommand->sAcquireFenceObj);
 		}
 	}
-
 	/* Command is ready */
 	if (psCommand->pfnReady(psCommand->pvReadyData))
 	{
@@ -316,25 +314,26 @@ static void _SCPDumpCommand(SCP_COMMAND *psCommand,
 
 	if (psCommand->ui32CmdType == SCP_COMMAND_CALLBACK)
 	{
-		if (SyncIsFenceObjValid(&psCommand->sAcquireFenceObj))
-		{
-			SyncDumpFence(&psCommand->sAcquireFenceObj, pfnDumpDebugPrintf, pvDumpDebugFile);
-		}
-		if (SyncIsTimelineObjValid(&psCommand->sSWTimelineObj))
-		{
-			SyncSWDumpTimeline(&psCommand->sSWTimelineObj, pfnDumpDebugPrintf, pvDumpDebugFile);
-		}
+	if (SyncIsFenceObjValid(&psCommand->sAcquireFenceObj))
+	{
+		SyncDumpFence(&psCommand->sAcquireFenceObj, pfnDumpDebugPrintf, pvDumpDebugFile);
+	}
+
+	if (SyncIsTimelineObjValid(&psCommand->sSWTimelineObj))
+	{
+		SyncSWDumpTimeline(&psCommand->sSWTimelineObj, pfnDumpDebugPrintf, pvDumpDebugFile);
+	}
 	}
 }
 
 /*****************************************************************************
- *                    Public interface functions                             *
+ *                         Public interface functions                        *
  *****************************************************************************/
 
 /*
 	SCPCreate
 */
-PVRSRV_ERROR IMG_CALLCONV SCPCreate(PVRSRV_DEVICE_NODE *psDevNode,
+PVRSRV_ERROR SCPCreate(PVRSRV_DEVICE_NODE *psDevNode,
 									IMG_UINT32 ui32CCBSizeLog2,
 									SCP_CONTEXT **ppsContext)
 {
@@ -344,31 +343,18 @@ PVRSRV_ERROR IMG_CALLCONV SCPCreate(PVRSRV_DEVICE_NODE *psDevNode,
 
 	/* allocate an internal queue info structure */
 	psContext = OSAllocZMem(sizeof(SCP_CONTEXT));
-	if (psContext == NULL)
-	{
-		PVR_DPF((PVR_DBG_ERROR,"SCPCreate: Failed to alloc queue struct"));
-		eError = PVRSRV_ERROR_OUT_OF_MEMORY;
-		goto ErrorExit;
-	}
+	PVR_LOG_RETURN_IF_NOMEM(psContext, "OSAllocZMem");
 
 	psContext->psDevNode = psDevNode;
 
 	/* allocate the command queue buffer - allow for overrun */
 	psContext->pvCCB = OSAllocMem(ui32Power2QueueSize);
-	if (psContext->pvCCB == NULL)
-	{
-		PVR_DPF((PVR_DBG_ERROR,"SCPCreate: Failed to alloc queue buffer"));
-		eError = PVRSRV_ERROR_OUT_OF_MEMORY;
-		goto ErrorExit;
-	}
+	PVR_LOG_GOTO_IF_NOMEM(psContext->pvCCB, eError, ErrorExitNoCCB);
 
 	psContext->ui32CCBSize = ui32Power2QueueSize;
 
 	eError = OSLockCreate(&psContext->hLock);
-	if (eError != PVRSRV_OK)
-	{
-		goto ErrorExit;
-	}
+	PVR_GOTO_IF_ERROR(eError, ErrorExit);
 
 	SCP_DEBUG_PRINT("%s: New SCP %p of size %d",
 			__func__, psContext, ui32Power2QueueSize);
@@ -378,16 +364,11 @@ PVRSRV_ERROR IMG_CALLCONV SCPCreate(PVRSRV_DEVICE_NODE *psDevNode,
 	return PVRSRV_OK;
 
 ErrorExit:
-	if (psContext)
-	{
-		if (psContext->pvCCB)
-		{
-			OSFreeMem(psContext->pvCCB);
-			psContext->pvCCB = NULL;
-		}
+	OSFreeMem(psContext->pvCCB);
+	psContext->pvCCB = NULL;
 
-		OSFreeMem(psContext);
-	}
+ErrorExitNoCCB:
+	OSFreeMem(psContext);
 
 	return eError;
 }
@@ -395,7 +376,7 @@ ErrorExit:
 /*
 	SCPAllocCommand
 */
-PVRSRV_ERROR IMG_CALLCONV SCPAllocCommand(SCP_CONTEXT *psContext,
+PVRSRV_ERROR SCPAllocCommand(SCP_CONTEXT *psContext,
 										  PVRSRV_FENCE iAcquireFence,
 										  SCPReady pfnCommandReady,
 										  SCPDo pfnCommandDo,
@@ -453,11 +434,12 @@ PVRSRV_ERROR IMG_CALLCONV SCPAllocCommand(SCP_CONTEXT *psContext,
 	psCommand->pfnReady = pfnCommandReady;
 	psCommand->pfnDo = pfnCommandDo;
 
-	psCommand->pvReadyData = ((IMG_CHAR *) psCommand) +
-							 sizeof(SCP_COMMAND);
-	psCommand->pvCompleteData = ((IMG_CHAR *) psCommand) +
-								sizeof(SCP_COMMAND) +
-								ui32ReadyDataByteSize;
+	psCommand->pvReadyData = IMG_OFFSET_ADDR(psCommand,
+	                                         sizeof(SCP_COMMAND));
+
+	psCommand->pvCompleteData = IMG_OFFSET_ADDR(psCommand,
+	                                            (sizeof(SCP_COMMAND) +
+	                                            ui32ReadyDataByteSize));
 
 	/* Copy over the fences */
 	if (iAcquireFence != PVRSRV_NO_FENCE)
@@ -497,13 +479,9 @@ PVRSRV_ERROR SCPSubmitCommand(SCP_CONTEXT *psContext)
 {
 	SCP_COMMAND *psCommand;
 
-	if (psContext == NULL)
-	{
-		return PVRSRV_ERROR_INVALID_PARAMS;
-	}
+	PVR_RETURN_IF_INVALID_PARAM(psContext);
 
-	psCommand = (SCP_COMMAND *) ((IMG_UINT8 *) psContext->pvCCB
-				+ psContext->ui32WriteOffset);
+	psCommand = IMG_OFFSET_ADDR(psContext->pvCCB, psContext->ui32WriteOffset);
 
 	SCP_DEBUG_PRINT("%s: Submit command %p for ctx %p",
 			__func__, psCommand, psContext);
@@ -521,17 +499,12 @@ PVRSRV_ERROR SCPRun(SCP_CONTEXT *psContext)
 	SCP_COMMAND *psCommand;
 	PVRSRV_ERROR eError = PVRSRV_OK;
 
-
-	if (psContext == NULL)
-	{
-		return PVRSRV_ERROR_INVALID_PARAMS;
-	}
+	PVR_RETURN_IF_INVALID_PARAM(psContext);
 
 	OSLockAcquire(psContext->hLock);
 	while (psContext->ui32DepOffset != psContext->ui32WriteOffset)
 	{
-		psCommand = (SCP_COMMAND *)((IMG_UINT8 *)psContext->pvCCB +
-		            psContext->ui32DepOffset);
+		psCommand = IMG_OFFSET_ADDR(psContext->pvCCB, psContext->ui32DepOffset);
 
 		/* See if the command is ready to go */
 		eError = _SCPCommandReady(psContext->psDevNode, psCommand);
@@ -596,11 +569,12 @@ void SCPCommandComplete(SCP_CONTEXT *psContext,
 
 	while (bContinue)
 	{
-		psCommand = (SCP_COMMAND *) ((IMG_UINT8 *) psContext->pvCCB +
-					psContext->ui32ReadOffset);
+		psCommand = IMG_OFFSET_ADDR(psContext->pvCCB, psContext->ui32ReadOffset);
 
 		if (psCommand->ui32CmdType == SCP_COMMAND_CALLBACK)
 		{
+
+
 			if (SyncIsFenceObjValid(&psCommand->sReleaseFenceObj))
 			{
 				SyncSWTimelineAdvanceKM(psContext->psDevNode, &psCommand->sSWTimelineObj);
@@ -611,7 +585,6 @@ void SCPCommandComplete(SCP_CONTEXT *psContext,
 				SyncFenceReleaseKM(&psCommand->sReleaseFenceObj);
 				SyncClearFenceObj(&psCommand->sReleaseFenceObj);
 			}
-
 			bContinue = IMG_FALSE;
 		}
 
@@ -631,7 +604,7 @@ IMG_BOOL SCPHasPendingCommand(SCP_CONTEXT *psContext)
 	return psContext->ui32DepOffset != psContext->ui32WriteOffset;
 }
 
-void IMG_CALLCONV SCPDumpStatus(SCP_CONTEXT *psContext,
+void SCPDumpStatus(SCP_CONTEXT *psContext,
 					DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
 					void *pvDumpDebugFile)
 {
@@ -655,17 +628,15 @@ void IMG_CALLCONV SCPDumpStatus(SCP_CONTEXT *psContext,
 
 		while (ui32DepOffset != psContext->ui32WriteOffset)
 		{
-		        /* Dump the command we're pending on */
-		        psCommand = (SCP_COMMAND *)((IMG_UINT8 *)psContext->pvCCB +
-		                ui32DepOffset);
+			/* Dump the command we're pending on */
+			psCommand = IMG_OFFSET_ADDR(psContext->pvCCB, ui32DepOffset);
 
-		        _SCPDumpCommand(psCommand, pfnDumpDebugPrintf, pvDumpDebugFile);
+			_SCPDumpCommand(psCommand, pfnDumpDebugPrintf, pvDumpDebugFile);
 
-		        /* processed cmd so update queue */
-		        UPDATE_CCB_OFFSET(ui32DepOffset,
-		                                          psCommand->ui32CmdSize,
-		                                          psContext->ui32CCBSize);
-
+			/* processed cmd so update queue */
+			UPDATE_CCB_OFFSET(ui32DepOffset,
+			                  psCommand->ui32CmdSize,
+			                  psContext->ui32CCBSize);
 		}
 	}
 
@@ -681,8 +652,7 @@ void IMG_CALLCONV SCPDumpStatus(SCP_CONTEXT *psContext,
 
 		while (ui32ReadOffset != psContext->ui32DepOffset)
 		{
-			psCommand = (SCP_COMMAND *)((IMG_UINT8 *)psContext->pvCCB +
-			            ui32ReadOffset);
+			psCommand = IMG_OFFSET_ADDR(psContext->pvCCB, ui32ReadOffset);
 
 			_SCPDumpCommand(psCommand, pfnDumpDebugPrintf, pvDumpDebugFile);
 
@@ -700,7 +670,7 @@ void IMG_CALLCONV SCPDumpStatus(SCP_CONTEXT *psContext,
 /*
 	SCPDestroy
 */
-void IMG_CALLCONV SCPDestroy(SCP_CONTEXT *psContext)
+void SCPDestroy(SCP_CONTEXT *psContext)
 {
 	/*
 		The caller must ensure that they completed all queued operations
