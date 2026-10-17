@@ -8,6 +8,9 @@
 #define ALPU_SCL 129
 #define ALPU_SDA 130
 
+/* #860 calls __udelay directly, including for constant two-microsecond
+ * waits.  Keep that call path instead of the udelay macro's constant case.
+ */
 void SDA0_PORT_OUTPUT(void) { }
 void SDA0_PORT_INPUT(void) { gpio_direction_input(ALPU_SDA); }
 
@@ -23,15 +26,15 @@ void trimui_sunxi_gpio_init(void)
 	}
 }
 
-void OSTimeDly(u16 ticks) { udelay((unsigned long)ticks * 2); }
+void OSTimeDly(u16 ticks) { __udelay((unsigned long)ticks * 2); }
 
 void I2CMasterStop(void)
 {
 	gpio_direction_output(ALPU_SCL, 0);
 	gpio_direction_output(ALPU_SDA, 0);
-	udelay(2);
+	__udelay(2);
 	gpio_direction_output(ALPU_SCL, 1);
-	udelay(2);
+	__udelay(2);
 	gpio_direction_output(ALPU_SDA, 1);
 }
 
@@ -51,27 +54,31 @@ void I2CMasterStart(void)
 {
 	gpio_direction_output(ALPU_SDA, 1);
 	gpio_direction_output(ALPU_SCL, 1);
-	udelay(2);
+	__udelay(2);
 	gpio_direction_output(ALPU_SDA, 0);
-	udelay(2);
+	__udelay(2);
 	gpio_direction_output(ALPU_SCL, 0);
 }
 
 u8 I2CMasterWrite(u8 data)
 {
-	unsigned int mask;
+	unsigned int mask = 0x80, remaining;
 	u8 ack;
-	for (mask = 0x80; mask; mask >>= 1) {
-		gpio_direction_output(ALPU_SDA, !!(data & mask));
+	for (remaining = 8; remaining; remaining--) {
+		if (data & mask)
+			gpio_direction_output(ALPU_SDA, 1);
+		else
+			gpio_direction_output(ALPU_SDA, 0);
+		mask >>= 1;
 		gpio_direction_output(ALPU_SCL, 1);
-		udelay(2);
+		__udelay(2);
 		gpio_direction_output(ALPU_SCL, 0);
-		udelay(2);
+		__udelay(2);
 	}
 	gpio_direction_output(ALPU_SDA, 1);
 	SDA0_PORT_INPUT();
 	gpio_direction_output(ALPU_SCL, 1);
-	udelay(2);
+	__udelay(2);
 	ack = gpio_get_value(ALPU_SDA);
 	gpio_direction_output(ALPU_SCL, 0);
 	return ack;
@@ -79,21 +86,25 @@ u8 I2CMasterWrite(u8 data)
 
 u8 I2CMasterRead(u8 ack)
 {
-	unsigned int mask;
-	u8 data = 0;
+	u8 remaining = 8;
+	unsigned int data = 0, mask = 0x80;
 	SDA0_PORT_INPUT();
-	for (mask = 0x80; mask; mask >>= 1) {
+	do {
 		gpio_direction_output(ALPU_SCL, 1);
+		/* Stock tests only the GPIO result's low byte.  Read errors can
+		 * therefore become data bits. TODO: propagate errors separately.
+		 */
 		if ((u8)gpio_get_value(ALPU_SDA))
-			data |= mask;
+			data = mask | data;
 		gpio_direction_output(ALPU_SCL, 0);
-		udelay(2);
-	}
+		__udelay(2);
+		mask >>= 1;
+	} while (--remaining);
 	gpio_direction_output(ALPU_SDA, 1);
 	if (ack)
 		gpio_direction_output(ALPU_SDA, 0);
 	gpio_direction_output(ALPU_SCL, 1);
-	udelay(2);
+	__udelay(2);
 	gpio_direction_output(ALPU_SCL, 0);
 	return data;
 }
@@ -176,7 +187,7 @@ void arelink_write_data(u16 address, const u8 *data, u8 count)
 
 void arelink_delay(unsigned int milliseconds)
 {
-	udelay(milliseconds * 1000);
+	__udelay(milliseconds * 1000);
 }
 
 void arelink_power_on(void)
