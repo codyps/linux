@@ -40,6 +40,30 @@
 
 int usb_hw_scan_debug;
 
+extern int trimui_get_axp_5v_enable(void);
+extern void trimui_set_axp_5v_enable(int enable);
+
+/* Recovered stock #860 callbacks at ffffff80084ae960 / ffffff80084ae9a4.
+ * TODO(stock bug): validate count and the complete input in a separate fix.
+ * Stock reads buf[0] even for count == 0, accepts arbitrary suffixes after
+ * '0'/'1', and reports success without changing power for any other byte.
+ */
+static ssize_t set_usbc0_axp_5v_enable(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	if (*buf == '1')
+		trimui_set_axp_5v_enable(1);
+	else if (*buf == '0')
+		trimui_set_axp_5v_enable(0);
+	return count;
+}
+
+static ssize_t show_usbc0_axp_5v_enable(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", trimui_get_axp_5v_enable());
+}
+
 static ssize_t device_chose(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -170,6 +194,7 @@ static struct device_attribute chose_attrs[] = {
 	__ATTR(usb_host, 0400, host_chose, NULL),
 	__ATTR(usb_device, 0400, device_chose, NULL),
 	__ATTR(otg_role, 0644, show_otg_role, set_otg_role),
+	__ATTR(axp_5v, 0644, show_usbc0_axp_5v_enable, set_usbc0_axp_5v_enable),
 };
 
 static ssize_t show_otg_hw_scan_debug(struct device *dev,

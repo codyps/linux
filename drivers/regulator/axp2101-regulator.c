@@ -209,10 +209,11 @@ int trimui_get_axp_5v_enable(void)
 
 void trimui_set_axp_5v_enable(int enable)
 {
-	if (enable)
-		regulator_enable_regmap_axp2202_c_drivevbus(trimui_drivevbus);
-	else
+	/* Retain the recovered branch layout as well as the enable semantics. */
+	if (!enable)
 		regulator_disable_regmap_axp2202_c_drivevbus(trimui_drivevbus);
+	else
+		regulator_enable_regmap_axp2202_c_drivevbus(trimui_drivevbus);
 }
 
 
