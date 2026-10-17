@@ -89,3 +89,14 @@ Periodic fetches (monthly target) from
 `DC-DeepComputing/fml13v01-linux:fm7110-6.6` are merged into `upstream`.
 Cherry-picks to `main` are made only when absorbing a specific upstream
 change.
+
+## TG3040 reconstruction changes
+
+The reconstruction changes the A133 build to the generic handle backend, enables
+the stock physical-memory tests, and disables the separate RGX kick-sync bridge.
+These choices follow the compilation-unit inventory retained in the original
+TG3040 #860 module DWARF, rather than matching the reported DDK version alone.
+`services/server/common/handle_generic.c` comes from the public Creality
+`sonic_pad_os` commit `7f37a7fbf4ad59907034715e3d967b9177de1cd4`, under
+`lichee/linux-4.9/modules/gpu/img-rgx/linux/rogue_km/`; its handle implementation
+interface matches this DDK's header. The source remains dual MIT/GPLv2.

@@ -223,7 +223,7 @@
 
 #define RGX_NUM_DRIVERS_SUPPORTED 1
 #define RGX_VZ_CONNECTION_TIMEOUT_US 60000000
-#define SUPPORT_RGXKICKSYNC_BRIDGE
+/* Stock does not compile the separate kick-sync bridge. */
 
 /*
  * ---------------------------------------------------------------------------
@@ -267,3 +267,5 @@ static inline size_t pvr_compat_strlcpy(char *dest, const char *src, size_t size
 #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0)) */
 
 #endif /* defined(__KERNEL__) */
+
+#define SUPPORT_PHYSMEM_TEST
