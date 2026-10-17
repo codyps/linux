@@ -188,6 +188,19 @@ int regulator_enable_regmap_axp2202_c_drivevbus(struct regulator_dev *rdev)
 	return ret;
 }
 
+int regulator_disable_regmap_axp2202_c_drivevbus(struct regulator_dev *rdev)
+{
+	int ret;
+
+	ret = regmap_update_bits(rdev->regmap, AXP2202_RBFET_CTRL, BIT(0), 0);
+	if (ret)
+		return ret;
+
+	ret = regmap_update_bits(rdev->regmap, AXP2202_MODULE_EN, BIT(4), 0);
+
+	return ret;
+}
+
 /* Recovered stock #860 wrappers at ffffff800834f0f8 / ffffff800834f114. */
 int trimui_get_axp_5v_enable(void)
 {
@@ -202,18 +215,6 @@ void trimui_set_axp_5v_enable(int enable)
 		regulator_disable_regmap_axp2202_c_drivevbus(trimui_drivevbus);
 }
 
-int regulator_disable_regmap_axp2202_c_drivevbus(struct regulator_dev *rdev)
-{
-	int ret;
-
-	ret = regmap_update_bits(rdev->regmap, AXP2202_RBFET_CTRL, BIT(0), 0);
-	if (ret)
-		return ret;
-
-	ret = regmap_update_bits(rdev->regmap, AXP2202_MODULE_EN, BIT(4), 0);
-
-	return ret;
-}
 
 static int axp2101_set_voltage_time_sel(struct regulator_dev *rdev,
 		unsigned int old_selector, unsigned int new_selector)
