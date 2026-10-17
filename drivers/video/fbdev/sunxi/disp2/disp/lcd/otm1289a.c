@@ -12,10 +12,14 @@ static const struct trimui_lcm_setting *active_table;
 
 static int __init lcd_model_setup(char *value)
 {
-	/* Bounded copy is a reconstruction fix; stock used strcpy here. */
-	if (value)
-		strlcpy(lcd_model_name, value, sizeof(lcd_model_name));
-	pr_info("get lcd model:%s\n", lcd_model_name);
+	if (value) {
+		/* Stock copies the entire argument, including an oversized one.
+		 * TODO: bound this copy in a separate fix; the reconstruction must
+		 * retain the shipped overflow and NULL-argument logging behavior.
+		 */
+		strcpy(lcd_model_name, value);
+		pr_info("get lcd model:%s\n", lcd_model_name);
+	}
 	return 1;
 }
 __setup("lcd_model_name=", lcd_model_setup);

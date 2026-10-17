@@ -26,10 +26,10 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 	int to_b = target & 255;
 	if (effect->duration < 200)
 		effect->duration = 200;
-	/* The original has no bound for linear/static effects and can overrun
-	 * frames[]. Bound those inputs to the actual recovered array size. */
-	if ((type == 1 || type == 4) && effect->duration > 15360)
-		effect->duration = 15360;
+	/* Stock leaves linear/static effects unbounded and can overwrite the
+	 * following state after frames[959]. TODO: validate those durations in
+	 * a separate fix; preserve the shipped writes during reconstruction.
+	 */
 	if (type == 1) {
 		n = effect->duration / 16;
 		from_r = (previous >> 16) & 255;
