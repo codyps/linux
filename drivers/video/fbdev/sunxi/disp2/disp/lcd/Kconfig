@@ -183,7 +183,7 @@ config LCD_SUPPORT_ZS080NI4003E7H3H_A
 
 config LCD_SUPPORT_LT9611
 	bool "LCD support lt9611 bridge panel"
-	default y
+	default n
 	---help---
 		If you want to support lt9611 bridge panel for display driver, select it.
 
