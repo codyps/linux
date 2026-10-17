@@ -23,8 +23,8 @@ else
 	BUILD_SPINAND=y
 endif
 
+ifneq ($(wildcard $(src)/lib),)
 $(obj)/$(nftl) : FORCE
-ifneq ($(wildcard $(obj)/lib),)
 	$(MAKE) -C $(obj)/.. \
 		LICHEE_KDIR="$(shell pwd)" \
 		build

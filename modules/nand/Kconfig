@@ -6,3 +6,10 @@ config SUNXI_NAND
 
 	  If unsure, say m.
 source "modules/nand/common1/Kconfig"
+
+config SUNXI_NAND_IOCTL_SECBLK
+	bool "Support ioctl for NAND secure storage items"
+	depends on SUNXI_NAND
+	default y
+	help
+	  Enable the SECBLK_READ, SECBLK_WRITE and SECBLK_IOCTL interface.

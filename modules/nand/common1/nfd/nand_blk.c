@@ -490,6 +490,7 @@ static int nand_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd,
 	 *        mark_to_disable_crc_when_ota();
 	 *        return 0;
 	 */
+#ifdef CONFIG_SUNXI_NAND_IOCTL_SECBLK
 	case SECBLK_READ:
 
 		nand_dbg_err("start secure read ...\n");
@@ -562,6 +563,7 @@ static int nand_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd,
 		IS_IDLE = 1;
 		return ret;
 
+#endif
 	default:
 		nand_dbg_err("unknown cmd 0x%x!\n", cmd);
 		return -ENOTTY;
