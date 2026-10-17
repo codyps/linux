@@ -68,6 +68,14 @@ static void check_battery(void)
 	trimui_low_battery = trimui_axp2202_get_bat_cap() < 16;
 }
 
+static noinline void trimui_led_power_disable(void)
+{
+	/* Stock ignores GPIO direction/output failures, including at shutdown.
+	 * TODO: handle those failures separately from this reconstruction.
+	 */
+	gpio_direction_output(107, 0);
+}
+
 static void commit_static_frame(void)
 {
 	struct sunxi_led *led = sunxi_led;
@@ -228,9 +236,21 @@ static ssize_t store_led_enable(struct class *class, struct class_attribute *att
 	return count;
 }
 
+static const char * const trimui_effect_names[] = {
+	"disable", "linear", "breath", "sniff", "static", "blink1", "blink2", "blink3",
+};
+
 static ssize_t help_show_effect(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	return sprintf(buffer, "TRIMUI LED Animation Effect names:\n0 - disable\n1 - linear\n2 - breath\n3 - sniff\n4 - static\n5 - blink1\n6 - blink2\n7 - blink3\n");
+	char line[32];
+	unsigned long i;
+
+	strcpy(buffer, "TRIMUI LED Animation Effect names:\n");
+	for (i = 0; i < ARRAY_SIZE(trimui_effect_names); i++) {
+		sprintf(line, "%d - %s\n", (int)i, trimui_effect_names[i]);
+		strcat(buffer, line);
+	}
+	return strlen(buffer);
 }
 
 static ssize_t show_max_scale(struct class *class, struct class_attribute *attr, char *buffer)
@@ -312,6 +332,11 @@ static ssize_t store_frame_hex(struct class *class, struct class_attribute *attr
 	return count;
 }
 
+static ssize_t show_duration(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.duration);
+}
+
 static ssize_t show_duration_m(struct class *class, struct class_attribute *attr, char *buffer)
 {
 	return sprintf(buffer, "%d\n", trimui_effect_m.duration);
@@ -367,16 +392,16 @@ static ssize_t store_duration_f2(struct class *class, struct class_attribute *at
 	return count;
 }
 
-static ssize_t show_duration(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_l.duration);
-}
-
 static ssize_t store_duration(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	kstrtoint(buffer, 0, (int *)&trimui_effect_l.duration);
 	trimui_effect_r.duration = trimui_effect_l.duration;
 	return count;
+}
+
+static ssize_t show_cycles(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.cycles);
 }
 
 static ssize_t show_cycles_m(struct class *class, struct class_attribute *attr, char *buffer)
@@ -434,11 +459,6 @@ static ssize_t store_cycles_f2(struct class *class, struct class_attribute *attr
 	return count;
 }
 
-static ssize_t show_cycles(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_l.cycles);
-}
-
 static ssize_t store_cycles(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	kstrtoint(buffer, 0, (int *)&trimui_effect_l.cycles);
@@ -446,80 +466,95 @@ static ssize_t store_cycles(struct class *class, struct class_attribute *attr, c
 	return count;
 }
 
+/* Stock writes the terminating newline at the fixed byte offset seven and
+ * returns eight, independently of sprintf's return value.  Keep both calls.
+ */
+static noinline int dump_rgb_hex(char *buffer, u32 rgb)
+{
+	sprintf(buffer, "%06X ", rgb & 0xffffff);
+	strcpy(buffer + 7, "\n");
+	return 8;
+}
+
+static noinline u32 get_rgb_hex(const char *buffer)
+{
+	u32 rgb = 0;
+
+	/* Stock ignores conversion failure and publishes the initialized zero.
+	 * TODO: report malformed input in a separate behavior-changing fix.
+	 */
+	sscanf(buffer, "%x", &rgb);
+	return rgb;
+}
+
 static ssize_t show_effect_rgb_hex_m(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	return sprintf(buffer, "%06X \n", trimui_effect_m.target_rgb & 0xffffff);
+	return dump_rgb_hex(buffer, trimui_effect_m.target_rgb);
 }
 
 static ssize_t store_effect_rgb_hex_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned int rgb = 0;
-	sscanf(buffer, "%x", &rgb);
+	u32 rgb = get_rgb_hex(buffer);
 	trimui_effect_m.target_rgb = rgb;
 	return count;
 }
 
 static ssize_t show_effect_rgb_hex_l(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	return sprintf(buffer, "%06X \n", trimui_effect_l.target_rgb & 0xffffff);
+	return dump_rgb_hex(buffer, trimui_effect_l.target_rgb);
 }
 
 static ssize_t store_effect_rgb_hex_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned int rgb = 0;
-	sscanf(buffer, "%x", &rgb);
+	u32 rgb = get_rgb_hex(buffer);
 	trimui_effect_l.target_rgb = rgb;
 	return count;
 }
 
 static ssize_t show_effect_rgb_hex_r(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	return sprintf(buffer, "%06X \n", trimui_effect_r.target_rgb & 0xffffff);
+	return dump_rgb_hex(buffer, trimui_effect_r.target_rgb);
 }
 
 static ssize_t store_effect_rgb_hex_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned int rgb = 0;
-	sscanf(buffer, "%x", &rgb);
+	u32 rgb = get_rgb_hex(buffer);
 	trimui_effect_r.target_rgb = rgb;
 	return count;
 }
 
 static ssize_t show_effect_rgb_hex_f1(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	return sprintf(buffer, "%06X \n", trimui_effect_f1.target_rgb & 0xffffff);
+	return dump_rgb_hex(buffer, trimui_effect_f1.target_rgb);
 }
 
 static ssize_t store_effect_rgb_hex_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned int rgb = 0;
-	sscanf(buffer, "%x", &rgb);
+	u32 rgb = get_rgb_hex(buffer);
 	trimui_effect_f1.target_rgb = rgb;
 	return count;
 }
 
 static ssize_t show_effect_rgb_hex_f2(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	return sprintf(buffer, "%06X \n", trimui_effect_f2.target_rgb & 0xffffff);
+	return dump_rgb_hex(buffer, trimui_effect_f2.target_rgb);
 }
 
 static ssize_t store_effect_rgb_hex_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned int rgb = 0;
-	sscanf(buffer, "%x", &rgb);
+	u32 rgb = get_rgb_hex(buffer);
 	trimui_effect_f2.target_rgb = rgb;
 	return count;
 }
 
 static ssize_t show_effect_rgb_hex_lr(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	return sprintf(buffer, "%06X \n", trimui_effect_l.target_rgb & 0xffffff);
+	return dump_rgb_hex(buffer, trimui_effect_l.target_rgb);
 }
 
 static ssize_t store_effect_rgb_hex_lr(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned int rgb = 0;
-	sscanf(buffer, "%x", &rgb);
+	u32 rgb = get_rgb_hex(buffer);
 	trimui_effect_l.target_rgb = rgb;
 	trimui_effect_r.target_rgb = rgb;
 	return count;

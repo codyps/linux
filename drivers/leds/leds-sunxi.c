@@ -1894,7 +1894,7 @@ static int led_regulator_enable(struct sunxi_led *led)
 		return 0;
 
 	if (regulator_enable(led->regulator) != 0) {
-		LED_ERR("enable regulator %s failed!\n", led->regulator_id);
+		SUNXI_LED_STOCK_ERR(3434, "enable regulator %s failed!\n", led->regulator_id);
 		return -1;
 	}
 	return 0;
@@ -1906,7 +1906,8 @@ static int led_regulator_disable(struct sunxi_led *led)
 		return 0;
 
 	if (regulator_disable(led->regulator) != 0) {
-		LED_ERR("enable regulator %s failed!\n", led->regulator_id);
+		/* Stock calls this an enable failure even on the disable path. */
+		SUNXI_LED_STOCK_ERR(3446, "enable regulator %s failed!\n", led->regulator_id);
 		return -1;
 	}
 	return 0;
@@ -1919,14 +1920,14 @@ static int sunxi_led_suspend_noirq(struct device *dev)
 
 #ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
 	trimui_suspended = 1;
-	gpio_direction_output(107, 0);
+	trimui_led_power_disable();
 	commit_static_frame();
 #endif
 	sunxi_clk_disable(led);
 	led_select_gpio_state(led->pctrl, PINCTRL_STATE_SLEEP);
 	led_regulator_disable(led);
 
-	dprintk(DEBUG_SUSPEND, "finish\n");
+	SUNXI_LED_STOCK_LOG(3465, DEBUG_SUSPEND, "finish\n");
 
 	return 0;
 }
@@ -1945,7 +1946,7 @@ static int sunxi_led_resume_noirq(struct device *dev)
 	led_select_gpio_state(led->pctrl, PINCTRL_STATE_DEFAULT);
 	sunxi_clk_enable(led);
 
-	dprintk(DEBUG_SUSPEND, "finish\n");
+	SUNXI_LED_STOCK_LOG(3483, DEBUG_SUSPEND, "finish\n");
 
 	return 0;
 }
@@ -1960,6 +1961,15 @@ static const struct dev_pm_ops sunxi_led_dev_pm_ops = {
 #define SUNXI_LED_DEV_PM_OPS NULL
 #endif
 
+#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
+static void sunxi_led_shutdown(struct platform_device *pdev)
+{
+	printk("%s\n", __func__);
+	trimui_suspended = 1;
+	trimui_led_power_disable();
+}
+#endif
+
 static const struct of_device_id sunxi_led_dt_ids[] = {
 	{.compatible = "allwinner,sunxi-leds"},
 	{},
@@ -1968,6 +1978,9 @@ static const struct of_device_id sunxi_led_dt_ids[] = {
 static struct platform_driver sunxi_led_driver = {
 	.probe		= sunxi_led_probe,
 	.remove		= sunxi_led_remove,
+#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
+	.shutdown	= sunxi_led_shutdown,
+#endif
 	.driver		= {
 		.name	= "sunxi-leds",
 		.owner	= THIS_MODULE,
