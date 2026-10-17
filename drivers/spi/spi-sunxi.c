@@ -16,6 +16,11 @@
  */
 
 #include <linux/init.h>
+/* TG3040 #860 reconstruction: TinyVision 356b94946a48 kernel/linux-4.9
+ * DMA/master layout with recovered older sampling/FIFO/setup behavior.
+ * The 52 enabled comparable bodies match stock; other configurations and
+ * complete referenced-data/hardware equivalence remain unverified.
+ */
 #include <linux/module.h>
 #include <linux/spinlock.h>
 #include <linux/workqueue.h>
@@ -35,6 +40,7 @@
 #include <asm/uaccess.h>
 #include <linux/sched.h>
 #include <linux/kthread.h>
+#include <linux/highmem.h>
 
 #ifdef CONFIG_DMA_ENGINE
 #include <linux/dmaengine.h>
@@ -48,9 +54,23 @@
 #include "spi-slave-protocol.h"
 
 #include <linux/regulator/consumer.h>
+#ifdef CONFIG_MTD_SPI_NOR
+#include <linux/memblock.h>
+#include <boot_param.h>
+#include <linux/mtd/mtd.h>
+#endif
 
 /* For debug */
 #define SPI_ERR(fmt, arg...)	pr_warn("%s()%d - "fmt, __func__, __LINE__, ##arg)
+
+/* Recovered TG3040 #860 diagnostic arguments, rather than synthetic source
+ * line directives. Preserve these values when editing the reconstruction. */
+#define SPI_ERR_STOCK(line, fmt, arg...) \
+	pr_warn("%s()%d - "fmt, __func__, line, ##arg)
+#define dprintk_STOCK(line, level_mask, fmt, arg...) do { \
+	if (unlikely(debug_mask & level_mask)) \
+		pr_warn("%s()%d - "fmt, __func__, line, ##arg); \
+} while (0)
 
 static u32 debug_mask = 1;
 #define dprintk(level_mask, fmt, arg...)				\
@@ -77,24 +97,30 @@ enum spi_mode_type {
 
 #ifdef CONFIG_DMA_ENGINE
 
-#define SPI_MAX_PAGES	200
 enum spi_dma_dir {
 	SPI_DMA_RWNULL,
 	SPI_DMA_WDEV = DMA_TO_DEVICE,
 	SPI_DMA_RDEV = DMA_FROM_DEVICE,
 };
 
-typedef struct {
-	enum spi_dma_dir dir;
-	struct dma_chan *chan;
-	int nents;
-	struct scatterlist sg[SPI_MAX_PAGES];
-	struct page *pages[SPI_MAX_PAGES];
-} spi_dma_info_t;
-
 u64 sunxi_spi_dma_mask = DMA_BIT_MASK(32);
 
 #endif
+
+/*
+ *#ifdef CONFIG_AW_MTD_SPINAND
+ *struct sunxi_spi_ttransfer {
+ *        struct spi_transfer tx;
+ *#define PREALLOC_LEN  (4096+64)
+ *        unsigned len;
+ *        [>-1: no use 1: transfer 2: not transfer <]
+ *#define INIT_STATE (-1)
+ *#define TRANSFER_STATE (1)
+ *#define NTRANSFER_STATE (2)
+ *        int state;
+ *};
+ *#endif
+ */
 
 struct sunxi_spi {
 	struct platform_device *pdev;
@@ -106,53 +132,30 @@ struct sunxi_spi {
 	struct clk *pclk;  /* PLL clock */
 	struct clk *mclk;  /* spi module clock */
 
-#ifdef CONFIG_DMA_ENGINE
-	spi_dma_info_t dma_rx;
-	spi_dma_info_t dma_tx;
-#endif
-
 	enum spi_mode_type mode_type;
 
-	unsigned int irq; /* irq NO. */
 	char dev_name[48];
-
-	int busy;
-#define SPI_FREE   (1<<0)
-#define SPI_SUSPND (1<<1)
-#define SPI_BUSY   (1<<2)
 
 	int result; /* 0: succeed -1:fail */
 
-	struct workqueue_struct *workqueue;
-	struct work_struct work;
 	struct task_struct *task;
 	int task_flag;
 
-	struct list_head queue; /* spi messages */
 	spinlock_t lock;
 
 	struct completion done;  /* wakup another spi transfer */
 
-	/* keep select during one message */
-	void (*cs_control)(struct spi_device *spi, bool on);
-
-/*
- * (1) enable cs1,    cs_bitmap = SPI_CHIP_SELECT_CS1;
- * (2) enable cs0&cs1,cs_bitmap = SPI_CHIP_SELECT_CS0|SPI_CHIP_SELECT_CS1;
- *
- */
-#define SPI_CHIP_SELECT_CS0 (0x01)
-#define SPI_CHIP_SELECT_CS1 (0x02)
-#define SPI_CHIP_SELECT_CS2 (0x04)
-#define SPI_CHIP_SELECT_CS3 (0x08)
-
-	int cs_bitmap;/* cs0- 0x1; cs1-0x2, cs0&cs1-0x3. */
-	u32 cdr;
 	u32 mode; /* 0: master mode, 1: slave mode */
 	int dbi_enabled;
 	struct sunxi_slave *slave;
 
 	struct pinctrl		 *pctrl;
+/*
+ *#ifdef CONFIG_AW_MTD_SPINAND
+ *        struct sunxi_spi_ttransfer stx;
+ *#endif
+ */
+
 };
 
 void spi_dump_reg(struct sunxi_spi *sspi, u32 offset, u32 len)
@@ -230,7 +233,7 @@ static s32 spi_set_cs(u32 chipselect, void __iomem *base_addr)
 		writel(reg_val, base_addr + SPI_TC_REG);
 		ret = SUNXI_SPI_OK;
 	} else {
-		SPI_ERR("Chip Select set fail! cs = %d\n", chipselect);
+		SPI_ERR_STOCK(195, "Chip Select set fail! cs = %d\n", chipselect);
 		ret = SUNXI_SPI_FAIL;
 	}
 
@@ -407,7 +410,7 @@ static void spi_config_dbi(struct spi_device *spi, void __iomem *base_addr)
 	writel(reg_val, base_addr + SPI_DBI_CR_REG2);
 
 
-	dprintk(DEBUG_INFO, "DBI mode configurate : %x\n", reg_val);
+	dprintk_STOCK(372, DEBUG_INFO, "DBI mode configurate : %x\n", reg_val);
 
 	reg_val = 0;
 	if (config & SPI_DBI_DCX_DATA_)
@@ -442,7 +445,7 @@ static void spi_config_dbi(struct spi_device *spi, void __iomem *base_addr)
 }
 
 /* config spi */
-static void spi_config_tc(u32 master, u32 config, void __iomem *base_addr)
+static void spi_config_tc(u32 config, void __iomem *base_addr)
 {
 	u32 reg_val = readl(base_addr + SPI_TC_REG);
 
@@ -470,43 +473,34 @@ static void spi_config_tc(u32 master, u32 config, void __iomem *base_addr)
 	else
 		reg_val &= ~SPI_TC_FBS;/*default LMTF =0, MSB first */
 
-	/*master mode: set DDB,DHB,SMC,SSCTL*/
-	if (master == 1) {
-		/*5. dummy burst type */
-		if (config & SPI_DUMMY_ONE_ACTIVE_)
-			reg_val |= SPI_TC_DDB;
-		else
-			reg_val &= ~SPI_TC_DDB;/*default DDB =0, ZERO */
+	/*5. dummy burst type */
+	if (config & SPI_DUMMY_ONE_ACTIVE_)
+		reg_val |= SPI_TC_DDB;
+	else
+		reg_val &= ~SPI_TC_DDB;/*default DDB =0, ZERO */
 
-		/*6.discard hash burst-DHB */
-		if (config & SPI_RECEIVE_ALL_ACTIVE_)
-			reg_val &= ~SPI_TC_DHB;
-		else
-			reg_val |= SPI_TC_DHB;/*default DHB =1, discard unused burst */
+	/*6.discard hash burst-DHB */
+	if (config & SPI_RECEIVE_ALL_ACTIVE_)
+		reg_val &= ~SPI_TC_DHB;
+	else
+		reg_val |= SPI_TC_DHB;/*default DHB =1, discard unused burst */
 
-		/*7. set SMC = 1 , SSCTL = 0 ,TPE = 1 */
-		reg_val &= ~SPI_TC_SSCTL;
-	} else {
-		/* tips for slave mode config */
-		dprintk(DEBUG_INFO, "slave mode configurate control register\n");
-	}
-
+	/*7. set SMC = 1 , SSCTL = 0 ,TPE = 1 */
+	reg_val &= ~SPI_TC_SSCTL;
 	writel(reg_val, base_addr + SPI_TC_REG);
 }
 
 /* set spi clock */
 static void spi_set_clk(u32 spi_clk, u32 ahb_clk, struct sunxi_spi *sspi)
 {
-	dprintk(DEBUG_INFO, "set spi clock %d, mclk %d\n", spi_clk, ahb_clk);
+	dprintk_STOCK(455, DEBUG_INFO, "set spi clock %d, mclk %d\n", spi_clk, ahb_clk);
 
 	clk_set_rate(sspi->mclk, spi_clk);
-	/*yes,we give up*/
 	if (clk_get_rate(sspi->mclk) != spi_clk) {
 		clk_set_rate(sspi->mclk, ahb_clk);
-		SPI_ERR("[spi%d] set spi clock failed, use clk:%d\n",
+		SPI_ERR_STOCK(461, "[spi%d] set spi clock failed, use clk:%d\n",
 				sspi->master->bus_num, ahb_clk);
-	} else
-		ahb_clk = spi_clk;
+	}
 }
 
 /* delay internal read sample point*/
@@ -528,6 +522,14 @@ static void spi_sample_delay(u32 sdm, u32 sdc, void __iomem *base_addr)
 	if (reg_val != org_val)
 		writel(reg_val, base_addr + SPI_TC_REG);
 }
+
+
+
+
+
+
+
+
 
 /* start spi transfer */
 static void spi_start_xfer(void __iomem *base_addr)
@@ -643,7 +645,6 @@ static void spi_enable_dma_irq(u32 bitmap, void __iomem *base_addr)
 
 	spi_set_dma_mode(base_addr);
 }
-#endif
 
 /* disable dma irq */
 static void spi_disable_dma_irq(u32 bitmap, void __iomem *base_addr)
@@ -654,6 +655,23 @@ static void spi_disable_dma_irq(u32 bitmap, void __iomem *base_addr)
 	reg_val &= ~bitmap;
 	writel(reg_val, base_addr + SPI_FIFO_CTL_REG);
 }
+
+static void spi_enable_dbi_dma(void __iomem *base_addr)
+{
+	u32 reg_val = readl(base_addr + SPI_DBI_CR_REG2);
+
+	reg_val |= DBI_CR2_DMA_ENABLE;
+	writel(reg_val, base_addr + SPI_DBI_CR_REG2);
+}
+
+static void spi_disable_dbi_dma(void __iomem *base_addr)
+{
+	u32 reg_val = readl(base_addr + SPI_DBI_CR_REG2);
+
+	reg_val &= ~(DBI_CR2_DMA_ENABLE);
+	writel(reg_val, base_addr + SPI_DBI_CR_REG2);
+}
+#endif
 
 /* query irq enable */
 static u32 spi_qry_irq_enable(void __iomem *base_addr)
@@ -715,22 +733,6 @@ static void spi_reset_fifo(void __iomem *base_addr)
 	reg_val &= ~(SPI_FIFO_CTL_RX_LEVEL|SPI_FIFO_CTL_TX_LEVEL);
 	reg_val |= (0x20<<16) | 0x20;
 	writel(reg_val, base_addr + SPI_FIFO_CTL_REG);
-}
-
-static void spi_enable_dbi_dma(void __iomem *base_addr)
-{
-	u32 reg_val = readl(base_addr + SPI_DBI_CR_REG2);
-
-	reg_val |= DBI_CR2_DMA_ENABLE;
-	writel(reg_val, base_addr + SPI_DBI_CR_REG2);
-}
-
-static void spi_disable_dbi_dma(void __iomem *base_addr)
-{
-	u32 reg_val = readl(base_addr + SPI_DBI_CR_REG2);
-
-	reg_val &= ~(DBI_CR2_DMA_ENABLE);
-	writel(reg_val, base_addr + SPI_DBI_CR_REG2);
 }
 
 static void spi_set_rx_trig(u32 val, void __iomem *base_addr)
@@ -833,6 +835,7 @@ static void spi_enable_quad(void __iomem  *base_addr)
 	reg_val |= SPI_BCC_QUAD_MODE;
 	writel(reg_val, base_addr + SPI_BCC_REG);
 }
+
 static int spi_regulator_request(struct sunxi_spi_platform_data *pdata,
 			struct device *dev)
 {
@@ -844,7 +847,7 @@ static int spi_regulator_request(struct sunxi_spi_platform_data *pdata,
 #ifdef CONFIG_SUNXI_REGULATOR_DT
 	regu = regulator_get(dev, "spi");
 	if (IS_ERR(regu)) {
-		SPI_ERR("%s: spi get supply failed!\n", __func__);
+		SPI_ERR_STOCK(801, "%s: spi get supply failed!\n", __func__);
 		return -1;
 	}
 #else
@@ -878,7 +881,7 @@ static int spi_regulator_enable(struct sunxi_spi_platform_data *pdata)
 		return 0;
 
 	if (regulator_enable(pdata->regulator) != 0) {
-		SPI_ERR("enable regulator %s failed!\n", pdata->regulator_id);
+		SPI_ERR_STOCK(835, "enable regulator %s failed!\n", pdata->regulator_id);
 		return -1;
 	}
 	return 0;
@@ -890,11 +893,278 @@ static int spi_regulator_disable(struct sunxi_spi_platform_data *pdata)
 		return 0;
 
 	if (regulator_disable(pdata->regulator) != 0) {
-		SPI_ERR("enable regulator %s failed!\n", pdata->regulator_id);
+		SPI_ERR_STOCK(847, "enable regulator %s failed!\n", pdata->regulator_id);
 		return -1;
 	}
 	return 0;
 }
+
+#ifdef CONFIG_MTD_SPI_NOR
+void dump_spinor_info(boot_spinor_info_t *spinor_info)
+{
+	pr_debug("\n"
+		"----------------------\n"
+		"magic:%s\n"
+		"readcmd:%x\n"
+		"read_mode:%d\n"
+		"write_mode:%d\n"
+		"flash_size:%dM\n"
+		"addr4b_opcodes:%d\n"
+		"erase_size:%d\n"
+		"frequency:%d\n"
+		"sample_mode:%x\n"
+		"sample_delay:%x\n"
+		"read_proto:%x\n"
+		"write_proto:%x\n"
+		"read_dummy:%d\n"
+		"----------------------\n",
+		spinor_info->magic, spinor_info->readcmd,
+		spinor_info->read_mode, spinor_info->write_mode,
+		spinor_info->flash_size, spinor_info->addr4b_opcodes,
+		spinor_info->erase_size, spinor_info->frequency,
+		spinor_info->sample_mode, spinor_info->sample_delay,
+		spinor_info->read_proto, spinor_info->write_proto,
+		spinor_info->read_dummy);
+}
+
+static int update_boot_param(struct mtd_info *mtd, struct sunxi_spi *sspi)
+{
+	struct spi_nor *nor = mtd->priv;
+	u8 erase_opcode = nor->erase_opcode;
+	uint32_t erasesize = mtd->erasesize;
+	size_t retlen = 0;
+	int ret;
+	struct erase_info instr;
+	boot_spinor_info_t *boot_info = NULL;
+	struct sunxi_boot_param_region *boot_param = NULL;
+	boot_param = kmalloc(BOOT_PARAM_SIZE, GFP_KERNEL);
+	memset(boot_param, 0, BOOT_PARAM_SIZE);
+
+	strncpy((char *)boot_param->header.magic,
+			(const char *)BOOT_PARAM_MAGIC,
+			sizeof(boot_param->header.magic));
+
+	boot_param->header.check_sum = CHECK_SUM;
+
+	boot_info = (boot_spinor_info_t *)boot_param->spiflash_info;
+
+	strncpy((char *)boot_info->magic, (const char *)SPINOR_BOOT_PARAM_MAGIC,
+			sizeof(boot_info->magic));
+	boot_info->readcmd = nor->read_opcode;
+	boot_info->flash_size = mtd->size / 1024 / 1024;
+	boot_info->erase_size = mtd->erasesize;
+	boot_info->read_proto = nor->read_proto;
+	boot_info->write_proto = nor->write_proto;
+	boot_info->read_dummy = nor->read_dummy;
+
+	boot_info->frequency = sspi->spi->max_speed_hz;
+	boot_info->sample_mode = sspi->sample_mode;
+	boot_info->sample_delay = sspi->sample_delay;
+
+	if (nor->read_proto == SNOR_PROTO_1_1_4)
+		boot_info->read_mode = 4;
+	else if (nor->read_proto == SNOR_PROTO_1_1_2)
+		boot_info->read_mode = 2;
+	else
+		boot_info->read_mode = 1;
+
+	if (nor->write_proto == SNOR_PROTO_1_1_4)
+		boot_info->write_mode = 4;
+	else if (nor->write_proto == SNOR_PROTO_1_1_2)
+		boot_info->write_mode = 2;
+	else
+		boot_info->write_mode = 1;
+
+	if (nor->flags & SNOR_F_4B_OPCODES)
+		boot_info->addr4b_opcodes = 1;
+
+	/*
+	 * To not break boot0, switch bits 4K erasing
+	 */
+	if (nor->addr_width == 4)
+		nor->erase_opcode = SPINOR_OP_BE_4K_4B;
+	else
+		nor->erase_opcode = SPINOR_OP_BE_4K;
+	mtd->erasesize = 4096;
+
+	instr.mtd = mtd;
+	instr.addr = (CONFIG_SPINOR_UBOOT_OFFSET << 9) - BOOT_PARAM_SIZE;
+	instr.len = BOOT_PARAM_SIZE;
+	instr.callback = NULL;
+	mtd->_erase(mtd, &instr);
+	nor->erase_opcode = erase_opcode;
+	mtd->erasesize = erasesize;
+
+	ret = mtd->_write(mtd, (CONFIG_SPINOR_UBOOT_OFFSET << 9) - BOOT_PARAM_SIZE,
+			BOOT_PARAM_SIZE, &retlen, (u_char *)boot_param);
+	if (ret < 0)
+		return -1;
+
+	dump_spinor_info(boot_info);
+	kfree(boot_param);
+	return BOOT_PARAM_SIZE == retlen ? 0 : -1;
+}
+
+static void sunxi_spi_try_sample_param(struct sunxi_spi *sspi, struct mtd_info *mtd,
+				boot_spinor_info_t *boot_info)
+{
+	unsigned int start_ok = 0, end_ok = 0, len_ok = 0, mode_ok = 0;
+	unsigned int start_backup = 0, end_backup = 0, len_backup = 0;
+	unsigned int mode = 0, startry_mode = 0, endtry_mode = 1;
+	unsigned int sample_delay = 0;
+	size_t retlen = 0, len = 512;
+	void __iomem *base_addr = sspi->base_addr;
+	boot0_file_head_t *boot0_head;
+	boot0_head = kmalloc(len, GFP_KERNEL);
+
+	spi_set_clk(sspi->spi->max_speed_hz, clk_get_rate(sspi->mclk), sspi);
+
+	spi_samp_mode_enable(1, base_addr);
+	spi_samp_dl_sw_status(1, base_addr);
+	for (mode = startry_mode; mode <= endtry_mode; mode++) {
+		sspi->sample_mode = mode;
+		spi_set_sample_mode(mode, base_addr);
+		for (sample_delay = 0; sample_delay < 64; sample_delay++) {
+			sspi->sample_delay = sample_delay;
+			spi_set_sample_delay(sample_delay, base_addr);
+			memset(boot0_head, 0, len);
+			mtd->_read(mtd, 0, len, &retlen, (u_char *)boot0_head);
+
+			if (strncmp((char *)boot0_head->boot_head.magic,
+				(char *)BOOT0_MAGIC,
+				sizeof(boot0_head->boot_head.magic)) == 0) {
+				dev_dbg(&sspi->pdev->dev, "mode:%d delay:%d [OK]\n",
+						mode, sample_delay);
+				if (!len_backup) {
+					start_backup = sample_delay;
+					end_backup = sample_delay;
+				} else
+					end_backup = sample_delay;
+				len_backup++;
+			} else {
+				dev_dbg(&sspi->pdev->dev, "mode:%d delay:%d [ERROR]\n",
+						mode, sample_delay);
+				if (!start_backup)
+					continue;
+				else {
+					if (len_backup > len_ok) {
+						len_ok = len_backup;
+						start_ok = start_backup;
+						end_ok = end_backup;
+						mode_ok = mode;
+					}
+
+					len_backup = 0;
+					start_backup = 0;
+					end_backup = 0;
+				}
+			}
+		}
+		if (len_backup > len_ok) {
+			len_ok = len_backup;
+			start_ok = start_backup;
+			end_ok = end_backup;
+			mode_ok = mode;
+		}
+		len_backup = 0;
+		start_backup = 0;
+		end_backup = 0;
+	}
+
+	if (!len_ok) {
+		sspi->sample_delay = SAMP_MODE_DL_DEFAULT;
+		sspi->sample_mode = SAMP_MODE_DL_DEFAULT;
+		spi_samp_mode_enable(0, base_addr);
+		spi_samp_dl_sw_status(0, base_addr);
+		/* default clock */
+		spi_set_clk(25000000, clk_get_rate(sspi->mclk), sspi);
+
+		dev_err(&sspi->pdev->dev, "spif update delay param error\n");
+	} else {
+		sspi->sample_delay = (start_ok + end_ok) / 2;
+		sspi->sample_mode = mode_ok;
+		spi_set_sample_mode(sspi->sample_mode, base_addr);
+		spi_set_sample_delay(sspi->sample_delay, base_addr);
+	}
+	dev_info(&sspi->pdev->dev,
+			"Sample mode:%d start:%d end:%d right_sample_delay:0x%x\n",
+			mode_ok, start_ok, end_ok, sspi->sample_delay);
+
+	boot_info->sample_mode = sspi->sample_mode;
+	boot_info->sample_delay = sspi->sample_delay;
+	kfree(boot0_head);
+	return;
+}
+
+void sunxi_spi_update_sample_delay_para(struct mtd_info *mtd, struct spi_device *spi)
+{
+	struct sunxi_spi *sspi = spi_master_get_devdata(spi->master);
+	void __iomem *base_addr = sspi->base_addr;
+	boot_spinor_info_t *boot_info = NULL;
+	struct sunxi_boot_param_region *boot_param = NULL;
+
+	if (!sspi) {
+		dev_err(&sspi->pdev->dev, "spi controller is not initialized\n");
+		return;
+	}
+
+	if (sspi->sample_mode == SAMP_MODE_DL_DEFAULT) {
+#ifdef CONFIG_SUNXI_FASTBOOT
+		int boot_param_addr = 0x42FFF000;
+		boot_param = (struct sunxi_boot_param_region *)__va(boot_param_addr);
+		boot_info = (boot_spinor_info_t *)boot_param->spiflash_info;
+#else
+		size_t retlen;
+		spi_set_clk(25000000, clk_get_rate(sspi->mclk), sspi);
+
+		boot_param = kmalloc(BOOT_PARAM_SIZE, GFP_KERNEL);
+		mtd->_read(mtd, (CONFIG_SPINOR_UBOOT_OFFSET << 9) - BOOT_PARAM_SIZE,
+			BOOT_PARAM_SIZE, &retlen, (u_char *)boot_param);
+		boot_info = (boot_spinor_info_t *)boot_param->spiflash_info;
+#endif
+
+		if (strncmp((const char *)boot_param->header.magic,
+					(const char *)BOOT_PARAM_MAGIC,
+					sizeof(boot_param->header.magic)) ||
+			strncmp((const char *)boot_info->magic,
+					(const char *)SPINOR_BOOT_PARAM_MAGIC,
+					sizeof(boot_info->magic))) {
+			dev_err(&sspi->pdev->dev, "boot param magic abnormity go ot retey\n");
+			sunxi_spi_try_sample_param(sspi, mtd, boot_info);
+			if (update_boot_param(mtd, sspi))
+				dev_err(&sspi->pdev->dev, "update boot param error\n");
+		}
+
+		if (boot_info->sample_delay == SAMP_MODE_DL_DEFAULT) {
+			dev_err(&sspi->pdev->dev, "boot smple delay abnormity go ot retey\n");
+			sunxi_spi_try_sample_param(sspi, mtd, boot_info);
+			if (update_boot_param(mtd, sspi))
+				dev_err(&sspi->pdev->dev, "update boot param error\n");
+		} else {
+			sspi->sample_mode = boot_info->sample_mode;
+			sspi->sample_delay = boot_info->sample_delay;
+
+			spi_set_clk(sspi->spi->max_speed_hz, clk_get_rate(sspi->mclk), sspi);
+			spi_samp_mode_enable(1, base_addr);
+			spi_samp_dl_sw_status(1, base_addr);
+			spi_set_sample_mode(sspi->sample_mode, base_addr);
+			spi_set_sample_delay(sspi->sample_delay, base_addr);
+			dev_info(&sspi->pdev->dev, "Read boot param[mode:%x delay:%x]\n",
+					sspi->sample_mode, sspi->sample_delay);
+		}
+#ifdef CONFIG_SUNXI_FASTBOOT
+		memblock_free(boot_param_addr, BOOT_PARAM_SIZE);
+		free_reserved_area(__va(boot_param_addr),
+				__va(boot_param_addr + BOOT_PARAM_SIZE), -1, "boot_param");
+#else
+		kfree(boot_param);
+#endif
+	}
+
+	return;
+}
+EXPORT_SYMBOL_GPL(sunxi_spi_update_sample_delay_para);
+#endif
 
 #ifdef CONFIG_DMA_ENGINE
 
@@ -907,10 +1177,10 @@ static void sunxi_spi_dma_cb_rx(void *data)
 	void __iomem *base_addr = sspi->base_addr;
 
 	spin_lock_irqsave(&sspi->lock, flags);
-	dprintk(DEBUG_INFO, "[spi%d] dma read data end\n", sspi->master->bus_num);
+	dprintk_STOCK(864, DEBUG_INFO, "[spi%d] dma read data end\n", sspi->master->bus_num);
 
 	if (spi_query_rxfifo(base_addr) > 0) {
-		SPI_ERR("[spi%d] DMA end, but RxFIFO isn't empty! FSR: %#x\n",
+		SPI_ERR_STOCK(868, "[spi%d] DMA end, but RxFIFO isn't empty! FSR: %#x\n",
 			sspi->master->bus_num, spi_query_rxfifo(base_addr));
 		sspi->result = -1; /* failed */
 	} else {
@@ -928,112 +1198,41 @@ static void sunxi_spi_dma_cb_tx(void *data)
 	unsigned long flags = 0;
 
 	spin_lock_irqsave(&sspi->lock, flags);
-	dprintk(DEBUG_INFO, "[spi%d] dma write data end\n", sspi->master->bus_num);
+	dprintk_STOCK(885, DEBUG_INFO, "[spi%d] dma write data end\n", sspi->master->bus_num);
 	spin_unlock_irqrestore(&sspi->lock, flags);
 }
 
-static int sunxi_spi_dmg_sg_cnt(void *addr, int len)
-{
-	int npages = 0;
-	char *bufp = (char *)addr;
-	int mapbytes = 0;
-	int bytesleft = len;
-
-	while (bytesleft > 0) {
-		if (bytesleft < (PAGE_SIZE - offset_in_page(bufp)))
-			mapbytes = bytesleft;
-		else
-			mapbytes = PAGE_SIZE - offset_in_page(bufp);
-
-		npages++;
-		bufp += mapbytes;
-		bytesleft -= mapbytes;
-	}
-	return npages;
-}
-
-static int sunxi_spi_dma_init_sg(spi_dma_info_t *info, void *addr,
-				 int len, int write)
-{
-	int i;
-	int npages = 0;
-	void *bufp = addr;
-	int mapbytes = 0;
-	int bytesleft = len;
-
-	if (!access_ok(write ? VERIFY_READ : VERIFY_WRITE, (void __user *)addr, len))
-		return -EFAULT;
-
-	npages = sunxi_spi_dmg_sg_cnt(addr, len);
-	WARN_ON(npages == 0);
-	dprintk(DEBUG_INFO, "npages = %d, len = %d\n", npages, len);
-	if (npages > SPI_MAX_PAGES)
-		npages = SPI_MAX_PAGES;
-
-	sg_init_table(info->sg, npages);
-	for (i = 0; i < npages; i++) {
-		/* If there are less bytes left than what fits
-		 * in the current page (plus page alignment offset)
-		 * we just feed in this, else we stuff in as much
-		 * as we can.
-		 */
-		if (bytesleft < (PAGE_SIZE - offset_in_page(bufp)))
-			mapbytes = bytesleft;
-		else
-			mapbytes = PAGE_SIZE - offset_in_page(bufp);
-
-		dprintk(DEBUG_INFO, "%d: len %d, offset %ld, addr %p(%d)\n", i, mapbytes,
-			offset_in_page(bufp), bufp, virt_addr_valid(bufp));
-		if (virt_addr_valid(bufp))
-			sg_set_page(&info->sg[i], virt_to_page(bufp),
-				    mapbytes, offset_in_page(bufp));
-		else
-			sg_set_page(&info->sg[i], vmalloc_to_page(bufp),
-				    mapbytes, offset_in_page(bufp));
-
-		bufp += mapbytes;
-		bytesleft -= mapbytes;
-	}
-
-	WARN_ON(bytesleft);
-	info->nents = npages;
-	return 0;
-}
-
 /* request dma channel and set callback function */
-static int sunxi_spi_prepare_dma(spi_dma_info_t *_info, enum spi_dma_dir _dir)
+static int sunxi_spi_prepare_dma(struct dma_chan **chan, enum spi_dma_dir _dir)
 {
 	dma_cap_mask_t mask;
 
-	dprintk(DEBUG_INFO, "Init DMA, dir %d\n", _dir);
+	dprintk_STOCK(894, DEBUG_INFO, "Init DMA, dir %d\n", _dir);
 
 	/* Try to acquire a generic DMA engine slave channel */
 	dma_cap_zero(mask);
 	dma_cap_set(DMA_SLAVE, mask);
 
-	if (_info->chan == NULL) {
-		_info->chan = dma_request_channel(mask, NULL, NULL);
-		if (_info->chan == NULL) {
-			SPI_ERR("Request DMA(dir %d) failed!\n", _dir);
+	if (*chan == NULL) {
+		*chan = dma_request_channel(mask, NULL, NULL);
+		if (*chan == NULL) {
+			SPI_ERR_STOCK(903, "Request DMA(dir %d) failed!\n", _dir);
 			return -EINVAL;
 		}
 	}
 
-	_info->dir = _dir;
 	return 0;
 }
 
 static int sunxi_spi_config_dma_rx(struct sunxi_spi *sspi, struct spi_transfer *t)
 {
-	int ret = 0;
-	int nents = 0;
 	struct dma_slave_config dma_conf = {0};
 	struct dma_async_tx_descriptor *dma_desc = NULL;
 	unsigned int i, j;
 	u8 buf[64], cnt = 0;
 
 	if (debug_mask & DEBUG_INFO3) {
-		dprintk(DEBUG_INIT, "t->len = %d\n", t->len);
+		dprintk_STOCK(919, DEBUG_INIT, "t->len = %d\n", t->len);
 		if (debug_mask & DEBUG_DATA) {
 			for (i = 0; i < t->len; i += 16) {
 				cnt = 0;
@@ -1045,10 +1244,6 @@ static int sunxi_spi_config_dma_rx(struct sunxi_spi *sspi, struct spi_transfer *
 			}
 		}
 	}
-
-	ret = sunxi_spi_dma_init_sg(&sspi->dma_rx, t->rx_buf, t->len, VERIFY_WRITE);
-	if (ret != 0)
-		return ret;
 
 	dma_conf.direction = DMA_DEV_TO_MEM;
 	dma_conf.src_addr = sspi->base_addr_phy + SPI_RXDATA_REG;
@@ -1062,26 +1257,14 @@ static int sunxi_spi_config_dma_rx(struct sunxi_spi *sspi, struct spi_transfer *
 	dma_conf.src_maxburst = 4;
 	dma_conf.dst_maxburst = 4;
 	dma_conf.slave_id = sunxi_slave_id(DRQDST_SDRAM, SUNXI_SPI_DRQ_RX(sspi->master->bus_num));
-	dmaengine_slave_config(sspi->dma_rx.chan, &dma_conf);
+	dmaengine_slave_config(sspi->master->dma_rx, &dma_conf);
 
-	nents = dma_map_sg(&sspi->pdev->dev, sspi->dma_rx.sg,
-			   sspi->dma_rx.nents, DMA_FROM_DEVICE);
-	if (!nents) {
-		SPI_ERR("[spi%d] dma_map_sg(%d) failed! return %d\n",
-				sspi->master->bus_num, sspi->dma_rx.nents, nents);
-		return -ENOMEM;
-	}
-	dprintk(DEBUG_INFO, "[spi%d] npages = %d, nents = %d\n",
-			sspi->master->bus_num, sspi->dma_rx.nents, nents);
-
-	dma_desc = dmaengine_prep_slave_sg(sspi->dma_rx.chan, sspi->dma_rx.sg,
-					   nents, DMA_FROM_DEVICE,
+	dma_desc = dmaengine_prep_slave_sg(sspi->master->dma_rx, t->rx_sg.sgl,
+					   t->rx_sg.nents, DMA_FROM_DEVICE,
 					   DMA_PREP_INTERRUPT|DMA_CTRL_ACK);
 	if (!dma_desc) {
-		SPI_ERR("[spi%d] dmaengine_prep_slave_sg() failed!\n",
+		SPI_ERR_STOCK(951, "[spi%d] dmaengine_prep_slave_sg() failed!\n",
 				sspi->master->bus_num);
-		dma_unmap_sg(&sspi->pdev->dev, sspi->dma_rx.sg,
-			     sspi->dma_rx.nents, DMA_FROM_DEVICE);
 		return -1;
 	}
 
@@ -1092,17 +1275,17 @@ static int sunxi_spi_config_dma_rx(struct sunxi_spi *sspi, struct spi_transfer *
 	return 0;
 }
 
+
+
 static int sunxi_spi_config_dma_tx(struct sunxi_spi *sspi, struct spi_transfer *t)
 {
-	int ret = 0;
-	int nents = 0;
 	struct dma_slave_config dma_conf = {0};
 	struct dma_async_tx_descriptor *dma_desc = NULL;
 	unsigned int i, j;
 	u8 buf[64], cnt = 0;
 
 	if (debug_mask & DEBUG_INFO4) {
-		dprintk(DEBUG_INIT, "t->len = %d\n", t->len);
+		dprintk_STOCK(970, DEBUG_INIT, "t->len = %d\n", t->len);
 		if (debug_mask & DEBUG_DATA) {
 			for (i = 0; i < t->len; i += 16) {
 				cnt = 0;
@@ -1114,11 +1297,6 @@ static int sunxi_spi_config_dma_tx(struct sunxi_spi *sspi, struct spi_transfer *
 			}
 		}
 	}
-
-	ret = sunxi_spi_dma_init_sg(&sspi->dma_tx, (void *)t->tx_buf,
-				    t->len, VERIFY_READ);
-	if (ret != 0)
-		return ret;
 
 	dma_conf.direction = DMA_MEM_TO_DEV;
 	dma_conf.dst_addr = sspi->base_addr_phy + SPI_TXDATA_REG;
@@ -1132,25 +1310,14 @@ static int sunxi_spi_config_dma_tx(struct sunxi_spi *sspi, struct spi_transfer *
 	dma_conf.src_maxburst = 4;
 	dma_conf.dst_maxburst = 4;
 	dma_conf.slave_id = sunxi_slave_id(SUNXI_SPI_DRQ_TX(sspi->master->bus_num), DRQSRC_SDRAM);
-	dmaengine_slave_config(sspi->dma_tx.chan, &dma_conf);
+	dmaengine_slave_config(sspi->master->dma_tx, &dma_conf);
 
-	nents = dma_map_sg(&sspi->pdev->dev, sspi->dma_tx.sg, sspi->dma_tx.nents, DMA_TO_DEVICE);
-	if (!nents) {
-		SPI_ERR("[spi%d] dma_map_sg(%d) failed! return %d\n",
-				sspi->master->bus_num, sspi->dma_tx.nents, nents);
-		return -ENOMEM;
-	}
-	dprintk(DEBUG_INFO, "[spi%d] npages = %d, nents = %d\n",
-			sspi->master->bus_num, sspi->dma_tx.nents, nents);
-
-	dma_desc = dmaengine_prep_slave_sg(sspi->dma_tx.chan, sspi->dma_tx.sg,
-					   nents, DMA_TO_DEVICE,
-					   DMA_PREP_INTERRUPT|DMA_CTRL_ACK);
+	dma_desc = dmaengine_prep_slave_sg(sspi->master->dma_tx, t->tx_sg.sgl,
+			t->tx_sg.nents, DMA_TO_DEVICE,
+			DMA_PREP_INTERRUPT|DMA_CTRL_ACK);
 	if (!dma_desc) {
-		SPI_ERR("[spi%d] dmaengine_prep_slave_sg() failed!\n",
+		SPI_ERR_STOCK(1002, "[spi%d] dmaengine_prep_slave_sg() failed!\n",
 				sspi->master->bus_num);
-		dma_unmap_sg(&sspi->pdev->dev, sspi->dma_tx.sg,
-			     sspi->dma_tx.nents, DMA_TO_DEVICE);
 		return -1;
 	}
 
@@ -1160,169 +1327,51 @@ static int sunxi_spi_config_dma_tx(struct sunxi_spi *sspi, struct spi_transfer *
 	return 0;
 }
 
-/* config dma src and dst address,
- * io or linear address,
- * drq type,
- * then enqueue
- * but not trigger dma start
- */
-static int sunxi_spi_config_dma(struct sunxi_spi *sspi, enum spi_dma_dir dma_dir, struct spi_transfer *t)
-{
-	if (dma_dir == SPI_DMA_RDEV)
-		return sunxi_spi_config_dma_rx(sspi, t);
-	else
-		return sunxi_spi_config_dma_tx(sspi, t);
-}
-
 /* set dma start flag, if queue, it will auto restart to transfer next queue */
-static int sunxi_spi_start_dma(spi_dma_info_t *_info)
+static int sunxi_spi_start_dma(struct dma_chan *chan)
 {
-	dma_async_issue_pending(_info->chan);
-	return 0;
-}
-
-/* Unmap and free the SG tables */
-static void sunxi_spi_dma_free_sg(struct sunxi_spi *sspi, spi_dma_info_t *info)
-{
-	if (info->dir == SPI_DMA_RWNULL)
-		return;
-
-	dma_unmap_sg(&sspi->pdev->dev, info->sg, info->nents, (enum dma_data_direction)info->dir);
-	info->dir = SPI_DMA_RWNULL;
-
-	/* Never release the DMA channel. Duanmintao
-	 * dma_release_channel(info->chan);
-	 * info->chan = NULL;
-	 */
-}
-
-/* release dma channel, and set queue status to idle. */
-static int sunxi_spi_release_dma(struct sunxi_spi *sspi, struct spi_transfer *t)
-{
-	unsigned long flags = 0;
-
-	spin_lock_irqsave(&sspi->lock, flags);
-
-	sunxi_spi_dma_free_sg(sspi, &sspi->dma_rx);
-	sunxi_spi_dma_free_sg(sspi, &sspi->dma_tx);
-
-	spin_unlock_irqrestore(&sspi->lock, flags);
+	dma_async_issue_pending(chan);
 	return 0;
 }
 #endif
 /* ------------------------------dma operation end--------------------------- */
 
-/* check the valid of cs id */
-static int sunxi_spi_check_cs(int cs_id, struct sunxi_spi *sspi)
-{
-	char ret = SUNXI_SPI_FAIL;
-
-	switch (cs_id) {
-	case 0:
-		ret = (sspi->cs_bitmap & SPI_CHIP_SELECT_CS0) ? SUNXI_SPI_OK : SUNXI_SPI_FAIL;
-		break;
-	case 1:
-		ret = (sspi->cs_bitmap & SPI_CHIP_SELECT_CS1) ? SUNXI_SPI_OK : SUNXI_SPI_FAIL;
-		break;
-	case 2:
-		ret = (sspi->cs_bitmap & SPI_CHIP_SELECT_CS2) ? SUNXI_SPI_OK : SUNXI_SPI_FAIL;
-		break;
-	case 3:
-		ret = (sspi->cs_bitmap & SPI_CHIP_SELECT_CS3) ? SUNXI_SPI_OK : SUNXI_SPI_FAIL;
-		break;
-	default:
-		SPI_ERR("[spi%d] chip select not support! cs = %d\n", sspi->master->bus_num, cs_id);
-		break;
-	}
-
-	return ret;
-}
-
 /* spi device on or off control */
-static void sunxi_spi_cs_control(struct spi_device *spi, bool on)
+static void sunxi_spi_cs_control(struct spi_device *spi, bool enable)
 {
 	struct sunxi_spi *sspi = spi_master_get_devdata(spi->master);
 
-	u8 cs = 0;
-
-	if (sspi->cs_control) {
-		if (on) {
-			/* set active */
-			cs = (spi->mode & SPI_CS_HIGH) ? 1 : 0;
-		} else {
-			/* set inactive */
-			cs = (spi->mode & SPI_CS_HIGH) ? 0 : 1;
-		}
-		spi_ss_level(sspi->base_addr, cs);
-	}
+	spi_set_cs(spi->chip_select, sspi->base_addr);
+	spi_ss_level(sspi->base_addr, enable);
 }
 
 /* change the properties of spi device with spi transfer.
  * every spi transfer must call this interface to update
- * the master to the excute transfer
- * set clock frequecy, bits per word, mode etc...
+ * the master to the excute transfer set clock frequecy
  * return:  >= 0 : succeed;    < 0: failed.
  */
 static int sunxi_spi_xfer_setup(struct spi_device *spi, struct spi_transfer *t)
 {
 	/* get at the setup function, the properties of spi device */
 	struct sunxi_spi *sspi = spi_master_get_devdata(spi->master);
-	/* allocate in the setup,and free in the cleanup */
-	struct sunxi_spi_config *config = spi->controller_data;
+	u32 spi_speed_hz;
 	void __iomem *base_addr = sspi->base_addr;
 
-	config->max_speed_hz  = (t && t->speed_hz) ? t->speed_hz : spi->max_speed_hz;
-	config->bits_per_word = (t && t->bits_per_word) ? t->bits_per_word : spi->bits_per_word;
-	config->bits_per_word = ((config->bits_per_word + 7) / 8) * 8;
+	spi_speed_hz  = (t && t->speed_hz) ? t->speed_hz : spi->max_speed_hz;
 
-	if (config->bits_per_word != 8) {
-		SPI_ERR("[spi%d] just support 8bits per word...\n", spi->master->bus_num);
-		return -EINVAL;
-	}
-
-	if (spi->chip_select >= spi->master->num_chipselect) {
-		SPI_ERR("[spi%d] spi device's chip select = %d exceeds the master supported cs_num[%d]\n",
-			spi->master->bus_num, spi->chip_select, spi->master->num_chipselect);
-		return -EINVAL;
-	}
-
-	/* check again board info */
-	if (sunxi_spi_check_cs(spi->chip_select, sspi) != SUNXI_SPI_OK) {
-		SPI_ERR("[spi%d] sunxi_spi_check_cs failed! spi_device cs =%d ...\n",
-				sspi->master->bus_num, spi->chip_select);
-		return -EINVAL;
-	}
-
-	/* set cs */
-	spi_set_cs(spi->chip_select, base_addr);
-	/* master: set spi module clock, set the default frequency10MHz */
-	/* spi_set_master(base_addr); */
-
-	if (config->max_speed_hz > SPI_MAX_FREQUENCY)
-		return -EINVAL;
-
-	if (config->max_speed_hz >= SPI_HIGH_FREQUENCY)
+	if (spi_speed_hz >= SPI_HIGH_FREQUENCY)
 		spi_sample_delay(0, 1, base_addr);
-	else if (config->max_speed_hz <= SPI_LOW_FREQUENCY)
+	else if (spi_speed_hz <= SPI_LOW_FREQUENCY)
 		spi_sample_delay(1, 0, base_addr);
 	else
 		spi_sample_delay(0, 0, base_addr);
-
 #ifdef CONFIG_EVB_PLATFORM
-	spi_set_clk(config->max_speed_hz, clk_get_rate(sspi->mclk), sspi);
+	spi_set_clk(spi_speed_hz, clk_get_rate(sspi->mclk), sspi);
 #else
-	spi_set_clk(config->max_speed_hz, 24000000, sspi);
+	spi_set_clk(spi_speed_hz, 24000000, sspi);
 #endif
-	/* master : set POL,PHA,SSOPL,LMTF,DDB,DHB; default: SSCTL=0,SMC=1,TBW=0
-	 * set bit width-default: 8 bits
-	 */
-	if (sspi->dbi_enabled)
-		spi_config_dbi(spi, base_addr);
-	else
-		spi_config_tc(1, spi->mode, base_addr);
 
-	spi_enable_tp(base_addr);
-
+	spi_config_tc(spi->mode, sspi->base_addr);
 	return 0;
 }
 
@@ -1339,7 +1388,7 @@ static int sunxi_spi_mode_check(struct sunxi_spi *sspi, struct spi_device *spi, 
 		spi_set_all_burst_received(sspi->base_addr);
 		spi_set_bc_tc_stc(t->len, 0, t->len, 0, sspi->base_addr);
 		sspi->mode_type = SINGLE_FULL_DUPLEX_RX_TX;
-		dprintk(DEBUG_INFO, "[spi%d] Single mode Full duplex tx & rx\n", sspi->master->bus_num);
+		dprintk_STOCK(1074, DEBUG_INFO, "[spi%d] Single mode Full duplex tx & rx\n", sspi->master->bus_num);
 	} /* half duplex transmit */
 	else if (t->tx_buf) {
 		if (t->tx_nbits == SPI_NBITS_QUAD) {
@@ -1347,19 +1396,19 @@ static int sunxi_spi_mode_check(struct sunxi_spi *sspi, struct spi_device *spi, 
 			spi_enable_quad(sspi->base_addr);
 			spi_set_bc_tc_stc(t->len, 0, 0, 0, sspi->base_addr);
 			sspi->mode_type = QUAD_HALF_DUPLEX_TX;
-			dprintk(DEBUG_INFO, "[spi%d] Quad mode Half duplex tx\n", sspi->master->bus_num);
+			dprintk_STOCK(1082, DEBUG_INFO, "[spi%d] Quad mode Half duplex tx\n", sspi->master->bus_num);
 		} else if (t->tx_nbits == SPI_NBITS_DUAL) {
 			spi_disable_quad(sspi->base_addr);
 			spi_enable_dual(sspi->base_addr);
 			spi_set_bc_tc_stc(t->len, 0, 0, 0, sspi->base_addr);
 			sspi->mode_type = DUAL_HALF_DUPLEX_TX;
-			dprintk(DEBUG_INFO, "[spi%d] Dual mode Half duplex tx\n", sspi->master->bus_num);
+			dprintk_STOCK(1088, DEBUG_INFO, "[spi%d] Dual mode Half duplex tx\n", sspi->master->bus_num);
 		} else {
 			spi_disable_quad(sspi->base_addr);
 			spi_disable_dual(sspi->base_addr);
 			spi_set_bc_tc_stc(t->len, 0, t->len, 0, sspi->base_addr);
 			sspi->mode_type = SINGLE_HALF_DUPLEX_TX;
-			dprintk(DEBUG_INFO, "[spi%d] Single mode Half duplex tx\n", sspi->master->bus_num);
+			dprintk_STOCK(1094, DEBUG_INFO, "[spi%d] Single mode Half duplex tx\n", sspi->master->bus_num);
 		}
 	} /* half duplex receive */
 	else if (t->rx_buf) {
@@ -1368,19 +1417,19 @@ static int sunxi_spi_mode_check(struct sunxi_spi *sspi, struct spi_device *spi, 
 			spi_enable_quad(sspi->base_addr);
 			spi_set_bc_tc_stc(0, t->len, 0, 0, sspi->base_addr);
 			sspi->mode_type = QUAD_HALF_DUPLEX_RX;
-			dprintk(DEBUG_INFO, "[spi%d] Quad mode Half duplex rx\n", sspi->master->bus_num);
+			dprintk_STOCK(1103, DEBUG_INFO, "[spi%d] Quad mode Half duplex rx\n", sspi->master->bus_num);
 		} else if (t->rx_nbits == SPI_NBITS_DUAL) {
 			spi_disable_quad(sspi->base_addr);
 			spi_enable_dual(sspi->base_addr);
 			spi_set_bc_tc_stc(0, t->len, 0, 0, sspi->base_addr);
 			sspi->mode_type = DUAL_HALF_DUPLEX_RX;
-			dprintk(DEBUG_INFO, "[spi%d] Dual mode Half duplex rx\n", sspi->master->bus_num);
+			dprintk_STOCK(1109, DEBUG_INFO, "[spi%d] Dual mode Half duplex rx\n", sspi->master->bus_num);
 		} else {
 			spi_disable_quad(sspi->base_addr);
 			spi_disable_dual(sspi->base_addr);
 			spi_set_bc_tc_stc(0, t->len, 0, 0, sspi->base_addr);
 			sspi->mode_type = SINGLE_HALF_DUPLEX_RX;
-			dprintk(DEBUG_INFO, "[spi%d] Single mode Half duplex rx\n", sspi->master->bus_num);
+			dprintk_STOCK(1115, DEBUG_INFO, "[spi%d] Single mode Half duplex rx\n", sspi->master->bus_num);
 		}
 	}
 	spin_unlock_irqrestore(&sspi->lock, flags);
@@ -1407,12 +1456,12 @@ static int sunxi_spi_cpu_readl(struct spi_device *spi, struct spi_transfer *t)
 		}
 	}
 	if (poll_time <= 0) {
-		SPI_ERR("[spi%d] cpu receive data time out!\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1142, "[spi%d] cpu receive data time out!\n", sspi->master->bus_num);
 		return -1;
 	}
 
 	if (debug_mask & DEBUG_INFO1) {
-		dprintk(DEBUG_INIT, "t->len = %d\n", t->len);
+		dprintk_STOCK(1147, DEBUG_INIT, "t->len = %d\n", t->len);
 		if (debug_mask & DEBUG_DATA) {
 			for (i = 0; i < t->len; i += 16) {
 				cnt = 0;
@@ -1443,7 +1492,7 @@ static int sunxi_spi_cpu_writel(struct spi_device *spi, struct spi_transfer *t)
 	u8 buf[64], cnt = 0;
 
 	if (debug_mask & DEBUG_INFO2) {
-		dprintk(DEBUG_INIT, "t->len = %d\n", t->len);
+		dprintk_STOCK(1178, DEBUG_INIT, "t->len = %d\n", t->len);
 		if (debug_mask & DEBUG_DATA) {
 			for (i = 0; i < t->len; i += 16) {
 				cnt = 0;
@@ -1469,7 +1518,7 @@ static int sunxi_spi_cpu_writel(struct spi_device *spi, struct spi_transfer *t)
 	while (spi_query_txfifo(base_addr) && (--poll_time > 0))
 		;
 	if (poll_time <= 0) {
-		SPI_ERR("[spi%d] cpu transfer data time out!\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1204, "[spi%d] cpu transfer data time out!\n", sspi->master->bus_num);
 		return -1;
 	}
 
@@ -1485,15 +1534,15 @@ static int sunxi_spi_dma_rx_config(struct spi_device *spi, struct spi_transfer *
 
 	/* rxFIFO reday dma request enable */
 	spi_enable_dma_irq(SPI_FIFO_CTL_RX_DRQEN, base_addr);
-	ret = sunxi_spi_prepare_dma(&sspi->dma_rx, SPI_DMA_RDEV);
+	ret = sunxi_spi_prepare_dma(&sspi->master->dma_rx, SPI_DMA_RDEV);
 	if (ret < 0) {
 		spi_disable_dma_irq(SPI_FIFO_CTL_RX_DRQEN, base_addr);
 		spi_disable_irq(SPI_INTEN_TC|SPI_INTEN_ERR, base_addr);
-		SPI_ERR("[spi%d] dma rx fail\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1224, "[spi%d] dma rx fail\n", sspi->master->bus_num);
 		return -EINVAL;
 	}
-	sunxi_spi_config_dma(sspi, SPI_DMA_RDEV, t);
-	sunxi_spi_start_dma(&sspi->dma_rx);
+	sunxi_spi_config_dma_rx(sspi, t);
+	sunxi_spi_start_dma(sspi->master->dma_rx);
 
 	return ret;
 }
@@ -1506,40 +1555,47 @@ static int sunxi_spi_dma_tx_config(struct spi_device *spi, struct spi_transfer *
 
 	spi_enable_dma_irq(SPI_FIFO_CTL_TX_DRQEN, base_addr);
 
-	ret = sunxi_spi_prepare_dma(&sspi->dma_tx, SPI_DMA_WDEV);
+	ret = sunxi_spi_prepare_dma(&sspi->master->dma_tx, SPI_DMA_WDEV);
 	if (ret < 0) {
 		spi_disable_dma_irq(SPI_FIFO_CTL_TX_DRQEN, base_addr);
 		spi_disable_irq(SPI_INTEN_TC|SPI_INTEN_ERR, base_addr);
-		SPI_ERR("[spi%d] dma tx fail\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1245, "[spi%d] dma tx fail\n", sspi->master->bus_num);
 		return -EINVAL;
 	}
-	sunxi_spi_config_dma(sspi, SPI_DMA_WDEV, t);
-	sunxi_spi_start_dma(&sspi->dma_tx);
+	sunxi_spi_config_dma_tx(sspi, t);
+	sunxi_spi_start_dma(sspi->master->dma_tx);
 
 	return ret;
 }
-static int sunxi_spi_dma_transfer(struct spi_device *spi, struct spi_transfer *t)
+#endif
+
+static int sunxi_spi_xfer(struct spi_device *spi, struct spi_transfer *t)
 {
 	struct sunxi_spi *sspi = spi_master_get_devdata(spi->master);
 	void __iomem *base_addr = sspi->base_addr;
 	unsigned tx_len = t->len;	/* number of bytes receieved */
 	unsigned rx_len = t->len;	/* number of bytes sent */
 
+
 	switch (sspi->mode_type) {
 	case SINGLE_HALF_DUPLEX_RX:
 	case DUAL_HALF_DUPLEX_RX:
 	case QUAD_HALF_DUPLEX_RX:
 	{
+#ifdef CONFIG_DMA_ENGINE
 		/* >64 use DMA transfer, or use cpu */
 		if (t->len > BULK_DATA_BOUNDARY) {
-			dprintk(DEBUG_INFO, "[spi%d] rx -> by dma\n", sspi->master->bus_num);
+			dprintk_STOCK(1270, DEBUG_INFO, "[spi%d] rx -> by dma\n", sspi->master->bus_num);
 			/* For Rx mode, the DMA end(not TC flag) is real end. */
 			spi_disable_irq(SPI_INTEN_TC, base_addr);
 			sunxi_spi_dma_rx_config(spi, t);
 			if (!sspi->dbi_enabled)
 				spi_start_xfer(base_addr);
 		} else {
-			dprintk(DEBUG_INFO, "[spi%d] rx -> by ahb\n", sspi->master->bus_num);
+#else
+		{
+#endif
+			dprintk_STOCK(1280, DEBUG_INFO, "[spi%d] rx -> by ahb\n", sspi->master->bus_num);
 			/* SMC=1,XCH trigger the transfer */
 			if (!sspi->dbi_enabled)
 				spi_start_xfer(base_addr);
@@ -1551,15 +1607,20 @@ static int sunxi_spi_dma_transfer(struct spi_device *spi, struct spi_transfer *t
 	case DUAL_HALF_DUPLEX_TX:
 	case QUAD_HALF_DUPLEX_TX:
 	{
+#ifdef CONFIG_DMA_ENGINE
 		/* >64 use DMA transfer, or use cpu */
 		if (t->len > BULK_DATA_BOUNDARY) {
-			dprintk(DEBUG_INFO, "[spi%d] tx -> by dma\n", sspi->master->bus_num);
+			dprintk_STOCK(1295, DEBUG_INFO, "[spi%d] tx -> by dma\n", sspi->master->bus_num);
 			if (!sspi->dbi_enabled)
 				spi_start_xfer(base_addr);
 			/* txFIFO empty dma request enable */
 			sunxi_spi_dma_tx_config(spi, t);
 		} else {
-			dprintk(DEBUG_INFO, "[spi%d] tx -> by ahb\n", sspi->master->bus_num);
+#else
+		{
+#endif
+			dprintk_STOCK(1304, DEBUG_INFO, "[spi%d] tx -> by ahb\n", sspi->master->bus_num);
+
 			if (!sspi->dbi_enabled)
 				spi_start_xfer(base_addr);
 			sunxi_spi_cpu_writel(spi, t);
@@ -1568,9 +1629,10 @@ static int sunxi_spi_dma_transfer(struct spi_device *spi, struct spi_transfer *t
 	}
 	case SINGLE_FULL_DUPLEX_RX_TX:
 	{
+#ifdef CONFIG_DMA_ENGINE
 		/* >64 use DMA transfer, or use cpu */
 		if (t->len > BULK_DATA_BOUNDARY) {
-			dprintk(DEBUG_INFO, "[spi%d] rx and tx -> by dma\n", sspi->master->bus_num);
+			dprintk_STOCK(1316, DEBUG_INFO, "[spi%d] rx and tx -> by dma\n", sspi->master->bus_num);
 			/* For Rx mode, the DMA end(not TC flag) is real end. */
 			spi_disable_irq(SPI_INTEN_TC, base_addr);
 			sunxi_spi_dma_rx_config(spi, t);
@@ -1578,7 +1640,10 @@ static int sunxi_spi_dma_transfer(struct spi_device *spi, struct spi_transfer *t
 				spi_start_xfer(base_addr);
 			sunxi_spi_dma_tx_config(spi, t);
 		} else {
-			dprintk(DEBUG_INFO, "[spi%d] rx and tx -> by ahb\n", sspi->master->bus_num);
+#else
+		{
+#endif
+			dprintk_STOCK(1327, DEBUG_INFO, "[spi%d] rx and tx -> by ahb\n", sspi->master->bus_num);
 			if ((rx_len == 0) || (tx_len == 0))
 				return -EINVAL;
 
@@ -1595,60 +1660,13 @@ static int sunxi_spi_dma_transfer(struct spi_device *spi, struct spi_transfer *t
 
 	return 0;
 }
-#else
-static int sunxi_spi_cpu_transfer(struct spi_device *spi, struct spi_transfer *t)
-{
-	struct sunxi_spi *sspi = spi_master_get_devdata(spi->master);
-	void __iomem *base_addr = sspi->base_addr;
-	unsigned tx_len = t->len;	/* number of bytes receieved */
-	unsigned rx_len = t->len;	/* number of bytes sent */
 
-	switch (sspi->mode_type) {
-	case SINGLE_HALF_DUPLEX_RX:
-	case DUAL_HALF_DUPLEX_RX:
-	case QUAD_HALF_DUPLEX_RX:
-	{
-		dprintk(DEBUG_INFO, "[spi%d] rx -> by ahb\n", sspi->master->bus_num);
-		/* SMC=1,XCH trigger the transfer */
-		if (!sspi->dbi_enabled)
-			spi_start_xfer(base_addr);
-		sunxi_spi_cpu_readl(spi, t);
-		break;
-	}
-	case SINGLE_HALF_DUPLEX_TX:
-	case DUAL_HALF_DUPLEX_TX:
-	case QUAD_HALF_DUPLEX_TX:
-	{
-		dprintk(DEBUG_INFO, "[spi%d] tx -> by ahb\n", sspi->master->bus_num);
-		if (!sspi->dbi_enabled)
-			spi_start_xfer(base_addr);
-		sunxi_spi_cpu_writel(spi, t);
-		break;
-	}
-	case SINGLE_FULL_DUPLEX_RX_TX:
-	{
-		dprintk(DEBUG_INFO, "[spi%d] rx and tx -> by ahb\n", sspi->master->bus_num);
-		if ((rx_len == 0) || (tx_len == 0))
-			return -EINVAL;
-
-		if (!sspi->dbi_enabled)
-			spi_start_xfer(base_addr);
-		sunxi_spi_cpu_writel(spi, t);
-		sunxi_spi_cpu_readl(spi, t);
-		break;
-	}
-	default:
-		return -1;
-	}
-
-	return 0;
-}
-#endif
 /*
  * <= 64 : cpu ;  > 64 : dma
  * wait for done completion in this function, wakup in the irq hanlder
  */
-static int sunxi_spi_xfer(struct spi_device *spi, struct spi_transfer *t)
+static int sunxi_spi_transfer_one(struct spi_master *master, struct spi_device *spi,
+			    struct spi_transfer *t)
 {
 	struct sunxi_spi *sspi = spi_master_get_devdata(spi->master);
 	void __iomem *base_addr = sspi->base_addr;
@@ -1657,40 +1675,216 @@ static int sunxi_spi_xfer(struct spi_device *spi, struct spi_transfer *t)
 	unsigned long timeout = 0;
 	int ret = 0;
 
-	dprintk(DEBUG_INFO, "[spi%d] begin transfer, txbuf %p, rxbuf %p, len %d\n",
+	dprintk_STOCK(1360, DEBUG_INFO, "[spi%d] begin transfer, txbuf %p, rxbuf %p, len %d\n",
 		spi->master->bus_num, tx_buf, rx_buf, t->len);
 	if ((!t->tx_buf && !t->rx_buf) || !t->len)
 		return -EINVAL;
 
+	/* Stock reconfigures every transfer, including repeated bus-zero I/O. */
+	if (sunxi_spi_xfer_setup(spi, t) < 0)
+		return -EINVAL;
+
 	/* write 1 to clear 0 */
 	spi_clr_irq_pending(SPI_INT_STA_MASK, base_addr);
+#ifdef CONFIG_DMA_ENGINE
 	/* disable all DRQ */
 	spi_disable_dma_irq(SPI_FIFO_CTL_DRQEN_MASK, base_addr);
-	/* reset tx/rx fifo */
-	if (!sspi->dbi_enabled)
-		spi_reset_fifo(base_addr);
+#endif
 
 	if (sunxi_spi_mode_check(sspi, spi, t))
 		return -EINVAL;
 
-	/* 1. Tx/Rx error irq,process in IRQ;
-	 * 2. Transfer Complete Interrupt Enable
-	 */
-	if (!sspi->dbi_enabled)
+	if (sspi->dbi_enabled) {
+		spi_config_dbi(spi, sspi->base_addr);
+#ifdef CONFIG_DMA_ENGINE
+		spi_enable_dbi_dma(base_addr);
+#endif
+	} else {
+		spi_reset_fifo(base_addr);
 		spi_enable_irq(SPI_INTEN_TC|SPI_INTEN_ERR, base_addr);
+	}
+
+	sunxi_spi_xfer(spi, t);
 
 	if ((debug_mask & DEBUG_INIT) && (debug_mask & DEBUG_DATA)) {
-		dprintk(DEBUG_DATA, "[spi%d] dump reg:\n", sspi->master->bus_num);
+		dprintk_STOCK(1385, DEBUG_DATA, "[spi%d] dump reg:\n", sspi->master->bus_num);
 		spi_dump_reg(sspi, 0, 0x40);
+	}
+
+	/* wait for xfer complete in the isr. */
+	timeout = wait_for_completion_timeout(
+				&sspi->done,
+				msecs_to_jiffies(XFER_TIMEOUT));
+	if (timeout == 0) {
+		SPI_ERR_STOCK(1394, "[spi%d] xfer timeout\n", spi->master->bus_num);
+		ret = -1;
+	} else if (sspi->result < 0) {
+		SPI_ERR_STOCK(1397, "[spi%d] xfer failed...\n", spi->master->bus_num);
+		ret = -1;
 	}
 
 #ifdef CONFIG_DMA_ENGINE
 	if (sspi->dbi_enabled)
-		spi_enable_dbi_dma(base_addr);
-	sunxi_spi_dma_transfer(spi, t);
-#else
-	sunxi_spi_cpu_transfer(spi, t);
+		spi_disable_dbi_dma(base_addr);
 #endif
+
+	if (sspi->mode_type != MODE_TYPE_NULL)
+		sspi->mode_type = MODE_TYPE_NULL;
+
+	return ret;
+}
+
+#ifdef CONFIG_AW_MTD_SPINAND
+
+/* tx_len : all data to transfer(single io tx data + quad io tx data)
+ * stc_len: single io tx data*/
+static void spi_set_bc_tc_stc2(u32 tx_len, u32 rx_len, u32 stc_len, u8 nbits, void __iomem *base_addr)
+{
+	u32 reg_val = readl(base_addr + SPI_BURST_CNT_REG);
+	reg_val &= ~SPI_BC_CNT_MASK;
+	reg_val |= (SPI_BC_CNT_MASK & (tx_len + rx_len));
+	writel(reg_val, base_addr + SPI_BURST_CNT_REG);
+	//SPI_DBG("\n-- BC = %d --\n", readl(base_addr + SPI_BURST_CNT_REG));
+
+	reg_val = readl(base_addr + SPI_TRANSMIT_CNT_REG);
+	reg_val &= ~SPI_TC_CNT_MASK;
+	reg_val |= (SPI_TC_CNT_MASK & tx_len);
+	writel(reg_val, base_addr + SPI_TRANSMIT_CNT_REG);
+	//SPI_DBG("\n-- TC = %d --\n", readl(base_addr + SPI_TRANSMIT_CNT_REG));
+
+	reg_val = readl(base_addr + SPI_BCC_REG);
+	reg_val &= ~SPI_BCC_STC_MASK;
+	reg_val |= (SPI_BCC_STC_MASK & stc_len);
+	if (nbits == 2)
+		reg_val |= SPI_BCC_DUAL_MODE;
+	else
+		reg_val &= ~SPI_BCC_DUAL_MODE;
+
+	if (nbits == 4)
+		reg_val |= SPI_BCC_QUAD_MODE;
+	else
+		reg_val &= ~SPI_BCC_QUAD_MODE;
+
+	writel(reg_val, base_addr + SPI_BCC_REG);
+	//SPI_DBG("\n-- STC = %d --\n", readl(base_addr + SPI_BCC_REG));
+}
+
+static int sunxi_spi_xfer_tx_rx(struct spi_device *spi, struct spi_transfer *tx, struct spi_transfer *rx)
+{
+#define SPI_FIFO_SIZE (64)
+	struct sunxi_spi *sspi = spi_master_get_devdata(spi->master);
+	void __iomem *base_addr = sspi->base_addr;
+	unsigned int xcnt = 0;
+	unsigned int poll_time = 0;
+	int ret = 0;
+
+	unsigned tcnt = tx->len;
+	unsigned rcnt = rx->len;
+
+	char *txbuf = (char *)tx->tx_buf;
+	char *rxbuf = (char *)rx->rx_buf;
+
+	u8 nbits = 0;
+
+	if (rx->rx_nbits == SPI_NBITS_DUAL)
+		nbits = 2;
+	else if (rx->rx_nbits == SPI_NBITS_QUAD)
+		nbits = 4;
+	else
+		nbits = 1;
+
+
+	spi_disable_irq(SPI_INTEN_MASK, base_addr);
+
+	/* write 1 to clear 0 */
+	spi_clr_irq_pending(SPI_INT_STA_MASK, base_addr);
+
+	spi_set_bc_tc_stc2(tcnt, rcnt, tcnt, nbits, base_addr);
+
+	/*
+	* 1. Tx/Rx error irq,process in IRQ;
+	* 2. Transfer Complete Interrupt Enable
+	*/
+	spi_enable_irq(SPI_INTEN_TC|SPI_INTEN_ERR, base_addr);
+
+	spi_start_xfer(base_addr);
+
+	if (tcnt) {
+
+		/* >64 use DMA transfer, or use cpu */
+		if (tcnt <= BULK_DATA_BOUNDARY) {
+			xcnt = 0;
+			poll_time = 0xfffff;
+			dprintk(DEBUG_DATA, "[spi-%d]xfer2 tx --> by ahb\n", spi->master->bus_num);
+			while (xcnt < tcnt) {
+				while (((readl(base_addr + SPI_FIFO_STA_REG) >> 16) & 0x7f) >= SPI_FIFO_SIZE) {
+					if (--poll_time < 0)
+						return -ETIMEDOUT;
+				}
+				writeb(*(txbuf + xcnt), (base_addr + SPI_TXDATA_REG));
+				xcnt++;
+			}
+
+		} else {
+			dprintk(DEBUG_DATA, "[spi-%d]xfer2 tx -> by dma\n", spi->master->bus_num);
+			/* txFIFO empty dma request enable */
+			sunxi_spi_dma_tx_config(spi, tx);
+
+		}
+	}
+
+	if (rcnt) {
+		if (rcnt <= BULK_DATA_BOUNDARY) {
+			xcnt = 0;
+			poll_time = 0xfffff;
+			dprintk(DEBUG_DATA, "[spi-%d]xfer2 rx --> by ahb\n", spi->master->bus_num);
+			while (xcnt < rcnt) {
+				if (((readl(base_addr + SPI_FIFO_STA_REG)) & 0x7f) && (--poll_time > 0)) {
+					*(rxbuf + xcnt) = readb((base_addr + SPI_RXDATA_REG));
+					xcnt++;
+				}
+			}
+			if (poll_time <= 0) {
+				SPI_ERR("cpu receive data timeout!\n");
+				return -ETIMEDOUT;
+			}
+		} else {
+			dprintk(DEBUG_INFO, "[spi-%d]xfer2 rx -> by dma\n", spi->master->bus_num);
+
+			/* For Rx mode, the DMA end(not TC flag) is real end. */
+			spi_disable_irq(SPI_INTEN_TC, base_addr);
+			sunxi_spi_dma_rx_config(spi, rx);
+		}
+	}
+
+	return ret;
+}
+
+/*
+ * <= 64 : cpu ;  > 64 : dma
+ * wait for done completion in this function, wakup in the irq hanlder
+ */
+static int sunxi_spi_transfer_two(struct spi_master *master, struct spi_device *spi,
+			    struct spi_transfer *t, struct spi_transfer *t2)
+{
+	struct sunxi_spi *sspi = spi_master_get_devdata(spi->master);
+	unsigned long timeout = 0;
+	int ret = 0;
+
+	/* Stock reconfigures every transfer, including repeated bus-zero I/O. */
+	if (sunxi_spi_xfer_setup(spi, t) < 0)
+		return -EINVAL;
+
+	if (t->tx_buf && t2->rx_buf)
+		sunxi_spi_xfer_tx_rx(spi, t, t2);
+	else {
+
+		SPI_ERR("[spi%d] begin transfer, t1: txbuf %p, rxbuf %p, len %d t2:  txbuf %p, rxbuf %p, len %d t2:\n",
+		spi->master->bus_num, t->tx_buf, t->rx_buf, t->len, t2->tx_buf, t2->rx_buf, t2->len);
+		SPI_ERR("[spi%d] xfer mode not support\n", spi->master->bus_num);
+		return -EINVAL;
+	}
+
 
 	if ((debug_mask & DEBUG_INIT) && (debug_mask & DEBUG_DATA)) {
 		dprintk(DEBUG_DATA, "[spi%d] dump reg:\n", sspi->master->bus_num);
@@ -1709,96 +1903,150 @@ static int sunxi_spi_xfer(struct spi_device *spi, struct spi_transfer *t)
 		ret = -1;
 	}
 
-#ifdef CONFIG_DMA_ENGINE
-	/* release dma resource if necessary */
-	sunxi_spi_release_dma(sspi, t);
-	if (sspi->dbi_enabled)
-		spi_disable_dbi_dma(base_addr);
-#endif
-
 	if (sspi->mode_type != MODE_TYPE_NULL)
 		sspi->mode_type = MODE_TYPE_NULL;
+
+	/*
+	 *if (sspi->stx.state == TRANSFER_STATE) {
+	 *        sunxi_spi_unmap_sg(spi->master, &sspi->stx.tx);
+	 *        sspi->stx.state = INIT_STATE;
+	 *}
+	 */
 
 	return ret;
 }
 
-/* spi core xfer process */
-static void sunxi_spi_work(struct work_struct *work)
+/*
+ * sunxi spi flash_transfer_one_message - Default implementation of transfer_one_message()
+ *
+ * This is a standard implementation of transfer_one_message() for
+ * drivers which implement a transfer_one() operation.  It provides
+ * standard handling of delays and chip select management.
+ */
+static int sunxi_spi_transfer_one_message(struct spi_master *master,
+				    struct spi_message *msg)
 {
-	struct sunxi_spi *sspi = container_of(work, struct sunxi_spi, work);
-	unsigned long flags = 0;
+	struct sunxi_spi *sspi = spi_master_get_devdata(master);
+	void __iomem *base_addr = sspi->base_addr;
+	struct spi_transfer *xfer;
+	struct spi_transfer *cur_xfer = NULL;
+	struct spi_transfer *prev_xfer = NULL;
+	int xfer_cnt = 0;
+	int xfer_n = 0;
+	int ret = 0;
+	struct spi_statistics *statm = &master->statistics;
+	struct spi_statistics *stats = &msg->spi->statistics;
 
-	spin_lock_irqsave(&sspi->lock, flags);
-	sspi->busy = SPI_BUSY;
-	/*
-	 * get from messages queue, and then do with them,
-	 * if message queue is empty ,then return and set status to free,
-	 * otherwise process them.
-	 */
-	while (!list_empty(&sspi->queue)) {
-		struct spi_message *msg = NULL;
-		struct spi_device  *spi = NULL;
-		struct spi_transfer *t  = NULL;
-		unsigned int cs_change = 0;
-		int status;
-		/* get message from message queue in sunxi_spi. */
-		msg = container_of(sspi->queue.next, struct spi_message, queue);
-		/* then delete from the message queue,now it is alone.*/
-		list_del_init(&msg->queue);
-		spin_unlock_irqrestore(&sspi->lock, flags);
-		/* get spi device from this message */
-		spi = msg->spi;
-		/* set default value,no need to change cs,keep select until spi transfer require to change cs. */
-		cs_change = 1;
-		/* set message status to succeed. */
-		status = 0;
-		/* search the spi transfer in this message, deal with it alone. */
-		list_for_each_entry(t, &msg->transfers, transfer_list) {
 
-			if (t->bits_per_word || t->speed_hz) {
-				status = sunxi_spi_xfer_setup(spi, t);
-				if (status < 0)
-					break;
-				dprintk(DEBUG_INFO, "[spi%d] xfer setup\n", sspi->master->bus_num);
+	SPI_STATISTICS_INCREMENT_FIELD(statm, messages);
+	SPI_STATISTICS_INCREMENT_FIELD(stats, messages);
+
+
+	list_for_each_entry(xfer, &msg->transfers, transfer_list) {
+
+		spi_statistics_add_transfer_stats(statm, xfer, master);
+		spi_statistics_add_transfer_stats(stats, xfer, master);
+
+		xfer_cnt++;
+		cur_xfer = xfer;
+
+		if (prev_xfer && prev_xfer->tx_buf && !prev_xfer->rx_buf &&
+				cur_xfer && cur_xfer->rx_buf && !cur_xfer->tx_buf) {
+			/*tx->rx*/
+			reinit_completion(&master->xfer_completion);
+
+			ret = master->transfer_two(master, msg->spi, prev_xfer, cur_xfer);
+			if (ret < 0) {
+				SPI_STATISTICS_INCREMENT_FIELD(statm,
+							       errors);
+				SPI_STATISTICS_INCREMENT_FIELD(stats,
+							       errors);
+				SPI_ERR("[spi%d]  SPI transfer failed: %d\n", sspi->master->bus_num, ret);
+				goto out;
 			}
-			/* first active the cs */
-			if (cs_change)
-				sspi->cs_control(spi, 1);
-			/* update the new cs value */
-			cs_change = t->cs_change;
-			/* do transfer
-			 * > 64 : dma ;  <= 64 : cpu
-			 * wait for done completion in this function, wakup in the irq hanlder
-			 */
-			status = sunxi_spi_xfer(spi, t);
 
-			if (status)
-				break;/* fail quit, zero means succeed */
-			/* accmulate the value in the message */
-			msg->actual_length += t->len;
-			/* accmulate the value in the message */
-			/* may be need to delay */
-			if (t->delay_usecs)
-				udelay(t->delay_usecs);
-			/* if zero ,keep active,otherwise deactived. */
-			if (cs_change)
-				sspi->cs_control(spi, 0);
+			if (msg->status != -EINPROGRESS)
+				goto out;
+
+			msg->actual_length += prev_xfer->len;
+			msg->actual_length += cur_xfer->len;
+			prev_xfer = NULL;
+			cur_xfer = NULL;
+			xfer_cnt = 0;
+
+		} else if (!prev_xfer) {
+			prev_xfer = xfer;
+
+		} else {
+			/*single handle*/
+
+			spi_ss_ctrl(base_addr, 1);
+			master->set_cs(msg->spi, false);
+			for (xfer_n = 0; xfer_n < xfer_cnt; xfer_n++) {
+				if (xfer_n == 0)
+					xfer = prev_xfer;
+				else
+					xfer = cur_xfer;
+
+				reinit_completion(&master->xfer_completion);
+
+				ret = master->transfer_one(master, msg->spi, xfer);
+				if (ret < 0) {
+					SPI_STATISTICS_INCREMENT_FIELD(statm,
+							errors);
+					SPI_STATISTICS_INCREMENT_FIELD(stats,
+							errors);
+					SPI_ERR("[spi%d]  SPI transfer failed: %d\n", sspi->master->bus_num, ret);
+					goto out;
+				}
+
+				msg->actual_length += xfer->len;
+
+			}
+
+			master->set_cs(msg->spi, true);
+			spi_ss_ctrl(base_addr, 0);
 		}
-
-		msg->status = status;
-		/* wakup the uplayer caller,complete one message */
-		msg->complete(msg->context);
-		/* fail or need to change cs */
-		if (status || !cs_change)
-			sspi->cs_control(spi, 0);
-		/* restore default value. */
-		sunxi_spi_xfer_setup(spi, NULL);
-		spin_lock_irqsave(&sspi->lock, flags);
 	}
-	/* set spi to free */
-	sspi->busy = SPI_FREE;
-	spin_unlock_irqrestore(&sspi->lock, flags);
+
+	/*do last xfer*/
+	{
+		if (prev_xfer && prev_xfer == cur_xfer) {
+
+			reinit_completion(&master->xfer_completion);
+
+			ret = master->transfer_one(master, msg->spi, cur_xfer);
+			if (ret < 0) {
+				SPI_STATISTICS_INCREMENT_FIELD(statm,
+						errors);
+				SPI_STATISTICS_INCREMENT_FIELD(stats,
+						errors);
+				SPI_ERR("[spi%d]  SPI transfer failed: %d\n", sspi->master->bus_num, ret);
+				goto out;
+			}
+
+			msg->actual_length += cur_xfer->len;
+			prev_xfer = NULL;
+			cur_xfer = NULL;
+			xfer_cnt = 0;
+		}
+	}
+
+out:
+
+	if (msg->status == -EINPROGRESS)
+		msg->status = ret;
+
+	if (msg->status && master->handle_err)
+		master->handle_err(master, msg);
+
+	spi_res_release(master, msg);
+
+	spi_finalize_current_message(master);
+
+	return ret;
 }
+#endif
 
 /* wake up the sleep thread, and give the result code */
 static irqreturn_t sunxi_spi_handler(int irq, void *dev_id)
@@ -1813,13 +2061,13 @@ static irqreturn_t sunxi_spi_handler(int irq, void *dev_id)
 	enable = spi_qry_irq_enable(base_addr);
 	status = spi_qry_irq_pending(base_addr);
 	spi_clr_irq_pending(status, base_addr);
-	dprintk(DEBUG_INFO, "[spi%d] irq status = %x\n", sspi->master->bus_num, status);
+	dprintk_STOCK(1423, DEBUG_INFO, "[spi%d] irq status = %x\n", sspi->master->bus_num, status);
 
 	sspi->result = 0; /* assume succeed */
 
 	if (sspi->mode) {
 		if ((enable & SPI_INTEN_RX_RDY) && (status & SPI_INT_STA_RX_RDY)) {
-			dprintk(DEBUG_INFO, "[spi%d] spi data is ready\n", sspi->master->bus_num);
+			dprintk_STOCK(1429, DEBUG_INFO, "[spi%d] spi data is ready\n", sspi->master->bus_num);
 			spi_disable_irq(SPI_INT_STA_RX_RDY, base_addr);
 			wake_up_process(sspi->task);
 			spin_unlock_irqrestore(&sspi->lock, flags);
@@ -1829,7 +2077,7 @@ static irqreturn_t sunxi_spi_handler(int irq, void *dev_id)
 
 	/* master mode, Transfer Complete Interrupt */
 	if (status & SPI_INT_STA_TC) {
-		dprintk(DEBUG_INFO, "[spi%d] SPI TC comes\n", sspi->master->bus_num);
+		dprintk_STOCK(1439, DEBUG_INFO, "[spi%d] SPI TC comes\n", sspi->master->bus_num);
 		spi_disable_irq(SPI_INT_STA_TC | SPI_INT_STA_ERR, base_addr);
 
 		/*wakup uplayer, by the sem */
@@ -1837,7 +2085,7 @@ static irqreturn_t sunxi_spi_handler(int irq, void *dev_id)
 		spin_unlock_irqrestore(&sspi->lock, flags);
 		return IRQ_HANDLED;
 	} else if (status & SPI_INT_STA_ERR) { /* master mode:err */
-		SPI_ERR("[spi%d]  SPI ERR %#x comes\n", sspi->master->bus_num, status);
+		SPI_ERR_STOCK(1447, "[spi%d]  SPI ERR %#x comes\n", sspi->master->bus_num, status);
 		/* error process, release dma in the workqueue,should not be here */
 		spi_disable_irq(SPI_INT_STA_TC | SPI_INT_STA_ERR, base_addr);
 		spi_soft_reset(base_addr);
@@ -1849,10 +2097,11 @@ static irqreturn_t sunxi_spi_handler(int irq, void *dev_id)
 	if (sspi->dbi_enabled) {
 		status = dbi_qry_irq_pending(base_addr);
 		dbi_clr_irq_pending(status, base_addr);
-		dprintk(DEBUG_INFO, "[dbi%d] irq status = %x\n",
+		dprintk_STOCK(1460, DEBUG_INFO, "[dbi%d] irq status = %x\n",
 				sspi->master->bus_num, status);
+
 		if ((status & DBI_INT_FIFO_EMPTY) && !(sspi->spi->dbi_mode & SPI_DBI_TRANSMIT_VIDEO_)) {
-			dprintk(DEBUG_INFO, "[spi%d] DBI Fram TC comes\n",
+			dprintk_STOCK(1463, DEBUG_INFO, "[spi%d] DBI Fram TC comes\n",
 					sspi->master->bus_num);
 			dbi_disable_irq(DBI_FIFO_EMPTY_INT_EN, base_addr);
 			/*wakup uplayer, by the sem */
@@ -1877,72 +2126,24 @@ static irqreturn_t sunxi_spi_handler(int irq, void *dev_id)
 			return IRQ_HANDLED;
 		}
 	}
-	dprintk(DEBUG_INFO, "[spi%d] SPI NONE comes\n", sspi->master->bus_num);
+	dprintk_STOCK(1487, DEBUG_INFO, "[spi%d] SPI NONE comes\n", sspi->master->bus_num);
 	spin_unlock_irqrestore(&sspi->lock, flags);
 	return IRQ_NONE;
 }
 
-/* interface 1 */
-static int sunxi_spi_transfer(struct spi_device *spi, struct spi_message *msg)
+static int sunxi_spi_setup(struct spi_device *spi)
 {
 	struct sunxi_spi *sspi = spi_master_get_devdata(spi->master);
-	unsigned long flags;
 
-	msg->actual_length = 0;
-	msg->status = -EINPROGRESS;
-
-	spin_lock_irqsave(&sspi->lock, flags);
-	/* add msg to the sunxi_spi queue */
-	list_add_tail(&msg->queue, &sspi->queue);
-	/* add work to the workqueue,schedule the cpu. */
-	queue_work(sspi->workqueue, &sspi->work);
-	spin_unlock_irqrestore(&sspi->lock, flags);
+	sspi->spi = spi;
 
 	return 0;
 }
 
-/* interface 2, setup the frequency and default status */
-static int sunxi_spi_setup(struct spi_device *spi)
+static bool sunxi_spi_can_dma(struct spi_master *master, struct spi_device *spi,
+				 struct spi_transfer *xfer)
 {
-	struct sunxi_spi *sspi = spi_master_get_devdata(spi->master);
-	struct sunxi_spi_config *config = spi->controller_data;/* general is null. */
-	unsigned long flags;
-
-	/* just support 8 bits per word */
-	if (spi->bits_per_word != 8)
-		return -EINVAL;
-	/* first check its valid,then set it as default select,finally set its */
-	if (sunxi_spi_check_cs(spi->chip_select, sspi) == SUNXI_SPI_FAIL) {
-		SPI_ERR("[spi%d] not support cs-%d\n", spi->master->bus_num, spi->chip_select);
-		return -EINVAL;
-	}
-	if (spi->max_speed_hz > SPI_MAX_FREQUENCY)
-		return -EINVAL;
-	if (!config) {
-		config = kzalloc(sizeof(*config), GFP_KERNEL);
-		if (!config)
-			return -ENOMEM;
-		spi->controller_data = config;
-	}
-	/* set the default value with spi device
-	 * can change by every spi transfer
-	 */
-	config->bits_per_word = spi->bits_per_word;
-	config->max_speed_hz  = spi->max_speed_hz;
-	config->mode		  = spi->mode;
-
-	spin_lock_irqsave(&sspi->lock, flags);
-	/* if spi is free, then deactived the spi device */
-	if (sspi->busy & SPI_FREE) {
-		/* set chip select number */
-		spi_set_cs(spi->chip_select, sspi->base_addr);
-		/* deactivate chip select */
-		sspi->cs_control(spi, 0);
-	}
-	sspi->spi = spi;
-	spin_unlock_irqrestore(&sspi->lock, flags);
-
-	return 0;
+	return (xfer->len > BULK_DATA_BOUNDARY);
 }
 
 static struct device_data *sunxi_spi_slave_set_txdata(struct sunxi_spi_slave_head *head)
@@ -1952,22 +2153,24 @@ static struct device_data *sunxi_spi_slave_set_txdata(struct sunxi_spi_slave_hea
 
 	buf = kzalloc(head->len, GFP_KERNEL);
 	if (IS_ERR_OR_NULL(buf)) {
-		SPI_ERR("failed to alloc mem\n");
+		SPI_ERR_STOCK(1514, "failed to alloc mem\n");
 		goto err0;
 	}
 
 	data = kzalloc(sizeof(*data), GFP_KERNEL);
 	if (IS_ERR_OR_NULL(data)) {
-		SPI_ERR("failed to alloc mem\n");
+		SPI_ERR_STOCK(1520, "failed to alloc mem\n");
 		goto err1;
 	}
 
+	/* Stock's u8 index wraps for lengths above 255.
+	 * TODO: widen the index or reject such lengths in a separate fix. */
 	for (i = 0; i < head->len; i++) {
 		buf[i] = i + SAMPLE_NUMBER;
 	}
 	udelay(100);
 
-	dprintk(DEBUG_DATA, "[debugging only] send data:\n");
+	dprintk_STOCK(1529, DEBUG_DATA, "[debugging only] send data:\n");
 	if (debug_mask & DEBUG_DATA)
 		spi_dump_data(buf, head->len);
 
@@ -1989,16 +2192,16 @@ static int sunxi_spi_slave_cpu_tx_config(struct sunxi_spi *sspi)
 	unsigned long timeout = 0;
 	unsigned long flags = 0;
 
-	dprintk(DEBUG_INFO, "[spi%d] receive pkt head ok\n", sspi->master->bus_num);
+	dprintk_STOCK(1551, DEBUG_INFO, "[spi%d] receive pkt head ok\n", sspi->master->bus_num);
 	if (sspi->slave->set_up_txdata) {
 		sspi->slave->data = sspi->slave->set_up_txdata(sspi->slave->head);
 		if (IS_ERR_OR_NULL(sspi->slave->data)) {
-			SPI_ERR("[spi%d] null data\n", sspi->master->bus_num);
+			SPI_ERR_STOCK(1555, "[spi%d] null data\n", sspi->master->bus_num);
 			ret = -1;
 			goto err;
 		}
 	} else {
-		SPI_ERR("[spi%d] none define set_up_txdata\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1560, "[spi%d] none define set_up_txdata\n", sspi->master->bus_num);
 		ret = -1;
 		goto err;
 	}
@@ -2010,13 +2213,13 @@ static int sunxi_spi_slave_cpu_tx_config(struct sunxi_spi *sspi)
 	spi_set_bc_tc_stc(0, 0, 0, 0, sspi->base_addr);
 	spi_enable_irq(SPI_INTEN_TC|SPI_INTEN_ERR, sspi->base_addr);
 
-	dprintk(DEBUG_INFO, "[spi%d] to be send data init ok\n", sspi->master->bus_num);
+	dprintk_STOCK(1572, DEBUG_INFO, "[spi%d] to be send data init ok\n", sspi->master->bus_num);
 	spin_lock_irqsave(&sspi->lock, flags);
 	for (i = 0; i < sspi->slave->head->len; i++) {
 		while ((spi_query_txfifo(sspi->base_addr) >= MAX_FIFU) && (--poll_time))
 			;
 		if (poll_time == 0) {
-			dprintk(DEBUG_INFO, "[spi%d]cpu send data timeout\n", sspi->master->bus_num);
+			dprintk_STOCK(1578, DEBUG_INFO, "[spi%d]cpu send data timeout\n", sspi->master->bus_num);
 			goto err;
 		}
 
@@ -2024,18 +2227,18 @@ static int sunxi_spi_slave_cpu_tx_config(struct sunxi_spi *sspi)
 	}
 	spin_unlock_irqrestore(&sspi->lock, flags);
 
-	dprintk(DEBUG_INFO, "[spi%d] already send data to fifo\n", sspi->master->bus_num);
+	dprintk_STOCK(1586, DEBUG_INFO, "[spi%d] already send data to fifo\n", sspi->master->bus_num);
 
 	/* wait for xfer complete in the isr. */
 	timeout = wait_for_completion_timeout(
 				&sspi->done,
 				msecs_to_jiffies(XFER_TIMEOUT));
 	if (timeout == 0) {
-		SPI_ERR("[spi%d] xfer timeout\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1593, "[spi%d] xfer timeout\n", sspi->master->bus_num);
 		ret = -1;
 		goto err;
 	} else if (sspi->result < 0) {
-		SPI_ERR("[spi%d] xfer failed...\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1597, "[spi%d] xfer failed...\n", sspi->master->bus_num);
 		ret = -1;
 		goto err;
 	}
@@ -2043,7 +2246,9 @@ static int sunxi_spi_slave_cpu_tx_config(struct sunxi_spi *sspi)
 err:
 	spi_clr_irq_pending(SPI_INT_STA_MASK, sspi->base_addr);
 	spi_disable_irq(SPI_INTEN_TC|SPI_INTEN_ERR, sspi->base_addr);
+#ifdef CONFIG_DMA_ENGINE
 	spi_disable_dma_irq(SPI_FIFO_CTL_DRQEN_MASK, sspi->base_addr);
+#endif
 	spi_reset_fifo(sspi->base_addr);
 	kfree(sspi->slave->data->tx_buf);
 	kfree(sspi->slave->data);
@@ -2056,10 +2261,10 @@ static int sunxi_spi_slave_cpu_rx_config(struct sunxi_spi *sspi)
 	int ret = 0, i;
 	u32 poll_time = 0x7ffffff;
 
-	dprintk(DEBUG_INFO, "[spi%d] receive pkt head ok\n", sspi->master->bus_num);
+	dprintk_STOCK(1618, DEBUG_INFO, "[spi%d] receive pkt head ok\n", sspi->master->bus_num);
 	sspi->slave->data = kzalloc(sizeof(struct device_data), GFP_KERNEL);
 	if (IS_ERR_OR_NULL(sspi->slave->data)) {
-		SPI_ERR("failed to alloc mem\n");
+		SPI_ERR_STOCK(1621, "failed to alloc mem\n");
 		ret = -ENOMEM;
 		goto err0;
 	}
@@ -2067,7 +2272,7 @@ static int sunxi_spi_slave_cpu_rx_config(struct sunxi_spi *sspi)
 	sspi->slave->data->len = sspi->slave->head->len;
 	sspi->slave->data->rx_buf = kzalloc(sspi->slave->data->len, GFP_KERNEL);
 	if (IS_ERR_OR_NULL(sspi->slave->data->rx_buf)) {
-		SPI_ERR("failed to alloc mem\n");
+		SPI_ERR_STOCK(1629, "failed to alloc mem\n");
 		ret = -ENOMEM;
 		goto err1;
 	}
@@ -2078,7 +2283,7 @@ static int sunxi_spi_slave_cpu_rx_config(struct sunxi_spi *sspi)
 	spi_enable_irq(SPI_INTEN_ERR|SPI_INTEN_RX_RDY, sspi->base_addr);
 	spi_set_bc_tc_stc(0, 0, 0, 0, sspi->base_addr);
 
-	dprintk(DEBUG_INFO, "[spi%d] to be receive data init ok\n", sspi->master->bus_num);
+	dprintk_STOCK(1640, DEBUG_INFO, "[spi%d] to be receive data init ok\n", sspi->master->bus_num);
 	for (i = 0; i < sspi->slave->data->len; i++) {
 		while (!spi_query_rxfifo(sspi->base_addr) && (--poll_time > 0))
 			;
@@ -2087,25 +2292,27 @@ static int sunxi_spi_slave_cpu_rx_config(struct sunxi_spi *sspi)
 
 
 	if (poll_time <= 0) {
-		SPI_ERR("[spi%d] cpu receive pkt head time out!\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1649, "[spi%d] cpu receive pkt head time out!\n", sspi->master->bus_num);
 		spi_reset_fifo(sspi->base_addr);
 		ret = -1;
 		goto err2;
 	} else if (sspi->result < 0) {
-		SPI_ERR("[spi%d] xfer failed...\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1654, "[spi%d] xfer failed...\n", sspi->master->bus_num);
 		spi_reset_fifo(sspi->base_addr);
 		ret = -1;
 		goto err2;
 	}
 
-	dprintk(DEBUG_DATA, "[debugging only] receive data:\n");
+	dprintk_STOCK(1660, DEBUG_DATA, "[debugging only] receive data:\n");
 	if (debug_mask & DEBUG_DATA)
 		spi_dump_data(sspi->slave->data->rx_buf, sspi->slave->data->len);
 
 err2:
 	spi_clr_irq_pending(SPI_INT_STA_MASK, sspi->base_addr);
 	spi_disable_irq(SPI_INTEN_TC|SPI_INTEN_ERR, sspi->base_addr);
+#ifdef CONFIG_DMA_ENGINE
 	spi_disable_dma_irq(SPI_FIFO_CTL_DRQEN_MASK, sspi->base_addr);
+#endif
 	spi_reset_fifo(sspi->base_addr);
 	kfree(sspi->slave->data->rx_buf);
 err1:
@@ -2120,7 +2327,7 @@ static int sunxi_spi_slave_handle_head(struct sunxi_spi *sspi, u8 *buf)
 
 	head = kzalloc(sizeof(*head), GFP_KERNEL);
 	if (IS_ERR_OR_NULL(head)) {
-		SPI_ERR("failed to alloc mem\n");
+		SPI_ERR_STOCK(1682, "failed to alloc mem\n");
 		ret = -ENOMEM;
 		goto err0;
 	}
@@ -2129,13 +2336,13 @@ static int sunxi_spi_slave_handle_head(struct sunxi_spi *sspi, u8 *buf)
 	head->addr = (buf[ADDR_MASK_0] << 16) | (buf[ADDR_MASK_1] << 8) | buf[ADDR_MASK_2];
 	head->len = buf[LENGTH_MASK];
 
-	dprintk(DEBUG_INFO, "[spi%d] op=0x%x addr=0x%x len=0x%x\n",
+	dprintk_STOCK(1692, DEBUG_INFO, "[spi%d] op=0x%x addr=0x%x len=0x%x\n",
 			sspi->master->bus_num, head->op_code, head->addr, head->len);
 
 	sspi->slave->head = head;
 
 	if (head->len > 64) {
-		dprintk(DEBUG_INFO, "[spi%d] length must less than 64 bytes\n", sspi->master->bus_num);
+		dprintk_STOCK(1697, DEBUG_INFO, "[spi%d] length must less than 64 bytes\n", sspi->master->bus_num);
 		ret = -1;
 		goto err1;
 	}
@@ -2145,7 +2352,7 @@ static int sunxi_spi_slave_handle_head(struct sunxi_spi *sspi, u8 *buf)
 	} else if (head->op_code == SUNXI_OP_READ) {
 		sunxi_spi_slave_cpu_tx_config(sspi);
 	} else {
-		dprintk(DEBUG_INFO, "[spi%d] pkt head opcode err\n", sspi->master->bus_num);
+		dprintk_STOCK(1707, DEBUG_INFO, "[spi%d] pkt head opcode err\n", sspi->master->bus_num);
 		ret = -1;
 		goto err1;
 	}
@@ -2169,7 +2376,7 @@ static int sunxi_spi_slave_task(void *data)
 
 	pkt_head = kzalloc(HEAD_LEN, GFP_KERNEL);
 	if (IS_ERR_OR_NULL(pkt_head)) {
-		SPI_ERR("[spi%d] failed to alloc mem\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1731, "[spi%d] failed to alloc mem\n", sspi->master->bus_num);
 		return -ENOMEM;
 	}
 
@@ -2178,16 +2385,18 @@ static int sunxi_spi_slave_task(void *data)
 	while (!kthread_should_stop()) {
 		spi_reset_fifo(sspi->base_addr);
 		spi_clr_irq_pending(SPI_INT_STA_MASK, sspi->base_addr);
+#ifdef CONFIG_DMA_ENGINE
 		spi_disable_dma_irq(SPI_FIFO_CTL_DRQEN_MASK, sspi->base_addr);
+#endif
 		spi_enable_irq(SPI_INTEN_ERR|SPI_INTEN_RX_RDY, sspi->base_addr);
 		spi_set_rx_trig(HEAD_LEN, sspi->base_addr);
 		spi_set_bc_tc_stc(0, 0, 0, 0, sspi->base_addr);
 
-		dprintk(DEBUG_INFO, "[spi%d] receive pkt head init ok, sleep and wait for data\n", sspi->master->bus_num);
+		dprintk_STOCK(1745, DEBUG_INFO, "[spi%d] receive pkt head init ok, sleep and wait for data\n", sspi->master->bus_num);
 		set_current_state(TASK_INTERRUPTIBLE);
 		schedule();
 
-		dprintk(DEBUG_INFO, "[spi%d] data is come, wake up and receive pkt head\n", sspi->master->bus_num);
+		dprintk_STOCK(1749, DEBUG_INFO, "[spi%d] data is come, wake up and receive pkt head\n", sspi->master->bus_num);
 
 		for (i = 0; i < HEAD_LEN ; i++) {
 			while (!spi_query_rxfifo(sspi->base_addr) && (--poll_time > 0))
@@ -2196,11 +2405,11 @@ static int sunxi_spi_slave_task(void *data)
 		}
 
 		if (poll_time <= 0) {
-			SPI_ERR("[spi%d] cpu receive pkt head time out!\n", sspi->master->bus_num);
+			SPI_ERR_STOCK(1758, "[spi%d] cpu receive pkt head time out!\n", sspi->master->bus_num);
 			spi_reset_fifo(sspi->base_addr);
 			continue;
 		} else if (sspi->result < 0) {
-			SPI_ERR("[spi%d] xfer failed...\n", sspi->master->bus_num);
+			SPI_ERR_STOCK(1762, "[spi%d] xfer failed...\n", sspi->master->bus_num);
 			spi_reset_fifo(sspi->base_addr);
 			continue;
 		}
@@ -2217,13 +2426,6 @@ static int sunxi_spi_slave_task(void *data)
 	return 0;
 }
 
-/* interface 3 */
-static void sunxi_spi_cleanup(struct spi_device *spi)
-{
-	kfree(spi->controller_data);
-	spi->controller_data = NULL;
-}
-
 static int sunxi_spi_select_gpio_state(struct pinctrl *pctrl, char *name, u32 no)
 {
 	int ret = 0;
@@ -2231,13 +2433,13 @@ static int sunxi_spi_select_gpio_state(struct pinctrl *pctrl, char *name, u32 no
 
 	pctrl_state = pinctrl_lookup_state(pctrl, name);
 	if (IS_ERR(pctrl_state)) {
-		SPI_ERR("[spi%d] pinctrl_lookup_state(%s) failed! return %p\n", no, name, pctrl_state);
+		SPI_ERR_STOCK(1786, "[spi%d] pinctrl_lookup_state(%s) failed! return %p\n", no, name, pctrl_state);
 		return -1;
 	}
 
 	ret = pinctrl_select_state(pctrl, pctrl_state);
 	if (ret < 0)
-		SPI_ERR("[spi%d] pinctrl_select_state(%s) failed! return %d\n", no, name, ret);
+		SPI_ERR_STOCK(1792, "[spi%d] pinctrl_select_state(%s) failed! return %d\n", no, name, ret);
 
 	return ret;
 }
@@ -2249,11 +2451,11 @@ static int sunxi_spi_request_gpio(struct sunxi_spi *sspi)
 	if (sspi->pctrl != NULL)
 		return sunxi_spi_select_gpio_state(sspi->pctrl, PINCTRL_STATE_DEFAULT, bus_no);
 
-	dprintk(DEBUG_INIT, "[spi%d] Pinctrl init %s\n", sspi->master->bus_num, sspi->pdev->dev.init_name);
+	dprintk_STOCK(1804, DEBUG_INIT, "[spi%d] Pinctrl init %s\n", sspi->master->bus_num, sspi->pdev->dev.init_name);
 
 	sspi->pctrl = devm_pinctrl_get(&sspi->pdev->dev);
 	if (IS_ERR(sspi->pctrl)) {
-		SPI_ERR("[spi%d] devm_pinctrl_get() failed! return %ld\n",
+		SPI_ERR_STOCK(1809, "[spi%d] devm_pinctrl_get() failed! return %ld\n",
 				sspi->master->bus_num, PTR_ERR(sspi->pctrl));
 		return -1;
 	}
@@ -2267,6 +2469,7 @@ static void sunxi_spi_release_gpio(struct sunxi_spi *sspi)
 	sspi->pctrl = NULL;
 }
 
+
 static int sunxi_spi_clk_init(struct sunxi_spi *sspi, u32 mod_clk)
 {
 	int ret = 0;
@@ -2274,35 +2477,35 @@ static int sunxi_spi_clk_init(struct sunxi_spi *sspi, u32 mod_clk)
 
 	sspi->pclk = of_clk_get(sspi->pdev->dev.of_node, 0);
 	if (IS_ERR_OR_NULL(sspi->pclk)) {
-		SPI_ERR("[spi%d] Unable to acquire module clock '%s', return %x\n",
+		SPI_ERR_STOCK(1830, "[spi%d] Unable to acquire module clock '%s', return %x\n",
 			sspi->master->bus_num, sspi->dev_name, PTR_RET(sspi->pclk));
 		return -1;
 	}
 
 	sspi->mclk = of_clk_get(sspi->pdev->dev.of_node, 1);
 	if (IS_ERR_OR_NULL(sspi->mclk)) {
-		SPI_ERR("[spi%d] Unable to acquire module clock '%s', return %x\n",
+		SPI_ERR_STOCK(1837, "[spi%d] Unable to acquire module clock '%s', return %x\n",
 			sspi->master->bus_num, sspi->dev_name, PTR_RET(sspi->mclk));
 		return -1;
 	}
 
 	ret = clk_set_parent(sspi->mclk, sspi->pclk);
 	if (ret != 0) {
-		SPI_ERR("[spi%d] clk_set_parent() failed! return %d\n",
+		SPI_ERR_STOCK(1844, "[spi%d] clk_set_parent() failed! return %d\n",
 			sspi->master->bus_num, ret);
 		return -1;
 	}
 
 	rate = clk_round_rate(sspi->mclk, mod_clk);
 	if (clk_set_rate(sspi->mclk, rate)) {
-		SPI_ERR("[spi%d] spi clk_set_rate failed\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1850, "[spi%d] spi clk_set_rate failed\n", sspi->master->bus_num);
 		return -1;
 	}
 
-	dprintk(DEBUG_INIT, "[spi%d] mclk %u\n", sspi->master->bus_num, (unsigned)clk_get_rate(sspi->mclk));
+	dprintk_STOCK(1854, DEBUG_INIT, "[spi%d] mclk %u\n", sspi->master->bus_num, (unsigned)clk_get_rate(sspi->mclk));
 
 	if (clk_prepare_enable(sspi->mclk)) {
-		SPI_ERR("[spi%d] Couldn't enable module clock 'spi'\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1857, "[spi%d] Couldn't enable module clock 'spi'\n", sspi->master->bus_num);
 		return -EBUSY;
 	}
 
@@ -2312,7 +2515,7 @@ static int sunxi_spi_clk_init(struct sunxi_spi *sspi, u32 mod_clk)
 static int sunxi_spi_clk_exit(struct sunxi_spi *sspi)
 {
 	if (IS_ERR_OR_NULL(sspi->mclk)) {
-		SPI_ERR("[spi%d] SPI mclk handle is invalid!\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1867, "[spi%d] SPI mclk handle is invalid!\n", sspi->master->bus_num);
 		return -1;
 	}
 
@@ -2334,29 +2537,25 @@ static int sunxi_spi_hw_init(struct sunxi_spi *sspi,
 
 	ret = spi_regulator_request(pdata, dev);
 	if (ret < 0) {
-		SPI_ERR("[spi%d] request regulator failed!\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1889, "[spi%d] request regulator failed!\n", sspi->master->bus_num);
 		return ret;
 	}
 	spi_regulator_enable(pdata);
 
 	if (sunxi_spi_request_gpio(sspi) < 0) {
-		SPI_ERR("[spi%d] Request GPIO failed!\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1895, "[spi%d] Request GPIO failed!\n", sspi->master->bus_num);
 		return -1;
 	}
 
 	ret = of_property_read_u32(sspi->pdev->dev.of_node, "clock-frequency", &sclk_freq_def);
 	if (ret) {
-		SPI_ERR("[spi%d] Get clock-frequency property failed\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(1901, "[spi%d] Get clock-frequency property failed\n", sspi->master->bus_num);
 		return -1;
 	}
 
-	ret = of_property_read_u32(sspi->pdev->dev.of_node, "cdr", &sspi->cdr);
-	if (ret)
-		dprintk(DEBUG_INFO, "[spi%d] get cdr property failed\n", sspi->master->bus_num);
-
 	sclk_freq = sunxi_spi_clk_init(sspi, sclk_freq_def);
 	if (sclk_freq < 0) {
-		SPI_ERR("[spi%d] sunxi_spi_clk_init(%s) failed!\n", sspi->master->bus_num, sspi->dev_name);
+		SPI_ERR_STOCK(1907, "[spi%d] sunxi_spi_clk_init(%s) failed!\n", sspi->master->bus_num, sspi->dev_name);
 		return -1;
 	}
 
@@ -2365,33 +2564,33 @@ static int sunxi_spi_hw_init(struct sunxi_spi *sspi,
 		spi_enable_bus(base_addr);
 
 	if (sspi->dbi_enabled) {
-		spi_set_cs(0, base_addr);
 		spi_set_slave(base_addr);
 		spi_set_dbi(base_addr);
 		spi_enable_dbi(base_addr);
 		spi_set_clk(10000000, sclk_freq, sspi);
 		spi_enable_tp(base_addr);
 	} else if (!sspi->mode) {
-		/* set the default chip select */
-		if (sunxi_spi_check_cs(0, sspi) == SUNXI_SPI_OK)
-			spi_set_cs(0, base_addr);
-		else
-			spi_set_cs(1, base_addr);
 		/* master: set spi module clock;
 		 * set the default frequency	10MHz
 		 */
 		spi_set_master(base_addr);
 		spi_set_clk(10000000, sclk_freq, sspi);
 		/* master : set POL,PHA,SSOPL,LMTF,DDB,DHB; default: SSCTL=0,SMC=1,TBW=0. */
-		spi_config_tc(1, SPI_MODE_0, base_addr);
+		spi_config_tc(SPI_MODE_0, base_addr);
 		spi_enable_tp(base_addr);
 		/* manual control the chip select */
+#ifndef CONFIG_AW_MTD_SPINAND
 		spi_ss_ctrl(base_addr, 1);
+#else
+		if (strcmp(dev->of_node->child->name, "spi-nand"))
+			spi_ss_ctrl(base_addr, 1);
+
+#endif
 	} else {
 		//slave
 		spi_set_slave(base_addr);
 		/* master : set POL,PHA,SSOPL,LMTF,DDB,DHB; default: SSCTL=0,SMC=1,TBW=0. */
-		spi_config_tc(1, SPI_MODE_0, base_addr);
+		spi_config_tc(SPI_MODE_0, base_addr);
 		spi_set_clk(sclk_freq_def, sclk_freq, sspi);
 
 		if (sclk_freq_def >= SPI_HIGH_FREQUENCY)
@@ -2436,13 +2635,12 @@ static ssize_t sunxi_spi_info_show(struct device *dev,
 		"pdev->num_resources = %u\n"
 		"pdev->resource.mem = [%pa, %pa]\n"
 		"pdev->resource.irq = %pa\n"
-		"pdev->dev.platform_data.cs_bitmap = %d\n"
 		"pdev->dev.platform_data.cs_num    = %d\n"
 		"pdev->dev.platform_data.regulator = 0x%p\n"
 		"pdev->dev.platform_data.regulator_id = %s\n",
 		pdev->id, pdev->name, pdev->num_resources,
 		&pdev->resource[0].start, &pdev->resource[0].end, &pdev->resource[1].start,
-		pdata->cs_bitmap, pdata->cs_num, pdata->regulator, pdata->regulator_id);
+		 pdata->cs_num, pdata->regulator, pdata->regulator_id);
 }
 static struct device_attribute sunxi_spi_info_attr =
 	__ATTR(info, S_IRUGO, sunxi_spi_info_show, NULL);
@@ -2458,11 +2656,7 @@ static ssize_t sunxi_spi_status_show(struct device *dev,
 				  "Dual mode, half duplex read",
 				  "Dual mode, half duplex write",
 				  "Null"};
-	char const *busy_state[] = {"Unknown", "Free", "Suspend", "Busy"};
 	char const *result_str[] = {"Success", "Fail"};
-#ifdef CONFIG_DMA_ENGINE
-	char const *dma_dir[] = {"DMA NULL", "DMA read", "DMA write"};
-#endif
 
 	if (master == NULL)
 		return snprintf(buf, PAGE_SIZE, "%s\n", "spi_master is NULL!");
@@ -2473,15 +2667,8 @@ static ssize_t sunxi_spi_status_show(struct device *dev,
 			"master->dma_alignment  = %d\n"
 			"master->mode_bits = %d\n"
 			"master->flags = 0x%x, ->bus_lock_flag = 0x%x\n"
-			"master->busy = %d, ->running = %d, ->rt = %d\n"
+			"master->running = %d, ->rt = %d\n"
 			"sspi->mode_type = %d [%s]\n"
-			"sspi->irq = %d [%s]\n"
-			"sspi->cs_bitmap = %d\n"
-#ifdef CONFIG_DMA_ENGINE
-			"sspi->dma_tx.dir = %d [%s]\n"
-			"sspi->dma_rx.dir = %d [%s]\n"
-#endif
-			"sspi->busy = %d [%s]\n"
 			"sspi->result = %d [%s]\n"
 			"sspi->base_addr = 0x%p, the SPI control register:\n"
 			"[VER] 0x%02x = 0x%08x, [GCR] 0x%02x = 0x%08x, [TCR] 0x%02x = 0x%08x\n"
@@ -2491,14 +2678,8 @@ static ssize_t sunxi_spi_status_show(struct device *dev,
 			"[DMA] 0x%02x = 0x%08x, [TXR] 0x%02x = 0x%08x, [RXD] 0x%02x = 0x%08x\n",
 			master->bus_num, master->num_chipselect, master->dma_alignment,
 			master->mode_bits, master->flags, master->bus_lock_flag,
-			master->busy, master->running, master->rt,
+			 master->running, master->rt,
 			sspi->mode_type, spi_mode[sspi->mode_type],
-			sspi->irq, sspi->dev_name, sspi->cs_bitmap,
-#ifdef CONFIG_DMA_ENGINE
-			sspi->dma_tx.dir, dma_dir[sspi->dma_tx.dir],
-			sspi->dma_rx.dir, dma_dir[sspi->dma_rx.dir],
-#endif
-			sspi->busy, busy_state[sspi->busy],
 			sspi->result, result_str[sspi->result],
 			sspi->base_addr,
 			SPI_VER_REG, readl(sspi->base_addr + SPI_VER_REG),
@@ -2541,13 +2722,13 @@ static int sunxi_spi_probe(struct platform_device *pdev)
 	int ret = 0, err = 0, irq;
 
 	if (np == NULL) {
-		SPI_ERR("SPI failed to get of_node\n");
+		SPI_ERR_STOCK(2068, "SPI failed to get of_node\n");
 		return -ENODEV;
 	}
 
 	pdev->id = of_alias_get_id(np, "spi");
 	if (pdev->id < 0) {
-		SPI_ERR("SPI failed to get alias id\n");
+		SPI_ERR_STOCK(2074, "SPI failed to get alias id\n");
 		return -EINVAL;
 	}
 
@@ -2558,21 +2739,21 @@ static int sunxi_spi_probe(struct platform_device *pdev)
 
 	pdata = kzalloc(sizeof(struct sunxi_spi_platform_data), GFP_KERNEL);
 	if (pdata == NULL) {
-		SPI_ERR("SPI failed to alloc mem\n");
+		SPI_ERR_STOCK(2085, "SPI failed to alloc mem\n");
 		return -ENOMEM;
 	}
 	pdev->dev.platform_data = pdata;
 
 	mem_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (mem_res == NULL) {
-		SPI_ERR("Unable to get spi MEM resource\n");
+		SPI_ERR_STOCK(2092, "Unable to get spi MEM resource\n");
 		ret = -ENXIO;
 		goto err0;
 	}
 
 	irq = platform_get_irq(pdev, 0);
 	if (irq < 0) {
-		SPI_ERR("No spi IRQ specified\n");
+		SPI_ERR_STOCK(2099, "No spi IRQ specified\n");
 		ret = -ENXIO;
 		goto err0;
 	}
@@ -2580,15 +2761,7 @@ static int sunxi_spi_probe(struct platform_device *pdev)
 	snprintf(spi_para, sizeof(spi_para), "spi%d_cs_number", pdev->id);
 	ret = of_property_read_u32(np, spi_para, &pdata->cs_num);
 	if (ret) {
-		SPI_ERR("Failed to get cs_number property\n");
-		ret = -EINVAL;
-		goto err0;
-	}
-
-	snprintf(spi_para, sizeof(spi_para), "spi%d_cs_bitmap", pdev->id);
-	ret = of_property_read_u32(np, spi_para, &pdata->cs_bitmap);
-	if (ret) {
-		SPI_ERR("Failed to get cs_bitmap property\n");
+		SPI_ERR_STOCK(2107, "Failed to get cs_number property\n");
 		ret = -EINVAL;
 		goto err0;
 	}
@@ -2596,7 +2769,7 @@ static int sunxi_spi_probe(struct platform_device *pdev)
 	/* create spi master */
 	master = spi_alloc_master(&pdev->dev, sizeof(struct sunxi_spi));
 	if (master == NULL) {
-		SPI_ERR("Unable to allocate SPI Master\n");
+		SPI_ERR_STOCK(2115, "Unable to allocate SPI Master\n");
 		ret = -ENOMEM;
 		goto err0;
 	}
@@ -2605,31 +2778,34 @@ static int sunxi_spi_probe(struct platform_device *pdev)
 	sspi = spi_master_get_devdata(master);
 	memset(sspi, 0, sizeof(struct sunxi_spi));
 
-	sspi->master        = master;
-	sspi->irq           = irq;
-
-#ifdef CONFIG_DMA_ENGINE
-	sspi->dma_rx.dir        = SPI_DMA_RWNULL;
-	sspi->dma_tx.dir        = SPI_DMA_RWNULL;
-#endif
-	sspi->cs_control        = sunxi_spi_cs_control;
-	sspi->cs_bitmap	        = pdata->cs_bitmap; /* cs0-0x1; cs1-0x2; cs0&cs1-0x3. */
-	sspi->busy              = SPI_FREE;
+	sspi->master		= master;
 	sspi->mode_type	        = MODE_TYPE_NULL;
 
 	master->dev.of_node     = pdev->dev.of_node;
 	master->bus_num         = pdev->id;
+	master->max_speed_hz	= SPI_MAX_FREQUENCY;
 	master->setup           = sunxi_spi_setup;
-	master->cleanup         = sunxi_spi_cleanup;
-	master->transfer        = sunxi_spi_transfer;
+	master->can_dma		= sunxi_spi_can_dma;
+	master->transfer_one    = sunxi_spi_transfer_one;
+	master->set_cs          = sunxi_spi_cs_control;
 	master->num_chipselect  = pdata->cs_num;
+	master->bits_per_word_mask = SPI_BPW_MASK(8);
 	/* the spi->mode bits understood by this driver: */
 	master->mode_bits       = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH | SPI_LSB_FIRST |
 				SPI_TX_DUAL | SPI_TX_QUAD | SPI_RX_DUAL | SPI_RX_QUAD;
+#ifdef CONFIG_AW_MTD_SPINAND
+	/*spi0 for flash exclusive*/
+	if (!strcmp(np->child->name, "spi-nand")) {
+
+		master->transfer_one_message = sunxi_spi_transfer_one_message;
+		master->transfer_two = sunxi_spi_transfer_two;
+
+	}
+#endif
 
 	ret = of_property_read_u32(np, "spi_dbi_enable", &sspi->dbi_enabled);
 	if (ret == 0)
-		dprintk(DEBUG_INIT, "[spi%d] SPI DBI INTERFACE\n",
+		dprintk_STOCK(2143, DEBUG_INIT, "[spi%d] SPI DBI INTERFACE\n",
 				sspi->master->bus_num);
 	else
 		sspi->dbi_enabled = 0;
@@ -2637,28 +2813,28 @@ static int sunxi_spi_probe(struct platform_device *pdev)
 
 	ret = of_property_read_u32(np, "spi_slave_mode", &sspi->mode);
 	if (sspi->mode)
-		dprintk(DEBUG_INIT, "[spi%d] SPI SLAVE MODE\n", sspi->master->bus_num);
+		dprintk_STOCK(2150, DEBUG_INIT, "[spi%d] SPI SLAVE MODE\n", sspi->master->bus_num);
 	else
-		dprintk(DEBUG_INIT, "[spi%d] SPI MASTER MODE\n", sspi->master->bus_num);
+		dprintk_STOCK(2152, DEBUG_INIT, "[spi%d] SPI MASTER MODE\n", sspi->master->bus_num);
 
 	snprintf(sspi->dev_name, sizeof(sspi->dev_name), SUNXI_SPI_DEV_NAME"%d", pdev->id);
-	err = request_irq(sspi->irq, sunxi_spi_handler, 0, sspi->dev_name, sspi);
+	err = devm_request_irq(&pdev->dev, irq, sunxi_spi_handler, 0, sspi->dev_name, sspi);
 	if (err) {
-		SPI_ERR("[spi%d] Cannot request IRQ\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(2157, "[spi%d] Cannot request IRQ\n", sspi->master->bus_num);
 		ret = -EINVAL;
 		goto err1;
 	}
 
 	if (request_mem_region(mem_res->start,
 			resource_size(mem_res), pdev->name) == NULL) {
-		SPI_ERR("[spi%d] Req mem region failed\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(2164, "[spi%d] Req mem region failed\n", sspi->master->bus_num);
 		ret = -ENXIO;
 		goto err2;
 	}
 
 	sspi->base_addr = ioremap(mem_res->start, resource_size(mem_res));
 	if (sspi->base_addr == NULL) {
-		SPI_ERR("[spi%d] Unable to remap IO\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(2171, "[spi%d] Unable to remap IO\n", sspi->master->bus_num);
 		ret = -ENXIO;
 		goto err3;
 	}
@@ -2667,22 +2843,22 @@ static int sunxi_spi_probe(struct platform_device *pdev)
 	sspi->pdev = pdev;
 	pdev->dev.init_name = sspi->dev_name;
 
+
 	/* Setup Deufult Mode */
 	ret = sunxi_spi_hw_init(sspi, pdata, &pdev->dev);
 	if (ret != 0) {
-		SPI_ERR("[spi%d] spi hw init failed!\n", sspi->master->bus_num);
+		SPI_ERR_STOCK(2183, "[spi%d] spi hw init failed!\n", sspi->master->bus_num);
 		ret = -EINVAL;
 		goto err4;
 	}
 
 	spin_lock_init(&sspi->lock);
 	init_completion(&sspi->done);
-	INIT_LIST_HEAD(&sspi->queue);
 
 	if (sspi->mode) {
 		slave = kzalloc(sizeof(*slave), GFP_KERNEL);
 		if (IS_ERR_OR_NULL(slave)) {
-			SPI_ERR("[spi%d] failed to alloc mem\n", sspi->master->bus_num);
+			SPI_ERR_STOCK(2194, "[spi%d] failed to alloc mem\n", sspi->master->bus_num);
 			ret = -ENOMEM;
 			goto err5;
 		}
@@ -2690,7 +2866,7 @@ static int sunxi_spi_probe(struct platform_device *pdev)
 		sspi->slave->set_up_txdata = sunxi_spi_slave_set_txdata;
 		sspi->task = kthread_create(sunxi_spi_slave_task, sspi, "spi_slave");
 		if (IS_ERR(sspi->task)) {
-			SPI_ERR("[spi%d] unable to start kernel thread.\n", sspi->master->bus_num);
+			SPI_ERR_STOCK(2202, "[spi%d] unable to start kernel thread.\n", sspi->master->bus_num);
 			ret = PTR_ERR(sspi->task);
 			sspi->task = NULL;
 			ret = -EINVAL;
@@ -2699,15 +2875,8 @@ static int sunxi_spi_probe(struct platform_device *pdev)
 
 		wake_up_process(sspi->task);
 	} else {
-		sspi->workqueue = create_singlethread_workqueue(dev_name(master->dev.parent));
-		if (sspi->workqueue == NULL) {
-			SPI_ERR("[spi%d] Unable to create workqueue\n", sspi->master->bus_num);
-			ret = -EPERM;
-			goto err5;
-		}
-		INIT_WORK(&sspi->work, sunxi_spi_work);/* banding the process handler */
 		if (spi_register_master(master)) {
-			SPI_ERR("[spi%d] cannot register SPI master\n", sspi->master->bus_num);
+			SPI_ERR_STOCK(2212, "[spi%d] cannot register SPI master\n", sspi->master->bus_num);
 			ret = -EBUSY;
 			goto err6;
 		}
@@ -2717,17 +2886,15 @@ static int sunxi_spi_probe(struct platform_device *pdev)
 	sunxi_spi_sysfs(pdev);
 #endif
 
-	dprintk(DEBUG_INFO, "[spi%d] loaded for Bus with %d Slaves at most\n",
+	dprintk_STOCK(2223, DEBUG_INFO, "[spi%d] loaded for Bus with %d Slaves at most\n",
 		master->bus_num, master->num_chipselect);
-	dprintk(DEBUG_INIT, "[spi%d]: driver probe succeed, base %p, irq %d\n",
-		master->bus_num, sspi->base_addr, sspi->irq);
+	dprintk_STOCK(2225, DEBUG_INIT, "[spi%d]: driver probe succeed, base %p, irq %d\n",
+		master->bus_num, sspi->base_addr, irq);
 	return 0;
 
 err6:
 	if (sspi->mode)
 		kfree(slave);
-	else
-		destroy_workqueue(sspi->workqueue);
 err5:
 	sunxi_spi_hw_exit(sspi, pdata);
 
@@ -2736,8 +2903,17 @@ err4:
 err3:
 	release_mem_region(mem_res->start, resource_size(mem_res));
 err2:
-	free_irq(sspi->irq, sspi);
 err1:
+/*
+ *#ifdef CONFIG_AW_MTD_SPINAND
+ *        [>spi0 for flash exclusive<]
+ *        if (master->bus_num == 0) {
+ *                sspi->stx.len = 0;
+ *                sspi->stx.state = INIT_STATE;
+ *                kfree(sspi->stx.tx.tx_buf);
+ *        }
+ *#endif
+ */
 	platform_set_drvdata(pdev, NULL);
 	spi_master_put(master);
 err0:
@@ -2751,32 +2927,37 @@ static int sunxi_spi_remove(struct platform_device *pdev)
 	struct spi_master *master = spi_master_get(platform_get_drvdata(pdev));
 	struct sunxi_spi *sspi = spi_master_get_devdata(master);
 	struct resource	*mem_res;
-	unsigned long flags;
 
-	spin_lock_irqsave(&sspi->lock, flags);
-	sspi->busy |= SPI_FREE;
-	spin_unlock_irqrestore(&sspi->lock, flags);
-
-	while (sspi->busy & SPI_BUSY)
-		msleep(10);
-
-	if (sspi->mode)
-		if (!sspi->task_flag)
-			if (!IS_ERR(sspi->task))
-				kthread_stop(sspi->task);
+	if ((sspi->mode) && (!sspi->task_flag))
+		if (!IS_ERR(sspi->task))
+			kthread_stop(sspi->task);
 
 	sunxi_spi_hw_exit(sspi, pdev->dev.platform_data);
 	iounmap(sspi->base_addr);
 	mem_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (mem_res != NULL)
 		release_mem_region(mem_res->start, resource_size(mem_res));
-	free_irq(sspi->irq, sspi);
+#ifdef CONFIG_DMA_ENGINE
+	if (master->dma_tx)
+		dma_release_channel(master->dma_tx);
+	if (master->dma_rx)
+		dma_release_channel(master->dma_rx);
+#endif
 	spi_unregister_master(master);
-	if (!sspi->mode)
-		destroy_workqueue(sspi->workqueue);
 	platform_set_drvdata(pdev, NULL);
 	spi_master_put(master);
 	kfree(pdev->dev.platform_data);
+
+/*
+ *#ifdef CONFIG_AW_MTD_SPINAND
+ *        [>spi0 for flash exclusive<]
+ *        if (master->bus_num == 0) {
+ *                sspi->stx.len = 0;
+ *                sspi->stx.state = INIT_STATE;
+ *                kfree(sspi->stx.tx.tx_buf);
+ *        }
+ *#endif
+ */
 
 	return 0;
 }
@@ -2787,22 +2968,19 @@ static int sunxi_spi_suspend(struct device *dev)
 	struct platform_device *pdev = to_platform_device(dev);
 	struct spi_master *master = spi_master_get(platform_get_drvdata(pdev));
 	struct sunxi_spi *sspi = spi_master_get_devdata(master);
-	unsigned long flags;
+	int ret;
 
-	spin_lock_irqsave(&sspi->lock, flags);
-	sspi->busy |= SPI_SUSPND;
-	spin_unlock_irqrestore(&sspi->lock, flags);
-
-	while (sspi->busy & SPI_BUSY)
-		msleep(10);
+	ret = spi_master_suspend(master);
+	if (ret < 0)
+		return ret;
 
 	spi_disable_bus(sspi->base_addr);
 	sunxi_spi_clk_exit(sspi);
 
-	sunxi_spi_select_gpio_state(sspi->pctrl, PINCTRL_STATE_SLEEP, master->bus_num);
+	ret = sunxi_spi_select_gpio_state(sspi->pctrl, PINCTRL_STATE_SLEEP, master->bus_num);
 	spi_regulator_disable(dev->platform_data);
 
-	dprintk(DEBUG_SUSPEND, "[spi%d] finish\n", master->bus_num);
+	dprintk_STOCK(2293, DEBUG_SUSPEND, "[spi%d] finish\n", master->bus_num);
 
 	return 0;
 }
@@ -2812,16 +2990,16 @@ static int sunxi_spi_resume(struct device *dev)
 	struct platform_device *pdev = to_platform_device(dev);
 	struct spi_master *master = spi_master_get(platform_get_drvdata(pdev));
 	struct sunxi_spi  *sspi = spi_master_get_devdata(master);
-	unsigned long flags;
+	int ret;
 
-	sunxi_spi_hw_init(sspi, pdev->dev.platform_data, dev);
+	ret = spi_master_resume(master);
+	if (ret < 0)
+		return ret;
+	ret = sunxi_spi_hw_init(sspi, pdev->dev.platform_data, dev);
 
-	spin_lock_irqsave(&sspi->lock, flags);
-	sspi->busy = SPI_FREE;
-	spin_unlock_irqrestore(&sspi->lock, flags);
-	dprintk(DEBUG_SUSPEND, "[spi%d] finish\n", master->bus_num);
+	dprintk_STOCK(2310, DEBUG_SUSPEND, "[spi%d] finish\n", master->bus_num);
 
-	return 0;
+	return ret;
 }
 
 static const struct dev_pm_ops sunxi_spi_dev_pm_ops = {
