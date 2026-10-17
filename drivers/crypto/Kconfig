@@ -538,6 +538,12 @@ config CRYPTO_DEV_SUN4I_SS
 	  To compile this driver as a module, choose M here: the module
 	  will be called sun4i-ss.
 
+source "drivers/crypto/sunxi-emce/Kconfig"
+
+menu "Support for Allwinner Sunxi CryptoEngine"
+
+comment "Choose one according to the actual usage"
+
 config CRYPTO_DEV_SUNXI
 	tristate "Support for Allwinner Sunxi CryptoEngine"
 	depends on ARCH_SUNXI
@@ -550,6 +556,19 @@ config CRYPTO_DEV_SUNXI
 	  Allwinner Sunxi SoC have a crypto accelerator named
 	  CryptoEngine. It support some SoC of sun8i/sun50i series.
 	  Select this if you want to use it.
+
+# #860 records this optional feature disabled. Its declaration is recovered
+# from configuration evidence; the optional implementation is unverified.
+config CRYPTO_DEV_SUNXI_IOCTL
+	tristate "Sunxi CryptoEngine ioctl (stock metadata only)"
+	depends on ARCH_SUNXI
+	default n
+	help
+	  This declaration reproduces the disabled stock option. The optional
+	  driver is outside the reconstructed TG3040 configuration and is not
+	  verified or supported by this reconstruction. Leave it disabled.
+
+endmenu
 
 config CRYPTO_DEV_ROCKCHIP
 	tristate "Rockchip's Cryptographic Engine driver"
@@ -567,6 +586,5 @@ config CRYPTO_DEV_ROCKCHIP
 	  Supporting cbc/ecb chainmode, and aes/des/des3_ede cipher mode.
 
 source "drivers/crypto/chelsio/Kconfig"
-source "drivers/crypto/sunxi-emce/Kconfig"
 
 endif # CRYPTO_HW

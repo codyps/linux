@@ -119,6 +119,13 @@ config I2C_SLAVE_EEPROM
 
 endif
 
+config TRIMUI_BOARD_ALPU_ARELINK
+	bool "TrimUI Brick Arelink board authentication"
+	depends on GPIOLIB && ARCH_SUN50IW10
+	help
+	  Reconstructed board serial number, cipher and EEPROM interface on
+	  PE1/PE2. This driver preserves the TG3040 boot-time initialization.
+
 config I2C_DEBUG_CORE
 	bool "I2C Core debugging messages"
 	help

@@ -796,6 +796,7 @@ config SUNXI_SST_STORAGE
 	  To compile this driver as a module, choose M here: the
 	  module will be called sunxi_storage.
 
+if COMPILE_TEST
 config LT9611
 	tristate "Lontium LT9611 MIPI DSI/CSI to HDMI 1.4 Bridge"
 	depends on I2C
@@ -804,6 +805,8 @@ config LT9611
 
 	  This driver can also be built as a module.  If so, the module
 	  will be called lt9611.
+
+endif
 
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
@@ -819,12 +822,8 @@ source "drivers/misc/echo/Kconfig"
 source "drivers/misc/cxl/Kconfig"
 source "drivers/misc/sunxi-rf/Kconfig"
 source "drivers/misc/leds/Kconfig"
+if COMPILE_TEST
 source "drivers/misc/cmsis-dap/Kconfig"
-config TRIMUI_BOARD_ALPU_ARELINK
-	bool "TrimUI Brick Arelink board authentication"
-	depends on GPIOLIB && ARCH_SUN50IW10
-	help
-	  Reconstructed board serial number, cipher and EEPROM interface on
-	  PE1/PE2. This driver preserves the TG3040 boot-time initialization.
+endif
 
 endmenu

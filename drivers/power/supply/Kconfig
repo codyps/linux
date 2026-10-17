@@ -657,6 +657,20 @@ config AXP803_POWER
 	  This driver provides support for the power supply features of
 	  AXP803 PMIC.
 
+config AXP2202_POWER
+	tristate "AXP2202 power supply driver"
+	depends on MFD_AXP2101
+	help
+	  This driver provides support for the power supply features of
+	  AXP2202 PMIC.
+
+config AXP2202_GPIO_POWER
+	tristate "AXP2202 power virtual acin"
+	depends on MFD_AXP2101
+	help
+	  This driver provides support for acin function in AXP2202 PMIC.
+
+
 config AXP2585_POWER
 	tristate "AXP2585 power supply driver"
 	depends on MFD_AXP2101
@@ -671,19 +685,5 @@ config AXP2585_LOW_WARNING_LED
 	default y
 	help
 	  support for axp2585 show led when battery capacity low warning.
-
-config AXP2202_POWER
-	tristate "AXP2202 power supply driver"
-	depends on MFD_AXP2101
-	help
-	  This driver provides support for the power supply features of
-	  AXP2202 PMIC.
-
-config AXP2202_GPIO_POWER
-	tristate "AXP2202 power virtual acin"
-	depends on MFD_AXP2101
-	help
-	  This driver provides support for acin function in AXP2202 PMIC.
-
 
 endif # POWER_SUPPLY

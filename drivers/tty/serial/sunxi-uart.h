@@ -63,7 +63,7 @@ struct sw_uart_dma {
 };
 #endif
 
-#ifdef CONFIG_SERIAL_SUNXI_RXDAM
+#ifdef CONFIG_SERIAL_SUNXI_RXDMA
 struct sw_uart_rxdma {
 	u32 use_rxdma;	/* 1:used */
 	char *rx_buffer;	/* receive buffer */
@@ -97,7 +97,7 @@ struct sw_uart_port {
 #define SUNXI_UART_DRQ_TX(ch)		(DRQDST_UART0_TX + ch)
 #endif
 
-#ifdef CONFIG_SERIAL_SUNXI_RXDAM
+#ifdef CONFIG_SERIAL_SUNXI_RXDMA
 	struct sw_uart_rxdma *rxdma;
 #endif
 	/* for debug */

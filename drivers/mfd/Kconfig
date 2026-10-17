@@ -1373,6 +1373,17 @@ config MFD_TPS80031
 	  ADC, RTC, 2 PWM, System Voltage Regulator/Battery Charger with
 	  Power Path from USB, 32K clock generator.
 
+config MFD_TCS4838
+	bool "TCS4838 power management core"
+	select MFD_CORE
+	select REGMAP
+
+config MFD_TCS4838_I2C
+	bool "TCS4838 I2C interface"
+	depends on I2C
+	select MFD_TCS4838
+	select REGMAP_I2C
+
 config TWL4030_CORE
 	bool "TI TWL4030/TWL5030/TWL6030/TPS659x0 Support"
 	depends on I2C=y
@@ -1688,14 +1699,3 @@ config MFD_VEXPRESS_SYSREG
 
 endmenu
 endif
-
-config MFD_TCS4838
-	bool "TCS4838 power management core"
-	select MFD_CORE
-	select REGMAP
-
-config MFD_TCS4838_I2C
-	bool "TCS4838 I2C interface"
-	depends on I2C
-	select MFD_TCS4838
-	select REGMAP_I2C

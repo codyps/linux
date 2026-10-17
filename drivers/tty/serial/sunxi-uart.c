@@ -734,7 +734,7 @@ static enum hrtimer_restart sw_uart_report_dma_rx(struct hrtimer *rx_hrtimer)
 
 #endif
 
-#ifdef CONFIG_SERIAL_SUNXI_RXDAM
+#ifdef CONFIG_SERIAL_SUNXI_RXDMA
 static inline void sw_uart_enable_fifo_clk(struct uart_port *port)
 {
 	unsigned int reg_val;
@@ -932,7 +932,7 @@ static irqreturn_t sw_uart_irq(int irq, void *dev_id)
 	struct sw_uart_port *sw_uport = UART_TO_SPORT(port);
 	unsigned int iir = 0, lsr = 0;
 	unsigned long flags;
-#ifdef CONFIG_SERIAL_SUNXI_RXDAM
+#ifdef CONFIG_SERIAL_SUNXI_RXDMA
 	unsigned char rxdma_ls = 0;
 #endif
 
@@ -942,7 +942,7 @@ static irqreturn_t sw_uart_irq(int irq, void *dev_id)
 	lsr = serial_in(port, SUNXI_UART_LSR);
 	SERIAL_DBG("irq: iir %x lsr %x\n", iir, lsr);
 
-#ifdef CONFIG_SERIAL_SUNXI_RXDAM
+#ifdef CONFIG_SERIAL_SUNXI_RXDMA
 	if (1 == sw_uport->id) {
 		rxdma_ls = serial_in(port, SUNXI_UART_RXDMA_IS);
 		SERIAL_DBG("irq: rxdma interrupt status %x\n", rxdma_ls);
@@ -951,7 +951,7 @@ static irqreturn_t sw_uart_irq(int irq, void *dev_id)
 	if (iir == SUNXI_UART_IIR_IID_BUSBSY) {
 		sw_uart_handle_busy(sw_uport);
 	} else {
-#ifdef CONFIG_SERIAL_SUNXI_RXDAM
+#ifdef CONFIG_SERIAL_SUNXI_RXDMA
 		if (rxdma_ls & SUNXI_UART_RXDMA_LS_MASK) {
 			sw_uart_handle_rxdma(sw_uport, rxdma_ls, lsr);
 		} else
@@ -1185,7 +1185,7 @@ static void sw_uart_stop_rx(struct uart_port *port)
 	}
 #endif
 
-#ifdef CONFIG_SERIAL_SUNXI_RXDAM
+#ifdef CONFIG_SERIAL_SUNXI_RXDMA
 	if (sw_uport->rxdma->use_rxdma)
 		sw_uart_stop_rxdma(sw_uport);
 #endif
@@ -1450,7 +1450,7 @@ static void sw_uart_set_termios(struct uart_port *port, struct ktermios *termios
 		port->cons->cflag = termios->c_cflag;
 
 /* fix me: remove macro */
-#ifdef CONFIG_SERIAL_SUNXI_RXDAM
+#ifdef CONFIG_SERIAL_SUNXI_RXDMA
 	if (sw_uport->rxdma->use_rxdma) {
 		/* disable the receive data interrupt */
 		sw_uport->ier &= ~SUNXI_UART_IER_RDI;
@@ -2171,7 +2171,7 @@ static int sw_uart_probe(struct platform_device *pdev)
 	int use_dma = 0;
 #endif
 
-#ifdef CONFIG_SERIAL_SUNXI_RXDAM
+#ifdef CONFIG_SERIAL_SUNXI_RXDMA
 	int use_rxdma = 0;
 #endif
 
@@ -2268,7 +2268,7 @@ static int sw_uart_probe(struct platform_device *pdev)
 	sw_uport->dma->tx_dma_used = 0;
 #endif
 
-#ifdef CONFIG_SERIAL_SUNXI_RXDAM
+#ifdef CONFIG_SERIAL_SUNXI_RXDMA
 	sw_uport->rxdma = devm_kzalloc(&pdev->dev, sizeof(struct sw_uart_rxdma), GFP_KERNEL);
 	if (!sw_uport->rxdma) {
 		dev_err(&pdev->dev, "unable to allocate mem\n");
@@ -2382,7 +2382,7 @@ static int sw_uart_probe(struct platform_device *pdev)
 	}
 #endif
 
-#ifdef CONFIG_SERIAL_SUNXI_RXDAM
+#ifdef CONFIG_SERIAL_SUNXI_RXDMA
 	ret = sw_uart_rxdma_buf_request(sw_uport);
 	if (ret < 0)
 		return -ENOMEM;
@@ -2405,7 +2405,7 @@ static int sw_uart_remove(struct platform_device *pdev)
 	sw_uart_release_dma_rx(sw_uport);
 #endif
 
-#ifdef CONFIG_SERIAL_SUNXI_RXDAM
+#ifdef CONFIG_SERIAL_SUNXI_RXDMA
 	sw_uart_release_rxdma(sw_uport);
 #endif
 	sw_uart_release_resource(sw_uport, pdev->dev.platform_data);
