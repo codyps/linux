@@ -820,4 +820,11 @@ source "drivers/misc/cxl/Kconfig"
 source "drivers/misc/sunxi-rf/Kconfig"
 source "drivers/misc/leds/Kconfig"
 source "drivers/misc/cmsis-dap/Kconfig"
+config TRIMUI_BOARD_ALPU_ARELINK
+	bool "TrimUI Brick Arelink board authentication"
+	depends on GPIOLIB && ARCH_SUN50IW10
+	help
+	  Reconstructed board serial number, cipher and EEPROM interface on
+	  PE1/PE2. This driver preserves the TG3040 boot-time initialization.
+
 endmenu
