@@ -42,6 +42,9 @@ do {									\
 } while (0)
 
 static struct sunxi_led *sunxi_led;
+#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
+static unsigned int trimui_led_count = 23;
+#endif
 
 static void sunxi_ledc_trans_data(struct sunxi_led *led);
 
@@ -1361,7 +1364,7 @@ static int sunxi_set_led_brightness(struct led_classdev *led_cdev,
 			enum led_brightness value)
 {
 	unsigned long flags;
-	u32 r, g, b, shift, old_data, new_data, length;
+	u32 r, g, b, new_data, length;
 	struct sunxi_led_info *pinfo;
 	struct sunxi_led_classdev_group *pcdev_group;
 	struct sunxi_led *led = sunxi_led;
@@ -1376,26 +1379,21 @@ static int sunxi_set_led_brightness(struct led_classdev *led_cdev,
 		pcdev_group = container_of(pinfo,
 			struct sunxi_led_classdev_group, g);
 		g = value;
-		shift = 16;
 		break;
 	case LED_TYPE_R:
 		pcdev_group = container_of(pinfo,
 			struct sunxi_led_classdev_group, r);
 		r = value;
-		shift = 8;
 		break;
 
 	case LED_TYPE_B:
 		pcdev_group = container_of(pinfo,
 			struct sunxi_led_classdev_group, b);
 		b = value;
-		shift = 0;
 		break;
 	}
 
-	old_data = led->data[pcdev_group->led_num];
-	if (((old_data >> shift) & 0xFF) == value)
-		return 0;
+	/* Stock retransmits even an unchanged brightness value. */
 
 	if (pinfo->type != LED_TYPE_R)
 		r = pcdev_group->r.cdev.brightness;
@@ -1560,6 +1558,9 @@ static void sunxi_get_para_of_property(struct sunxi_led *led)
 	err = sunxi_get_u32_of_property("led_count", &val);
 	if (!err)
 		led->led_count = val;
+#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
+	trimui_led_count = led->led_count;
+#endif
 
 	memcpy(led->output_mode.str, "GRB", 3);
 	led->output_mode.val = SUNXI_OUTPUT_GRB;
@@ -1674,7 +1675,7 @@ led_show(struct class *class, struct class_attribute *attr, char *buf)
 static struct class_attribute led_class_attrs[] = {
 	__ATTR(light, 0644, led_show, NULL),
 #ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
-	__ATTR(tg5040_exterme_brightness, 0664, trimui_led_attr_show, trimui_led_attr_store),
+	__ATTR(tg5040_exterme_brightness, 0664, show_tg5040_max_scale, store_tg5040_max_scale),
 #endif
 	__ATTR_NULL,
 };
@@ -1789,7 +1790,8 @@ static int sunxi_led_probe(struct platform_device *pdev)
 #ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
 	ret = trimui_board_init();
 	if (ret) {
-		class_unregister(&led_class);
+		/* Stock also leaks the already registered LED class here.
+		 * TODO: unwind it in a separate corrective change. */
 		goto eclass;
 	}
 #endif
@@ -1832,9 +1834,9 @@ static int sunxi_led_remove(struct platform_device *pdev)
 {
 	struct sunxi_led *led = platform_get_drvdata(pdev);
 
-#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
-	trimui_board_exit();
-#endif
+	/* Stock leaves the board thread, classes, GPIO and motor regulator alive.
+	 * TODO: stop/release them in a separate fix; retain the shipped teardown.
+	 */
 	class_unregister(&led_class);
 
 	sunxi_led_remove_debugfs(led);

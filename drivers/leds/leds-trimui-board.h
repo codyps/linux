@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* Included by leds-sunxi.c so the original LEDC transport remains shared. */
+/* TG3040 #860 board LED callbacks and state recovered from the shipped Image. */
 #include <linux/gpio.h>
 #include <linux/kthread.h>
 #include "leds-trimui-effects.h"
@@ -9,21 +9,59 @@ extern int trimui_axp2202_get_bat_cap(void);
 extern int trimui_set_speaker_enable(int enable);
 extern int trimui_speaker_mute;
 
-enum { EFFECT_M, EFFECT_L, EFFECT_R, EFFECT_F1, EFFECT_F2, EFFECT_COUNT };
-static struct trimui_led_effect trimui_effect[EFFECT_COUNT];
-static u32 trimui_frame[128], trimui_wire_frame[128];
-static u32 trimui_anim_frames[14400];
-static unsigned int trimui_limit = 128, trimui_scale_m = 40;
-static unsigned int trimui_scale_lr = 40, trimui_scale_f = 40;
-static int trimui_led_enable = 1, trimui_effect_enable;
-static int trimui_frames_enable, trimui_frames_cycles, trimui_frames_fps;
-static int trimui_frames_len, trimui_frame_index, trimui_cycles_left;
-static int trimui_mask_m, trimui_mask_lr, trimui_mask_f;
-static int trimui_low_battery, trimui_suspended, trimui_motor_voltage;
-static int trimui_mute_requested;
-static struct regulator *trimui_motor_regulator;
-static struct task_struct *trimui_led_task;
-static DEFINE_MUTEX(trimui_frame_lock);
+/* Preserve the recovered relative BSS layout, including overflow victims.
+ * Stock state starts at ffffff8008bf47d0; effects are F2,F1,R,L,M in memory.
+ * TODO: split and bound these buffers in a separate corrective change.
+ */
+static struct trimui_stock_led_state {
+	int mask_lr, mask_f, mask_m, frames_enable;
+	int frames_cycles, frames_fps, frames_len, effect_enable;
+	struct trimui_led_effect effects[5];
+	int mute;
+	u32 frame[128];
+	int low_battery, frame_index, cycles_left, motor_voltage;
+	struct regulator *motor_regulator;
+	int suspended;
+	u32 wire_frame[128];
+	u8 animation_alignment[12];
+	u32 anim_frames[14400];
+} trimui_led_state;
+
+static unsigned int trimui_limit = 128, trimui_scale_f = 40;
+static unsigned int trimui_scale_lr = 40, trimui_scale_m = 40;
+static int trimui_led_enable = 1;
+static unsigned int * const trimui_scale_by_led[23] = {
+	&trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m,
+	&trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m,
+	&trimui_scale_f, &trimui_scale_f,
+	&trimui_scale_lr, &trimui_scale_lr, &trimui_scale_lr, &trimui_scale_lr,
+	&trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m,
+	&trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m,
+	&trimui_scale_m,
+};
+#define trimui_mask_lr trimui_led_state.mask_lr
+#define trimui_mask_f trimui_led_state.mask_f
+#define trimui_mask_m trimui_led_state.mask_m
+#define trimui_frames_enable trimui_led_state.frames_enable
+#define trimui_frames_cycles trimui_led_state.frames_cycles
+#define trimui_frames_fps trimui_led_state.frames_fps
+#define trimui_frames_len trimui_led_state.frames_len
+#define trimui_effect_enable trimui_led_state.effect_enable
+#define trimui_effect_f2 trimui_led_state.effects[0]
+#define trimui_effect_f1 trimui_led_state.effects[1]
+#define trimui_effect_r trimui_led_state.effects[2]
+#define trimui_effect_l trimui_led_state.effects[3]
+#define trimui_effect_m trimui_led_state.effects[4]
+#define trimui_mute_requested trimui_led_state.mute
+#define trimui_frame trimui_led_state.frame
+#define trimui_low_battery trimui_led_state.low_battery
+#define trimui_frame_index trimui_led_state.frame_index
+#define trimui_cycles_left trimui_led_state.cycles_left
+#define trimui_motor_voltage trimui_led_state.motor_voltage
+#define trimui_motor_regulator trimui_led_state.motor_regulator
+#define trimui_suspended trimui_led_state.suspended
+#define trimui_wire_frame trimui_led_state.wire_frame
+#define trimui_anim_frames trimui_led_state.anim_frames
 
 static void check_battery(void)
 {
@@ -35,361 +73,832 @@ static void commit_static_frame(void)
 	struct sunxi_led *led = sunxi_led;
 	unsigned int i, scale, rgb, r, g, b;
 	unsigned long flags;
-	mutex_lock(&trimui_frame_lock);
-	for (i = 0; i < led->led_count && i < 128; i++) {
-		scale = i < 8 ? trimui_scale_m : i < 10 ? trimui_scale_f : trimui_scale_lr;
+	struct timeval start, end;
+	unsigned long diff_time;
+
+	mutex_lock(&led->pcdev_group[0].r.cdev.led_access);
+	/* Stock trusts the device-tree count even beyond these arrays.
+	 * TODO: validate that count separately; retain the unchecked accesses.
+	 */
+	for (i = 0; i < trimui_led_count; i++) {
+		scale = *trimui_scale_by_led[i];
 		if (trimui_low_battery && scale > 3)
 			scale = 3;
 		rgb = trimui_frame[i];
-		r = (((rgb >> 16) & 255) * scale) >> 8;
-		g = (((rgb >> 8) & 255) * scale) >> 8;
-		b = ((rgb & 255) * scale) >> 8;
-		trimui_wire_frame[i] = i < 10 ? (g << 16) | (r << 8) | b :
-			(r << 16) | (g << 8) | b;
+		r = ((((rgb >> 16) & 255) * scale) >> 8) & 255;
+		g = ((((rgb >> 8) & 255) * scale) >> 8) & 255;
+		/* Stock uses an arithmetic shift and leaves blue unmasked.
+		 * TODO: normalize channel widths in a separate fix. */
+		b = (s32)((rgb & 255) * scale) >> 8;
+		trimui_wire_frame[i] = i < 10 ? (r << 16) | (g << 8) | b :
+			(g << 16) | (r << 8) | b;
 	}
 	if (trimui_suspended || !trimui_led_enable)
 		memset(trimui_wire_frame, 0, sizeof(trimui_wire_frame));
+	do_gettimeofday(&start);
 	spin_lock_irqsave(&led->lock, flags);
-	led->length = min_t(unsigned int, led->led_count, 128);
-	memcpy(led->data, trimui_wire_frame, led->length * sizeof(u32));
+	led->length = trimui_led_count;
+	for (i = 0; i < led->length; i++)
+		led->data[i] = trimui_wire_frame[i];
 	spin_unlock_irqrestore(&led->lock, flags);
 	sunxi_ledc_trans_data(led);
+	if (debug_mask & DEBUG_INFO2) {
+		/* Retain the diagnostic argument emitted by the stock binary. */
+		printk(KERN_WARNING "%s()%d - dump reg:\n", "sunxi_set_led_rgb32_frame", 2744);
+		led_dump_reg(led, 0, 0x30);
+	}
 	sunxi_ledc_complete(led);
-	mutex_unlock(&trimui_frame_lock);
+	do_gettimeofday(&end);
+	diff_time = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
+	if (debug_mask & DEBUG_INFO1)
+		printk(KERN_WARNING "num = %03u, time = %ld us\n", led->length, diff_time);
+	mutex_unlock(&led->pcdev_group[0].r.cdev.led_access);
 }
 
 static int trimui_ledc_run_thread(void *unused)
 {
-	unsigned int i, battery_ticks = 0;
+	unsigned int battery_ticks = 0;
 	u32 rgb;
 	trimui_scale_m = 14;
 	trimui_effect_enable = 1;
-	/* The Brick transmits 14 physical RGB packages; the shared DT says 23. */
-	sunxi_led->led_count = 14;
-	for (i = 0; i < EFFECT_COUNT; i++) {
-		struct trimui_led_effect *e = &trimui_effect[i];
-		e->type = 2;
-		e->duration = 2000;
-		e->cycles = 5;
-		e->target_rgb = i >= EFFECT_F1 ? 0x00ff33 : 0xffffff;
-		gen_effect(e, 2, e->target_rgb, e->target_rgb);
-		e->active_cycles = e->cycles;
-	}
+#define INITIAL_EFFECT(e, color) do { (e).type = 2; (e).duration = 2000; \
+	(e).cycles = 5; (e).target_rgb = (color); } while (0)
+	INITIAL_EFFECT(trimui_effect_m, 0xffffff);
+	INITIAL_EFFECT(trimui_effect_r, 0xffffff);
+	INITIAL_EFFECT(trimui_effect_l, 0xffffff);
+	INITIAL_EFFECT(trimui_effect_f2, 0x00ff33);
+	INITIAL_EFFECT(trimui_effect_f1, 0x00ff33);
+#undef INITIAL_EFFECT
+#define START_EFFECT(e) do { gen_effect(&(e), 2, (e).target_rgb, (e).target_rgb); } while (0)
+	START_EFFECT(trimui_effect_l);
+	START_EFFECT(trimui_effect_r);
+	START_EFFECT(trimui_effect_f1);
+	START_EFFECT(trimui_effect_f2);
+	START_EFFECT(trimui_effect_m);
+#undef START_EFFECT
+#define RESET_EFFECT(e) do { (e).index = 0; (e).active_cycles = (e).cycles; } while (0)
+	RESET_EFFECT(trimui_effect_l);
+	RESET_EFFECT(trimui_effect_r);
+	RESET_EFFECT(trimui_effect_f1);
+	RESET_EFFECT(trimui_effect_f2);
+	RESET_EFFECT(trimui_effect_m);
+#undef RESET_EFFECT
 	while (!kthread_should_stop()) {
 		if (trimui_effect_enable) {
-			for (i = 0; i < EFFECT_COUNT; i++) {
-				if (!is_effect_actived(&trimui_effect[i]))
-					continue;
-				rgb = step_one_frame(&trimui_effect[i]);
-				switch (i) {
-				case EFFECT_M: {
-					unsigned int j;
-					for (j = 0; j < 8; j++) trimui_frame[j] = rgb;
-					break;
-				}
-				case EFFECT_L: trimui_frame[10] = trimui_frame[11] = rgb; break;
-				case EFFECT_R: trimui_frame[12] = trimui_frame[13] = rgb; break;
-				case EFFECT_F1: trimui_frame[9] = rgb; break;
-				case EFFECT_F2: trimui_frame[8] = rgb; break;
+			if (is_effect_actived(&trimui_effect_l)) {
+				rgb = step_one_frame(&trimui_effect_l);
+				trimui_frame[10] = trimui_frame[11] = rgb;
+			}
+			if (is_effect_actived(&trimui_effect_r)) {
+				rgb = step_one_frame(&trimui_effect_r);
+				trimui_frame[12] = trimui_frame[13] = rgb;
+			}
+			if (is_effect_actived(&trimui_effect_m)) {
+				unsigned int i;
+				rgb = step_one_frame(&trimui_effect_m);
+				for (i = 0; i < 8; i++) trimui_frame[i] = rgb;
+			}
+			if (is_effect_actived(&trimui_effect_f1))
+				trimui_frame[9] = step_one_frame(&trimui_effect_f1);
+			if (is_effect_actived(&trimui_effect_f2))
+				trimui_frame[8] = step_one_frame(&trimui_effect_f2);
+		} else if (trimui_frames_enable) {
+			int offset = trimui_frame_index * 14;
+			if (trimui_frames_len <= 0)
+				goto battery;
+			/* TODO: bound the animation length/index in a corrective patch.
+			 * Stock reads beyond anim_frames when sysfs supplies such state.
+			 */
+			if (++trimui_frame_index >= trimui_frames_len) {
+				trimui_frame_index = 0;
+				if (trimui_cycles_left > 0) trimui_cycles_left--;
+				else if (trimui_cycles_left >= -1) {
+					trimui_frames_cycles = 0;
+					trimui_frames_len = 0;
 				}
 			}
-			commit_static_frame();
-		} else if (trimui_frames_enable) {
-			if (trimui_frames_len > 0 && trimui_frames_len <= 14400 / 14) {
-				u32 *frame = trimui_anim_frames + trimui_frame_index * 14;
-				if (trimui_mask_m) memcpy(trimui_frame, frame, 8 * sizeof(u32));
-				if (trimui_mask_f) memcpy(trimui_frame + 8, frame + 8, 2 * sizeof(u32));
-				if (trimui_mask_lr) memcpy(trimui_frame + 10, frame + 10, 4 * sizeof(u32));
-				if (++trimui_frame_index >= trimui_frames_len) {
-					trimui_frame_index = 0;
-					if (trimui_cycles_left > 0) trimui_cycles_left--;
-					else if (trimui_cycles_left >= -1) {
-						trimui_frames_cycles = 0;
-						trimui_frames_len = 0;
-					}
-				}
-				commit_static_frame();
+			if (trimui_mask_m) memcpy(trimui_frame, trimui_anim_frames + offset, 8 * sizeof(u32));
+			if (trimui_mask_lr) memcpy(trimui_frame + 10, trimui_anim_frames + offset + 10, 4 * sizeof(u32));
+			if (trimui_mask_f) {
+				trimui_frame[9] = trimui_anim_frames[offset + 9];
+				trimui_frame[8] = trimui_anim_frames[offset + 8];
 			}
 		}
-		if (battery_ticks++ > 625) {
+		commit_static_frame();
+ battery:
+		if (battery_ticks > 625) {
 			battery_ticks = 0;
 			check_battery();
 		}
+		battery_ticks++;
 		msleep(16);
 	}
 	return 0;
 }
 
-static int trimui_effect_index(const char *suffix)
+/* Stock ignores conversion failures, still returns count, and still performs
+ * the callback's subsequent side effects. TODO: report parse errors in a fix.
+ */
+static ssize_t show_tg5040_max_scale(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	if (!strcmp(suffix, "m")) return EFFECT_M;
-	if (!strcmp(suffix, "l") || !strcmp(suffix, "lr")) return EFFECT_L;
-	if (!strcmp(suffix, "r")) return EFFECT_R;
-	if (!strcmp(suffix, "f1")) return EFFECT_F1;
-	if (!strcmp(suffix, "f2")) return EFFECT_F2;
-	return -1;
+	return sprintf(buffer, "%d\n", trimui_limit);
 }
 
-static int *trimui_integer_attribute(const char *name)
+static ssize_t store_tg5040_max_scale(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	if (!strcmp(name, "enable")) return &trimui_led_enable;
-	if (!strcmp(name, "effect_enable")) return &trimui_effect_enable;
-	if (!strcmp(name, "anim_frames_len")) return &trimui_frames_len;
-	if (!strcmp(name, "anim_frames_fps")) return &trimui_frames_fps;
-	if (!strcmp(name, "anim_frames_cycles")) return &trimui_frames_cycles;
-	if (!strcmp(name, "anim_frames_enable")) return &trimui_frames_enable;
-	if (!strcmp(name, "anim_frames_mask_m_enable")) return &trimui_mask_m;
-	if (!strcmp(name, "anim_frames_mask_lr_enable")) return &trimui_mask_lr;
-	if (!strcmp(name, "anim_frames_mask_f1f2_enable")) return &trimui_mask_f;
-	return NULL;
+	kstrtoint(buffer, 0, (int *)&trimui_limit);
+	if (trimui_limit > 255) trimui_limit = 255;
+	return count;
 }
 
-static ssize_t trimui_led_attr_show(struct class *class,
-				  struct class_attribute *attr, char *buffer)
+static ssize_t help_show(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	const char *name = attr->attr.name, *suffix;
-	struct trimui_led_effect *e;
-	int *value, index, i, count = 0;
-	if (!strcmp(name, "tg5040_exterme_brightness")) return sprintf(buffer, "%u\n", trimui_limit);
-	if (!strcmp(name, "max_scale")) return sprintf(buffer, "%u\n", trimui_scale_m);
-	if (!strcmp(name, "max_scale_lr")) return sprintf(buffer, "%u\n", trimui_scale_lr);
-	if (!strcmp(name, "max_scale_f1f2")) return sprintf(buffer, "%u\n", trimui_scale_f);
-	if (!strcmp(name, "voltage")) return sprintf(buffer, "%d\n",
-		IS_ERR_OR_NULL(trimui_motor_regulator) ? 0 : regulator_get_voltage(trimui_motor_regulator));
-	if (!strcmp(name, "mute")) return sprintf(buffer, "%d\n", trimui_mute_requested);
-	value = trimui_integer_attribute(name);
-	if (value) return sprintf(buffer, "%d\n", *value);
-	if (!strcmp(name, "frame") || !strcmp(name, "anim_frames")) {
-		count = sunxi_led->led_count * 4;
-		memcpy(buffer, !strcmp(name, "frame") ? trimui_frame : trimui_anim_frames, count);
-		return count;
-	}
-	if (!strcmp(name, "frame_hex") || !strcmp(name, "anim_frames_hex")) {
-		u32 *data = !strcmp(name, "frame_hex") ? trimui_frame : trimui_anim_frames;
-		char *position = buffer;
-		/* Preserve the shipped sparse pointer stepping and returned length. */
-		for (i = 0; i < sunxi_led->led_count; i++) {
-			count += 7;
-			sprintf(position, "%06X ", data[i] & 0xffffff);
-			position += count;
-		}
-		strcpy(position, "\n");
-		return count + 1;
-	}
-	if (!strcmp(name, "effect_names"))
-		return sprintf(buffer, "TRIMUI LED Animation Effect names:\n0 - disable\n1 - linear\n2 - breath\n3 - sniff\n4 - static\n5 - blink1\n6 - blink2\n7 - blink3\n");
-	if (!strcmp(name, "help")) {
-		sprintf(buffer, "%s\n", trimui_led_help);
-		return sizeof(trimui_led_help);
-	}
-	if (!strncmp(name, "effect_duration_", 16)) suffix = name + 16;
-	else if (!strncmp(name, "effect_cycles_", 14)) suffix = name + 14;
-	else if (!strncmp(name, "effect_rgb_hex_", 15)) suffix = name + 15;
-	else if (!strncmp(name, "effect_", 7)) suffix = name + 7;
-	else return -EINVAL;
-	index = trimui_effect_index(suffix);
-	if (index < 0) return -EINVAL;
-	e = &trimui_effect[index];
-	if (!strncmp(name, "effect_duration_", 16)) return sprintf(buffer, "%d\n", e->duration);
-	if (!strncmp(name, "effect_cycles_", 14)) return sprintf(buffer, "%d\n", e->cycles);
-	if (!strncmp(name, "effect_rgb_hex_", 15)) return sprintf(buffer, "%06X \n", e->target_rgb & 0xffffff);
-	return sprintf(buffer, "%d\n", e->type);
+	sprintf(buffer, "%s\n", trimui_led_help);
+	return sizeof(trimui_led_help);
 }
 
-static ssize_t trimui_led_attr_store(struct class *class,
-		struct class_attribute *attr, const char *buffer, size_t count)
+static ssize_t show_led_enable(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	const char *name = attr->attr.name, *suffix;
-	int *value, parsed, index, i, last, colors;
-	unsigned int rgb;
-	if (!strcmp(name, "frame") || !strcmp(name, "anim_frames")) {
-		u32 *data = !strcmp(name, "frame") ? trimui_frame : trimui_anim_frames;
-		size_t capacity = !strcmp(name, "frame") ? sunxi_led->led_count * 4 : sizeof(trimui_anim_frames);
-		memcpy(data, buffer, min(count, capacity));
-		return count;
+	return sprintf(buffer, "%d\n", trimui_led_enable);
+}
+
+static ssize_t store_led_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_led_enable);
+	return count;
+}
+
+static ssize_t help_show_effect(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "TRIMUI LED Animation Effect names:\n0 - disable\n1 - linear\n2 - breath\n3 - sniff\n4 - static\n5 - blink1\n6 - blink2\n7 - blink3\n");
+}
+
+static ssize_t show_max_scale(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_scale_m);
+}
+
+static ssize_t store_max_scale(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_scale_m);
+	if (trimui_scale_m > trimui_limit) trimui_scale_m = trimui_limit;
+	return count;
+}
+
+static ssize_t show_max_scale_lr(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_scale_lr);
+}
+
+static ssize_t store_max_scale_lr(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_scale_lr);
+	if (trimui_scale_lr > trimui_limit) trimui_scale_lr = trimui_limit;
+	return count;
+}
+
+static ssize_t show_max_scale_f1f2(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_scale_f);
+}
+
+static ssize_t store_max_scale_f1f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_scale_f);
+	if (trimui_scale_f > trimui_limit) trimui_scale_f = trimui_limit;
+	return count;
+}
+
+static ssize_t show_frame(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	int size = trimui_led_count << 2;
+	memcpy(buffer, trimui_frame, size);
+	return size;
+}
+
+static ssize_t store_frame(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	/* Stock compares count with a buffer address minus one, not its size.
+	 * TODO: use sizeof(frame) in a separate corrective patch. */
+	unsigned long length = count;
+	if (count > (unsigned long)trimui_frame - 1)
+		length = (int)(trimui_led_count << 2);
+	memcpy(trimui_frame, buffer, length);
+	return count;
+}
+
+static ssize_t show_frame_hex(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	int i, count = 0;
+	char *position = buffer;
+	/* Stock advances by the cumulative length, producing sparse output.
+	 * TODO: advance by the last write and bound output in a separate fix. */
+	for (i = 0; i < (int)trimui_led_count; i++) {
+		count += 7;
+		sprintf(position, "%06X ", trimui_frame[i] & 0xffffff);
+		position += count;
 	}
-	if (!strcmp(name, "frame_hex") || !strcmp(name, "anim_frames_hex")) {
-		int animation = !strcmp(name, "anim_frames_hex");
-		u32 *data = animation ? trimui_anim_frames : trimui_frame;
-		int offset = animation ? max(trimui_frames_len, 0) * 14 : 0;
-		int capacity = animation ? 14400 : sunxi_led->led_count;
-		colors = min_t(size_t, count / 7, max(capacity - offset, 0));
-		for (i = 0; i < colors; i++) {
-			rgb = 0;
-			if (animation) data[i] = 0;
-			sscanf(buffer + 7 * i, "%x", &rgb);
-			data[offset + i] = rgb;
-		}
-		if (animation) trimui_frames_len += colors / 14;
-		return count;
+	strcpy(position, "\n");
+	return count + 1;
+}
+
+static ssize_t store_frame_hex(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	int i, bytes = (int)count;
+	if (bytes > (int)trimui_led_count * 7)
+		bytes = trimui_led_count * 7;
+	for (i = 0; i < bytes / 7; i++)
+		sscanf(buffer + 7 * i, "%x", &trimui_frame[i]);
+	return count;
+}
+
+static ssize_t show_duration_m(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_m.duration);
+}
+
+static ssize_t store_duration_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_m.duration);
+	return count;
+}
+
+static ssize_t show_duration_l(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.duration);
+}
+
+static ssize_t store_duration_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_l.duration);
+	return count;
+}
+
+static ssize_t show_duration_r(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_r.duration);
+}
+
+static ssize_t store_duration_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_r.duration);
+	return count;
+}
+
+static ssize_t show_duration_f1(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_f1.duration);
+}
+
+static ssize_t store_duration_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_f1.duration);
+	return count;
+}
+
+static ssize_t show_duration_f2(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_f2.duration);
+}
+
+static ssize_t store_duration_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_f2.duration);
+	return count;
+}
+
+static ssize_t show_duration(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.duration);
+}
+
+static ssize_t store_duration(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_l.duration);
+	trimui_effect_r.duration = trimui_effect_l.duration;
+	return count;
+}
+
+static ssize_t show_cycles_m(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_m.cycles);
+}
+
+static ssize_t store_cycles_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_m.cycles);
+	return count;
+}
+
+static ssize_t show_cycles_l(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.cycles);
+}
+
+static ssize_t store_cycles_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_l.cycles);
+	return count;
+}
+
+static ssize_t show_cycles_r(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_r.cycles);
+}
+
+static ssize_t store_cycles_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_r.cycles);
+	return count;
+}
+
+static ssize_t show_cycles_f1(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_f1.cycles);
+}
+
+static ssize_t store_cycles_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_f1.cycles);
+	return count;
+}
+
+static ssize_t show_cycles_f2(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_f2.cycles);
+}
+
+static ssize_t store_cycles_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_f2.cycles);
+	return count;
+}
+
+static ssize_t show_cycles(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.cycles);
+}
+
+static ssize_t store_cycles(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_l.cycles);
+	trimui_effect_r.cycles = trimui_effect_l.cycles;
+	return count;
+}
+
+static ssize_t show_effect_rgb_hex_m(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%06X \n", trimui_effect_m.target_rgb & 0xffffff);
+}
+
+static ssize_t store_effect_rgb_hex_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	unsigned int rgb = 0;
+	sscanf(buffer, "%x", &rgb);
+	trimui_effect_m.target_rgb = rgb;
+	return count;
+}
+
+static ssize_t show_effect_rgb_hex_l(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%06X \n", trimui_effect_l.target_rgb & 0xffffff);
+}
+
+static ssize_t store_effect_rgb_hex_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	unsigned int rgb = 0;
+	sscanf(buffer, "%x", &rgb);
+	trimui_effect_l.target_rgb = rgb;
+	return count;
+}
+
+static ssize_t show_effect_rgb_hex_r(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%06X \n", trimui_effect_r.target_rgb & 0xffffff);
+}
+
+static ssize_t store_effect_rgb_hex_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	unsigned int rgb = 0;
+	sscanf(buffer, "%x", &rgb);
+	trimui_effect_r.target_rgb = rgb;
+	return count;
+}
+
+static ssize_t show_effect_rgb_hex_f1(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%06X \n", trimui_effect_f1.target_rgb & 0xffffff);
+}
+
+static ssize_t store_effect_rgb_hex_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	unsigned int rgb = 0;
+	sscanf(buffer, "%x", &rgb);
+	trimui_effect_f1.target_rgb = rgb;
+	return count;
+}
+
+static ssize_t show_effect_rgb_hex_f2(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%06X \n", trimui_effect_f2.target_rgb & 0xffffff);
+}
+
+static ssize_t store_effect_rgb_hex_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	unsigned int rgb = 0;
+	sscanf(buffer, "%x", &rgb);
+	trimui_effect_f2.target_rgb = rgb;
+	return count;
+}
+
+static ssize_t show_effect_rgb_hex_lr(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%06X \n", trimui_effect_l.target_rgb & 0xffffff);
+}
+
+static ssize_t store_effect_rgb_hex_lr(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	unsigned int rgb = 0;
+	sscanf(buffer, "%x", &rgb);
+	trimui_effect_l.target_rgb = rgb;
+	trimui_effect_r.target_rgb = rgb;
+	return count;
+}
+
+static ssize_t show_effect_m(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_m.type);
+}
+
+static ssize_t store_effect_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_m.type);
+	if ((unsigned int)trimui_effect_m.type > 7) trimui_effect_m.type = 0;
+	gen_effect(&trimui_effect_m, trimui_effect_m.type, trimui_effect_m.target_rgb, trimui_effect_m.current_rgb);
+	trimui_effect_m.index = 0;
+	trimui_effect_m.active_cycles = trimui_effect_m.cycles;
+	return count;
+}
+
+static ssize_t show_effect_l(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.type);
+}
+
+static ssize_t store_effect_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_l.type);
+	if ((unsigned int)trimui_effect_l.type > 7) trimui_effect_l.type = 0;
+	gen_effect(&trimui_effect_l, trimui_effect_l.type, trimui_effect_l.target_rgb, trimui_effect_l.current_rgb);
+	trimui_effect_l.index = 0;
+	trimui_effect_l.active_cycles = trimui_effect_l.cycles;
+	return count;
+}
+
+static ssize_t show_effect_r(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_r.type);
+}
+
+static ssize_t store_effect_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_r.type);
+	if ((unsigned int)trimui_effect_r.type > 7) trimui_effect_r.type = 0;
+	gen_effect(&trimui_effect_r, trimui_effect_r.type, trimui_effect_r.target_rgb, trimui_effect_r.current_rgb);
+	trimui_effect_r.index = 0;
+	trimui_effect_r.active_cycles = trimui_effect_r.cycles;
+	return count;
+}
+
+static ssize_t show_effect_f1(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_f1.type);
+}
+
+static ssize_t store_effect_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_f1.type);
+	if ((unsigned int)trimui_effect_f1.type > 7) trimui_effect_f1.type = 0;
+	gen_effect(&trimui_effect_f1, trimui_effect_f1.type, trimui_effect_f1.target_rgb, trimui_effect_f1.current_rgb);
+	trimui_effect_f1.index = 0;
+	trimui_effect_f1.active_cycles = trimui_effect_f1.cycles;
+	return count;
+}
+
+static ssize_t show_effect_f2(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_f2.type);
+}
+
+static ssize_t store_effect_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_f2.type);
+	if ((unsigned int)trimui_effect_f2.type > 7) trimui_effect_f2.type = 0;
+	gen_effect(&trimui_effect_f2, trimui_effect_f2.type, trimui_effect_f2.target_rgb, trimui_effect_f2.current_rgb);
+	trimui_effect_f2.index = 0;
+	trimui_effect_f2.active_cycles = trimui_effect_f2.cycles;
+	return count;
+}
+
+static ssize_t show_effect_lr(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.type);
+}
+
+static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_l.type);
+	if ((unsigned int)trimui_effect_l.type > 7) trimui_effect_l.type = 0;
+	trimui_effect_r.type = trimui_effect_l.type;
+	gen_effect(&trimui_effect_l, trimui_effect_l.type, trimui_effect_l.target_rgb, trimui_effect_l.current_rgb);
+	gen_effect(&trimui_effect_r, trimui_effect_r.type, trimui_effect_r.target_rgb, trimui_effect_r.current_rgb);
+	trimui_effect_l.index = 0;
+	trimui_effect_l.active_cycles = trimui_effect_l.cycles;
+	trimui_effect_r.index = 0;
+	trimui_effect_r.active_cycles = trimui_effect_r.cycles;
+	return count;
+}
+
+static ssize_t show_effect_enable(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_enable);
+}
+
+static ssize_t store_effect_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_effect_enable);
+	return count;
+}
+
+static ssize_t show_anim_frames(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	int size = trimui_led_count << 2;
+	memcpy(buffer, trimui_anim_frames, size);
+	return size;
+}
+
+static ssize_t store_anim_frames(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	size_t length = count;
+	/* Stock falls back to one LED frame, rather than clamping to capacity.
+	 * TODO: reject oversized writes separately instead of preserving this. */
+	if (count > sizeof(trimui_anim_frames) - 1)
+		length = (int)(trimui_led_count << 2);
+	memcpy(trimui_anim_frames, buffer, length);
+	return count;
+}
+
+static ssize_t show_anim_frames_hex(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	int i, count = 0;
+	char *position = buffer;
+	/* Stock advances by the cumulative length, producing sparse output.
+	 * TODO: advance by the last write and bound output in a separate fix. */
+	for (i = 0; i < (int)trimui_led_count; i++) {
+		count += 7;
+		sprintf(position, "%06X ", trimui_anim_frames[i] & 0xffffff);
+		position += count;
 	}
-	if (strncmp(name, "effect_rgb_hex_", 15) && kstrtoint(buffer, 0, &parsed)) return count;
-	if (!strcmp(name, "tg5040_exterme_brightness")) { trimui_limit = min_t(unsigned int, parsed, 255); return count; }
-	if (!strcmp(name, "max_scale")) { trimui_scale_m = min_t(unsigned int, parsed, trimui_limit); return count; }
-	if (!strcmp(name, "max_scale_lr")) { trimui_scale_lr = min_t(unsigned int, parsed, trimui_limit); return count; }
-	if (!strcmp(name, "max_scale_f1f2")) { trimui_scale_f = min_t(unsigned int, parsed, trimui_limit); return count; }
-	if (!strcmp(name, "voltage")) {
-		trimui_motor_voltage = parsed;
-		if (!IS_ERR_OR_NULL(trimui_motor_regulator)) regulator_set_voltage(trimui_motor_regulator, parsed, parsed + 100000);
-		return count;
+	strcpy(position, "\n");
+	return count + 1;
+}
+
+static ssize_t store_anim_frames_hex(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	int i, colors = (int)(count / 7);
+	int offset = trimui_frames_len * 14;
+	if (colors > 4200)
+		colors = 4200;
+	/* Stock ignores append capacity and clears the start of the buffer,
+	 * even when sscanf writes at a later append offset. TODO: validate the
+	 * append and clear its actual destination in a separate fix. */
+	for (i = 0; i < colors; i++) {
+		trimui_anim_frames[i] = 0;
+		sscanf(buffer + 7 * i, "%x", &trimui_anim_frames[offset + i]);
 	}
-	if (!strcmp(name, "mute")) {
-		trimui_mute_requested = parsed;
-		trimui_speaker_mute = !!parsed;
-		trimui_set_speaker_enable(!parsed);
-		return count;
-	}
-	value = trimui_integer_attribute(name);
-	if (value) {
-		*value = parsed;
-		if (value == &trimui_frames_enable) {
-			trimui_frame_index = 0; trimui_cycles_left = trimui_frames_cycles - 1;
-			if (!parsed) trimui_frames_len = 0;
-		} else if (value == &trimui_frames_cycles) {
-			trimui_frames_enable = 0; trimui_frame_index = trimui_cycles_left = 0;
-		}
-		return count;
-	}
-	if (!strncmp(name, "effect_rgb_hex_", 15)) {
-		rgb = 0;
-		sscanf(buffer, "%x", &rgb);
-		suffix = name + 15;
-	} else if (!strncmp(name, "effect_duration_", 16)) suffix = name + 16;
-	else if (!strncmp(name, "effect_cycles_", 14)) suffix = name + 14;
-	else if (!strncmp(name, "effect_", 7)) suffix = name + 7;
-	else return count;
-	index = trimui_effect_index(suffix);
-	if (index < 0) return count;
-	last = !strcmp(suffix, "lr") ? EFFECT_R : index;
-	for (i = index; i <= last; i++) {
-		struct trimui_led_effect *e = &trimui_effect[i];
-		if (!strncmp(name, "effect_duration_", 16)) e->duration = parsed;
-		else if (!strncmp(name, "effect_cycles_", 14)) e->cycles = parsed;
-		else if (!strncmp(name, "effect_rgb_hex_", 15)) e->target_rgb = rgb;
-		else {
-			e->type = (unsigned int)parsed > 7 ? 0 : parsed;
-			gen_effect(e, e->type, e->target_rgb, e->current_rgb);
-			e->index = 0; e->active_cycles = e->cycles;
-		}
-	}
+	trimui_frames_len += colors / 14;
+	printk("\n anim frames:%d, pixels:%d\n", trimui_frames_len, colors);
+	return count;
+}
+
+static ssize_t show_frames_len(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_frames_len);
+}
+
+static ssize_t store_frames_len(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_frames_len);
+	return count;
+}
+
+static ssize_t show_frames_fps(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_frames_fps);
+}
+
+static ssize_t store_frames_fps(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_frames_fps);
+	return count;
+}
+
+static ssize_t show_frames_cycles(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_frames_cycles);
+}
+
+static ssize_t store_frames_cycles(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_frames_cycles);
+	trimui_frames_enable = 0;
+	trimui_frame_index = trimui_cycles_left = 0;
+	return count;
+}
+
+static ssize_t show_frames_enable(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_frames_enable);
+}
+
+static ssize_t store_frames_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_frames_enable);
+	trimui_frame_index = 0;
+	trimui_cycles_left = trimui_frames_cycles - 1;
+	if (!trimui_frames_enable) trimui_frames_len = 0;
+	return count;
+}
+
+static ssize_t show_frames_override_m_enable(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_mask_m);
+}
+
+static ssize_t store_frames_override_m_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_mask_m);
+	return count;
+}
+
+static ssize_t show_frames_override_f1f2_enable(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_mask_f);
+}
+
+static ssize_t store_frames_override_f1f2_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_mask_f);
+	return count;
+}
+
+static ssize_t show_frames_override_lr_enable(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_mask_lr);
+}
+
+static ssize_t store_frames_override_lr_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_mask_lr);
+	return count;
+}
+
+static ssize_t show_motor_voltage(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_motor_regulator ? regulator_get_voltage(trimui_motor_regulator) : 0);
+}
+
+static ssize_t store_motor_voltage(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_motor_voltage);
+	/* Stock passes NULL/error pointers through. TODO: check regulator_get in a separate fix. */
+	regulator_set_voltage(trimui_motor_regulator, trimui_motor_voltage, trimui_motor_voltage + 100000);
+	return count;
+}
+
+static ssize_t show_speaker_mute(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_mute_requested);
+}
+
+static ssize_t store_speaker_mute(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	kstrtoint(buffer, 0, (int *)&trimui_mute_requested);
+	trimui_speaker_mute = !!trimui_mute_requested;
+	trimui_set_speaker_enable(!trimui_mute_requested);
+	printk("speaker force mute:%d\n", trimui_speaker_mute);
 	return count;
 }
 
 static struct class_attribute trimui_led_anim_attrs[] = {
-	__ATTR(help, 0664, trimui_led_attr_show, NULL),
-	__ATTR(enable, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_names, 0664, trimui_led_attr_show, NULL),
-	__ATTR(max_scale, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(max_scale_lr, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(max_scale_f1f2, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(frame, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(frame_hex, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_duration_m, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_duration_l, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_duration_r, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_duration_f1, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_duration_f2, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_duration_lr, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_cycles_m, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_cycles_l, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_cycles_r, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_cycles_f1, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_cycles_f2, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_cycles_lr, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_rgb_hex_m, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_rgb_hex_l, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_rgb_hex_r, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_rgb_hex_f1, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_rgb_hex_f2, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_rgb_hex_lr, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_m, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_l, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_r, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_f1, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_f2, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_lr, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(effect_enable, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(anim_frames, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(anim_frames_hex, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(anim_frames_len, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(anim_frames_fps, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(anim_frames_cycles, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(anim_frames_enable, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(anim_frames_mask_m_enable, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(anim_frames_mask_f1f2_enable, 0664, trimui_led_attr_show, trimui_led_attr_store),
-	__ATTR(anim_frames_mask_lr_enable, 0664, trimui_led_attr_show, trimui_led_attr_store),
+	__ATTR(help, 0664, help_show, NULL),
+	__ATTR(enable, 0664, show_led_enable, store_led_enable),
+	__ATTR(effect_names, 0664, help_show_effect, NULL),
+	__ATTR(max_scale, 0664, show_max_scale, store_max_scale),
+	__ATTR(max_scale_lr, 0664, show_max_scale_lr, store_max_scale_lr),
+	__ATTR(max_scale_f1f2, 0664, show_max_scale_f1f2, store_max_scale_f1f2),
+	__ATTR(frame, 0664, show_frame, store_frame),
+	__ATTR(frame_hex, 0664, show_frame_hex, store_frame_hex),
+	__ATTR(effect_duration_m, 0664, show_duration_m, store_duration_m),
+	__ATTR(effect_duration_l, 0664, show_duration_l, store_duration_l),
+	__ATTR(effect_duration_r, 0664, show_duration_r, store_duration_r),
+	__ATTR(effect_duration_f1, 0664, show_duration_f1, store_duration_f1),
+	__ATTR(effect_duration_f2, 0664, show_duration_f2, store_duration_f2),
+	__ATTR(effect_duration_lr, 0664, show_duration, store_duration),
+	__ATTR(effect_cycles_m, 0664, show_cycles_m, store_cycles_m),
+	__ATTR(effect_cycles_l, 0664, show_cycles_l, store_cycles_l),
+	__ATTR(effect_cycles_r, 0664, show_cycles_r, store_cycles_r),
+	__ATTR(effect_cycles_f1, 0664, show_cycles_f1, store_cycles_f1),
+	__ATTR(effect_cycles_f2, 0664, show_cycles_f2, store_cycles_f2),
+	__ATTR(effect_cycles_lr, 0664, show_cycles, store_cycles),
+	__ATTR(effect_rgb_hex_m, 0664, show_effect_rgb_hex_m, store_effect_rgb_hex_m),
+	__ATTR(effect_rgb_hex_l, 0664, show_effect_rgb_hex_l, store_effect_rgb_hex_l),
+	__ATTR(effect_rgb_hex_r, 0664, show_effect_rgb_hex_r, store_effect_rgb_hex_r),
+	__ATTR(effect_rgb_hex_f1, 0664, show_effect_rgb_hex_f1, store_effect_rgb_hex_f1),
+	__ATTR(effect_rgb_hex_f2, 0664, show_effect_rgb_hex_f2, store_effect_rgb_hex_f2),
+	__ATTR(effect_rgb_hex_lr, 0664, show_effect_rgb_hex_lr, store_effect_rgb_hex_lr),
+	__ATTR(effect_m, 0664, show_effect_m, store_effect_m),
+	__ATTR(effect_l, 0664, show_effect_l, store_effect_l),
+	__ATTR(effect_r, 0664, show_effect_r, store_effect_r),
+	__ATTR(effect_f1, 0664, show_effect_f1, store_effect_f1),
+	__ATTR(effect_f2, 0664, show_effect_f2, store_effect_f2),
+	__ATTR(effect_lr, 0664, show_effect_lr, store_effect_lr),
+	__ATTR(effect_enable, 0664, show_effect_enable, store_effect_enable),
+	__ATTR(anim_frames, 0664, show_anim_frames, store_anim_frames),
+	__ATTR(anim_frames_hex, 0664, show_anim_frames_hex, store_anim_frames_hex),
+	__ATTR(anim_frames_len, 0664, show_frames_len, store_frames_len),
+	__ATTR(anim_frames_fps, 0664, show_frames_fps, store_frames_fps),
+	__ATTR(anim_frames_cycles, 0664, show_frames_cycles, store_frames_cycles),
+	__ATTR(anim_frames_enable, 0664, show_frames_enable, store_frames_enable),
+	__ATTR(anim_frames_mask_m_enable, 0664, show_frames_override_m_enable, store_frames_override_m_enable),
+	__ATTR(anim_frames_mask_f1f2_enable, 0664, show_frames_override_f1f2_enable, store_frames_override_f1f2_enable),
+	__ATTR(anim_frames_mask_lr_enable, 0664, show_frames_override_lr_enable, store_frames_override_lr_enable),
 	__ATTR_NULL,
 };
 static struct class trimui_led_anim_class = {
 	.name = "led_anim", .owner = THIS_MODULE, .class_attrs = trimui_led_anim_attrs,
 };
 static struct class_attribute trimui_motor_attrs[] = {
-	__ATTR(voltage, 0664, trimui_led_attr_show, trimui_led_attr_store),
+	__ATTR(voltage, 0664, show_motor_voltage, store_motor_voltage),
 	__ATTR_NULL,
 };
 static struct class trimui_motor_class = {
 	.name = "motor", .owner = THIS_MODULE, .class_attrs = trimui_motor_attrs,
 };
 static struct class_attribute trimui_speaker_attrs[] = {
-	__ATTR(mute, 0664, trimui_led_attr_show, trimui_led_attr_store),
+	__ATTR(mute, 0664, show_speaker_mute, store_speaker_mute),
 	__ATTR_NULL,
 };
 static struct class trimui_speaker_class = {
 	.name = "speaker", .owner = THIS_MODULE, .class_attrs = trimui_speaker_attrs,
 };
 
-static void trimui_board_exit(void)
-{
-	if (!IS_ERR_OR_NULL(trimui_led_task)) {
-		kthread_stop(trimui_led_task);
-		trimui_led_task = NULL;
-	}
-	class_unregister(&trimui_speaker_class);
-	class_unregister(&trimui_motor_class);
-	class_unregister(&trimui_led_anim_class);
-	if (!IS_ERR_OR_NULL(trimui_motor_regulator))
-		regulator_put(trimui_motor_regulator);
-	trimui_motor_regulator = NULL;
-	gpio_direction_output(107, 0);
-	gpio_free(107);
-}
 
 static int trimui_board_init(void)
 {
-	unsigned int i;
+	struct task_struct *task;
 	int result;
-	for (i = 0; i < EFFECT_COUNT; i++) {
-		trimui_effect[i].duration = 2000;
-		trimui_effect[i].cycles = 1;
+	unsigned int i;
+
+	BUILD_BUG_ON(offsetof(struct trimui_stock_led_state, frame) != 0x4bc4);
+	BUILD_BUG_ON(offsetof(struct trimui_stock_led_state, motor_regulator) != 0x4dd8);
+	BUILD_BUG_ON(offsetof(struct trimui_stock_led_state, wire_frame) != 0x4de4);
+	BUILD_BUG_ON(offsetof(struct trimui_stock_led_state, anim_frames) != 0x4ff0);
+	memset(trimui_frame, 0, sizeof(trimui_frame));
+	memset(&trimui_effect_m, 0, sizeof(trimui_effect_m));
+	memset(&trimui_effect_l, 0, sizeof(trimui_effect_l));
+	memset(&trimui_effect_r, 0, sizeof(trimui_effect_r));
+	memset(&trimui_effect_f1, 0, sizeof(trimui_effect_f1));
+	memset(&trimui_effect_f2, 0, sizeof(trimui_effect_f2));
+	for (i = 0; i < 5; i++) {
+		trimui_led_state.effects[i].duration = 2000;
+		trimui_led_state.effects[i].cycles = 1;
 	}
-	result = gpio_request(107, "led_power");
-	if (result)
-		return result;
+	result = gpio_request(107, "led_5v");
+	/* Stock continues after GPIO and thread errors. TODO: unwind and return
+	 * those errors in a separate fix, and stop the thread on remove. */
+	if (result < 0)
+		printk("trimui_ledc_init error! led_5v: %d\n", 107);
 	gpio_direction_output(107, 1);
+	task = kthread_run(trimui_ledc_run_thread, NULL, "ledc daemon");
+	if (IS_ERR(task))
+		printk("ledc thread error\n");
 	result = class_register(&trimui_led_anim_class);
-	if (result)
-		goto gpio;
+	if (result < 0) {
+		printk(KERN_ERR "%s()%d - class_register err\n", "sunxi_led_probe", 3329);
+		class_unregister(&trimui_led_anim_class);
+		return -EFAULT;
+	}
 	result = class_register(&trimui_motor_class);
-	if (result)
-		goto animation;
+	if (result < 0) {
+		printk(KERN_ERR "%s()%d - class_register err\n", "init_motor_voltage", 3158);
+		class_unregister(&trimui_motor_class);
+	}
 	trimui_motor_regulator = regulator_get(NULL, "axp2202-bldo3");
 	result = class_register(&trimui_speaker_class);
-	if (result)
-		goto motor;
-	trimui_led_task = kthread_run(trimui_ledc_run_thread, NULL, "trimui_ledc");
-	if (!IS_ERR(trimui_led_task))
-		return 0;
-	result = PTR_ERR(trimui_led_task);
-	class_unregister(&trimui_speaker_class);
-motor:
-	if (!IS_ERR_OR_NULL(trimui_motor_regulator))
-		regulator_put(trimui_motor_regulator);
-	trimui_motor_regulator = NULL;
-	class_unregister(&trimui_motor_class);
-animation:
-	class_unregister(&trimui_led_anim_class);
-gpio:
-	gpio_direction_output(107, 0);
-	gpio_free(107);
-	return result;
+	if (result < 0) {
+		printk(KERN_ERR "%s()%d - class_register err\n", "init_speaker_mute", 3218);
+		class_unregister(&trimui_speaker_class);
+	}
+	return 0;
 }

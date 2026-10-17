@@ -18,7 +18,7 @@ static int __init lcd_model_setup(char *value)
 		 * retain the shipped overflow and NULL-argument logging behavior.
 		 */
 		strcpy(lcd_model_name, value);
-		pr_info("get lcd model:%s\n", lcd_model_name);
+		printk("get lcd model:%s\n", lcd_model_name);
 	}
 	return 1;
 }

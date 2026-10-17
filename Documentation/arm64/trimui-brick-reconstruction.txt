@@ -60,8 +60,13 @@ Reconstruction evidence
 * TCS4838 MFD/regulator tables, pointers and register settings match stock.
 * Arelink is usable reconstructed C, not decompiler pseudocode: 754 comparisons
   against emulated stock code cover cipher output, framing and EEPROM commands.
-* LED effects pass 27398 differential checks. Sysfs callbacks are also tested
-  against stock code, including the unusual stock hex-output formatting.
+* LED callbacks preserve stock parse failures, buffer overruns, NULL/error
+  regulator calls and sparse output writes. 693 compiled callback cases, 720
+  transfer cases and 202 daemon cases (3310 iterations) match emulated stock.
+  Relative LED state layout and driver link order are recovered; absolute
+  layout and every live adjacent overflow victim are not yet matched.
+* 269 compiled panel/effect cases include oversized copies and effect writes
+  beyond declared arrays. These execute only in mapped emulated storage.
 * NAND IDs were recovered into C: 63 descriptors, eleven manufacturers, with
   recursive comparison of every table byte and referenced string.
 * The published NAND translation-layer assembly was already in the baseline;
@@ -99,13 +104,16 @@ The companion workbench repository contains scripts, original artifact hashes,
 Ghidra pseudocode, detailed comparison results and the exported commit series.
 No manufacturer source files were inferred from filenames alone.
 
-Limits and deliberate deviations
+Limits and reconstruction policy
 --------------------------------
 
-The LCD boot-argument copy is bounded. Arelink C preserves protocol behavior
-but reorganizes implementation and private AES routines. LED arrays and effect
-lengths are bounded for oversized inputs, regulator errors are checked, and
-teardown releases resources. Valid tested sysfs outputs preserve stock behavior.
+Preserve shipped behavior even where it is erroneous. Comments marked TODO
+identify fixes that must be separate from this reconstruction. The panel's
+unbounded strcpy, unchecked LED buffers and scale table, failed-parse side
+effects, invalid regulator calls and incomplete teardown are intentional stock
+compatibility. Emulated tests do not prove every manifestation of undefined
+behavior or concurrent access. Arelink C reorganizes implementation and private
+AES routines; complete equivalence has not been established.
 
 Some GPU and other kernel code/data differences remain. Wi-Fi instruction
 residuals are separately classified and tested; whole-driver equivalence and
