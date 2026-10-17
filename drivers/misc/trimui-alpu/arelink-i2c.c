@@ -26,7 +26,8 @@ void trimui_sunxi_gpio_init(void)
 	}
 }
 
-void OSTimeDly(u16 ticks) { __udelay((unsigned long)ticks * 2); }
+/* #860 spills and reloads this volatile 16-bit argument before doubling it. */
+void OSTimeDly(volatile u16 ticks) { __udelay((unsigned long)ticks * 2); }
 
 void I2CMasterStop(void)
 {
@@ -111,13 +112,13 @@ u8 I2CMasterRead(u8 ack)
 
 u8 I2CSendDeviceAddress(u8 address)
 {
-	unsigned int attempt;
+	u8 remaining = 3;
 	I2CMasterInit();
-	for (attempt = 0; attempt < 3; attempt++) {
+	do {
 		I2CMasterStart();
 		if (!I2CMasterWrite(address))
 			return 0;
-	}
+	} while (--remaining);
 	return 2;
 }
 
@@ -161,7 +162,9 @@ u8 I2CRead(u8 address, const u8 *reg, u8 reg_len, u8 *data, u8 count)
 		gpio_direction_output(ALPU_SDA, 1);
 		result = I2CMasterReceiver(address);
 		if (!result) {
-			/* Stock returns without STOP for the zero-length read. */
+			/* Stock returns without STOP for the zero-length read.
+			 * TODO: release the bus in a separate fix.
+			 */
 			if (!count)
 				return 0;
 			for (i = 0; i + 1 < count; i++)
