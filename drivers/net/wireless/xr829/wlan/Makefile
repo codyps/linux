@@ -1,4 +1,4 @@
-xr829_core-y := \
+xradio_core-y := \
 	common.o \
 	fwio.o \
 	txrx.o \
@@ -13,18 +13,18 @@ xr829_core-y := \
 	platform.o \
 	fw_dbg_inf.o
 
-xr829_core-$(CONFIG_PM)            += pm.o
-xr829_core-$(CONFIG_XRADIO_SDIO)   += sdio.o
-xr829_core-$(CONFIG_XRADIO_DEBUG)  += debug.o
-xr829_core-$(CONFIG_XRADIO_ITP)    += itp.o
-xr829_core-$(CONFIG_XRADIO_ETF)    += etf.o
+xradio_core-$(CONFIG_PM)            += pm.o
+xradio_core-$(CONFIG_XRADIO_SDIO)   += sdio.o
+xradio_core-$(CONFIG_XRADIO_DEBUG)  += debug.o
+xradio_core-$(CONFIG_XRADIO_ITP)    += itp.o
+xradio_core-$(CONFIG_XRADIO_ETF)    += etf.o
 
 ldflags-y += --strip-debug
 
-xr829_wlan-y := wlan_init.o
+xradio_wlan-y := wlan_init.o
 
-obj-$(CONFIG_XRADIO) += xr829_core.o
-obj-m += xr829_wlan.o
+obj-$(CONFIG_XRADIO) += xradio_core.o
+obj-m += xradio_wlan.o
 
 ##=======  User Options ======= 
 ## Use vfs for firmware load when request_firmware

@@ -1,8 +1,8 @@
-obj-$(CONFIG_XRMAC) += xr829_mac.o
+obj-$(CONFIG_XRMAC) += xradio_mac.o
 
 ldflags-y += --strip-debug
-# xr829_mac objects
-xr829_mac-y := \
+# xradio_mac objects
+xradio_mac-y := \
 	main.o status.o \
 	sta_info.o \
 	wep.o \
@@ -29,22 +29,22 @@ xr829_mac-y := \
 	average.o \
 	chan.o
 
-xr829_mac-$(CONFIG_XRMAC_LEDS) += led.o
-xr829_mac-$(CONFIG_XRMAC_DEBUGFS) += \
+xradio_mac-$(CONFIG_XRMAC_LEDS) += led.o
+xradio_mac-$(CONFIG_XRMAC_DEBUGFS) += \
 	debugfs.o \
 	debugfs_sta.o \
 	debugfs_netdev.o \
 	debugfs_key.o
 
-xr829_mac-$(CONFIG_XRMAC_MESH) += \
+xradio_mac-$(CONFIG_XRMAC_MESH) += \
 	mesh.o \
 	mesh_pathtbl.o \
 	mesh_plink.o \
 	mesh_hwmp.o
 
-xr829_mac-$(CONFIG_PM) += pm.o
+xradio_mac-$(CONFIG_PM) += pm.o
 
-xr829_mac-$(CONFIG_XRMAC_DRIVER_API_TRACER) += driver-trace.o
+xradio_mac-$(CONFIG_XRMAC_DRIVER_API_TRACER) += driver-trace.o
 CFLAGS_driver-trace.o := -I$(src)
 
 # objects for PID algorithm
@@ -57,9 +57,9 @@ rc80211_minstrel-$(CONFIG_XRMAC_DEBUGFS) += rc80211_minstrel_debugfs.o
 rc80211_minstrel_ht-y := rc80211_minstrel_ht.o
 rc80211_minstrel_ht-$(CONFIG_XRMAC_DEBUGFS) += rc80211_minstrel_ht_debugfs.o
 
-xr829_mac-$(CONFIG_XRMAC_RC_PID) += $(rc80211_pid-y)
-xr829_mac-$(CONFIG_XRMAC_RC_MINSTREL) += $(rc80211_minstrel-y)
-xr829_mac-$(CONFIG_XRMAC_RC_MINSTREL_HT) += $(rc80211_minstrel_ht-y)
+xradio_mac-$(CONFIG_XRMAC_RC_PID) += $(rc80211_pid-y)
+xradio_mac-$(CONFIG_XRMAC_RC_MINSTREL) += $(rc80211_minstrel-y)
+xradio_mac-$(CONFIG_XRMAC_RC_MINSTREL_HT) += $(rc80211_minstrel_ht-y)
 
 ccflags-y += -D__CHECK_ENDIAN__
 # Extra IE for probe response from upper layer is needed in P2P GO

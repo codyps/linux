@@ -37,3 +37,6 @@ obj-m			+= gc02m1_mipi.o
 obj-m			+= ofilm0092.o
 obj-m			+= ov7750_mipi.o
 obj-m			+= ov5658.o
+
+# Camera modules present in the stock Brick firmware.
+obj-m += gc2590_mipi.o ov5648_mipi.o
