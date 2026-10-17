@@ -420,7 +420,7 @@ static int sensor_power(struct v4l2_subdev *sd, int on)
 {
 	int ret = 0;
 
-	sensor_dbg("zzz5648 sensor_power\n");
+	printk("zzz5648 sensor_power\n");
 
 	switch (on) {
 	case STBY_ON:
@@ -510,16 +510,18 @@ static int sensor_reset(struct v4l2_subdev *sd, u32 val)
 static int sensor_detect(struct v4l2_subdev *sd)
 {
 	data_type rdval;
-	unsigned int SENSOR_ID = 0;
-	sensor_read(sd, 0x300A, &rdval);
-	SENSOR_ID |= rdval;
-	SENSOR_ID |= (rdval << 8);
-	sensor_read(sd, 0x300B, &rdval);
-	SENSOR_ID |= (rdval);
-	sensor_print("V4L2_IDENT_SENSOR = 0x%x\n", SENSOR_ID);
-	if (SENSOR_ID != 0x5648) {
+
+	sensor_read(sd, 0x300a, &rdval);
+	sensor_print("0x300A =  0x%x\n", rdval);
+	if (rdval != 0x56) {
 		sensor_print("ov5648 %s error, chip found is not an target chip", __func__);
-		//return -ENODEV;
+		return -ENODEV;
+	}
+	sensor_read(sd, 0x300b, &rdval);
+	sensor_print("0x300B =  0x%x\n", rdval);
+	if (rdval != 0x48) {
+		sensor_print("ov5648 %s error, chip found is not an target chip", __func__);
+		return -ENODEV;
 	}
 	return 0;
 }
