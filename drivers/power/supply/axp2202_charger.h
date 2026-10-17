@@ -215,7 +215,6 @@ struct axp_config_info {
 	u32 wakeup_ovtemp_chg;
 	u32 wakeup_bat_ov;
 	u32 wakeup_gpio;
-	u32 wakeup_new_soc;
 
 	u32 pmu_bc12_en;
 	u32 pmu_cc_logic_en;

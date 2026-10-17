@@ -313,6 +313,8 @@ static int axp2202_get_soc(struct power_supply *ps,
 	struct axp2202_bat_power *bat_power = power_supply_get_drvdata(ps);
 	struct regmap *regmap = bat_power->regmap;
 	unsigned int data;
+	uint8_t sample[2], i;
+	uint16_t voltage[3], tmp;
 	int ret = 0;
 
 	ret = regmap_read(bat_power->regmap, AXP2202_CURVE_CHECK, &data);
@@ -333,6 +335,28 @@ static int axp2202_get_soc(struct power_supply *ps,
 		data = AXP2202_SOC_MAX;
 	else if (data < AXP2202_SOC_MIN)
 		data = AXP2202_SOC_MIN;
+
+	/* The stock gauge rejects a spurious full indication below 3450 mV. */
+	if (data == 100) {
+		voltage[0] = 0;
+		for (i = 0; i < 3; i++) {
+			ret = regmap_bulk_read(regmap, AXP2202_VBAT_H, sample, 2);
+			if (ret < 0)
+				break;
+			voltage[i] = ((sample[0] & GENMASK(5, 0)) << 8) | sample[1];
+		}
+		if (voltage[0] > voltage[1]) {
+			tmp = voltage[0];
+			voltage[0] = voltage[1];
+			voltage[1] = tmp;
+		}
+		if (voltage[1] > voltage[2])
+			voltage[1] = voltage[2];
+		if (voltage[0] > voltage[1])
+			voltage[1] = voltage[0];
+		if (voltage[1] < 3450)
+			data = 0;
+	}
 
 	val->intval = data;
 
@@ -700,11 +724,6 @@ static int axp2202_model_update(struct axp2202_bat_power *bat_power)
 	uint8_t i;
 	uint8_t *param;
 
-	/* reset power curve regs */
-	ret = regmap_write(regmap, AXP2202_CURVE_CHECK, 0);
-	if (ret < 0)
-		pr_err("can not clear curve_check \n");;
-
 	/* reset and open brom */
 	ret = regmap_update_bits(regmap, AXP2202_GAUGE_CONFIG,
 				 AXP2202_BROMUP_EN, 0);
@@ -1041,7 +1060,6 @@ static int axp2202_init_chip(struct axp2202_bat_power *bat_power)
 	struct axp_config_info *axp_config = &bat_power->dts_info;
 	int ret = 0;
 	int val;
-	uint8_t data[2];
 	unsigned int reg_value;
 
 	if (bat_power == NULL) {
@@ -1202,19 +1220,7 @@ static int axp2202_init_chip(struct axp2202_bat_power *bat_power)
 	val |= clamp_val(axp_config->pmu_battery_warning_level2, 0, 15);
 	regmap_write(bat_power->regmap, AXP2202_GAUGE_THLD, val);
 
-	/* battery ratio check */
-	regmap_read(bat_power->regmap, AXP2202_GAUGE_SOC, &val);
-	pr_warn("\n\nbat_radio:%d\n\n", val);
-	if (val > 60) {
-		ret = regmap_bulk_read(bat_power->regmap, AXP2202_VBAT_H, data, 2);
-		val = ((data[0] & GENMASK(5, 0)) << 0x08) | (data[1]);
-		pr_warn("\n\nbat_vol:%d\n\n", val);
-		if (val < 3500) {
-			axp2202_reset_mcu(bat_power->regmap);
-			regmap_write(bat_power->regmap, AXP2202_CURVE_CHECK, 0x81);
-			pr_warn("adapt reset gauge: soc > 60%% , bat_vol < 3500\n");
-		}
-	}
+
 	return ret;
 }
 
@@ -1270,7 +1276,6 @@ enum axp2202_bat_virq_index {
 	AXP2202_VIRQ_BAT_UNTEMP_CHG,
 	AXP2202_VIRQ_BAT_OVTEMP_CHG,
 	AXP2202_VIRQ_BAT_OV,
-	AXP2202_VIRQ_BAT_NEW_SOC,
 	AXP2202_VIRQ_MAX_VIRQ,
 };
 
@@ -1297,8 +1302,6 @@ static struct axp_interrupts axp_bat_irq[] = {
 					  axp2202_irq_handler_bat_stat_change },
 	[AXP2202_VIRQ_BAT_OV] = { "battery_over_voltage",
 					  axp2202_irq_handler_bat_stat_change },
-	[AXP2202_VIRQ_BAT_NEW_SOC] = { "gauge_new_soc",
-					  axp2202_irq_handler_bat_stat_change },
 };
 
 int axp2202_bat_dt_parse(struct device_node *node,
@@ -1314,7 +1317,7 @@ int axp2202_bat_dt_parse(struct device_node *node,
 	AXP_OF_PROP_READ(pmu_runtime_chgcur,              500);
 	AXP_OF_PROP_READ(pmu_suspend_chgcur,             1200);
 	AXP_OF_PROP_READ(pmu_shutdown_chgcur,            1200);
-	AXP_OF_PROP_READ(pmu_prechg_chgcur,               100);
+	AXP_OF_PROP_READ(pmu_prechg_chgcur,               450);
 	AXP_OF_PROP_READ(pmu_terminal_chgcur,             128);
 	AXP_OF_PROP_READ(pmu_init_chgvol,                4200);
 	AXP_OF_PROP_READ(pmu_battery_warning_level1,       15);
@@ -1375,8 +1378,7 @@ int axp2202_bat_dt_parse(struct device_node *node,
 		of_property_read_bool(node, "wakeup_bat_ovtemp_chg");
 	axp_config->wakeup_bat_ov =
 		of_property_read_bool(node, "wakeup_bat_ov");
-	axp_config->wakeup_new_soc =
-		of_property_read_bool(node, "wakeup_new_soc");
+	printk("prechgcur:%d\b", axp_config->pmu_prechg_chgcur);
 
 
 	return 0;
@@ -1499,12 +1501,6 @@ static int axp2202_battery_probe(struct platform_device *pdev)
 	struct axp2202_bat_power *bat_power;
 	struct power_supply_config psy_cfg = {};
 	struct axp20x_dev *axp_dev = dev_get_drvdata(pdev->dev.parent);
-	struct device_node *node = pdev->dev.of_node;
-
-	if (!of_device_is_available(node)) {
-		pr_err("axp2202-battery device is not configed\n");
-		return -ENODEV;
-	}
 
 	if (!axp_dev->irq) {
 		pr_err("can not register axp2202-battery without irq\n");
@@ -1521,10 +1517,10 @@ static int axp2202_battery_probe(struct platform_device *pdev)
 	bat_power->name = "axp2202_battery";
 	bat_power->dev = &pdev->dev;
 	bat_power->regmap = axp_dev->regmap;
-	trimui_bat_power = bat_power;
 
 	/* for device tree parse */
 	axp2202_bat_parse_device_tree(bat_power);
+	trimui_bat_power = bat_power;
 
 	ret = axp2202_init_chip(bat_power);
 	if (ret < 0) {
@@ -1668,68 +1664,32 @@ static void axp2202_bat_virq_dts_set(struct axp2202_bat_power *bat_power, bool e
 		axp2202_bat_irq_set(
 			axp_bat_irq[AXP2202_VIRQ_BAT_OV].irq,
 			enable);
-	if (!dts_info->wakeup_new_soc)
-		axp2202_bat_irq_set(
-			axp_bat_irq[AXP2202_VIRQ_BAT_NEW_SOC].irq,
-			enable);
 
 }
 
 static void axp2202_bat_shutdown(struct platform_device *pdev)
 {
 	struct axp2202_bat_power *bat_power = platform_get_drvdata(pdev);
-	int reg_value;
-
-	cancel_delayed_work_sync(&bat_power->bat_supply_mon);
-
-	regmap_read(bat_power->regmap, AXP2202_CURVE_CHECK, &reg_value);
-	if (reg_value & 0x80) {
-		cancel_delayed_work_sync(&bat_power->bat_power_curve);
-	}
-
-	regmap_update_bits(bat_power->regmap, AXP2202_CLK_EN, BIT(3), 0);
-	regmap_update_bits(bat_power->regmap, AXP2202_CC_MODE_CTRL, BIT(1), 0);
-	regmap_update_bits(bat_power->regmap, AXP2202_CC_MODE_CTRL, BIT(0), 0);
 
 	axp2202_charger_ichg_set(bat_power, bat_power->dts_info.pmu_shutdown_chgcur);
-
 }
 
 static int axp2202_bat_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	struct axp2202_bat_power *bat_power = platform_get_drvdata(pdev);
-	int reg_value;
-
-	cancel_delayed_work_sync(&bat_power->bat_supply_mon);
-	regmap_read(bat_power->regmap, AXP2202_CURVE_CHECK, &reg_value);
-	if (reg_value & 0x80) {
-		cancel_delayed_work_sync(&bat_power->bat_power_curve);
-	}
 
 	axp2202_charger_ichg_set(bat_power, bat_power->dts_info.pmu_suspend_chgcur);
-
 	axp2202_bat_virq_dts_set(bat_power, false);
-
 	return 0;
 }
 
 static int axp2202_bat_resume(struct platform_device *pdev)
 {
 	struct axp2202_bat_power *bat_power = platform_get_drvdata(pdev);
-	int reg_value;
 
 	power_supply_changed(bat_power->bat_supply);
-
-	schedule_delayed_work(&bat_power->bat_supply_mon, 0);
-	regmap_read(bat_power->regmap, AXP2202_CURVE_CHECK, &reg_value);
-	if (reg_value & 0x80) {
-		schedule_delayed_work(&bat_power->bat_power_curve, 0);
-	}
-
 	axp2202_charger_ichg_set(bat_power, bat_power->dts_info.pmu_runtime_chgcur);
-
 	axp2202_bat_virq_dts_set(bat_power, true);
-
 	return 0;
 }
 
