@@ -18,6 +18,9 @@
 #ifndef __SUNXI_RFKILL_H
 #define __SUNXI_RFKILL_H
 
+/* Stock WLAN remove accesses wlan_data after freeing it and removes sysfs
+ * after misc_deregister. TODO: fix both cleanup orders in a separate change. */
+
 #include <linux/regulator/consumer.h>
 #include <linux/platform_device.h>
 #include <linux/clk.h>

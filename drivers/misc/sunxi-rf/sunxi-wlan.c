@@ -174,10 +174,8 @@ static int sunxi_wlan_on(struct sunxi_wlan_platdata *data, bool on_off)
 
 	for (i = 0; i < (data->power_num); i++) {
 		if (data->wlan_power_name[i]) {
-			if (!data->wlan_power[i]) {
-				data->wlan_power[i] = regulator_get(dev,
-					data->wlan_power_name[i]);
-			}
+			data->wlan_power[i] = regulator_get_optional(dev,
+				data->wlan_power_name[i]);
 			if (!IS_ERR(data->wlan_power[i])) {
 				if (on_off) {
 					ret =
@@ -211,18 +209,15 @@ static int sunxi_wlan_on(struct sunxi_wlan_platdata *data, bool on_off)
 						regulator_put(data->wlan_power[i]);
 						return ret;
 					}
-					regulator_put(data->wlan_power[i]);
-					data->wlan_power[i] = NULL;
 				}
+				regulator_put(data->wlan_power[i]);
 			}
 		}
 	}
 
 	if (data->io_regulator_name) {
-		if (!data->io_regulator) {
-			data->io_regulator = regulator_get(dev,
-					data->io_regulator_name);
-		}
+		data->io_regulator = regulator_get_optional(dev,
+				data->io_regulator_name);
 		if (!IS_ERR(data->io_regulator)) {
 			if (on_off) {
 				ret = regulator_set_voltage(data->io_regulator,
@@ -254,9 +249,8 @@ static int sunxi_wlan_on(struct sunxi_wlan_platdata *data, bool on_off)
 					regulator_put(data->io_regulator);
 					return ret;
 				}
-				regulator_put(data->io_regulator);
-				data->io_regulator = NULL;
 			}
+			regulator_put(data->io_regulator);
 		}
 	}
 
