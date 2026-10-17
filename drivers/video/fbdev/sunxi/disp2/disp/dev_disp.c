@@ -2238,12 +2238,11 @@ static s32 disp_init(struct platform_device *pdev)
 								output_cs;
 		g_disp_drv.disp_init.output_eotf[para->boot_info.disp] =
 								output_eotf;
-	} else {
-#if defined(CONFIG_SUNXI_IOMMU)
-		sunxi_enable_device_iommu(DE_MASTOR_ID, true);
-#endif
 	}
 
+	/* #860 has no direct global IOMMU-enable call on the nonsynchronized
+	 * boot path.  Keep the manager callback sequencing instead.
+	 */
 	para->feat_init.chn_cfg_mode = g_disp_drv.disp_init.chn_cfg_mode;
 
 	bsp_disp_init(para);
@@ -2759,7 +2758,7 @@ static int disp_probe(struct platform_device *pdev)
 	disp_init(pdev);
 	ret = sysfs_create_group(&display_dev->kobj, &disp_attribute_group);
 	if (ret)
-		__wrn("sysfs_create_group fail!\n");
+		DISP_STOCK_WRN(2758, "sysfs_create_group fail!\n");
 
 	power_status_init = 1;
 #if defined(CONFIG_PM_RUNTIME)
