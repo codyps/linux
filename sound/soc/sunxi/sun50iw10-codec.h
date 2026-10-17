@@ -14,6 +14,13 @@
  *
  */
 #ifndef _SUN50IW10_CODEC_H
+/* TG3040 machine probe reads hp_detect_case, then forces HP_DETECT_HIGH.
+ * It also ignores the jack IRQ request result. Preserve both stock behaviors;
+ * TODO: honor the DT polarity and propagate IRQ failures in a separate fix.
+ * noheadphonemic suppresses microphone bias/ADC changes; jack detection and
+ * the board speaker mute policy still run.
+ */
+
 #define _SUN50IW10_CODEC_H
 
 #define SUNXI_CODEC_CPUDAI_RX_CHANNELS_MAX 2

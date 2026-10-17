@@ -32,8 +32,6 @@
 #include "sun50iw10-codec.h"
 #include "sunxi_rw_func.h"
 
-extern int trimui_headphone_present;
-extern int trimui_speaker_mute;
 
 #ifdef CONFIG_SND_SUNXI_SOC_SUN50IW10_JACK
 static int mdata_threshold = 0x10;
@@ -58,6 +56,10 @@ enum dectect_jack {
 };
 
 static bool is_irq;
+#endif
+int trimui_headphone_present;
+int trimui_speaker_mute;
+#ifdef CONFIG_SND_SUNXI_SOC_SUN50IW10_JACK
 static int switch_state;
 #endif
 
@@ -83,6 +85,7 @@ struct sunxi_card_priv {
 	u32 key_hook;
 	u32 key_voiceassist;
 	u32 hp_detect_case;
+	u32 noheadphonemic;
 #endif
 };
 
@@ -114,10 +117,12 @@ static int sunxi_check_jack_type(struct snd_soc_jack *jack)
 		 */
 		pr_debug("[SND_JACK_HEADPHONE] priv->HEADSET_DATA:0x%x\n",
 			priv->HEADSET_DATA);
-		snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
-				(0x1 << HMICBIASEN), (0x0 << HMICBIASEN));
-		snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
-				(0x1 << MICADCEN), (0x0 << MICADCEN));
+		if (!priv->noheadphonemic) {
+			snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
+					(0x1 << HMICBIASEN), (0x0 << HMICBIASEN));
+			snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
+					(0x1 << MICADCEN), (0x0 << MICADCEN));
+		}
 		jack_type = SND_JACK_HEADPHONE;
 	}
 
@@ -138,9 +143,11 @@ static void sunxi_check_hs_plug(struct work_struct *work)
 		snd_soc_update_bits(priv->codec, SUNXI_HMIC_CTRL,
 				(0x1 << MIC_DET_IRQ_EN),
 				(0x1 << MIC_DET_IRQ_EN));
-		snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
-				(0x1 << MICADCEN),
-				(0x1 << MICADCEN));
+		if (!priv->noheadphonemic) {
+			snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
+					(0x1 << MICADCEN),
+					(0x1 << MICADCEN));
+		}
 		/* Enable PA */
 		snd_soc_update_bits(priv->codec, SUNXI_HEADPHONE_REG,
 				(0x1 << HPPA_EN),
@@ -172,12 +179,16 @@ static void sunxi_check_hs_detect_status(struct work_struct *work)
 	struct sunxi_card_priv *priv =
 		container_of(work, struct sunxi_card_priv, hs_detect_work.work);
 	int jack_type = 0, reg_val = 0;
+	struct sunxi_codec_info *sunxi_codec = snd_soc_codec_get_drvdata(priv->codec);
+	struct codec_spk_config *spk_cfg = &(sunxi_codec->spk_config);
 
 	mutex_lock(&priv->jack_mlock);
 	if (priv->detect_state == PLUG_IN) {
 		/* Enable hbias and adc*/
-		snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
-				(0x1 << MICADCEN), (0x1 << MICADCEN));
+		if (!priv->noheadphonemic) {
+			snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
+					(0x1 << MICADCEN), (0x1 << MICADCEN));
+		}
 		msleep(100);
 		jack_type = sunxi_check_jack_type(&priv->jack);
 		if (jack_type != priv->switch_status) {
@@ -186,6 +197,9 @@ static void sunxi_check_hs_detect_status(struct work_struct *work)
 			pr_err("plugin --> switch:%d\n", jack_type);
 			switch_state = jack_type;
 		}
+
+		if (spk_cfg->used)
+			gpio_set_value(spk_cfg->spk_gpio, !spk_cfg->pa_level);
 
 		/*
 		 * if SND_JACK_HEADSET,enable mic detect irq
@@ -222,12 +236,16 @@ static void sunxi_check_hs_detect_status(struct work_struct *work)
 		snd_jack_report(priv->jack.jack, priv->switch_status);
 		switch_state = priv->switch_status;
 		pr_err("plugout --> switch:%d\n", priv->switch_status);
+		if (spk_cfg->used && !trimui_speaker_mute)
+			gpio_set_value(spk_cfg->spk_gpio, spk_cfg->pa_level);
 		priv->tv_headset_plugin.tv_sec = 0;
 		/*enable hbias and adc*/
-		snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
-				    (0x1 << HMICBIASEN), (0x1 << HMICBIASEN));
-		snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
-				    (0x1 << MICADCEN), (0x1 << MICADCEN));
+		if (!priv->noheadphonemic) {
+			snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
+					    (0x1 << HMICBIASEN), (0x1 << HMICBIASEN));
+			snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
+					    (0x1 << MICADCEN), (0x1 << MICADCEN));
+		}
 		snd_soc_update_bits(priv->codec, SUNXI_HMIC_CTRL,
 				(0x1f << MDATA_THRESHOLD),
 				(mdata_threshold << MDATA_THRESHOLD));
@@ -306,7 +324,11 @@ static irqreturn_t jack_interrupt(int irq, void *dev_id)
 				snd_soc_read(priv->codec, SUNXI_HMIC_STS));
 
 	jack_state = snd_soc_read(priv->codec, SUNXI_HMIC_STS);
-	trimui_headphone_present = !!(jack_state & 8);
+	if (jack_state & 8)
+		trimui_headphone_present = 1;
+	else
+		trimui_headphone_present = 0;
+	printk("g_hp_plugin:%d\n", trimui_headphone_present);
 
 	if (priv->detect_state != PLUG_IN) {
 		if (jack_state & (1 << MIC_DET_ST)) {
@@ -314,9 +336,11 @@ static irqreturn_t jack_interrupt(int irq, void *dev_id)
 			regval &= ~(0x1 << MIC_DET_IRQ_EN);
 			snd_soc_write(priv->codec, SUNXI_HMIC_CTRL, regval);
 
-			regval = snd_soc_read(priv->codec, SUNXI_MICBIAS_REG);
-			regval &= ~(0x1 << MICADCEN);
-			snd_soc_write(priv->codec, SUNXI_MICBIAS_REG, regval);
+			if (!priv->noheadphonemic) {
+				regval = snd_soc_read(priv->codec, SUNXI_MICBIAS_REG);
+				regval &= ~(0x1 << MICADCEN);
+				snd_soc_write(priv->codec, SUNXI_MICBIAS_REG, regval);
+			}
 
 			/* clear mic detect status */
 			regval = snd_soc_read(priv->codec, SUNXI_HMIC_STS);
@@ -651,10 +675,12 @@ static void sunxi_hs_reg_init(struct sunxi_card_priv *priv)
 	snd_soc_update_bits(priv->codec, SUNXI_HMIC_CTRL,
 			(0xf << HMIC_N), (HP_DEBOUCE_TIME << HMIC_N));
 
-	snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
-			    (0x1 << HMICBIASEN), (0x1 << HMICBIASEN));
-	snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
-			    (0x1 << MICADCEN), (0x1 << MICADCEN));
+	if (!priv->noheadphonemic) {
+		snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
+				    (0x1 << HMICBIASEN), (0x1 << HMICBIASEN));
+		snd_soc_update_bits(priv->codec, SUNXI_MICBIAS_REG,
+				    (0x1 << MICADCEN), (0x1 << MICADCEN));
+	}
 	snd_soc_update_bits(priv->codec, SUNXI_HMIC_CTRL,
 				(0x1 << MIC_DET_IRQ_EN),
 				(0x1 << MIC_DET_IRQ_EN));
@@ -799,6 +825,15 @@ static int sunxi_card_dev_probe(struct platform_device *pdev)
 	} else {
 		priv->hp_detect_case = temp_val;
 		pr_err("[audio] hp_detect_case: %d\n", priv->hp_detect_case);
+	}
+
+	priv->hp_detect_case = HP_DETECT_HIGH;
+	ret = of_property_read_u32(np, "noheadphonemic", &temp_val);
+	if (ret < 0) {
+		pr_err("[audio] noheadphonemic missing or it has headphonemic.\n");
+		priv->noheadphonemic = 0;
+	} else {
+		priv->noheadphonemic = temp_val;
 	}
 
 	priv->jackirq = platform_get_irq(pdev, 0);

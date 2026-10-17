@@ -589,8 +589,8 @@ static const struct soc_enum sunxi_codec_adcswap_func_enum[] = {
 
 /* Board controls recovered from TG3040 #860. */
 static struct sunxi_codec_info *trimui_codec;
-int trimui_headphone_present;
-int trimui_speaker_mute;
+extern int trimui_headphone_present;
+extern int trimui_speaker_mute;
 
 int trimui_set_speaker_enable(int enable)
 {
