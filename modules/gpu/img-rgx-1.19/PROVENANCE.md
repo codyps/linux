@@ -137,8 +137,20 @@ option is absent in stock. Whole-union zero-initializers in six power-command
 routines are also absent; the recovered code writes the active command fields
 and leaves unused bytes unspecified, as the shipped implementation does.
 
-After these changes, 1953/2063 comparable pvrsrvkm function bodies and all 18
+After these changes, 1958/2063 comparable pvrsrvkm function bodies and all 18
 comparable dc_sunxi bodies match raw code/relocations. The companion workbench
 separates diagnostic-line/address differences, differential execution checks,
 and unresolved code differences. Matching instruction bodies does not establish
 all referenced-data, firmware or physical hardware behavior.
+
+
+A separate Linaro GCC 7.4.1-2019.02 candidate identifies remaining RISC-V cache
+workarounds: two do_invalid_range calls, its A133 no-op shim, and private
+riscv_cache/rv_cache mapping choices. Stock has none of these. Removing them
+restores the four-argument _MemsetPageArray and its callers. The GCC 7.4.1
+comparison matches 1974/2063 raw instruction bodies/relocations; all other 89
+have classified changes confined to PVR diagnostic source-line arguments after
+resolving named address targets. No source padding or #line directives were
+added to manufacture diagnostic equality. The mirrored compiler is not asserted
+to be the original OpenWrt-customized compiler. This code comparison still does
+not validate every referenced object or physical GPU behavior.

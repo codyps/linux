@@ -878,7 +878,7 @@ static PVRSRV_ERROR
 _MemsetPageArray(IMG_UINT32 uiNumToClean,
                  struct page **ppsCleanArray,
                  pgprot_t pgprot,
-		IMG_UINT8 ui8Pattern, int rv_cache)
+		IMG_UINT8 ui8Pattern)
 {
 	IMG_CPU_VIRTADDR pvAddr;
 	IMG_UINT32 uiMaxPagesToMap = MIN(PVR_LINUX_PHYSMEM_MAX_KMAP_PAGES,
@@ -891,11 +891,7 @@ _MemsetPageArray(IMG_UINT32 uiNumToClean,
 	{
 		IMG_UINT32 uiToClean = MIN(uiNumToClean, uiMaxPagesToMap);
 
-		if (rv_cache) {
-			pvAddr = pvr_vmap_cached(ppsCleanArray, uiToClean, VM_WRITE, pgprot);
-		} else {
-			pvAddr = pvr_vmap(ppsCleanArray, uiToClean, VM_WRITE, pgprot);
-		}
+		pvAddr = pvr_vmap(ppsCleanArray, uiToClean, VM_WRITE, pgprot);
 		if (!pvAddr)
 		{
 			if (uiMaxPagesToMap <= 1)
@@ -981,7 +977,7 @@ _CleanupThread_CleanPages(void *pvData)
 	 * at a time. */
 	eError = _MemsetPageArray(psPagePoolEntry->uiItemsRemaining,
 	                          psPagePoolEntry->ppsPageArray,
-				pgprot, PVRSRV_ZERO_VALUE, 0);
+				pgprot, PVRSRV_ZERO_VALUE);
 	if (eError != PVRSRV_OK)
 	{
 		goto eExit;
@@ -1959,7 +1955,7 @@ _AllocOSPages_Fast(PMR_OSPAGEARRAY_DATA *psPageArrayData)
 	{
 		eError = _MemsetPageArray(uiOSPagesToAlloc - uiDevPagesFromPool,
 		                          ppsPageAttributeArray, PAGE_KERNEL,
-					PVRSRV_ZERO_VALUE, 1);
+					PVRSRV_ZERO_VALUE);
 		if (eError != PVRSRV_OK)
 		{
 			PVR_DPF((PVR_DBG_ERROR, "Failed to zero pages (fast)"));
@@ -1972,14 +1968,14 @@ _AllocOSPages_Fast(PMR_OSPAGEARRAY_DATA *psPageArrayData)
 		 * can point to different allocations: first for pages obtained from
 		 * the pool and then the remaining pages */
 		eError = _MemsetPageArray(uiDevPagesFromPool, ppsPageArray, PAGE_KERNEL,
-			PVRSRV_POISON_ON_ALLOC_VALUE, 1);
+			PVRSRV_POISON_ON_ALLOC_VALUE);
 		if (eError != PVRSRV_OK)
 		{
 			PVR_DPF((PVR_DBG_ERROR, "Failed to poison pages (fast)"));
 		}
 		eError = _MemsetPageArray(uiOSPagesToAlloc - uiDevPagesFromPool,
 		                          ppsPageAttributeArray, PAGE_KERNEL,
-						PVRSRV_POISON_ON_ALLOC_VALUE, 1);
+						PVRSRV_POISON_ON_ALLOC_VALUE);
 		if (eError != PVRSRV_OK)
 		{
 			PVR_DPF((PVR_DBG_ERROR, "Failed to poison pages (fast)"));
@@ -2282,7 +2278,7 @@ _AllocOSPages_Sparse(PMR_OSPAGEARRAY_DATA *psPageArrayData,
 		 * zeroed or we didn't allocate any of them. */
 		eError = _MemsetPageArray(uiTempPageArrayIndex - uiDevPagesFromPool,
 		                          &ppsTempPageArray[uiDevPagesFromPool],
-					PAGE_KERNEL, PVRSRV_ZERO_VALUE, 0);
+					PAGE_KERNEL, PVRSRV_ZERO_VALUE);
 		PVR_LOG_GOTO_IF_FALSE(eError == PVRSRV_OK, "failed to zero pages (sparse)", e_free_pages);
 	}
 	else if (BIT_ISSET(ui32AllocFlags, FLAG_POISON_ON_ALLOC))
@@ -2290,7 +2286,7 @@ _AllocOSPages_Sparse(PMR_OSPAGEARRAY_DATA *psPageArrayData,
 		/* Here we need to poison all of the pages regardless if they were
 		 * allocated from the pool or from the system. */
 		eError = _MemsetPageArray(uiTempPageArrayIndex, ppsTempPageArray,
-					PAGE_KERNEL, PVRSRV_POISON_ON_ALLOC_VALUE, 0);
+					PAGE_KERNEL, PVRSRV_POISON_ON_ALLOC_VALUE);
 		PVR_LOG_IF_FALSE(eError == PVRSRV_OK, "failed to poison pages (sparse)");
 
 		/* We need to flush the cache for the poisoned pool pages here. The flush for the pages
@@ -3070,7 +3066,6 @@ PMRAcquireKernelMappingDataOSMem(PMR_IMPL_PRIVDATA pvPriv,
 	struct page **pagearray;
 	PMR_OSPAGEARRAY_KERNMAP_DATA *psData;
 
-	int riscv_cache = 0;
 
 	/* For cases device page size greater than the OS page size,
 	 * multiple physically contiguous OS pages constitute one device page.
@@ -3127,7 +3122,6 @@ PMRAcquireKernelMappingDataOSMem(PMR_IMPL_PRIVDATA pvPriv,
 				break;
 
 		case PVRSRV_MEMALLOCFLAG_CPU_CACHED:
-				riscv_cache = 1;
 				break;
 
 		default:
@@ -3179,11 +3173,7 @@ PMRAcquireKernelMappingDataOSMem(PMR_IMPL_PRIVDATA pvPriv,
 		goto e1;
 	}
 
-	if (riscv_cache) {
-		pvAddress = pvr_vmap_cached(pagearray, ui32PageCount, VM_READ | VM_WRITE, prot);
-	} else {
-		pvAddress = pvr_vmap(pagearray, ui32PageCount, VM_READ | VM_WRITE, prot);
-	}
+	pvAddress = pvr_vmap(pagearray, ui32PageCount, VM_READ | VM_WRITE, prot);
 	if (pvAddress == NULL)
 	{
 		eError = PVRSRV_ERROR_OUT_OF_MEMORY;

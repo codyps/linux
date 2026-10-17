@@ -21,13 +21,6 @@ static inline void *pvr_vmap(struct page **pages, unsigned int count,
 	return vm_map_ram(pages, count, NUMA_NO_NODE, prot);
 }
 
-static inline void *pvr_vmap_cached(struct page **pages, unsigned int count,
-				    unsigned long flags, pgprot_t prot)
-{
-	(void)flags;
-	return vm_map_ram(pages, count, NUMA_NO_NODE, prot);
-}
-
 static inline void pvr_vunmap(const void *addr, unsigned int count,
 			      pgprot_t prot)
 {

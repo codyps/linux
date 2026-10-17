@@ -79,10 +79,13 @@ Reconstruction evidence
   display-class ABI, Configure2 bridge and 63-byte annotation limit. All 141
   sampled display-class and 133 sampled memory layouts match stock DWARF.
   Recovered A133 platform, DVFS, DMA, heap configuration, command-queue context,
-  memory mapping and client-connect initialization. 1953 of 2063 comparable
+  memory mapping and client-connect initialization. 1958 of 2063 comparable
   pvrsrvkm bodies and all 18 dc_sunxi bodies match raw code/relocations.
   Separate emulated checks cover configuration, power and memory lifecycles;
-  compiler/diagnostic differences and unverified GPU code remain.
+  The Linaro GCC 7.4.1 candidate gives 1974/2063 raw matches; the other 89
+  classify as diagnostic-line differences. This is not the original customized
+  OpenWrt compiler. Every referenced data object and hardware path is not yet
+  verified.
 * Video capture now matches all 86 vin_io and 554 vin_v4l2 comparable bodies.
   Four format tables match recursively, including RGB888/BGR888 descriptors.
 * Wi-Fi serial-derived MAC addressing and AP restart diagnostics are restored.
