@@ -686,7 +686,55 @@ static void axp803_bat_power_monitor(struct work_struct *work)
 	struct axp803_bat_power *bat_power =
 		container_of(work, typeof(*bat_power), bat_supply_mon.work);
 
+	unsigned int reg_value, chg_status;
+	int rest_pct, ocv_pct, col_pct;
+	struct axp_config_info *axp_config = &bat_power->dts_info;
+
 	power_supply_changed(bat_power->bat_supply);
+
+	/* Stock #860 performs this maintenance even with debugging disabled. */
+	rest_pct = axp803_get_rest_cap(bat_power);
+	if (axp_config->ocv_coulumb_100 == 1) {
+		if (rest_pct == 100)
+			regmap_update_bits(bat_power->regmap, 0x32, 0x08, 0);
+		else if (axp_config->pmu_chgled_func)
+			regmap_update_bits(bat_power->regmap, 0x32, 0x08, 0x08);
+		else
+			regmap_update_bits(bat_power->regmap, 0x32, 0x08, 0);
+	}
+
+	/* TODO: stock ignores these read/write errors and can use stale or
+	 * uninitialized samples. Keep its order and masks for reconstruction.
+	 */
+	regmap_read(bat_power->regmap, AXP803_OCV_PERCENT, &reg_value);
+	ocv_pct = (reg_value & 0x80) ? (reg_value & 0x7f) : 0;
+	regmap_read(bat_power->regmap, AXP803_COU_PERCENT, &reg_value);
+	col_pct = (reg_value & 0x80) ? (reg_value & 0x7f) : 0;
+	regmap_read(bat_power->regmap, AXP803_STATUS, &reg_value);
+	reg_value &= 0x24;
+	regmap_read(bat_power->regmap, AXP803_MODE_CHGSTATUS, &chg_status);
+	chg_status &= 0x32;
+	if (reg_value == 0x20 || (reg_value == 0x04 || reg_value == 0x24)) {
+		if (ocv_pct == 100 && col_pct == 100) {
+			/* TODO: stock ORs 100 into the low seven bits, rather
+			 * than assigning 100, and clears the validity bit.
+			 */
+			regmap_read(bat_power->regmap, AXP803_CAP, &reg_value);
+			reg_value = (reg_value & 0x7f) | ocv_pct;
+			regmap_write(bat_power->regmap, AXP803_CAP, reg_value);
+			regmap_read(bat_power->regmap, AXP803_OCV_PERCENT, &reg_value);
+			reg_value = (reg_value & 0x7f) | ocv_pct;
+			regmap_write(bat_power->regmap, AXP803_OCV_PERCENT, reg_value);
+			regmap_read(bat_power->regmap, AXP803_COU_PERCENT, &reg_value);
+			reg_value = (reg_value & 0x7f) | ocv_pct;
+			regmap_write(bat_power->regmap, AXP803_COU_PERCENT, reg_value);
+			regmap_update_bits(bat_power->regmap, AXP803_CHARGE1, 0x80, 0);
+		} else if (rest_pct < 100) {
+			regmap_update_bits(bat_power->regmap, AXP803_CHARGE1, 0x80, 0x80);
+		}
+	} else if (chg_status) {
+		regmap_update_bits(bat_power->regmap, AXP803_CHARGE1, 0x80, 0x80);
+	}
 
 	/* debug info */
 	if (unlikely(axp_debug_mask & AXP_CHG)) {
