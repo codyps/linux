@@ -34,7 +34,7 @@ extern s32 axp_usb_vbus_output(int high);
 #endif
 
 #define  DMSG_ERR(format, args...)		pr_err("hci: "format, ##args)
-#define  DMSG_PRINT(stuff...)			printk(stuff)
+#define  DMSG_PRINT(stuff...)			pr_warn(stuff) /* Stock #860 severity. */
 
 #define HCI_USBC_NO     "hci_ctrl_no"
 
