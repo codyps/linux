@@ -13,9 +13,6 @@
 struct sunxi_lcd_drv g_lcd_drv;
 
 struct __lcd_panel *panel_array[] = {
-#ifdef CONFIG_LCD_SUPPORT_OTM1289A
-	&otm1289a_panel,
-#endif
 #ifdef CONFIG_EINK_PANEL_USED
 	&default_eink,
 #endif
@@ -118,12 +115,17 @@ struct __lcd_panel *panel_array[] = {
 #ifdef CONFIG_LCD_SUPPORT_BP101WX1_206
 	&bp101wx1_panel,
 #endif
+#ifdef CONFIG_LCD_SUPPORT_OTM1289A
+	&otm1289a_panel,
+#endif
 #ifdef CONFIG_LCD_SUPPORT_K101IM2QA04
 	&k101im2qa04_panel,
 #endif
 #ifdef CONFIG_LCD_SUPPORT_LT9611
 	&lt9611_panel,
 #endif
+	&cv101_800x1280_panel,
+	&boe101_800x1280_panel,
 	NULL,
 };
 

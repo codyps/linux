@@ -80,6 +80,8 @@ int lcd_init(void);
 
 extern struct __lcd_panel default_eink;
 extern struct __lcd_panel default_panel;
+extern struct __lcd_panel cv101_800x1280_panel;
+extern struct __lcd_panel boe101_800x1280_panel;
 extern struct __lcd_panel lt070me05000_panel;
 extern struct __lcd_panel wtq05027d01_panel;
 extern struct __lcd_panel t27p06_panel;

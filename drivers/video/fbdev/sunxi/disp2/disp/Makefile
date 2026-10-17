@@ -66,16 +66,11 @@ disp-$(CONFIG_EINK_PANEL_USED) += de/disp_eink_manager.o \
 		de/eink_buffer_manager.o de/eink_pipeline_manager.o \
 		de/disp_format_convert.o lcd/default_eink.o
 
-disp-objs += lcd/panels.o lcd/lcd_source.o lcd/default_panel.o \
-		lcd/lt070me05000.o lcd/wtq05027d01.o lcd/t27p06.o \
-		lcd/dx0960be40a1.o lcd/tft720x1280.o lcd/S6D7AA0X01.o \
-		lcd/cpu_gg1p4062utsw.o lcd/ls029b3sx02.o \
-		lcd/he0801a068.o lcd/inet_dsi_panel.o lcd/lq101r1sx03.o  \
-		lcd/WilliamLcd.o \
-		lcd/lt9611.o
 disp-objs += $(obj_low)
 
+disp-$(CONFIG_LCD_SUPPORT_K101IM2QA04) += lcd/k101im2qa04.o
+disp-$(CONFIG_LCD_SUPPORT_BP101WX1_206) += lcd/bp101wx1-206.o
 disp-$(CONFIG_LCD_SUPPORT_OTM1289A) += lcd/otm1289a.o
 
-disp-$(CONFIG_LCD_SUPPORT_BP101WX1_206) += lcd/bp101wx1-206.o
-disp-$(CONFIG_LCD_SUPPORT_K101IM2QA04) += lcd/k101im2qa04.o
+# Stock links only the selected panels, followed by these two TG3040 panels.
+disp-y += lcd/cv101_800x1280.o lcd/boe101_800x1280.o
