@@ -700,6 +700,7 @@ void sunxi_mmc_init_priv_v5p3x(struct sunxi_mmc_host *host,
 	struct sunxi_mmc_ver_priv *ver_priv =
 	    devm_kzalloc(&pdev->dev, sizeof(struct sunxi_mmc_ver_priv),
 			 GFP_KERNEL);
+	/* TODO: stock dereferences a failed allocation below without checking it. */
 	host->version_priv_dat = ver_priv;
 	ver_priv->mmc_clk_dly[mmc_clk_400k].cmod = mmc_clk_400k;
 	ver_priv->mmc_clk_dly[mmc_clk_400k].mod_str = "sunxi-dly-400k";
@@ -794,7 +795,8 @@ void sunxi_mmc_init_priv_v5p3x(struct sunxi_mmc_host *host,
 	host->sunxi_mmc_oclk_en = sunxi_mmc_oclk_onoff;
 	host->sunxi_mmc_judge_retry = sunxi_mmc_judge_retry_v5p3x;
 	/*sunxi_of_parse_clk_dly(host); */
-	if (mmc_readl(host, REG_SMCV) == SMHC_VERSION_V5P3) {
+	/* Stock applies the descriptor shift to this and all later revisions. */
+	if (mmc_readl(host, REG_SMCV) >= SMHC_VERSION_V5P3) {
 			host->des_addr_shift = 2;
 	}
 
