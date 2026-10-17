@@ -8,7 +8,11 @@
 #include "trimui-panel-tables.h"
 
 static char lcd_model_name[64] = "otm1289a";
-static const struct trimui_lcm_setting *active_table;
+/* Stock keeps the command arrays writable and caches the first selection.
+ * Prefix matches (including suffixed model names) and ignored I/O failures
+ * are intentional here; corrective validation belongs in a separate change.
+ */
+static struct trimui_lcm_setting *active_table;
 
 static int __init lcd_model_setup(char *value)
 {
@@ -22,7 +26,7 @@ static int __init lcd_model_setup(char *value)
 	}
 	return 1;
 }
-__setup("lcd_model_name=", lcd_model_setup);
+__setup("lcd=", lcd_model_setup);
 
 static void lcd_power_on(u32 sel)
 {
@@ -65,23 +69,35 @@ static void lcd_bl_close(u32 sel)
 
 static void lcd_panel_init(u32 sel)
 {
-	unsigned int i;
+	int i;
 
-	pr_info("jd9168:lcd panel init\n");
+	printk("jd9168:lcd panel init\n");
 	sunxi_lcd_dsi_clk_enable(sel);
 	if (!active_table) {
-		if (!strncmp(lcd_model_name, "gc9702c", 7))
+		printk("check_lcd_module[%s]\n", lcd_model_name);
+		if (!strncmp(lcd_model_name, "gc9702c", 7)) {
 			active_table = table_gc9702c;
-		else if (!strncmp(lcd_model_name, "otm1289a", 8))
+			printk("LCD gc9702c\n");
+		} else if (!strncmp(lcd_model_name, "otm1289a", 8)) {
 			active_table = table_otm1289a;
-		else if (!strncmp(lcd_model_name, "er68576", 7))
+			printk("LCD otm1289a\n");
+		} else if (!strncmp(lcd_model_name, "er68576", 7)) {
 			active_table = table_er68576;
-		else if (!strncmp(lcd_model_name, "st7703", 6))
+			printk("LCD er68576\n");
+		} else if (!strncmp(lcd_model_name, "st7703", 6)) {
 			active_table = table_st7703;
-		else
+			printk("LCD st7703\n");
+		} else if (!strncmp(lcd_model_name, "jd9168", 6)) {
 			active_table = table_jd9168;
+			printk("LCD jd9168\n");
+		} else {
+			active_table = table_jd9168;
+			printk("LCD default\n");
+		}
 	}
-	for (i = 0; active_table[i].count != 0xff; i++) {
+	for (i = 0; ; i++) {
+		if (active_table[i].count == 0xff)
+			break;
 		if (active_table[i].count == 0xfe)
 			sunxi_lcd_delay_ms(active_table[i].data[0]);
 		else
