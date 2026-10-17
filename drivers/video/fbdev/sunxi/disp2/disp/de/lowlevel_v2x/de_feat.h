@@ -432,6 +432,7 @@ struct de_feat {
 	const int *num_vi_chns;
 	const int *num_layers;
 	const int *is_support_vep;
+	const int *is_support_fcm;
 	const int *is_support_smbl;
 	const int *is_support_wb;
 	const int *supported_output_types;
@@ -457,6 +458,7 @@ int de_feat_is_supported_output_types(unsigned int disp,
 				      unsigned int output_type);
 int de_feat_is_support_wb(unsigned int disp);
 int de_feat_is_support_scale(unsigned int disp);
+int de_feat_is_support_fcm_by_chn(unsigned int disp, unsigned int chn);
 int de_feat_is_support_scale_by_chn(unsigned int disp, unsigned int chn);
 int de_feat_get_scale_linebuf(unsigned int disp);
 int de_feat_get_tcon_index(unsigned int tcon_index);
