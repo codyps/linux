@@ -492,9 +492,9 @@ static void xradio_get_mac_addrs(u8 *macaddr)
 #endif
 
 	/* TG3040 uses the authenticated board serial before the fallback policy. */
-	serial = get_unaligned_le32(gTrimuiSerialNumber) << 4;
 	macaddr[0] = 0xdc;
 	macaddr[1] = 0x44;
+	serial = get_unaligned_le32(gTrimuiSerialNumber) << 4;
 	macaddr[2] = 0x60 | (serial >> 24);
 	macaddr[3] = serial >> 16;
 	macaddr[4] = serial >> 8;
@@ -1054,7 +1054,7 @@ int xradio_core_reinit(struct xradio_common *hw_priv, int count)
 	xradio_pm_lock_awake(&hw_priv->pm_state);
 #endif
 
-	xradio_dbg(XRADIO_DBG_ALWY, "%s %d!\n", __func__, __LINE__);
+	xradio_dbg(XRADIO_DBG_ALWY, "%s %d!\n", __func__, 1078);
 
 	/* Disconnect with AP or STAs. */
 	xradio_for_each_vif(hw_priv, priv, i) {

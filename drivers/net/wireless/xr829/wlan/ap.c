@@ -2040,9 +2040,9 @@ static int xradio_update_beaconing(struct xradio_vif *priv)
 			wsm_unlock_tx(hw_priv);
 		} else
 			printk("ap started join_status: %d\n", priv->join_status);
-		printk("%s, %d\n", __func__, __LINE__);
+		printk("%s, %d\n", __FUNCTION__, 2048);
 	}
-	printk("%s, %d\n", __func__, __LINE__);
+	printk("%s, %d\n", __FUNCTION__, 2051); /* Stock's separate function-string object. */
 	return 0;
 }
 
