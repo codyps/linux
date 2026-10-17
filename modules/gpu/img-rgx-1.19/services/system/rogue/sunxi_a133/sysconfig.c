@@ -191,8 +191,11 @@ PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 
 void SysDevDeInit(PVRSRV_DEVICE_CONFIG *psDevConfig)
 {
+	PHYS_HEAP_CONFIG *pasPhysHeaps;
+
 	sunxi_platform_term();
-	OSFreeMem(psDevConfig->pasPhysHeaps);
+	pasPhysHeaps = psDevConfig->pasPhysHeaps;
+	OSFreeMem(pasPhysHeaps);
 	OSFreeMem(psDevConfig);
 }
 
