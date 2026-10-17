@@ -1022,12 +1022,11 @@ PVRSRVBridgeRGXSetComputeContextProperty(IMG_UINT32 ui32DispatchTableEntry,
 	/* Release now we have looked up handles. */
 	UnlockHandle(psConnection->psHandleBase);
 
-/*	psRGXSetComputeContextPropertyOUT->eError =
+	psRGXSetComputeContextPropertyOUT->eError =
 	    PVRSRVRGXSetComputeContextPropertyKM(psComputeContextInt,
 						 psRGXSetComputeContextPropertyIN->ui32Property,
 						 psRGXSetComputeContextPropertyIN->ui64Input,
 						 &psRGXSetComputeContextPropertyOUT->ui64Output);
-*/
 RGXSetComputeContextProperty_exit:
 
 	/* Lock over handle lookup cleanup. */
