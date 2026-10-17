@@ -2284,7 +2284,7 @@ static int disp_mem_request(int sel, u32 size)
 
 #if defined(CONFIG_SUNXI_IOMMU) && defined(CONFIG_ION_SUNXI)
 	if (sel >= DISP_MEM_NUM || !size) {
-		__wrn("invalid param\n");
+		DISP_STOCK_WRN(2283, "invalid param\n");
 		return -EINVAL;
 	}
 	g_disp_mm[sel].p_ion_mem = disp_ion_malloc(size, (u32 *)(&g_disp_mm[sel].mem_start));
@@ -2364,7 +2364,7 @@ static int disp_mem_release(int sel)
 {
 #if defined (CONFIG_SUNXI_IOMMU) && defined(CONFIG_ION_SUNXI)
 	if (!g_disp_mm[sel].info_base) {
-		__wrn("invalid param\n");
+		DISP_STOCK_WRN(2363, "invalid param\n");
 		return -EINVAL;
 	}
 	disp_ion_free((void *__force)g_disp_mm[sel].info_base,
@@ -3265,7 +3265,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 	if (copy_from_user
 	    ((void *)karg, (void __user *)arg, 4 * sizeof(unsigned long))) {
-		__wrn("copy_from_user fail\n");
+		DISP_STOCK_WRN(3260, "copy_from_user fail\n");
 		return -EFAULT;
 	}
 
@@ -3292,19 +3292,18 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 	if (cmd < DISP_FB_REQUEST) {
 		if (ubuffer[0] >= num_screens) {
-			__wrn
-			    ("para err, cmd = 0x%x,screen id = %d\n",
+			DISP_STOCK_WRN(3289, "para err, cmd = 0x%x,screen id = %d\n",
 			     cmd, (int)ubuffer[0]);
 			return -1;
 		}
 	}
 	if (DISPLAY_DEEP_SLEEP & suspend_status) {
-		__wrn("ioctl:%x fail when in suspend!\n", cmd);
+		DISP_STOCK_WRN(3294, "ioctl:%x fail when in suspend!\n", cmd);
 		return -1;
 	}
 
 	if (cmd == DISP_print)
-		__wrn("cmd:0x%x,%ld,%ld\n", cmd, ubuffer[0], ubuffer[1]);
+		DISP_STOCK_WRN(3299, "cmd:0x%x,%ld,%ld\n", cmd, ubuffer[0], ubuffer[1]);
 
 	switch (cmd) {
 		/* ----disp global---- */
@@ -3314,7 +3313,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 			if (copy_from_user(&para, (void __user *)ubuffer[1],
 			     sizeof(struct disp_color))) {
-				__wrn("copy_from_user fail\n");
+				DISP_STOCK_WRN(3309, "copy_from_user fail\n");
 				return -EFAULT;
 			}
 			if (mgr && (mgr->set_back_color != NULL))
@@ -3421,7 +3420,8 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			 * DISP_DEVICE_SWITCH request will not be responsed.
 			 */
 
-			mutex_lock(&g_disp_drv.mlock);
+			/* #860 does not take mlock on this ioctl path.  Preserve
+			 * that race; TODO: serialize device reconfiguration separately. */
 			if (!(suspend_status & DISPLAY_BLANK))
 				ret =
 				    bsp_disp_device_switch(ubuffer[0],
@@ -3431,7 +3431,6 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 #if defined(SUPPORT_TV) && defined(CONFIG_ARCH_SUN50IW2P1)
 			bsp_disp_tv_set_hpd(1);
 #endif
-			mutex_unlock(&g_disp_drv.mlock);
 		break;
 	}
 
@@ -3441,7 +3440,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 		if (copy_from_user(&config, (void __user *)ubuffer[1],
 			sizeof(struct disp_device_config))) {
-			__wrn("copy_from_user fail\n");
+			DISP_STOCK_WRN(3433, "copy_from_user fail\n");
 			return  -EFAULT;
 		}
 		suspend_output_type[ubuffer[0]] = config.type;
@@ -3462,7 +3461,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		if (ret == 0) {
 			if (copy_to_user((void __user *)ubuffer[1], &config,
 				sizeof(struct disp_device_config))) {
-				__wrn("copy_to_user fail\n");
+				DISP_STOCK_WRN(3454, "copy_to_user fail\n");
 				return  -EFAULT;
 			}
 		}
@@ -3577,7 +3576,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 			if (copy_to_user((void __user *)ubuffer[1], &para,
 			     sizeof(struct disp_output))) {
-				__wrn("copy_from_user fail\n");
+				DISP_STOCK_WRN(3569, "copy_from_user fail\n");
 				return -EFAULT;
 			}
 			break;
@@ -3610,7 +3609,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		mutex_lock(&g_disp_drv.mlock);
 
 		if (ubuffer[2] > lyr_cfg_size) {
-			__wrn("Total layer number is %d\n", lyr_cfg_size);
+			DISP_STOCK_WRN(3602, "Total layer number is %d\n", lyr_cfg_size);
 			mutex_unlock(&g_disp_drv.mlock);
 			return -EFAULT;
 		}
@@ -3618,7 +3617,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		if (copy_from_user(lyr_cfg,
 			(void __user *)ubuffer[1],
 			sizeof(struct disp_layer_config) * ubuffer[2]))	{
-			__wrn("copy_from_user fail\n");
+			DISP_STOCK_WRN(3610, "copy_from_user fail\n");
 			mutex_unlock(&g_disp_drv.mlock);
 
 			return  -EFAULT;
@@ -3644,7 +3643,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		if (copy_from_user(lyr_cfg,
 			(void __user *)ubuffer[1],
 			sizeof(struct disp_layer_config) * ubuffer[2]))	{
-			__wrn("copy_from_user fail\n");
+			DISP_STOCK_WRN(3636, "copy_from_user fail\n");
 
 			return  -EFAULT;
 		}
@@ -3653,7 +3652,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		if (copy_to_user((void __user *)ubuffer[1],
 			lyr_cfg,
 			sizeof(struct disp_layer_config) * ubuffer[2]))	{
-			__wrn("copy_to_user fail\n");
+			DISP_STOCK_WRN(3645, "copy_to_user fail\n");
 
 			return  -EFAULT;
 		}
@@ -3676,7 +3675,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		if (copy_from_user(pLyr_cfg2,
 		    (void __user *)ubuffer[1],
 		    sizeof(struct disp_layer_config2) * ubuffer[2])) {
-			__wrn("copy_from_user fail\n");
+			DISP_STOCK_WRN(3668, "copy_from_user fail\n");
 
 			return  -EFAULT;
 		}
@@ -3745,7 +3744,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		if (copy_from_user(lyr_cfg2,
 		    (void __user *)ubuffer[1],
 		    sizeof(struct disp_layer_config2) * ubuffer[2])) {
-			__wrn("copy_from_user fail\n");
+			DISP_STOCK_WRN(3737, "copy_from_user fail\n");
 
 			return  -EFAULT;
 		}
@@ -3754,7 +3753,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		if (copy_to_user((void __user *)ubuffer[1],
 			lyr_cfg2,
 			sizeof(struct disp_layer_config2) * ubuffer[2])) {
-			__wrn("copy_to_user fail\n");
+			DISP_STOCK_WRN(3746, "copy_to_user fail\n");
 
 			return  -EFAULT;
 		}
@@ -3782,7 +3781,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			u32 size = ubuffer[2];
 
 			if (gamma_tbl == NULL) {
-				__wrn("kmalloc fail\n");
+				DISP_STOCK_WRN(3774, "kmalloc fail\n");
 				ret = -EFAULT;
 				break;
 			}
@@ -3791,7 +3790,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			    LCD_GAMMA_TABLE_SIZE : size;
 			if (copy_from_user(gamma_tbl, (void __user *)ubuffer[1],
 					  size)) {
-				__wrn("copy_from_user fail\n");
+				DISP_STOCK_WRN(3783, "copy_from_user fail\n");
 				kfree(gamma_tbl);
 				ret = -EFAULT;
 
@@ -3829,7 +3828,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			u32 size = ubuffer[2];
 
 			if (gamma_tbl == NULL) {
-				__wrn("kmalloc fail\n");
+				DISP_STOCK_WRN(3821, "kmalloc fail\n");
 				ret = -EFAULT;
 				break;
 			}
@@ -3838,7 +3837,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			    LCD_GAMMA_TABLE_SIZE : size;
 			if (copy_from_user(gamma_tbl, (void __user *)ubuffer[1],
 					  size)) {
-				__wrn("copy_from_user fail\n");
+				DISP_STOCK_WRN(3830, "copy_from_user fail\n");
 				kfree(gamma_tbl);
 				ret = -EFAULT;
 
@@ -3936,7 +3935,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 			if (copy_from_user(&rect, (void __user *)ubuffer[1],
 			     sizeof(struct disp_rect))) {
-				__wrn("copy_from_user fail\n");
+				DISP_STOCK_WRN(3928, "copy_from_user fail\n");
 				return -EFAULT;
 			}
 			if (smbl && smbl->set_window)
@@ -3965,7 +3964,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 			if (copy_from_user(&info, (void __user *)ubuffer[1],
 			     sizeof(struct disp_capture_info))) {
-				__wrn("copy_from_user fail\n");
+				DISP_STOCK_WRN(3957, "copy_from_user fail\n");
 				return -EFAULT;
 			}
 			if (cptr && cptr->commmit)
@@ -3979,7 +3978,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		if (copy_from_user(&info,
 				   (void __user *)ubuffer[1],
 				   sizeof(struct disp_capture_info2)))	{
-			__wrn("copy_from_user fail\n");
+			DISP_STOCK_WRN(3971, "copy_from_user fail\n");
 			return  -EFAULT;
 		}
 		if (cptr && cptr->commmit2)
@@ -4081,13 +4080,13 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	case DISP_LCD_BACKLIGHT_ENABLE:
 		{
 			if (mgr && mgr->device) {
-				mutex_lock(&g_disp_drv.mlock);
+				/* #860 does not take mlock on this ioctl path.  Preserve
+			 * that race; TODO: serialize device reconfiguration separately. */
 				if (mgr->device->pwm_enable)
 					mgr->device->pwm_enable(mgr->device);
 				if (mgr->device->backlight_enable)
 					mgr->device->backlight_enable(mgr->device);
 
-				mutex_unlock(&g_disp_drv.mlock);
 
 				return 0;
 			}
@@ -4097,13 +4096,13 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	case DISP_LCD_BACKLIGHT_DISABLE:
 		{
 			if (mgr && mgr->device) {
-				mutex_lock(&g_disp_drv.mlock);
+				/* #860 does not take mlock on this ioctl path.  Preserve
+			 * that race; TODO: serialize device reconfiguration separately. */
 				if (mgr->device->pwm_disable)
 					mgr->device->pwm_disable(mgr->device);
 				if (mgr->device->backlight_disable)
 					mgr->device->backlight_disable(mgr->device);
 
-				mutex_unlock(&g_disp_drv.mlock);
 
 				return 0;
 			}
@@ -4117,7 +4116,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 			if (copy_from_user(&ksc, (void __user *)ubuffer[1],
 					   sizeof(struct disp_ksc_info))) {
-				__wrn("copy_from_user fail\n");
+				DISP_STOCK_WRN(4102, "copy_from_user fail\n");
 				return  -EFAULT;
 			}
 			if (mgr && mgr->set_ksc_para)
