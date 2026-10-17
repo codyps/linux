@@ -190,3 +190,11 @@ config LCD_SUPPORT_LT9611
 config LCD_SUPPORT_OTM1289A
 	bool "TrimUI multi-panel driver recovered from Brick #860"
 	default n
+
+config LCD_SUPPORT_BP101WX1_206
+	bool "LCD support bp101wx1-206 panel"
+	default y
+
+config LCD_SUPPORT_K101IM2QA04
+	bool "LCD support K101IM2QA04 panel"
+	default y
