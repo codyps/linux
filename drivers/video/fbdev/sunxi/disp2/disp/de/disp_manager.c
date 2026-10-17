@@ -2454,6 +2454,12 @@ static s32 disp_mgr_force_apply(struct disp_manager *mgr)
 	return 0;
 }
 
+void disp_pq_force_flush(int screen_id)
+{
+	if (mgrs && screen_id < bsp_disp_feat_get_num_screens())
+		disp_mgr_force_apply(&mgrs[screen_id]);
+}
+
 static s32 disp_mgr_enable(struct disp_manager *mgr)
 {
 	unsigned long flags;

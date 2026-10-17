@@ -1318,3 +1318,9 @@ int de_feat_exit(void)
 {
 	return 0;
 }
+
+/* The TG3040 A133 feature table advertises no FCM channels. */
+int de_feat_is_support_fcm_by_chn(unsigned int disp, unsigned int chn)
+{
+	return 0;
+}
