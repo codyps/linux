@@ -566,10 +566,64 @@ phy_has_fixups_show(struct device *dev, struct device_attribute *attr,
 }
 static DEVICE_ATTR_RO(phy_has_fixups);
 
+static ssize_t
+phy_registers_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	struct phy_device *phydev = to_phy_device(dev);
+	int index;
+
+	for (index = 0; index < 32; index++)
+		sprintf(buf, "%s%2d: 0x%x\n", buf, index,
+			phy_read(phydev, index));
+
+	return strlen(buf);
+}
+
+static ssize_t
+phy_registers_store(struct device *dev,
+		    struct device_attribute *attr,
+		    const char *buf, size_t count)
+{
+	struct phy_device *phydev = to_phy_device(dev);
+	int index, val;
+	int i;
+	char tmp[32];
+
+	for (i = 0; i < count; i++) {
+		if (*(buf + i) == ' ')
+			break;
+	}
+
+	memset(tmp, 0, sizeof(tmp));
+	strncpy(tmp, buf, i);
+	if (kstrtoint(tmp, 0, &index)) {
+		pr_err("wrong register index input\n");
+		pr_err("usage: <reg index> <value>\n");
+		return count;
+	}
+
+	memset(tmp, 0, sizeof(tmp));
+	strncpy(tmp, buf + i + 1, strlen(buf) - i - 1);
+	if (kstrtoint(tmp, 0, &val)) {
+		pr_err("wrong register value input\n");
+		pr_err("usage: <reg index> <value>\n");
+		return count;
+	}
+
+	pr_info("Set Ethernet PHY register %d to 0x%x\n", (int)index, (int)val);
+
+	phy_write(phydev, index, val);
+
+	return count;
+}
+
+static DEVICE_ATTR_RW(phy_registers);
+
 static struct attribute *phy_dev_attrs[] = {
 	&dev_attr_phy_id.attr,
 	&dev_attr_phy_interface.attr,
 	&dev_attr_phy_has_fixups.attr,
+	&dev_attr_phy_registers.attr,
 	NULL,
 };
 ATTRIBUTE_GROUPS(phy_dev);
@@ -1786,8 +1840,59 @@ void phy_drivers_unregister(struct phy_driver *drv, int n)
 }
 EXPORT_SYMBOL(phy_drivers_unregister);
 
+#define PHY_ID_RTL8211F 0x001cc916
+#define PHY_ID_RTL_MASK 0x00ffffff
+#define PHY_REG_DEBUG_ADDR 0x1e
+#define PHY_REG_DEBUG_DATA 0x1f
+#define LED_CFG_PAGE 0x0d04
+#define LED_CFG_REG_ADDR 0x10
+#define LED_CFG_REG_VAL 0x0f51
+
+static int rtl8211f_led_init(struct phy_device *phydev)
+{
+	int ret;
+
+	ret = phy_write(phydev, PHY_REG_DEBUG_DATA, LED_CFG_PAGE);
+	if (ret < 0)
+		return ret;
+
+	ret = phy_write(phydev, LED_CFG_REG_ADDR, LED_CFG_REG_VAL);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+
+static int rtl8211f_config_init(struct phy_device *phydev)
+{
+	int ret;
+
+	ret = genphy_config_init(phydev);
+	if (ret < 0)
+		return ret;
+
+	ret = rtl8211f_led_init(phydev);
+
+
+	return ret;
+}
+
 static struct phy_driver genphy_driver[] = {
 {
+	.phy_id		= PHY_ID_RTL8211F,
+	.phy_id_mask	= PHY_ID_RTL_MASK,
+	.name		= "RTL8211F PHY",
+	.soft_reset	= genphy_no_soft_reset,
+	.config_init	= rtl8211f_config_init,
+	.features	= PHY_GBIT_FEATURES | SUPPORTED_MII |
+			  SUPPORTED_AUI | SUPPORTED_FIBRE |
+			  SUPPORTED_BNC,
+	.config_aneg	= genphy_config_aneg,
+	.aneg_done	= genphy_aneg_done,
+	.read_status	= genphy_read_status,
+	.suspend	= genphy_suspend,
+	.resume		= genphy_resume,
+}, {
 	.phy_id		= 0xffffffff,
 	.phy_id_mask	= 0xffffffff,
 	.name		= "Generic PHY",

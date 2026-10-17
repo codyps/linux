@@ -48,6 +48,9 @@
 #define HCI_DEV_CLOSE			8
 #define HCI_DEV_SETUP			9
 
+#define HCI_DEV_WAKEUP      10
+#define HCI_DEV_SLEEP       11
+
 /* HCI notify events */
 #define HCI_NOTIFY_CONN_ADD		1
 #define HCI_NOTIFY_CONN_DEL		2

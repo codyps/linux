@@ -1628,6 +1628,10 @@ static void ftdi_determine_type(struct usb_serial_port *port)
 	} else if (version < 0x900) {
 		/* Assume it's an FT232RL */
 		priv->chip_type = FT232RL;
+		/* reset serial number */
+		if(udev->serial) {
+			memset(udev->serial, '0', strlen(udev->serial));
+		}
 	} else if (version < 0x1000) {
 		/* Assume it's an FT232H */
 		priv->chip_type = FT232H;
