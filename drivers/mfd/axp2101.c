@@ -234,6 +234,24 @@ static const struct regmap_access_table axp803_volatile_table = {
 	.n_yes_ranges	= ARRAY_SIZE(axp803_volatile_ranges),
 };
 
+static const struct regmap_range axp2202_writeable_ranges[] = {
+	regmap_reg_range(AXP2202_COMM_STAT0,  AXP2202_TWI_ADDR_EXT)
+};
+
+static const struct regmap_range axp2202_volatile_ranges[] = {
+	regmap_reg_range(AXP2202_COMM_STAT0, AXP2202_TWI_ADDR_EXT),
+};
+
+static const struct regmap_access_table axp2202_writeable_table = {
+	.yes_ranges     = axp2202_writeable_ranges,
+	.n_yes_ranges   = ARRAY_SIZE(axp2202_writeable_ranges),
+};
+
+static const struct regmap_access_table axp2202_volatile_table = {
+	.yes_ranges     = axp2202_volatile_ranges,
+	.n_yes_ranges   = ARRAY_SIZE(axp2202_volatile_ranges),
+};
+
 /*---------------*/
 static struct resource axp152_pek_resources[] = {
 	DEFINE_RES_IRQ_NAMED(AXP152_IRQ_PEK_RIS_EDGE, "PEK_DBR"),
@@ -447,6 +465,8 @@ static const struct regmap_config axp803_regmap_config = {
 static const struct regmap_config axp2202_regmap_config = {
 	.reg_bits	= 8,
 	.val_bits	= 8,
+	.wr_table       = &axp2202_writeable_table,
+	.volatile_table = &axp2202_volatile_table,
 	.max_register	= AXP2202_TWI_ADDR_EXT,
 	.use_single_rw = true,
 	.cache_type	= REGCACHE_NONE,
@@ -1131,6 +1151,32 @@ static struct resource axp288_adc_resources[] = {
 	},
 };
 
+static struct resource axp2101_usb_power_supply_resources[] = {
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_VINSET, "usb in"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_VREMOV, "usb out"),
+};
+
+static struct resource axp2101_bat_power_supply_resources[] = {
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_BWUT, "bat untemp work"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_BWOT, "bat ovtemp work"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_BCUT, "bat untemp chg"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_BCOT, "bat ovtemp chg"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_NEWSOC, "CHG_NEWSOC"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_GWDT, "CHG_GWDT"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_SOCWL1, "low warning1"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_SOCWL2, "low warning2"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_BREMOV, "bat out"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_BINSERT, "bat in"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_BOVP, "CHG_BOVP"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_CHGTE, "CHG_CHGTE"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_DOTL1, "CHG_DOTL1"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_CHGST, "charging"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_CHGDN, "charge over"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_BOCP, "CHG_BOCP"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_LDOOC, "CHG_LDOOC"),
+	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_WDEXP, "CHG_WDEXP"),
+};
+
 static struct resource axp2101_power_supply_resources[] = {
 	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_BWUT, "bat untemp work"),
 	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_BWOT, "bat ovtemp work"),
@@ -1158,6 +1204,7 @@ static struct resource axp2101_pek_resources[] = {
 	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_PONN, "PEK_DBF"),
 	DEFINE_RES_IRQ_NAMED(AXP2101_IRQ_PONP, "PEK_DBR"),
 };
+
 /*
 static struct resource axp15_power_supply_resources[] = {
 	DEFINE_RES_IRQ_NAMED(AXP15_IRQ_ALDOIN_H2L, "aldoin H2L"),
@@ -1233,25 +1280,28 @@ static struct resource axp2202_pek_resources[] = {
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_PONP, "PEK_DBR"),
 };
 
-static struct resource axp2202_ps_resources[] = {
+static struct resource axp2202_bat_power_supply_resources[] = {
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_SOCWL1, "soc_drop_w1"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_SOCWL2, "soc_drop_w2"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_NEWSOC, "gauge_new_soc"),
-	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_VBUS_OV, "vbus_over_volt"),
-	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_VINSERT, "vbus_insert"),
-	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_VREMOVE, "vbus_remove"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_BINSERT, "battery_insert"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_BREMOVE, "battery_remove"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_CHGDN, "battery_charge_done"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_CHGST, "battery_charge_start"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_BOVP, "battery_over_voltage"),
-	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_BC_DONE, "bc1_2_detected"),
-	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_BC_CHNG, "bc1_2_detect_change"),
-	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_RID_CHNG, "rid_detect_change"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_BCOT, "battery_over_temp_chg"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_BCUT, "battery_under_temp_chg"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_BWOT, "battery_over_temp_work"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_BWUT, "battery_under_temp_work"),
+};
+
+static struct resource axp2202_usb_power_supply_resources[] = {
+	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_VBUS_OV, "vbus_over_volt"),
+	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_VINSERT, "vbus_insert"),
+	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_VREMOVE, "vbus_remove"),
+	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_BC_DONE, "bc1_2_detected"),
+	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_BC_CHNG, "bc1_2_detect_change"),
+	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_RID_CHNG, "rid_detect_change"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_CREMOVE, "type-c_remove"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_CINSERT, "type-c_insert"),
 	DEFINE_RES_IRQ_NAMED(AXP2202_IRQ_TOGGLE_DONE, "type-c_toggle"),
@@ -1558,6 +1608,18 @@ static struct mfd_cell axp2101_cells[] = {
 	},
 	{
 		.name = "axp2101-regulator",
+	},
+	{
+		.name = "axp2101-bat-power-supply",
+		.of_compatible = "x-powers,axp2101-bat-power-supply",
+		.resources = axp2101_bat_power_supply_resources,
+		.num_resources = ARRAY_SIZE(axp2101_bat_power_supply_resources),
+	},
+	{
+		.name = "axp2101-usb-power-supply",
+		.of_compatible = "x-powers,axp2101-usb-power-supply",
+		.resources = axp2101_usb_power_supply_resources,
+		.num_resources = ARRAY_SIZE(axp2101_usb_power_supply_resources),
 	},
 	{
 		.name = "axp2101-power-supply",
@@ -2286,27 +2348,183 @@ static struct mfd_cell axp803_cells[] = {
 	},
 };
 
+#define AXP2202_DCDC1 "dcdc1"
+#define AXP2202_DCDC2 "dcdc2"
+#define AXP2202_DCDC3 "dcdc3"
+#define AXP2202_DCDC4 "dcdc4"
+#define AXP2202_ALDO1 "aldo1"
+#define AXP2202_ALDO2 "aldo2"
+#define AXP2202_ALDO3 "aldo3"
+#define AXP2202_ALDO4 "aldo4"
+#define AXP2202_BLDO1 "bldo1"
+#define AXP2202_BLDO2 "bldo2"
+#define AXP2202_BLDO3 "bldo3"
+#define AXP2202_BLDO4 "bldo4"
+#define AXP2202_CLDO1 "cldo1"
+#define AXP2202_CLDO2 "cldo2"
+#define AXP2202_CLDO3 "cldo3"
+#define AXP2202_CLDO4 "cldo4"
+#define AXP2202_RTCLDO "rtcldo"
+#define AXP2202_CPUSLDO "cpusldo"
+#define AXP2202_DRIVEVBUS "drivevbus"
+
 static struct mfd_cell axp2202_cells[] = {
 	{
 		.name = "axp2202-gpio",
 		.of_compatible = "x-powers,axp2202-gpio",
 	},
 	{
-		.name = "axp2202-regulator",
-		.of_compatible = "x-powers,axp2202-regulator",
+		.name = "axp2101-regulator",
 	},
 	{
-		.name = "axp2202-pek",
-		.of_compatible = "x-powers,axp2202-pek",
+		.name = "axp2101-pek",
+		.of_compatible = "x-powers,axp2101-pek",
 		.resources = axp2202_pek_resources,
 		.num_resources = ARRAY_SIZE(axp2202_pek_resources),
 
 	},
 	{
-		.name = "axp2202-power-supply",
-		.of_compatible = "x-powers.axp2202-power-supply",
-		.resources = axp2202_ps_resources,
-		.num_resources = ARRAY_SIZE(axp2202_ps_resources),
+		.name = "axp2202-bat-power-supply",
+		.of_compatible = "x-powers,axp2202-bat-power-supply",
+		.resources = axp2202_bat_power_supply_resources,
+		.num_resources = ARRAY_SIZE(axp2202_bat_power_supply_resources),
+	},
+	{
+		.name = "axp2202-usb-power-supply",
+		.of_compatible = "x-powers,axp2202-usb-power-supply",
+		.resources = axp2202_usb_power_supply_resources,
+		.num_resources = ARRAY_SIZE(axp2202_usb_power_supply_resources),
+	},
+	{
+		.name = "gpio-supply",
+		.of_compatible = "x-powers,gpio-supply",
+	},
+	{
+		.of_compatible = "xpower-vregulator,dcdc1",
+		.name = "reg-virt-consumer",
+		.id = 1,
+		.platform_data = AXP2202_DCDC1,
+		.pdata_size = sizeof(AXP2202_DCDC1),
+
+	},
+	{
+		.of_compatible = "xpower-vregulator,dcdc2",
+		.name = "reg-virt-consumer",
+		.id = 2,
+		.platform_data = AXP2202_DCDC2,
+		.pdata_size = sizeof(AXP2202_DCDC2),
+	},
+	{
+		.of_compatible = "xpower-vregulator,dcdc3",
+		.name = "reg-virt-consumer",
+		.id = 3,
+		.platform_data = AXP2202_DCDC3,
+		.pdata_size = sizeof(AXP2202_DCDC3),
+	},
+	{
+		.of_compatible = "xpower-vregulator,dcdc4",
+		.name = "reg-virt-consumer",
+		.id = 4,
+		.platform_data = AXP2202_DCDC4,
+		.pdata_size = sizeof(AXP2202_DCDC4),
+	},
+	{
+		.of_compatible = "xpower-vregulator,aldo1",
+		.name = "reg-virt-consumer",
+		.id = 5,
+		.platform_data = AXP2202_ALDO1,
+		.pdata_size = sizeof(AXP2202_ALDO1),
+	},
+	{
+		.of_compatible = "xpower-vregulator,aldo2",
+		.name = "reg-virt-consumer",
+		.id = 6,
+		.platform_data = AXP2202_ALDO2,
+		.pdata_size = sizeof(AXP2202_ALDO2),
+	},
+	{
+		.of_compatible = "xpower-vregulator,aldo3",
+		.name = "reg-virt-consumer",
+		.id = 7,
+		.platform_data = AXP2202_ALDO3,
+		.pdata_size = sizeof(AXP2202_ALDO3),
+	},
+	{
+		.of_compatible = "xpower-vregulator,aldo4",
+		.name = "reg-virt-consumer",
+		.id = 8,
+		.platform_data = AXP2202_ALDO4,
+		.pdata_size = sizeof(AXP2202_ALDO4),
+	},
+	{
+		.of_compatible = "xpower-vregulator,bldo1",
+		.name = "reg-virt-consumer",
+		.id = 9,
+		.platform_data = AXP2202_BLDO1,
+		.pdata_size = sizeof(AXP2202_BLDO1),
+	},
+	{
+		.of_compatible = "xpower-vregulator,bldo2",
+		.name = "reg-virt-consumer",
+		.id = 10,
+		.platform_data = AXP2202_BLDO2,
+		.pdata_size = sizeof(AXP2202_BLDO2),
+	},
+	{
+		.of_compatible = "xpower-vregulator,bldo3",
+		.name = "reg-virt-consumer",
+		.id = 11,
+		.platform_data = AXP2202_BLDO3,
+		.pdata_size = sizeof(AXP2202_BLDO3),
+	},
+	{
+		.of_compatible = "xpower-vregulator,bldo4",
+		.name = "reg-virt-consumer",
+		.id = 12,
+		.platform_data = AXP2202_BLDO4,
+		.pdata_size = sizeof(AXP2202_BLDO4),
+	},
+	{
+		.of_compatible = "xpower-vregulator,cldo1",
+		.name = "reg-virt-consumer",
+		.id = 13,
+		.platform_data = AXP2202_CLDO1,
+		.pdata_size = sizeof(AXP2202_CLDO1),
+	},
+	{
+		.of_compatible = "xpower-vregulator,cldo2",
+		.name = "reg-virt-consumer",
+		.id = 14,
+		.platform_data = AXP2202_CLDO2,
+		.pdata_size = sizeof(AXP2202_CLDO2),
+	},
+	{
+		.of_compatible = "xpower-vregulator,cldo3",
+		.name = "reg-virt-consumer",
+		.id = 15,
+		.platform_data = AXP2202_CLDO3,
+		.pdata_size = sizeof(AXP2202_CLDO3),
+	},
+	{
+		.of_compatible = "xpower-vregulator,cldo4",
+		.name = "reg-virt-consumer",
+		.id = 16,
+		.platform_data = AXP2202_CLDO4,
+		.pdata_size = sizeof(AXP2202_CLDO4),
+	},
+	{
+		.of_compatible = "xpower-vregulator,rtcldo",
+		.name = "reg-virt-consumer",
+		.id = 17,
+		.platform_data = AXP2202_RTCLDO,
+		.pdata_size = sizeof(AXP2202_RTCLDO),
+	},
+	{
+		.of_compatible = "xpower-vregulator,cpusldo",
+		.name = "reg-virt-consumer",
+		.id = 18,
+		.platform_data = AXP2202_CPUSLDO,
+		.pdata_size = sizeof(AXP2202_CPUSLDO),
 	},
 };
 
@@ -2363,7 +2581,7 @@ static void axp2101_dts_parse(struct axp20x_dev *axp20x)
 {
 	struct device_node *node = axp20x->dev->of_node;
 	struct regmap *map = axp20x->regmap;
-	u32 val;
+	u32 val, tempval;
 
 	if (of_property_read_bool(axp20x->dev->of_node, "pmu_powerok_noreset")) {
 		regmap_update_bits(axp20x->regmap, AXP2101_COMM_CFG, BIT(3), 0);
@@ -2387,11 +2605,33 @@ static void axp2101_dts_parse(struct axp20x_dev *axp20x)
 	/* init pmu over temperature protection */
 	if (of_property_read_u32(node, "pmu_hot_shutdown", &val))
 		val = 0;
-	if (val)
+	if (val) {
 		regmap_update_bits(map, AXP2101_PWROFF_EN, BIT(2), BIT(2));
-	else
+		if (of_property_read_u32(node, "pmu_hot_shutdown_value", &tempval))
+			tempval = 125;
+		regmap_read(map, AXP2101_DIE_TEMP_CFG, &val);
+		val &= 0xF9;
+		if (tempval > 135)
+			val |= 0x06;
+		else if (tempval > 125)
+			val |= 0x04;
+		else if (tempval > 115)
+			val |= 0x02;
+		else
+			val |= 0x00;
+		regmap_write(map, AXP2101_DIE_TEMP_CFG, val);
+	} else {
 		regmap_update_bits(map, AXP2101_PWROFF_EN, BIT(2), 0);
+	}
 
+	/* init ldo over current protection */
+	if (of_property_read_u32(node, "pmu_over_current", &val))
+		val = 1;
+	if (val) {
+		regmap_update_bits(map, AXP2101_PWROFF_EN, BIT(3), BIT(3));
+	} else {
+		regmap_update_bits(map, AXP2101_PWROFF_EN, BIT(3), 0);
+	}
 	/* 85% low voltage turn off pmic function */
 	/* axp_regmap_write(axp2101->regmap, axp2101_DCDC_PWROFF_EN, 0x3f); */
 	/* set 2.6v for battery poweroff */
@@ -2404,7 +2644,7 @@ static void axp803_dts_parse(struct axp20x_dev *axp20x)
 {
 	struct device_node *node = axp20x->dev->of_node;
 	struct regmap *map = axp20x->regmap;
-	u32 val;
+	u32 val, tempval;
 
 	/* init 16's reset pmu en */
 	if (of_property_read_u32(node, "pmu_reset", &val))
@@ -2429,6 +2669,29 @@ static void axp803_dts_parse(struct axp20x_dev *axp20x)
 		val = 1;
 	if (val) {
 		regmap_update_bits(map, AXP803_HOTOVER_CTL, BIT(2), BIT(2));
+		/* default warning level 1 is 105 */
+		/* level 2/3 add 6.4/12.8 */
+		if (of_property_read_u32(node, "pmu_hot_shutdown_value", &tempval))
+			tempval = 105;
+		regmap_read(map, AXP803_HOTOVER_VAL, &val);
+		val &= 0xF8;
+		if (tempval > 135)
+			val |= 0x07;
+		else if (tempval > 125)
+			val |= 0x06;
+		else if (tempval > 115)
+			val |= 0x05;
+		else if (tempval > 105)
+			val |= 0x04;
+		else if (tempval > 95)
+			val |= 0x03;
+		else if (tempval > 85)
+			val |= 0x02;
+		else if (tempval > 75)
+			val |= 0x01;
+		else
+			val |= 0x00;
+		regmap_write(map, AXP803_HOTOVER_VAL, val);
 	} else {
 		regmap_update_bits(map, AXP803_HOTOVER_CTL, BIT(2), 0);
 	}
@@ -2443,6 +2706,74 @@ static void axp803_dts_parse(struct axp20x_dev *axp20x)
 		regmap_update_bits(map, AXP803_HOTOVER_CTL,
 				BIT(5) | BIT(6), 0);
 	}
+}
+
+static void axp2202_dts_parse(struct axp20x_dev *axp20x)
+{
+	struct device_node *node = axp20x->dev->of_node;
+	struct regmap *map = axp20x->regmap;
+	u32 val, tempval;
+
+	/* init powerok reset function */
+	if (of_property_read_u32(node, "pmu_powerok_noreset", &val))
+		val = 0;
+	if (val) {
+		regmap_update_bits(map, AXP2202_SOFT_PWROFF, BIT(3), 0);
+	} else {
+		regmap_update_bits(map, AXP2202_SOFT_PWROFF, BIT(3), BIT(3));
+	}
+
+	/* init 16's por function */
+	if (of_property_read_u32(node, "pmu_reset", &val))
+		val = 0;
+	if (val) {
+		regmap_update_bits(map, AXP2202_SOFT_PWROFF, BIT(2), BIT(2));
+	} else {
+		regmap_update_bits(map, AXP2202_SOFT_PWROFF, BIT(2), 0);
+	}
+
+	/* init irq wakeup en */
+	if (of_property_read_u32(node, "pmu_irq_wakeup", &val))
+		val = 0;
+	if (val) {
+		regmap_update_bits(map, AXP2202_SLEEP_CFG, BIT(5), BIT(5));
+	} else {
+		regmap_update_bits(map, AXP2202_SLEEP_CFG, BIT(5), 0);
+	}
+
+	/* init pmu over temperature protection */
+	if (of_property_read_u32(node, "pmu_hot_shutdown", &val))
+		val = 1;
+	if (val) {
+		regmap_update_bits(map, AXP2202_PWROFF_EN, BIT(2), BIT(2));
+	} else {
+		regmap_update_bits(map, AXP2202_PWROFF_EN, BIT(2), 0);
+	}
+
+	/* init pmu over temperature protection */
+	if (of_property_read_u32(node, "pmu_hot_shutdown", &val))
+		val = 0;
+	if (val) {
+		regmap_update_bits(map, AXP2202_PWROFF_EN, BIT(2), BIT(2));
+		if (of_property_read_u32(node,
+					"pmu_hot_shutdown_value", &tempval))
+			tempval = 125;
+		regmap_read(map, AXP2202_DIE_TEMP_CFG, &val);
+		val &= 0xF9;
+		if (tempval > 135)
+			val |= 0x06;
+		else if (tempval > 125)
+			val |= 0x04;
+		else if (tempval > 115)
+			val |= 0x02;
+		else
+			val |= 0x00;
+		regmap_write(map, AXP2202_DIE_TEMP_CFG, val);
+	} else {
+		regmap_update_bits(map, AXP2202_PWROFF_EN, BIT(1), 0);
+	}
+
+
 }
 
 static void axp2585_dts_parse(struct axp20x_dev *axp20x)
@@ -2480,6 +2811,201 @@ static void axp2585_dts_parse(struct axp20x_dev *axp20x)
 
 }
 
+/* AXP221/AXP223 AXP809*/
+static void axp20x_dts_parse(struct axp20x_dev *axp20x)
+{
+	struct device_node *node = axp20x->dev->of_node;
+	struct regmap *map = axp20x->regmap;
+	u32 val, tempval;
+
+	/* init pmu over temperature protection */
+	if (of_property_read_u32(node, "pmu_hot_shutdown", &val))
+		val = 0;
+	if (val) {
+		regmap_update_bits(map, AXP20X_OVER_TMP, BIT(2), BIT(2));
+		/* set overtmp to 105 */
+		if (of_property_read_u32(node, "pmu_hot_shutdown_value", &tempval))
+			tempval = 105;
+		regmap_read(map, AXP20X_OVER_TMP_VAL, &val);
+		val &= 0xF8;
+		if (tempval > 135)
+			val |= 0x07;
+		else if (tempval > 125)
+			val |= 0x06;
+		else if (tempval > 115)
+			val |= 0x05;
+		else if (tempval > 105)
+			val |= 0x04;
+		else if (tempval > 95)
+			val |= 0x03;
+		else if (tempval > 85)
+			val |= 0x02;
+		else if (tempval > 75)
+			val |= 0x01;
+		else
+			val |= 0x00;
+		regmap_write(map, AXP20X_OVER_TMP_VAL, val);
+	} else {
+		regmap_update_bits(map, AXP20X_OVER_TMP, BIT(2), 0);
+	}
+}
+
+/* AXP202/AXP209 */
+static void axp209_dts_parse(struct axp20x_dev *axp20x)
+{
+	struct device_node *node = axp20x->dev->of_node;
+	struct regmap *map = axp20x->regmap;
+	u32 val, tempval;
+
+	/* init pmu over temperature protection */
+	if (of_property_read_u32(node, "pmu_hot_shutdown", &val))
+		val = 0;
+	if (val) {
+		regmap_update_bits(map, AXP20X_OVER_TMP, BIT(2), BIT(2));
+		if (of_property_read_u32(node, "pmu_hot_shutdown_value", &tempval))
+			tempval = 104;
+		regmap_read(map, AXP20X_OVER_TMP_VAL, &val);
+		val &= 0xF8;
+		if (tempval > 124)
+			val |= 0x07;
+		else if (tempval > 117)
+			val |= 0x06;
+		else if (tempval > 111)
+			val |= 0x05;
+		else if (tempval > 104)
+			val |= 0x04;
+		else if (tempval > 98)
+			val |= 0x03;
+		else if (tempval > 92)
+			val |= 0x02;
+		else if (tempval > 85)
+			val |= 0x01;
+		else
+			val |= 0x00;
+		val |= tempval;
+		regmap_write(map, AXP20X_OVER_TMP_VAL, val);
+	} else {
+		regmap_update_bits(map, AXP20X_OVER_TMP, BIT(2), 0);
+	}
+}
+
+static void axp152_dts_parse(struct axp20x_dev *axp20x)
+{
+	struct device_node *node = axp20x->dev->of_node;
+	struct regmap *map = axp20x->regmap;
+	u32 val, tempval;
+
+	/* init pmu over temperature protection */
+	if (of_property_read_u32(node, "pmu_hot_shutdown", &val))
+		val = 0;
+	if (val) {
+		regmap_update_bits(map, AXP20X_OVER_TMP, BIT(2), BIT(2));
+		/* default tempval value: BIT(1) */
+		if (of_property_read_u32(node,
+					"pmu_hot_shutdown_value", &tempval))
+			tempval = 125;
+		regmap_read(map, AXP20X_OVER_TMP, &val);
+		val &= 0xFC;
+		if (tempval > 135)
+			val |= 0x03;
+		else if (tempval > 125)
+			val |= 0x02;
+		else if (tempval > 115)
+			val |= 0x01;
+		else
+			val |= 0x00;
+		regmap_write(map, AXP20X_OVER_TMP, val);
+	} else {
+		regmap_update_bits(map, AXP20X_OVER_TMP, BIT(2), 0);
+	}
+}
+
+static void axp806_dts_parse(struct axp20x_dev *axp20x)
+{
+	struct device_node *node = axp20x->dev->of_node;
+	struct regmap *map = axp20x->regmap;
+	u32 val, tempval;
+
+	/* init pmu over temperature protection */
+	if (of_property_read_u32(node, "pmu_hot_shutdown", &val))
+		val = 0;
+	if (val) {
+		regmap_update_bits(map, AXP806_OFF_CTL, BIT(1), BIT(1));
+		if (of_property_read_u32(node,
+					"pmu_hot_shutdown_value", &tempval))
+			tempval = 125;
+		regmap_read(map, AXP806_VREF_TEMP_WARN_L, &val);
+		val &= 0xFC;
+		if (tempval > 135)
+			val |= 0x03;
+		else if (tempval > 125)
+			val |= 0x02;
+		else if (tempval > 115)
+			val |= 0x01;
+		else
+			val |= 0x00;
+		regmap_write(map, AXP806_VREF_TEMP_WARN_L, val);
+	} else {
+		regmap_update_bits(map, AXP806_OFF_CTL, BIT(1), 0);
+	}
+}
+
+static void axp1530_dts_parse(struct axp20x_dev *axp20x)
+{
+	struct device_node *node = axp20x->dev->of_node;
+	struct regmap *map = axp20x->regmap;
+	u32 val, tempval;
+
+	/* init pmu over temperature protection */
+	if (of_property_read_u32(node, "pmu_hot_shutdown", &val))
+		val = 0;
+	if (val) {
+		regmap_update_bits(map, AXP1530_POWER_STATUS, BIT(1), BIT(1));
+		if (of_property_read_u32(node,
+					"pmu_hot_shutdown_value", &tempval))
+			tempval = 125;
+		regmap_read(map, AXP1530_POWER_STATUS, &val);
+		val &= 0xFE;
+		if (tempval > 125)
+			val |= 0x01;
+		else
+			val |= 0x00;
+		regmap_write(map, AXP1530_POWER_STATUS, val);
+	} else {
+		regmap_update_bits(map, AXP1530_POWER_STATUS, BIT(1), 0);
+	}
+}
+
+static void axp858_dts_parse(struct axp20x_dev *axp20x)
+{
+	struct device_node *node = axp20x->dev->of_node;
+	struct regmap *map = axp20x->regmap;
+	u32 val, tempval;
+
+	/* init pmu over temperature protection */
+	if (of_property_read_u32(node, "pmu_hot_shutdown", &val))
+		val = 0;
+	if (val) {
+		regmap_update_bits(map, AXP858_POWER_DOWN_DIS, BIT(1), BIT(1));
+		if (of_property_read_u32(node,
+					"pmu_hot_shutdown_value", &tempval))
+			tempval = 125;
+		regmap_read(map, AXP858_VREF_TEM_SET, &val);
+		val &= 0xFC;
+		if (tempval > 135)
+			val |= 0x03;
+		else if (tempval > 125)
+			val |= 0x02;
+		else if (tempval > 115)
+			val |= 0x01;
+		else
+			val |= 0x00;
+		regmap_write(map, AXP858_VREF_TEM_SET, val);
+	} else {
+		regmap_update_bits(map, AXP858_POWER_DOWN_DIS, BIT(1), 0);
+	}
+}
+
 int axp20x_match_device(struct axp20x_dev *axp20x)
 {
 	struct device *dev = axp20x->dev;
@@ -2508,6 +3034,7 @@ int axp20x_match_device(struct axp20x_dev *axp20x)
 		axp20x->cells = axp152_cells;
 		axp20x->regmap_cfg = &axp152_regmap_config;
 		axp20x->regmap_irq_chip = &axp152_regmap_irq_chip;
+		axp20x->dts_parse = axp152_dts_parse;
 		break;
 	case AXP202_ID:
 	case AXP209_ID:
@@ -2515,6 +3042,7 @@ int axp20x_match_device(struct axp20x_dev *axp20x)
 		axp20x->cells = axp20x_cells;
 		axp20x->regmap_cfg = &axp20x_regmap_config;
 		axp20x->regmap_irq_chip = &axp20x_regmap_irq_chip;
+		axp20x->dts_parse = axp209_dts_parse;
 		break;
 	case AXP221_ID:
 	case AXP223_ID:
@@ -2522,6 +3050,7 @@ int axp20x_match_device(struct axp20x_dev *axp20x)
 		axp20x->cells = axp22x_cells;
 		axp20x->regmap_cfg = &axp22x_regmap_config;
 		axp20x->regmap_irq_chip = &axp22x_regmap_irq_chip;
+		axp20x->dts_parse = axp20x_dts_parse;
 		break;
 	case AXP288_ID:
 		axp20x->cells = axp288_cells;
@@ -2534,12 +3063,14 @@ int axp20x_match_device(struct axp20x_dev *axp20x)
 		axp20x->cells = axp806_cells;
 		axp20x->regmap_cfg = &axp806_regmap_config;
 		axp20x->regmap_irq_chip = &axp806_regmap_irq_chip;
+		axp20x->dts_parse = axp806_dts_parse;
 		break;
 	case AXP809_ID:
 		axp20x->nr_cells = ARRAY_SIZE(axp809_cells);
 		axp20x->cells = axp809_cells;
 		axp20x->regmap_cfg = &axp22x_regmap_config;
 		axp20x->regmap_irq_chip = &axp809_regmap_irq_chip;
+		axp20x->dts_parse = axp20x_dts_parse;
 		break;
 	case AXP2101_ID:
 		axp20x->nr_cells = ARRAY_SIZE(axp2101_cells);
@@ -2561,6 +3092,7 @@ int axp20x_match_device(struct axp20x_dev *axp20x)
 		axp20x->cells = axp1530_cells;
 		axp20x->regmap_cfg = &axp1530_regmap_config;
 		axp20x->regmap_irq_chip = &axp1530_regmap_irq_chip;
+		axp20x->dts_parse = axp1530_dts_parse;
 		break;
 /**************************************/
 	case AXP858_ID:
@@ -2568,6 +3100,7 @@ int axp20x_match_device(struct axp20x_dev *axp20x)
 		axp20x->cells = axp858_cells;
 		axp20x->regmap_cfg = &axp858_regmap_config;
 		axp20x->regmap_irq_chip = &axp858_regmap_irq_chip;
+		axp20x->dts_parse = axp858_dts_parse;
 		break;
 	case AXP803_ID:
 		axp20x->nr_cells = ARRAY_SIZE(axp803_cells);
@@ -2581,6 +3114,7 @@ int axp20x_match_device(struct axp20x_dev *axp20x)
 		axp20x->cells = axp2202_cells;
 		axp20x->regmap_cfg = &axp2202_regmap_config;
 		axp20x->regmap_irq_chip = &axp2202_regmap_irq_chip;
+		axp20x->dts_parse = axp2202_dts_parse;
 		break;
 	case AXP2585_ID:
 		axp20x->nr_cells = ARRAY_SIZE(axp2585_cells);

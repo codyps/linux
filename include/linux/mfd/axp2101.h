@@ -283,6 +283,10 @@ extern int axp_debug_mask;
 #define AXP20X_OCV(m)			(0xc0 + (m))
 #define AXP20X_OCV_MAX			0xf
 
+/* Hot shutdoen */
+
+#define AXP20X_OVER_TMP_VAL		0xf3
+
 /* AXP22X specific registers */
 #define AXP22X_BATLOW_THRES1		0xe6
 
@@ -694,6 +698,7 @@ extern int axp_debug_mask;
 #define AXP803_DISIBATH_REG        (0x7C)
 #define AXP803_DCDC_MODESET        (0x80)
 #define AXP803_ADC_EN              (0x82)
+#define AXP803_TS_PIN_CTRL         (0x84)
 #define AXP803_ADC_SPEED_SET       (0x85)
 #define AXP803_HOTOVER_CTL         (0x8F)
 #define AXP803_GPIO0_CTL           (0x90)
@@ -725,6 +730,7 @@ extern int axp_debug_mask;
 #define AXP803_WARNING_LEVEL       (0xE6)
 #define AXP803_ADJUST_PARA         (0xE8)
 #define AXP803_ADJUST_PARA1        (0xE9)
+#define AXP803_HOTOVER_VAL         (0xF3)
 #define AXP803_REG_ADDR_EXT        (0xFF)
 
 /*
@@ -739,13 +745,14 @@ extern int axp_debug_mask;
 #define AXP2202_COMM_FAULT          (0x08)
 #define AXP2202_ICO_CFG             (0x0a)
 #define AXP2202_CLK_EN              (0x0b)
+#define AXP2202_VBUS_TYPE           (0x0f)
 
 #define AXP2202_COMM_CFG            (0x10)
 #define AXP2202_BATFET_CTRL         (0x12)
 #define AXP2202_RBFET_CTRL          (0x13)
 #define AXP2202_DIE_TEMP_CFG        (0x14)
 #define AXP2202_VSYS_MIN            (0x15)
-#define AXP2202_VIMDPM_CFG          (0x16)
+#define AXP2202_VINDPM_CFG          (0x16)
 #define AXP2202_IIN_LIM             (0x17)
 #define AXP2202_RESET_CFG           (0x18)
 #define AXP2202_MODULE_EN           (0x19)
@@ -851,7 +858,7 @@ extern int axp_debug_mask;
 #define AXP2202_GAUGE_IP_VER        (0xa0)
 #define AXP2202_GAUGE_BROM          (0xa1)
 #define AXP2202_GAUGE_CONFIG        (0xa2)
-#define AXP2202_GAUGE_TEMPERATURE   (0xa3)
+#define AXP2202_GAUGE_TEMP   (0xa3)
 #define AXP2202_GAUGE_SOC           (0xa4)
 #define AXP2202_GAUGE_TIME2EMPTY_H  (0xa6)
 #define AXP2202_GAUGE_TIME2EMPTY_L  (0xa7)
@@ -1128,7 +1135,7 @@ enum {
 	AXP858_CLDO3,
 	AXP858_CLDO4,
 	AXP858_CPUSLDO,
-	AXP858_SW,
+	AXP858_DC1SW,
 	AXP858_REG_ID_MAX,
 };
 
@@ -1466,7 +1473,7 @@ enum {
 	AXP2202_DCDC1 = 0,
 	AXP2202_DCDC2,
 	AXP2202_DCDC3,
-	AXP2202_CPUSLDO,
+	AXP2202_DCDC4,
 	AXP2202_ALDO1,
 	AXP2202_ALDO2,
 	AXP2202_ALDO3,
@@ -1479,8 +1486,9 @@ enum {
 	AXP2202_CLDO2,
 	AXP2202_CLDO3,
 	AXP2202_CLDO4,
+	AXP2202_RTCLDO,
+	AXP2202_CPUSLDO,
 	AXP2202_REG_ID_MAX,
-	AXP2202_VBUS,
 };
 
 enum axp2202_irqs {

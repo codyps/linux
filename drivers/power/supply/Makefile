@@ -82,3 +82,6 @@ obj-$(CONFIG_AXP288_CHARGER)	+= axp288_charger.o
 obj-$(CONFIG_AW_AXP)		+= axp/
 obj-$(CONFIG_CHARGER_SY6974)	+= sy6974_charger.o
 obj-$(CONFIG_BATTERY_CW2015)	+= cw2015_battery.o
+
+obj-$(CONFIG_AXP2202_POWER) += axp2202_usb_power.o axp2202_battery.o
+obj-$(CONFIG_AXP2202_GPIO_POWER) += axp2202_gpio_power.o
