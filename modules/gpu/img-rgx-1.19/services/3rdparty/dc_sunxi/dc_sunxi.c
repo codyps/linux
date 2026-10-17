@@ -449,7 +449,6 @@ PVRSRV_ERROR DC_SUNXI_BufferAlloc(IMG_HANDLE hDisplayContext,
 								  DC_BUFFER_CREATE_INFO *psCreateInfo,
 								  IMG_DEVMEM_LOG2ALIGN_T *puiLog2PageSize,
 								  IMG_UINT32 *pui32PageCount,
-								  IMG_UINT32 *pui32PhysHeapID,
 								  IMG_UINT32 *pui32ByteStride,
 								  IMG_HANDLE *phBuffer)
 {
@@ -490,7 +489,6 @@ PVRSRV_ERROR DC_SUNXI_BufferAlloc(IMG_HANDLE hDisplayContext,
 
 	*puiLog2PageSize = PAGE_SHIFT;
 	*pui32PageCount	 = BYTE_TO_PAGES(ui32ByteSize);
-	*pui32PhysHeapID = DC_PHYS_HEAP_ID;
 	*pui32ByteStride = psBuffer->ui32ByteStride;
 	*phBuffer	 = psBuffer;
 

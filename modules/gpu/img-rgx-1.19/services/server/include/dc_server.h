@@ -39,8 +39,8 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */ /***************************************************************************/
 
-#ifndef _DC_SERVER_H_
-#define _DC_SERVER_H_
+#ifndef DC_SERVER_H
+#define DC_SERVER_H
 
 #include "img_types.h"
 #include "pvrsrv_error.h"
@@ -49,13 +49,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "kerneldisplay.h"
 #include "sync_server.h"
 
+#include "dc_external.h"
+
 #define DC_MAX_DEVICE_COUNT		(1)
 #define DC_MAX_PANEL_COUNT		(1)
 #define DC_MAX_FORMATS			(1)
 #define DC_MAX_DIMENSIONS		(1)
 #define DC_MAX_PIPE_COUNT		(1)
-#define DC_MAX_SRV_SYNC_COUNT	(1)
-#define DC_MAX_PLANES			(4)
 
 typedef struct _DC_DEVICE_ DC_DEVICE;
 typedef struct _DC_DISPLAY_CONTEXT_ DC_DISPLAY_CONTEXT;
@@ -124,7 +124,6 @@ PVRSRV_ERROR DCDisplayContextConfigureCheck(DC_DISPLAY_CONTEXT *psDisplayContext
 											DC_BUFFER **papsBuffers);
 
 PVRSRV_ERROR DCDisplayContextConfigure(DC_DISPLAY_CONTEXT *psDisplayContext,
-									   IMG_UINT32 ui32ClientCacheOpSeqNum,
 									   IMG_UINT32 ui32PipeCount,
 									   PVRSRV_SURFACE_CONFIG_INFO *pasSurfAttrib,
 									   DC_BUFFER **papsBuffers,
@@ -160,6 +159,8 @@ PVRSRV_ERROR DCBufferPin(DC_BUFFER *psBuffer, DC_PIN_HANDLE *phPin);
 
 PVRSRV_ERROR DCBufferUnpin(DC_PIN_HANDLE hPin);
 
+PVRSRV_ERROR DCResetDevice(DC_DEVICE *psDevice);
+
 PVRSRV_ERROR DCInit(void);
 PVRSRV_ERROR DCDeInit(void);
 
@@ -169,4 +170,4 @@ IMG_UINT32 DCDeviceGetIndex(IMG_HANDLE hDevice);
 IMG_HANDLE DCDeviceGetDeviceAtIndex(IMG_UINT32 ui32DeviceIndex);
 #endif
 
-#endif /*_DC_SERVER_H_  */
+#endif /*DC_SERVER_H  */

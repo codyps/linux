@@ -100,3 +100,16 @@ TG3040 #860 module DWARF, rather than matching the reported DDK version alone.
 `sonic_pad_os` commit `7f37a7fbf4ad59907034715e3d967b9177de1cd4`, under
 `lichee/linux-4.9/modules/gpu/img-rgx/linux/rogue_km/`; its handle implementation
 interface matches this DDK's header. The source remains dual MIT/GPLv2.
+
+The stock display-class ABI differs from the imported modern kernel port.
+Its DWARF describes a 208-byte `_DC_DEVICE_` with a physical heap pointer and
+list node, plus the 176-byte callback table with `pfnResetDevice`. The matching
+DC implementation and generated bridge were recovered from the related public
+`licy007/myir-semidrive-linux` commit
+`c96cc8f345885b92d84ac52fc917b4329f8ee791`, path `drivers/gpu/rogue_km/`.
+That source tree reports DDK 1.18@6276027; this is a component-level source
+match, not a claim that the entire stock module is version 1.18. The imported
+DC files are adapted to this tree's PhysHeapAcquireByID and void PMR-finalize
+interfaces. Restoring the callback signatures also removes the extra heap-ID
+argument from the Sunxi buffer-allocation callback. All 141 shared layouts
+compared in the DC compilation unit match the stock module's DWARF.
