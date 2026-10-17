@@ -188,6 +188,63 @@ static int sun50i_h616_ths_calibrate(struct ths_device *tmdev,
 	return 0;
 }
 
+
+/* #860 uses the SID revision-dependent trim path for the four-sensor part. */
+static int sun50i_h616_ths_calibrate_wrap(struct ths_device *tmdev,
+					u16 *caldata, int callen)
+{
+	struct device *dev = tmdev->dev;
+	struct nvmem_device *sid;
+	u16 version;
+	u32 trim;
+	int i, reference;
+
+	sid = devm_nvmem_device_get(dev, "sid");
+	if (IS_ERR(sid)) {
+		if (PTR_ERR(sid) == -EPROBE_DEFER)
+			return PTR_ERR(sid);
+		return sun50i_h616_ths_calibrate(tmdev, caldata, callen);
+	}
+
+	/* Stock ignores read errors and may use uninitialized version/trim.
+	 * TODO: validate reads and lengths as a separate change.
+	 */
+	nvmem_device_read(sid, 0, sizeof(version), &version);
+	switch (version) {
+	case 0x2400:
+	case 0x2c00:
+	case 0x7400:
+	case 0x7c00: {
+		nvmem_device_read(sid, 0x1c, sizeof(trim), &trim);
+		if (!trim) {
+			devm_nvmem_device_put(dev, sid);
+			return 0;
+		}
+		reference = ((trim >> 24) & 0x3f) + 2;
+		for (i = 0; i < tmdev->chip->sensor_num; i++) {
+			int sample = (trim >> (i * 6)) & 0x3f;
+			int cdata = CALIBRATE_DEFAULT +
+				(sample - reference) * 12401 / -1000;
+			int offset = (i % 2) * 16;
+
+			regmap_update_bits(tmdev->regmap,
+				SUN50I_H616_THS_TEMP_CALIB + (i / 2 * 4),
+				0xfff << offset, cdata << offset);
+		}
+		/* Stock ignores write errors and leaves has_calibration unchanged.
+		 * TODO: handle failed writes separately.
+		 */
+		devm_nvmem_device_put(dev, sid);
+		return 0;
+	}
+	default:
+		break;
+	}
+
+	devm_nvmem_device_put(dev, sid);
+	return sun50i_h616_ths_calibrate(tmdev, caldata, callen);
+}
+
 static int sunxi_ths_calibrate(struct ths_device *tmdev)
 {
 	struct nvmem_cell *calcell;
@@ -366,7 +423,7 @@ static const struct ths_thermal_chip sun50iw9p1_ths = {
 	.scale = -81,
 	.ft_deviation = 8000,
 	.temp_data_base = SUN50I_H616_THS_TEMP_DATA,
-	.calibrate = sun50i_h616_ths_calibrate,
+	.calibrate = sun50i_h616_ths_calibrate_wrap,
 	.init = sun50i_h616_thermal_init,
 };
 
