@@ -886,14 +886,14 @@ static int __init do_initcall_level(int level, bool parallel_level)
 	char *thread_name;
 	static int initcall_count;
 	int initcall_paralell_devices = 0;
-
+	/* Stock formats the table-slot address (fn), not its callback (*fn). */
 	strcpy(initcall_command_line, saved_command_line);
 	parse_args(initcall_level_names[level],
 		   initcall_command_line, __start___param,
 		   __stop___param - __start___param,
 		   level, level,
 		   NULL, &repair_env_string);
-
+	/* TODO: unwind failed workers/free names; #860 parallel level 6 is empty. */
 	if (true == parallel_level) {
 		for (fn = initcall_levels[level]; fn < initcall_levels[level+1]; fn++) {
 			++initcall_paralell_devices;
