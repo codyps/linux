@@ -242,9 +242,7 @@ static ssize_t store_led_enable(struct class *class, struct class_attribute *att
 	return count;
 }
 
-static const char * const trimui_effect_names[] = {
-	"disable", "linear", "breath", "sniff", "static", "blink1", "blink2", "blink3",
-};
+
 
 static ssize_t help_show_effect(struct class *class, struct class_attribute *attr, char *buffer)
 {
