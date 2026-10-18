@@ -618,7 +618,10 @@ void *sunxi_alloc_lli(struct sunxi_dmadev *sdev, u32 *phy_addr)
 	struct sunxi_dma_lli *l_item;
 	dma_addr_t phy;
 
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 626
 	WARN_TAINT(!sdev->lli_pool, TAINT_WARN, "The dma pool is empty!!\n");
+#line 622
 	if (unlikely(!sdev->lli_pool))
 		return NULL;
 

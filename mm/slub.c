@@ -4743,9 +4743,15 @@ static ssize_t show_slab_objects(struct kmem_cache *s,
 			if (page) {
 				node = page_to_nid(page);
 				if (flags & SO_TOTAL)
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 4743
 					WARN_ON_ONCE(1);
+#line 4747
 				else if (flags & SO_OBJECTS)
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 4745
 					WARN_ON_ONCE(1);
+#line 4749
 				else
 					x = page->pages;
 				total += x;
@@ -5576,7 +5582,10 @@ static char *create_unique_id(struct kmem_cache *s)
 	char *name = kmalloc(ID_STR_LENGTH, GFP_KERNEL);
 	char *p = name;
 
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 5576
 	BUG_ON(!name);
+#line 5580
 
 	*p++ = ':';
 	/*
@@ -5600,7 +5609,10 @@ static char *create_unique_id(struct kmem_cache *s)
 		*p++ = '-';
 	p += sprintf(p, "%07d", s->size);
 
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 5600
 	BUG_ON(p > name + ID_STR_LENGTH - 1);
+#line 5604
 	return name;
 }
 

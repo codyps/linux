@@ -821,7 +821,10 @@ void sid_efuse_key_rd(struct efuse_key_map *key_map, void *buf, u32 n)
 	u32 *dst = (u32 *)buf;
 
 	key_size = key_map->size / 8;
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 852
 	WARN_ON(key_size & 3);
+#line 825
 	if (remainder > key_size)
 		remainder = key_size;
 
@@ -851,7 +854,10 @@ s32 sunxi_efuse_readn(void *key_name, void *buf, u32 n)
 				key_name, buf, n);
 		return -EINVAL;
 	}
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 882
 	WARN_ON(n < 4);
+#line 855
 
 	/* Confirm the readable attribute. */
 	for (; key_map->name[0] != 0; key_map++) {

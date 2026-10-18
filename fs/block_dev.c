@@ -1590,7 +1590,10 @@ static void __blkdev_put(struct block_device *bdev, fmode_t mode, int for_part)
 		bdev->bd_part_count--;
 
 	if (!--bdev->bd_openers) {
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 1594
 		WARN_ON_ONCE(bdev->bd_holders);
+#line 1594
 		sync_blockdev(bdev);
 		kill_bdev(bdev);
 
@@ -1639,8 +1642,14 @@ void blkdev_put(struct block_device *bdev, fmode_t mode)
 		 */
 		spin_lock(&bdev_lock);
 
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 1643
 		WARN_ON_ONCE(--bdev->bd_holders < 0);
+#line 1643
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 1644
 		WARN_ON_ONCE(--bdev->bd_contains->bd_holders < 0);
+#line 1644
 
 		/* bd_contains might point to self, check in a separate step */
 		if ((bdev_free = !bdev->bd_holders))

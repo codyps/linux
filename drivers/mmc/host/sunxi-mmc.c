@@ -1164,9 +1164,18 @@ static void sunxi_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 	};
 	static const char * const drv_type[] = { "B", "A", "C", "D" };
 
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 1166
 	WARN_ON(ios->bus_mode >= ARRAY_SIZE(bus_mode));
+#line 1168
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 1167
 	WARN_ON(ios->power_mode >= ARRAY_SIZE(pwr_mode));
+#line 1169
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 1168
 	WARN_ON(ios->timing >= ARRAY_SIZE(timing));
+#line 1170
 	dev_info(mmc_dev(mmc),
 		 "sdc set ios:clk %dHz bm %s pm %s vdd %d width %d timing %s dt %s\n",
 		 ios->clock, bus_mode[ios->bus_mode],

@@ -893,7 +893,10 @@ int add_nand_blktrans_dev(struct nand_blk_dev *dev)
 
 	if (!down_trylock(&nand_mutex)) {
 		up(&nand_mutex);
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 1185
 		BUG();
+#line 897
 	}
 
 	list_for_each(this, &tr->devs)
@@ -1114,7 +1117,10 @@ void nand_blk_unregister(struct nand_blk_ops *tr)
 	up(&nand_mutex);
 
 	if (!list_empty(&tr->devs))
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 1406
 		BUG();
+#line 1118
 }
 
 /****************************************************************************

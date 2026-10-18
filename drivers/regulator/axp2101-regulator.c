@@ -1101,7 +1101,10 @@ static int axp20x_set_dcdc_workmode(struct regulator_dev *rdev, int id, u32 work
 		break;
 	default:
 		/* should not happen */
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 1070
 		WARN_ON(1);
+#line 1105
 		return -EINVAL;
 	}
 

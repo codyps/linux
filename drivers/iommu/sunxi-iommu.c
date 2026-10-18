@@ -295,12 +295,18 @@ static int sunxi_alloc_iopte(u32 *sent, int prot)
 	flags |= (prot & IOMMU_WRITE) ? DENT_WRITABLE : 0;
 
 	pent = kmem_cache_zalloc(iopte_cache, GFP_ATOMIC);
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 297
 	WARN_ON((unsigned long)pent & (PT_SIZE - 1));
+#line 299
 	if (!pent) {
 		SUNXI_IOMMU_STOCK_ERR(299, "%s, %d, malloc failed!\n", __func__, __LINE__);
 		return 0;
 	}
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 302
 	*sent = __pa(pent) | DENT_VALID;
+#line 304
 	__dma_flush_area(sent, sizeof(*sent));
 
 	return 1;
@@ -364,7 +370,10 @@ static int sunxi_iommu_map(struct iommu_domain *domain, unsigned long iova,
 	int i, j;
 	int flush_count = 0;
 
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 366
 	WARN_ON(sunxi_domain->pgtable == NULL);
+#line 368
 	iova_start = iova & IOMMU_PT_MASK;
 	paddr_start = paddr & IOMMU_PT_MASK;
 	iova_end = SPAGE_ALIGN(iova+size) - SPAGE_SIZE;
@@ -378,7 +387,10 @@ static int sunxi_iommu_map(struct iommu_domain *domain, unsigned long iova,
 		for (flush_count = 0; iova_start <= iova_end;
 			iova_start += SPAGE_SIZE, paddr_start += SPAGE_SIZE) {
 			pent = iopte_offset(dent, iova_start);
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 380
 			WARN_ON(*pent);
+#line 382
 			*pent = sunxi_mk_pte(paddr_start, prot);
 			++flush_count;
 		}
@@ -393,7 +405,10 @@ static int sunxi_iommu_map(struct iommu_domain *domain, unsigned long iova,
 		for (flush_count = 0; iova_start < SPDE_ALIGN(s_iova_start + 1);
 			iova_start += SPAGE_SIZE, paddr_start += SPAGE_SIZE) {
 			pent = iopte_offset(dent, iova_start);
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 395
 			WARN_ON(*pent);
+#line 397
 			*pent = sunxi_mk_pte(paddr_start, prot);
 			++flush_count;
 		}
@@ -421,7 +436,10 @@ static int sunxi_iommu_map(struct iommu_domain *domain, unsigned long iova,
 	for (flush_count = 0; iova_start <= iova_end;
 			iova_start += SPAGE_SIZE, paddr_start += SPAGE_SIZE) {
 		pent = iopte_offset(dent, iova_start);
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 423
 		WARN_ON(*pent);
+#line 425
 		*pent = sunxi_mk_pte(paddr_start, prot);
 		++flush_count;
 	}
@@ -652,7 +670,10 @@ static size_t sunxi_iommu_unmap(struct iommu_domain *domain, unsigned long iova,
 	int i;
 	int flush_count = 0;
 
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 654
 	WARN_ON(sunxi_domain->pgtable == NULL);
+#line 656
 	iova_start = iova & IOMMU_PT_MASK;
 	iova_end = SPAGE_ALIGN(iova+size) - SPAGE_SIZE;
 	s_iova_start = iova_start;
@@ -766,7 +787,10 @@ sunxi_convert_sg_to_table(struct iommu_domain *domain,
 		/*
 		 * sg_next maybe return NULL, check the cur point in it
 		 */
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 768
 		WARN_ON(IS_ERR_OR_NULL(cur));
+#line 770
 		phys = page_to_phys(sg_page(cur));
 		length = PAGE_ALIGN(cur->offset + cur->length);
 
@@ -775,7 +799,10 @@ sunxi_convert_sg_to_table(struct iommu_domain *domain,
 		cur = sg_next(cur);
 		total_length += length;
 #if !defined(CONFIG_ARM)
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 777
 		WARN_ON(total_length > MAX_SG_SIZE);
+#line 779
 		++j;
 #endif
 	}
@@ -794,8 +821,14 @@ sunxi_iommu_map_sg(struct iommu_domain *domain, unsigned long iova,
 	int flush_count = 0;
 	size_t total_size = 0;
 
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 796
 	WARN_ON(sunxi_domain->pgtable == NULL);
+#line 798
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 797
 	WARN_ON(IS_ERR_OR_NULL(sg));
+#line 799
 	iova_start = iova & IOMMU_PT_MASK;
 	paddr_start = sunxi_domain->sg_buffer;
 	s_iova_start = iova_start;
@@ -815,7 +848,10 @@ sunxi_iommu_map_sg(struct iommu_domain *domain, unsigned long iova,
 		for (flush_count = 0; iova_start <= iova_end;
 				iova_start += SPAGE_SIZE, paddr_start++) {
 			pent = iopte_offset(dent, iova_start);
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 817
 			WARN_ON(*pent);
+#line 819
 			*pent = sunxi_mk_pte(*paddr_start, prot);
 			++flush_count;
 		}
@@ -830,7 +866,10 @@ sunxi_iommu_map_sg(struct iommu_domain *domain, unsigned long iova,
 		for (flush_count = 0; iova_start < SPDE_ALIGN(s_iova_start + 1);
 				iova_start += SPAGE_SIZE, paddr_start++) {
 			pent = iopte_offset(dent, iova_start);
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 832
 			WARN_ON(*pent);
+#line 834
 			*pent = sunxi_mk_pte(*paddr_start, prot);
 			++flush_count;
 		}
@@ -858,7 +897,10 @@ sunxi_iommu_map_sg(struct iommu_domain *domain, unsigned long iova,
 	for (flush_count = 0; iova_start <= iova_end;
 			iova_start += SPAGE_SIZE, paddr_start++) {
 		pent = iopte_offset(dent, iova_start);
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 860
 		WARN_ON(*pent);
+#line 862
 		*pent = sunxi_mk_pte(*paddr_start, prot);
 		++flush_count;
 	}
@@ -880,7 +922,10 @@ sunxi_iommu_iova_to_phys(struct iommu_domain *domain, dma_addr_t iova)
 	u32 *dent, *pent;
 	phys_addr_t ret = 0;
 
+/* Keep the source line reported by the stock BUG/WARN record. */
+#line 882
 	WARN_ON(sunxi_domain->pgtable == NULL);
+#line 884
 	mutex_lock(&sunxi_domain->dt_lock);
 	dent = iopde_offset(sunxi_domain->pgtable, iova);
 	if (IS_VALID(*dent)) {
