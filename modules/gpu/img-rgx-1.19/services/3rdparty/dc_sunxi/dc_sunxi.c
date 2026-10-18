@@ -1,3 +1,5 @@
+/* Preserve the stock display-class BUG diagnostic source locations. */
+#line 1 "/home2/trimuidev/tg3040/tina_1.1.1/lichee/linux-4.9/modules/gpu/img-rgx/linux/rogue_km/binary_sunxi_linux_nullws_release/target_aarch64/kbuild/services/3rdparty/dc_sunxi/dc_sunxi.c"
 /*************************************************************************/ /*!
 @File
 @Copyright      Copyright (c) Imagination Technologies Ltd. All Rights Reserved
@@ -330,7 +332,9 @@ void DC_SUNXI_ContextConfigure(IMG_HANDLE hDisplayContext,
 
 	if (ui32PipeCount != 0)
 	{
+#line 332
 		BUG_ON(ahBuffers == NULL);
+#line 334
 
 		if (psDeviceData->bCanFlip)
 		{
@@ -404,7 +408,9 @@ void DC_SUNXI_ContextDestroy(IMG_HANDLE hDisplayContext)
 {
 	DC_SUNXI_CONTEXT *psDeviceContext = hDisplayContext;
 
+#line 406
 	BUG_ON(psDeviceContext->hLastConfigData != NULL);
+#line 408
 	kfree(psDeviceContext);
 }
 
@@ -514,7 +520,9 @@ PVRSRV_ERROR DC_SUNXI_BufferAcquire(IMG_HANDLE hBuffer,
 
 	for (i = 0; i < BYTE_TO_PAGES(ui32ByteSize); i++)
 	{
+#line 531
 		BUG_ON(i * PAGE_SIZE >= ui32MaxLen);
+#line 518
 		pasDevPAddr[i].uiAddr = uiStartAddr + (i * PAGE_SIZE);
 #if defined(DC_SUNXI_USE_SCREEN_BASE)
 		pasDevPAddr[i].uiAddr =
