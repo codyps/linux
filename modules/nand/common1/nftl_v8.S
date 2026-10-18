@@ -665,20 +665,23 @@ nftl_support_boot_check_crc_from_dts:
 	.size	nftl_support_boot_check_crc_from_dts, .-nftl_support_boot_check_crc_from_dts
 	.section	.rodata
 	.align	3
+/* Stock #860 reports NFTL 5.0.000, built 2020.12.24 at 09:50.
+ * Keep both the printed metadata and get_nftl_version copy lengths.
+ */
 .LC10:
-	.string	"17:53"
+	.string	"09:50"
 	.align	3
 .LC11:
-	.string	"2020.09.28"
+	.string	"2020.12.24"
 	.align	3
 .LC12:
-	.string	"006"
+	.string	"000"
 	.align	3
 .LC13:
-	.string	"7"
+	.string	"0"
 	.align	3
 .LC14:
-	.string	"3"
+	.string	"5"
 	.align	3
 .LC15:
 	.string	"sunxi nftl version %s.%s.%s  %s-%s\n"
