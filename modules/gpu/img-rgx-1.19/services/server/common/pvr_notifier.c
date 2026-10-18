@@ -1,3 +1,5 @@
+/* Preserve the source pathname emitted by the stock BUG/WARN diagnostics. */
+#line 1 "/home2/trimuidev/tg3040/tina_1.1.1/lichee/linux-4.9/modules/gpu/img-rgx/linux/rogue_km/binary_sunxi_linux_nullws_release/target_aarch64/kbuild/services/server/common/pvr_notifier.c"
 /*************************************************************************/ /*!
 @File
 @Title          PowerVR notifier interface

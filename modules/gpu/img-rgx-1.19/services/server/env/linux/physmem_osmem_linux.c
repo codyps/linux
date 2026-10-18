@@ -1,3 +1,5 @@
+/* Preserve the source pathname emitted by the stock BUG/WARN diagnostics. */
+#line 1 "/home2/trimuidev/tg3040/tina_1.1.1/lichee/linux-4.9/modules/gpu/img-rgx/linux/rogue_km/binary_sunxi_linux_nullws_release/target_aarch64/kbuild/services/server/env/linux/physmem_osmem_linux.c"
 /*************************************************************************/ /*!
 @File
 @Title          Implementation of PMR functions for OS managed memory
@@ -3026,7 +3028,9 @@ PMRSysPhysAddrOSMem(PMR_IMPL_PRIVDATA pvPriv,
 							" [0; %" IMG_UINT64_FMTSPECX "]", __func__,
 							psDevPAddr[uiIdx].uiAddr,
 							psOSPageArrayData->ui64DmaMask));
+#line 3027
 					BUG();
+#line 3030
 				}
 			}
 #endif

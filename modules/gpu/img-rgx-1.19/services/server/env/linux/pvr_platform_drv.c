@@ -1,3 +1,5 @@
+/* Preserve the source pathname emitted by the stock BUG/WARN diagnostics. */
+#line 1 "/home2/trimuidev/tg3040/tina_1.1.1/lichee/linux-4.9/modules/gpu/img-rgx/linux/rogue_km/binary_sunxi_linux_nullws_release/target_aarch64/kbuild/services/server/env/linux/pvr_platform_drv.c"
 /*
  * @File
  * @Title       PowerVR DRM platform driver
@@ -181,7 +183,9 @@ static int pvr_probe(struct platform_device *pdev)
 	 * because of potential race conditions. Calling the function here,
 	 * before calling drm_dev_register, avoids those potential races.
 	 */
+#line 191
 	BUG_ON(pvr_drm_platform_driver.load != NULL);
+#line 185
 	ret = pvr_drm_load(ddev, 0);
 	if (ret)
 		goto err_drm_dev_put;
@@ -233,7 +237,9 @@ static int pvr_remove(struct platform_device *pdev)
 	/* The unload callback, called from drm_dev_unregister, is
 	 * deprecated. Call the unload function directly.
 	 */
+#line 235
 	BUG_ON(pvr_drm_platform_driver.unload != NULL);
+#line 237
 	pvr_drm_unload(ddev);
 
 	drm_dev_put(ddev);

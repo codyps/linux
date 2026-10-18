@@ -1,3 +1,5 @@
+/* Preserve the source pathname emitted by the stock BUG/WARN diagnostics. */
+#line 1 "/home2/trimuidev/tg3040/tina_1.1.1/lichee/linux-4.9/modules/gpu/img-rgx/linux/rogue_km/binary_sunxi_linux_nullws_release/target_aarch64/kbuild/services/server/env/linux/pvr_debug.c"
 /*************************************************************************/ /*!
 @File
 @Title          Debug Functionality
@@ -237,7 +239,9 @@ static IMG_BOOL VBAppend(IMG_CHAR *pszBuf, IMG_UINT32 ui32BufSiz, const IMG_CHAR
 	IMG_INT32 i32Len;
 
 	ui32Used = OSStringLength(pszBuf);
+#line 233
 	BUG_ON(ui32Used >= ui32BufSiz);
+#line 241
 	ui32Space = ui32BufSiz - ui32Used;
 
 	i32Len = vsnprintf(&pszBuf[ui32Used], ui32Space, pszFormat, VArgs);

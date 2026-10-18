@@ -1,3 +1,5 @@
+/* Preserve the source pathname emitted by the stock BUG/WARN diagnostics. */
+#line 1 "/home2/trimuidev/tg3040/tina_1.1.1/lichee/linux-4.9/modules/gpu/img-rgx/linux/rogue_km/binary_sunxi_linux_nullws_release/target_aarch64/kbuild/services/system/rgx_sunxi/sunxi_platform.c"
 /*
  * Copyright (C) 2019 Allwinner Technology Limited. All rights reserved.
  *
@@ -649,13 +651,19 @@ int sunxi_platform_init(struct device *dev)
 	sunxi_data->power_on = 0;
 
 	val = readl(sunxi_data->ppu_reg + GPU_PD_STAT_REG);
+#line 653
 	WARN_ON((val & GPU_PD_STAT_MASK) != GPU_PD_STAT_3D_MODE);
+#line 653
 	if (!sunxi_data->soft_mode) {
 		val = ppu_mode_switch(POWER_CTRL_MODE_HW, false);
+#line 656
 		WARN_ON((val & POWER_CTRL_MODE_MASK) != POWER_CTRL_MODE_HW);
+#line 656
 	} else {
 		val = ppu_mode_switch(POWER_CTRL_MODE_SW, true);
+#line 659
 		WARN_ON((val & POWER_CTRL_MODE_MASK) != POWER_CTRL_MODE_SW);
+#line 659
 	}
 	sunxi_create_debugfs();
 	if (sysfs_create_group(&dev->kobj, &scene_ctrl_attribute_group)) {
