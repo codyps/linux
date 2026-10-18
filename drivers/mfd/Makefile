@@ -94,6 +94,9 @@ obj-$(CONFIG_MFD_MC13XXX)	+= mc13xxx-core.o
 obj-$(CONFIG_MFD_MC13XXX_SPI)	+= mc13xxx-spi.o
 obj-$(CONFIG_MFD_MC13XXX_I2C)	+= mc13xxx-i2c.o
 
+# Recovered #860 order: TCS4838 core/I2C, MFD core, then AXP2101.
+obj-$(CONFIG_MFD_TCS4838) += tcs4838.o
+obj-$(CONFIG_MFD_TCS4838_I2C) += tcs4838-i2c.o
 obj-$(CONFIG_MFD_CORE)		+= mfd-core.o
 
 obj-$(CONFIG_EZX_PCAP)		+= ezx-pcap.o
@@ -116,9 +119,6 @@ obj-$(CONFIG_PMIC_DA9052)	+= da9052-core.o
 obj-$(CONFIG_MFD_DA9052_SPI)	+= da9052-spi.o
 obj-$(CONFIG_MFD_DA9052_I2C)	+= da9052-i2c.o
 
-# Stock #860 places TCS4838 core/I2C before the AXP2101 objects.
-obj-$(CONFIG_MFD_TCS4838) += tcs4838.o
-obj-$(CONFIG_MFD_TCS4838_I2C) += tcs4838-i2c.o
 obj-$(CONFIG_MFD_AXP2101)	+= axp2101.o
 obj-$(CONFIG_MFD_AXP2101_I2C)	+= axp2101-i2c.o
 
