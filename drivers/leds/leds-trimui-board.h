@@ -928,7 +928,8 @@ static int trimui_board_init(void)
 		printk("ledc thread error\n");
 	result = class_register(&trimui_led_anim_class);
 	if (result < 0) {
-		printk(KERN_ERR "%s()%d - class_register err\n", "sunxi_led_probe", 3329);
+		/* Stock reuses the probe diagnostic array, including pointer identity. */
+		printk(KERN_ERR "%s()%d - class_register err\n", trimui_ro_writes.sunxi_led_probe, 3329);
 		class_unregister(&trimui_led_anim_class);
 		return -EFAULT;
 	}

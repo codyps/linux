@@ -75,11 +75,11 @@ static void sunxi_clk_get(struct sunxi_led *led)
 
 	led->clk_ledc = of_clk_get(np, 0);
 	if (IS_ERR(led->clk_ledc))
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_clk_get, "failed to get clk_ledc!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_clk_get, 90, "failed to get clk_ledc!\n");
 
 	led->clk_cpuapb = of_clk_get(np, 1);
 	if (IS_ERR(led->clk_cpuapb))
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_clk_get, "failed to get clk_cpuapb!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_clk_get, 94, "failed to get clk_cpuapb!\n");
 }
 
 static void sunxi_clk_put(struct sunxi_led *led)
@@ -1019,7 +1019,7 @@ static void sunxi_led_create_debugfs(struct sunxi_led *led)
 
 	debugfs_dir = debugfs_create_dir("sunxi_leds", NULL);
 	if (IS_ERR_OR_NULL(debugfs_dir)) {
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_create_debugfs, "debugfs_create_dir failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1034, "debugfs_create_dir failed!\n");
 		return;
 	}
 
@@ -1028,60 +1028,60 @@ static void sunxi_led_create_debugfs(struct sunxi_led *led)
 	debugfs_file = debugfs_create_file("reset_ns", 0660,
 				debugfs_dir, NULL, &reset_ns_fops);
 	if (!debugfs_file)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_create_debugfs, "debugfs_create_file for reset_ns failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1043, "debugfs_create_file for reset_ns failed!\n");
 
 	debugfs_file = debugfs_create_file("t1h_ns", 0660,
 				debugfs_dir, NULL, &t1h_ns_fops);
 	if (!debugfs_file)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_create_debugfs, "debugfs_create_file for t1h_ns failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1048, "debugfs_create_file for t1h_ns failed!\n");
 
 	debugfs_file = debugfs_create_file("t1l_ns", 0660,
 				debugfs_dir, NULL, &t1l_ns_fops);
 	if (!debugfs_file)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_create_debugfs, "debugfs_create_file for t1l_ns failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1053, "debugfs_create_file for t1l_ns failed!\n");
 
 	debugfs_file = debugfs_create_file("t0h_ns", 0660,
 				debugfs_dir, NULL, &t0h_ns_fops);
 	if (!debugfs_file)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_create_debugfs, "debugfs_create_file for t0h_ns failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1058, "debugfs_create_file for t0h_ns failed!\n");
 
 	debugfs_file = debugfs_create_file("t0l_ns", 0660,
 				debugfs_dir, NULL, &t0l_ns_fops);
 	if (!debugfs_file)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_create_debugfs, "debugfs_create_file for t0l_ns failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1063, "debugfs_create_file for t0l_ns failed!\n");
 
 	debugfs_file = debugfs_create_file("wait_time0_ns", 0660,
 				debugfs_dir, NULL, &wait_time0_ns_fops);
 	if (!debugfs_file)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_create_debugfs, "debugfs_create_file for wait_time0_ns failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1068, "debugfs_create_file for wait_time0_ns failed!\n");
 
 	debugfs_file = debugfs_create_file("wait_time1_ns", 0660,
 				debugfs_dir, NULL, &wait_time1_ns_fops);
 	if (!debugfs_file)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_create_debugfs, "debugfs_create_file for wait_time1_ns failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1073, "debugfs_create_file for wait_time1_ns failed!\n");
 
 	debugfs_file = debugfs_create_file("wait_data_time_ns", 0660,
 				debugfs_dir, NULL, &wait_data_time_ns_fops);
 	if (!debugfs_file)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_create_debugfs, "debugfs_create_file for wait_data_time_ns failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1078, "debugfs_create_file for wait_data_time_ns failed!\n");
 
 	debugfs_file = debugfs_create_file("data", 0440,
 				debugfs_dir, NULL, &data_fops);
 	if (!debugfs_file)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_create_debugfs, "debugfs_create_file for data failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1083, "debugfs_create_file for data failed!\n");
 
 	debugfs_file = debugfs_create_file("output_mode", 0660,
 				debugfs_dir, NULL, &output_mode_fops);
 	if (!debugfs_file)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_create_debugfs, "debugfs_create_file for output_mode failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1088, "debugfs_create_file for output_mode failed!\n");
 
 	if (!debugfs_file)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_create_debugfs, "debugfs_create_file for trans_mode failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1091, "debugfs_create_file for trans_mode failed!\n");
 
 	debugfs_file = debugfs_create_file("hwversion", 0440,
 				debugfs_dir, NULL, &hwversion_fops);
 	if (!debugfs_file)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_create_debugfs, "debugfs_create_file for hwversion failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1096, "debugfs_create_file for hwversion failed!\n");
 }
 
 static void sunxi_led_remove_debugfs(struct sunxi_led *led)
@@ -1301,11 +1301,11 @@ static int sunxi_ledc_irq_init(struct sunxi_led *led)
 	led->irqnum = platform_get_irq(pdev, 0);
 	if (led->irqnum < 0)
 		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_ledc_irq_init, "failed to get ledc irq!\n");
-
+	/* irqnum is unsigned, so stock emits no negative-IRQ diagnostic. TODO: validate the signed result separately. */
 	err = request_irq(led->irqnum, sunxi_ledc_irq_handler,
 				flags, name, dev);
 	if (err) {
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_ledc_irq_init, "failed to install IRQ handler for irqnum %d\n",
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_ledc_irq_init, 1322, "failed to install IRQ handler for irqnum %d\n",
 			led->irqnum);
 		return -EPERM;
 	}
@@ -1328,7 +1328,7 @@ static void sunxi_ledc_pinctrl_init(struct sunxi_led *led)
 
 	led->pctrl = pinctrl;
 	if (IS_ERR(pinctrl))
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_ledc_pinctrl_init, "devm_pinctrl_get_select_default failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_ledc_pinctrl_init, 1344, "devm_pinctrl_get_select_default failed!\n");
 }
 
 static int led_regulator_request(struct sunxi_led *led)
@@ -1341,7 +1341,7 @@ static int led_regulator_request(struct sunxi_led *led)
 
 	regu = regulator_get(NULL, led->regulator_id);
 	if (IS_ERR(regu)) {
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.led_regulator_request, "get regulator %s failed!\n", led->regulator_id);
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.led_regulator_request, 1357, "get regulator %s failed!\n", led->regulator_id);
 		return -1;
 	}
 	led->regulator = regu;
@@ -1453,7 +1453,7 @@ static int sunxi_register_led_classdev(struct sunxi_led *led)
 		pcdev->dev = dev;
 		err = led_classdev_register(dev, pcdev);
 		if (err < 0) {
-			SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_register_led_classdev, "led_classdev_register %s failed!\n",
+			SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_register_led_classdev, 1478, "led_classdev_register %s failed!\n",
 				pcdev->name);
 			return err;
 		}
@@ -1467,7 +1467,7 @@ static int sunxi_register_led_classdev(struct sunxi_led *led)
 		pcdev->dev = dev;
 		err = led_classdev_register(dev, pcdev);
 		if (err < 0) {
-			SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_register_led_classdev, "led_classdev_register %s failed!\n",
+			SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_register_led_classdev, 1492, "led_classdev_register %s failed!\n",
 			pcdev->name);
 			return err;
 		}
@@ -1481,7 +1481,7 @@ static int sunxi_register_led_classdev(struct sunxi_led *led)
 		pcdev->dev = dev;
 		err = led_classdev_register(dev, pcdev);
 		if (err < 0) {
-			SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_register_led_classdev, "led_classdev_register %s failed!\n",
+			SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_register_led_classdev, 1506, "led_classdev_register %s failed!\n",
 					pcdev->name);
 			return err;
 		}
@@ -1529,7 +1529,7 @@ static inline int sunxi_get_u32_of_property(const char *propname, int *val)
 
 	err = of_property_read_u32(np, propname, val);
 	if (err < 0)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_get_u32_of_property, "failed to get the value of propname %s!\n", propname);
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_get_u32_of_property, 1553, "failed to get the value of propname %s!\n", propname);
 
 	return err;
 }
@@ -1544,7 +1544,7 @@ static inline int sunxi_get_str_of_property(const char *propname,
 
 	err = of_property_read_string(np, propname, out_string);
 	if (err < 0)
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_get_str_of_property, "failed to get the string of propname %s!\n", propname);
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_get_str_of_property, 1568, "failed to get the string of propname %s!\n", propname);
 
 	return err;
 }
@@ -1577,7 +1577,7 @@ static void sunxi_get_para_of_property(struct sunxi_led *led)
 	err =  sunxi_get_str_of_property("led_regulator", &str);
 	if (!err) {
 		if (strlen(str) >= sizeof(led->regulator_id))
-			SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_get_para_of_property, "illegal regulator id\n");
+			SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_get_para_of_property, 1600, "illegal regulator id\n");
 		else {
 			strcpy(led->regulator_id, str);
 			pr_info("led_regulator: %s\n", led->regulator_id);
@@ -1695,14 +1695,14 @@ static int sunxi_led_probe(struct platform_device *pdev)
 	struct resource *mem_res = NULL;
 	int ret;
 
-	SUNXI_LED_NAMED_LOG(trimui_ro_writes.sunxi_led_probe, DEBUG_INIT, "start\n");
+	SUNXI_LED_NAMED_STOCK_LOG(trimui_ro_writes.sunxi_led_probe, 3233, DEBUG_INIT, "start\n");
 
 	led = kzalloc(sizeof(struct sunxi_led), GFP_KERNEL);
 	if (!led) {
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_probe, "kzalloc failed\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_probe, 3237, "kzalloc failed\n");
 		ret = -ENOMEM;
 	}
-
+	/* Stock logs allocation failure then dereferences NULL. TODO: return -ENOMEM separately. */
 	sunxi_led = led;
 
 	platform_set_drvdata(pdev, led);
@@ -1710,14 +1710,14 @@ static int sunxi_led_probe(struct platform_device *pdev)
 
 	mem_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (mem_res == NULL) {
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_probe, "failed to get MEM res\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_probe, 3248, "failed to get MEM res\n");
 		ret = -ENXIO;
 		goto emem;
 	}
 
 	if (!request_mem_region(mem_res->start, resource_size(mem_res),
 				mem_res->name)) {
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_probe, "failed to request mem region\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_probe, 3255, "failed to request mem region\n");
 		ret = -EINVAL;
 		goto emem;
 	}
@@ -1731,7 +1731,7 @@ static int sunxi_led_probe(struct platform_device *pdev)
 
 	led->output_mode.str = kzalloc(3, GFP_KERNEL);
 	if (!led->output_mode.str) {
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_probe, "kzalloc failed\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_probe, 3269, "kzalloc failed\n");
 		ret = -ENOMEM;
 		goto ezalloc_str;
 	}
@@ -1740,14 +1740,14 @@ static int sunxi_led_probe(struct platform_device *pdev)
 
 	err = led_regulator_request(led);
 	if (err < 0) {
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_probe, "request regulator failed!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_probe, 3278, "request regulator failed!\n");
 		ret = err;
 		goto eregulator;
 	}
 
 	err = sunxi_register_led_classdev(led);
 	if (err) {
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_probe, "failed to register led classdev\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_probe, 3285, "failed to register led classdev\n");
 		ret = err;
 		goto eclassdev;
 	}
@@ -1759,7 +1759,7 @@ static int sunxi_led_probe(struct platform_device *pdev)
 
 	err = sunxi_ledc_irq_init(led);
 	if (err) {
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_probe, "failed to init irq\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_probe, 3297, "failed to init irq\n");
 		ret = err;
 		goto eirq;
 	}
@@ -1770,7 +1770,7 @@ static int sunxi_led_probe(struct platform_device *pdev)
 	dma_cap_set(DMA_SLAVE, mask);
 	led->dma_chan = dma_request_channel(mask, NULL, NULL);
 	if (!led->dma_chan) {
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_probe, "failed to get the DMA channel!\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_probe, 3308, "failed to get the DMA channel!\n");
 		ret = -EFAULT;
 		goto edma;
 	}
@@ -1781,7 +1781,7 @@ static int sunxi_led_probe(struct platform_device *pdev)
 
 	err = class_register(&led_class);
 	if (err < 0) {
-		SUNXI_LED_NAMED_ERR(trimui_ro_writes.sunxi_led_probe, "class_register err\n");
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_probe, 3319, "class_register err\n");
 		class_unregister(&led_class);
 		ret = -EFAULT;
 		goto eclass;
@@ -1795,7 +1795,7 @@ static int sunxi_led_probe(struct platform_device *pdev)
 		goto eclass;
 	}
 #endif
-	SUNXI_LED_NAMED_LOG(trimui_ro_writes.sunxi_led_probe, DEBUG_INIT, "finish\n");
+	SUNXI_LED_NAMED_STOCK_LOG(trimui_ro_writes.sunxi_led_probe, 3338, DEBUG_INIT, "finish\n");
 
 	return 0;
 
