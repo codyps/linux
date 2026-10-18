@@ -59,9 +59,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * version (1) / Firmware DDK build version (6345021)". Restore to 6345021 so KM,
  * firmware, and source agree. (tsp-cv7.4.3) */
 #define PVRVERSION_BUILD             6345021
-#define PVRVERSION_BSCONTROL        "Rogue_DDK_Linux_WS"
+#define PVRVERSION_BSCONTROL        "Rogue_DDK_Linux"
 
-#define PVRVERSION_STRING           "Rogue_DDK_Linux_WS rogueddk 1.19@6345021"
+#define PVRVERSION_STRING           "Rogue_DDK_Linux rogueddk 1.19@6345021"
 #define PVRVERSION_STRING_SHORT     "1.19@6345021"
 
 #define COPYRIGHT_TXT               "Copyright (c) Imagination Technologies Ltd. All Rights Reserved."

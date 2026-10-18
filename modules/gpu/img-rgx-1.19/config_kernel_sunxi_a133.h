@@ -2,7 +2,8 @@
 #define PVRSRV_ENABLE_CCCB_GROW
 #define RGX_FW_FILENAME "rgx.fw"
 #define RGX_SH_FILENAME "rgx.sh"
-#define PVR_BUILD_DIR "sunxi_a133_linux"
+/* Stock reports this build-directory name despite the A133 system selection. */
+#define PVR_BUILD_DIR "sunxi_linux"
 #define PVR_BUILD_TYPE "release"
 #define PVRSRV_MODNAME "pvrsrvkm"
 #define PVRSYNC_MODNAME "pvr_sync"

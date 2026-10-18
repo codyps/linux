@@ -125,6 +125,9 @@ bridge_base := $(BRIDGE_SOURCE_ROOT)
 # -I$(OUT)/include -I$(TOP)/kernel/drivers/staging/imgtec
 ifeq ($(PVR_SYSTEM),sunxi_a133)
   ccflags-y += -D__linux__ -include $(DDK_SRC)/config_kernel_sunxi_a133.h
+  # Stock's MMU diagnostic includes its absolute generated-kbuild path. Keep
+  # that observable literal without changing __LINE__ or the actual toolchain.
+  CFLAGS_rgxmmuinit.o += -Wno-builtin-macro-redefined -D__FILE__='"/home2/trimuidev/tg3040/tina_1.1.1/lichee/linux-4.9/modules/gpu/img-rgx/linux/rogue_km/binary_sunxi_linux_nullws_release/target_aarch64/kbuild/services/server/devices/rogue/rgxmmuinit.c"'
 else
   ccflags-y += -D__linux__ -include $(DDK_SRC)/config_kernel.h
 endif
