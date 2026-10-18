@@ -2069,11 +2069,16 @@ static int  __exit sunxi_internal_codec_remove(struct platform_device *pdev)
 	clk_put(sunxi_codec->pllclkx4);
 
 	devm_iounmap(&pdev->dev, sunxi_codec->digital_base);
+	/* TODO: stock reads spk_cfg after this free and leaves trimui_codec
+	 * pointing at the released allocation. Preserve both bugs here; a
+	 * separate fix should finish PA cleanup before freeing and clear it.
+	 */
 	devm_kfree(&pdev->dev, sunxi_codec);
-	trimui_codec = NULL;
 	platform_set_drvdata(pdev, NULL);
 
 	if (spk_cfg->used) {
+		printk("%s  speaker:%d\n", __func__, 0);
+		/* TODO: stock drives raw zero even when the PA is active-low. */
 		gpio_set_value(spk_cfg->spk_gpio, 0);
 	}
 
