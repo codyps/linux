@@ -22,8 +22,6 @@ obj-$(CONFIG_REGULATOR_ARIZONA) += arizona-micsupp.o arizona-ldo1.o
 obj-$(CONFIG_REGULATOR_AS3711) += as3711-regulator.o
 obj-$(CONFIG_REGULATOR_AS3722) += as3722-regulator.o
 obj-$(CONFIG_REGULATOR_AXP20X) += axp20x-regulator.o
-# Stock #860 registers the CPU regulator before the PMIC regulator.
-obj-$(CONFIG_REGULATOR_TCS4838) += tcs4838-regulator.o
 obj-$(CONFIG_REGULATOR_AXP2101) += axp2101-regulator.o
 obj-$(CONFIG_REGULATOR_BCM590XX) += bcm590xx-regulator.o
 obj-$(CONFIG_REGULATOR_DA903X)	+= da903x.o
@@ -119,3 +117,4 @@ obj-$(CONFIG_REGULATOR_WM8994) += wm8994-regulator.o
 
 ccflags-$(CONFIG_REGULATOR_DEBUG) += -DDEBUG
 
+obj-$(CONFIG_REGULATOR_TCS4838) += tcs4838-regulator.o
