@@ -66,7 +66,7 @@ static unsigned int * const trimui_scale_by_led[32] = {
 #define trimui_suspended trimui_led_state.suspended
 #define trimui_wire_frame trimui_led_state.wire_frame
 #define trimui_anim_frames trimui_led_state.anim_frames
-
+/* Stock treats negative capacity errors as low battery; TODO: handle read errors separately. */
 static void check_battery(void)
 {
 	trimui_low_battery = trimui_axp2202_get_bat_cap() < 16;

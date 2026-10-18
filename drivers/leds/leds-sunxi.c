@@ -1928,7 +1928,7 @@ static int sunxi_led_suspend_noirq(struct device *dev)
 	led_regulator_disable(led);
 
 	SUNXI_LED_STOCK_LOG(3465, DEBUG_SUSPEND, "finish\n");
-
+	/* Stock reports success despite PM helper failures; TODO: propagate errors with unwind. */
 	return 0;
 }
 
@@ -1947,7 +1947,7 @@ static int sunxi_led_resume_noirq(struct device *dev)
 	sunxi_clk_enable(led);
 
 	SUNXI_LED_STOCK_LOG(3483, DEBUG_SUSPEND, "finish\n");
-
+	/* Stock continues after GPIO, regulator, pinctrl and clock failures; TODO: unwind those errors. */
 	return 0;
 }
 
