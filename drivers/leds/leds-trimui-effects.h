@@ -13,6 +13,17 @@ struct trimui_led_effect {
 	u32 frames[960];
 };
 
+/* #860's blink lookup occupies the first 160 bytes of this read-only pool.
+ * Effects 5/6/7 read 10/20/30 entries; retain the unused fourth period too.
+ * Keep the recovered placement so the section-anchor offsets also match.
+ */
+static const int trimui_blink_pattern[40] __attribute__((no_reorder)) = {
+	1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+	1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+	1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+	1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+};
+
 static u32 trimui_rgb(int r, int g, int b)
 {
 	return ((r & 255) << 16) | ((g & 255) << 8) | (b & 255);
@@ -76,7 +87,7 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 			effect->frames[i] = 0;
 		count = (type - 4) * 10;
 		for (i = 0; i < count; i++)
-			if (i % 10 < 5)
+			if (trimui_blink_pattern[i])
 				effect->frames[i] = target;
 	} else {
 		return;
