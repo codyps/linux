@@ -555,8 +555,12 @@ static ssize_t show_effect_rgb_hex_lr(struct class *class, struct class_attribut
 static ssize_t store_effect_rgb_hex_lr(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	u32 rgb = get_rgb_hex(buffer);
-	trimui_effect_l.target_rgb = rgb;
-	trimui_effect_r.target_rgb = rgb;
+	/* Stock issues the left store before the right store, without locking.
+	 * Keep that order when these separate stock objects share our aggregate.
+	 * TODO: synchronize the pair with the effect thread in a separate fix.
+	 */
+	WRITE_ONCE(trimui_effect_l.target_rgb, rgb);
+	WRITE_ONCE(trimui_effect_r.target_rgb, rgb);
 	return count;
 }
 
