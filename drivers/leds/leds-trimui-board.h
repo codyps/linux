@@ -678,12 +678,12 @@ static ssize_t show_anim_frames(struct class *class, struct class_attribute *att
 
 static ssize_t store_anim_frames(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	size_t length = count;
 	/* Stock falls back to one LED frame, rather than clamping to capacity.
 	 * TODO: reject oversized writes separately instead of preserving this. */
-	if (count > sizeof(trimui_anim_frames) - 1)
-		length = (int)(trimui_led_count << 2);
-	memcpy(trimui_anim_frames, buffer, length);
+	if (count < sizeof(trimui_anim_frames))
+		memcpy(trimui_anim_frames, buffer, count);
+	else
+		memcpy(trimui_anim_frames, buffer, (int)(trimui_led_count << 2));
 	return count;
 }
 
