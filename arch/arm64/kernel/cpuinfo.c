@@ -33,7 +33,7 @@
 #include <linux/sched.h>
 #include <linux/smp.h>
 #include <linux/delay.h>
-#include <linux/of_platform.h>
+extern char *get_trimui_serialno(void);
 
 /*
  * In case the boot CPU is hotpluggable, we record its initial state and
@@ -119,10 +119,10 @@ static int c_show(struct seq_file *m, void *v)
 {
 	int i, j;
 	bool compat = personality(current->personality) == PER_LINUX32;
-	struct device_node *np;
-	const char *model;
-	const char *serial;
-	u32 revision;
+
+
+
+
 
 	for_each_online_cpu(i) {
 		struct cpuinfo_arm64 *cpuinfo = &per_cpu(cpu_data, i);
@@ -134,8 +134,8 @@ static int c_show(struct seq_file *m, void *v)
 		 * "processor".  Give glibc what it expects.
 		 */
 		seq_printf(m, "processor\t: %d\n", i);
-		seq_printf(m, "model name\t: ARMv8 Processor rev %d (%s)\n",
-			   MIDR_REVISION(midr), COMPAT_ELF_PLATFORM);
+		/* Stock omits the native model-name line. TODO: fix it separately. */
+
 		if (compat)
 			seq_printf(m, "model name\t: ARMv8 Processor rev %d (%s)\n",
 				   MIDR_REVISION(midr), COMPAT_ELF_PLATFORM);
@@ -176,15 +176,15 @@ static int c_show(struct seq_file *m, void *v)
 		seq_printf(m, "CPU revision\t: %d\n\n", MIDR_REVISION(midr));
 	}
 
-	seq_printf(m, "Hardware\t: T800\n");
-	np = of_find_node_by_path("/soc@03000000/product");
-	if (np) {
-		if (!of_property_read_u32(np, "version", &revision))
-			seq_printf(m, "Revision\t: %04x\n", revision);
-		if (!of_property_read_string(np, "machine", &model))
-			seq_printf(m, "Model\t\t: %s\n", model);
-		of_node_put(np);
-	}
+	seq_printf(m, "hwserial\t: %s\n\n", get_trimui_serialno());
+
+
+
+
+
+
+
+
 
 	return 0;
 }
