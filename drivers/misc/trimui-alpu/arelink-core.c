@@ -9,9 +9,29 @@
 #include "arelink-tables.h"
 
 static u32 random_state = 0xa37f1da6;
-static u8 key_size = 2, initialized, authenticated, protected_block;
-static u8 key[32], mask_table[16], receive_buffer[72], page_buffer[64];
-static u32 passwords[16];
+static u8 key_size = 2;
+/* Stock keeps cipher scratch beside protocol state, without serialization.
+ * Keep the shared state and its neighboring overwrite victims. TODO: serialize
+ * callers and validate all indices in a separate fix. The byte at offset 528
+ * and five alignment bytes are reserved; their original declarations are unknown.
+ */
+static struct {
+	u32 rounds, nk;
+	u8 aes_input[16], aes_output[16], aes_state[16];
+	u8 expanded[240], cipher_key[32];
+	u32 passwords[16];
+	u8 receive_buffer[72], page_buffer[64];
+	u8 reserved_528, initialized, protected_block, reserved_531[5];
+	u8 mask_table[16], key[32], authenticated;
+} __attribute__((packed)) alpu_state __attribute__((aligned(8)));
+#define initialized alpu_state.initialized
+#define authenticated alpu_state.authenticated
+#define protected_block alpu_state.protected_block
+#define key alpu_state.key
+#define mask_table alpu_state.mask_table
+#define receive_buffer alpu_state.receive_buffer
+#define page_buffer alpu_state.page_buffer
+#define passwords alpu_state.passwords
 static u16 block_status = 0xffff;
 
 u8 arelink_random(void)
@@ -135,10 +155,18 @@ static u8 multiply(u8 x, u8 y)
 
 static void aes_block(const u8 *input, u8 *output, u8 decrypt)
 {
-	u8 expanded[240], state[16], shifted[16], temp[4];
+	u8 shifted[16], temp[4];
 	unsigned int nk = 4 + 2 * key_size, rounds = nk + 6;
 	unsigned int i, j, round, row, column, source;
-	memcpy(expanded, key, nk * 4);
+	u8 *expanded = alpu_state.expanded;
+#define STATE(c, r) alpu_state.aes_state[(r) * 4 + (c)]
+	alpu_state.rounds = rounds;
+	alpu_state.nk = nk;
+	for (i = 0; i < nk * 4; i++)
+		alpu_state.cipher_key[i] = key[i];
+	for (i = 0; i < 16; i++)
+		alpu_state.aes_input[i] = input[i];
+	memcpy(expanded, alpu_state.cipher_key, nk * 4);
 	for (i = nk; i < (rounds + 1) * 4; i++) {
 		memcpy(temp, expanded + (i - 1) * 4, 4);
 		if (!(i % nk)) {
@@ -156,42 +184,49 @@ static void aes_block(const u8 *input, u8 *output, u8 decrypt)
 	}
 	/* The stock library transposes its internal state; external blocks use
 	 * standard AES column order. */
-	memcpy(state, input, 16);
+	for (column = 0; column < 4; column++)
+		for (row = 0; row < 4; row++)
+			STATE(column, row) = alpu_state.aes_input[column * 4 + row];
 	for (round = 0; round <= rounds; round++) {
 		unsigned int key_round = decrypt ? rounds - round : round;
 		if (round) {
 			for (row = 0; row < 4; row++)
 				for (column = 0; column < 4; column++) {
 					source = (column + (decrypt ? 4 - row : row)) & 3;
-					shifted[column * 4 + row] = state[source * 4 + row];
+					shifted[column * 4 + row] = STATE(source, row);
 				}
 			for (i = 0; i < 16; i++)
-				state[i] = decrypt ? arelink_aes_isbox[shifted[i]] :
+				STATE(i / 4, i % 4) = decrypt ? arelink_aes_isbox[shifted[i]] :
 					arelink_aes_sbox[shifted[i]];
 			if (!decrypt && round < rounds)
 				for (column = 0; column < 4; column++) {
-					u8 *s = state + 4 * column;
-					u8 total = s[0] ^ s[1] ^ s[2] ^ s[3];
-					u8 first = s[0];
+					u8 total = STATE(column, 0) ^ STATE(column, 1) ^
+						STATE(column, 2) ^ STATE(column, 3);
+					u8 first = STATE(column, 0);
 					for (i = 0; i < 3; i++)
-						s[i] ^= total ^ xtime(s[i] ^ s[i + 1]);
-					s[3] ^= total ^ xtime(s[3] ^ first);
+						STATE(column, i) ^= total ^ xtime(STATE(column, i) ^ STATE(column, i + 1));
+					STATE(column, 3) ^= total ^ xtime(STATE(column, 3) ^ first);
 				}
 		}
 		for (i = 0; i < 16; i++)
-			state[i] ^= expanded[key_round * 16 + i];
+			STATE(i / 4, i % 4) ^= expanded[key_round * 16 + i];
 		if (decrypt && round && round < rounds)
 			for (column = 0; column < 4; column++) {
-				u8 *s = state + 4 * column;
-				memcpy(temp, s, 4);
 				for (i = 0; i < 4; i++)
-					s[i] = multiply(temp[i], 14) ^
+					temp[i] = STATE(column, i);
+				for (i = 0; i < 4; i++)
+					STATE(column, i) = multiply(temp[i], 14) ^
 						multiply(temp[(i + 1) & 3], 11) ^
 						multiply(temp[(i + 2) & 3], 13) ^
 						multiply(temp[(i + 3) & 3], 9);
 			}
 	}
-	memcpy(output, state, 16);
+	for (column = 0; column < 4; column++)
+		for (row = 0; row < 4; row++)
+			alpu_state.aes_output[column * 4 + row] = STATE(column, row);
+	for (i = 0; i < 16; i++)
+		output[i] = alpu_state.aes_output[i];
+#undef STATE
 }
 
 u8 arelink_init(u8 *serial)
