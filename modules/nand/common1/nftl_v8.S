@@ -35,8 +35,8 @@ mod:
 	.align	3
 	.type	nftl_blk_head, %object
 	.size	nftl_blk_head, 136
-nftl_blk_head:
-	.zero	136
+/* nftl_blk_head: storage in the recovered BSS block below. */
+/* .zero 136: preserve the original source-line positions here. */
 	.section	.rodata
 	.align	3
 .LC3:
@@ -546,8 +546,8 @@ nftl_write_end:
 	.align	3
 	.type	phyinfo, %object
 	.size	phyinfo, 20
-phyinfo:
-	.zero	20
+/* phyinfo: storage in the recovered BSS block below. */
+/* .zero 20: preserve the original source-line positions here. */
 	.section	.rodata
 	.align	3
 .LC9:
@@ -1534,13 +1534,13 @@ _nftl_nand_mark_bad_blk:
 	ret
 	.size	_nftl_nand_mark_bad_blk, .-_nftl_nand_mark_bad_blk
 	.local	panic_info
-	.comm	panic_info,40,8
+/* panic_info: common storage replaced by its recovered BSS slot. */
 	.local	panic_part
-	.comm	panic_part,16,8
+/* panic_part: common storage replaced by its recovered BSS slot. */
 	.local	nand_on_panic
-	.comm	nand_on_panic,4,4
+/* nand_on_panic: common storage replaced by its recovered BSS slot. */
 	.local	panic_enable
-	.comm	panic_enable,4,4
+/* panic_enable: common storage replaced by its recovered BSS slot. */
 	.align	2
 	.type	panic_mark_panic, %function
 panic_mark_panic:
@@ -2472,13 +2472,13 @@ panic_recover_data:
 	.bss
 	.type	samsung_read_retry_mode, %object
 	.size	samsung_read_retry_mode, 1
-samsung_read_retry_mode:
-	.zero	1
+/* samsung_read_retry_mode: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	samsung_read_retry_cycle
 	.type	samsung_read_retry_cycle, %object
 	.size	samsung_read_retry_cycle, 1
-samsung_read_retry_cycle:
-	.zero	1
+/* samsung_read_retry_cycle: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	samsung_read_retry_addr
 	.data
 	.align	3
@@ -2928,24 +2928,24 @@ samsung_special_exit:
 	.bss
 	.type	hynix20nm_read_retry_mode, %object
 	.size	hynix20nm_read_retry_mode, 1
-hynix20nm_read_retry_mode:
-	.zero	1
+/* hynix20nm_read_retry_mode: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	hynix20nm_read_retry_cycle
 	.type	hynix20nm_read_retry_cycle, %object
 	.size	hynix20nm_read_retry_cycle, 1
-hynix20nm_read_retry_cycle:
-	.zero	1
+/* hynix20nm_read_retry_cycle: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	hynix20nm_read_retry_reg_num
 	.type	hynix20nm_read_retry_reg_num, %object
 	.size	hynix20nm_read_retry_reg_num, 1
-hynix20nm_read_retry_reg_num:
-	.zero	1
+/* hynix20nm_read_retry_reg_num: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	hynix20nm_read_retry_reg_adr
 	.align	3
 	.type	hynix20nm_read_retry_reg_adr, %object
 	.size	hynix20nm_read_retry_reg_adr, 8
-hynix20nm_read_retry_reg_adr:
-	.zero	8
+/* hynix20nm_read_retry_reg_adr: storage in the recovered BSS block below. */
+/* .zero 8: preserve the original source-line positions here. */
 	.global	hynix20nm_read_retry_reg_adr_1
 	.data
 	.align	3
@@ -2978,25 +2978,25 @@ hynix20nm_read_retry_reg_adr_2:
 	.align	3
 	.type	hynix20nm_lsb_mode_reg_adr, %object
 	.size	hynix20nm_lsb_mode_reg_adr, 4
-hynix20nm_lsb_mode_reg_adr:
-	.zero	4
+/* hynix20nm_lsb_mode_reg_adr: storage in the recovered BSS block below. */
+/* .zero 4: preserve the original source-line positions here. */
 	.global	hynix20nm_lsb_mode_default_val
 	.align	3
 	.type	hynix20nm_lsb_mode_default_val, %object
 	.size	hynix20nm_lsb_mode_default_val, 4
-hynix20nm_lsb_mode_default_val:
-	.zero	4
+/* hynix20nm_lsb_mode_default_val: storage in the recovered BSS block below. */
+/* .zero 4: preserve the original source-line positions here. */
 	.global	hynix20nm_lsb_mode_val
 	.align	3
 	.type	hynix20nm_lsb_mode_val, %object
 	.size	hynix20nm_lsb_mode_val, 4
-hynix20nm_lsb_mode_val:
-	.zero	4
+/* hynix20nm_lsb_mode_val: storage in the recovered BSS block below. */
+/* .zero 4: preserve the original source-line positions here. */
 	.global	hynix20nm_lsb_mode_reg_num
 	.type	hynix20nm_lsb_mode_reg_num, %object
 	.size	hynix20nm_lsb_mode_reg_num, 1
-hynix20nm_lsb_mode_reg_num:
-	.zero	1
+/* hynix20nm_lsb_mode_reg_num: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.text
 	.align	2
 	.global	hynix20nm_vender_set_param
@@ -4557,13 +4557,13 @@ hynix20nm_special_exit:
 	.bss
 	.type	micron_read_retry_mode, %object
 	.size	micron_read_retry_mode, 1
-micron_read_retry_mode:
-	.zero	1
+/* micron_read_retry_mode: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	micron_read_retry_cycle
 	.type	micron_read_retry_cycle, %object
 	.size	micron_read_retry_cycle, 1
-micron_read_retry_cycle:
-	.zero	1
+/* micron_read_retry_cycle: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	micron_p1_1
 	.data
 	.align	3
@@ -4633,7 +4633,7 @@ micron_p1_4:
 	.byte	14
 	.byte	15
 	.local	micron_p1
-	.comm	micron_p1,8,8
+/* micron_p1: common storage replaced by its recovered BSS slot. */
 	.section	.rodata
 	.align	3
 .LC69:
@@ -5160,18 +5160,18 @@ micron_special_exit:
 	.bss
 	.type	toshiba_read_retry_mode, %object
 	.size	toshiba_read_retry_mode, 1
-toshiba_read_retry_mode:
-	.zero	1
+/* toshiba_read_retry_mode: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	toshiba_read_retry_cycle
 	.type	toshiba_read_retry_cycle, %object
 	.size	toshiba_read_retry_cycle, 1
-toshiba_read_retry_cycle:
-	.zero	1
+/* toshiba_read_retry_cycle: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	toshiba_read_retry_reg_cnt
 	.type	toshiba_read_retry_reg_cnt, %object
 	.size	toshiba_read_retry_reg_cnt, 1
-toshiba_read_retry_reg_cnt:
-	.zero	1
+/* toshiba_read_retry_reg_cnt: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	toshiba_read_retry_start_cmd
 	.data
 	.align	3
@@ -5376,13 +5376,13 @@ toshiba_read_retry_last_cmd:
 toshiba_read_retry_exit_cmd:
 	.byte	-1
 	.local	toshiba_toggle_mode_flag
-	.comm	toshiba_toggle_mode_flag,4,4
+/* toshiba_toggle_mode_flag: common storage replaced by its recovered BSS slot. */
 	.local	toshiba_retry_flag
-	.comm	toshiba_retry_flag,4,4
+/* toshiba_retry_flag: common storage replaced by its recovered BSS slot. */
 	.local	toshiba_sclk0_bak
-	.comm	toshiba_sclk0_bak,4,4
+/* toshiba_sclk0_bak: common storage replaced by its recovered BSS slot. */
 	.local	toshiba_sclk1_bak
-	.comm	toshiba_sclk1_bak,4,4
+/* toshiba_sclk1_bak: common storage replaced by its recovered BSS slot. */
 	.text
 	.align	2
 	.global	toshiba_read_retry_clock_save
@@ -6251,53 +6251,53 @@ toshiba_special_exit:
 	.bss
 	.type	hynix26nm_read_retry_mode, %object
 	.size	hynix26nm_read_retry_mode, 1
-hynix26nm_read_retry_mode:
-	.zero	1
+/* hynix26nm_read_retry_mode: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	hynix26nm_read_retry_cycle
 	.type	hynix26nm_read_retry_cycle, %object
 	.size	hynix26nm_read_retry_cycle, 1
-hynix26nm_read_retry_cycle:
-	.zero	1
+/* hynix26nm_read_retry_cycle: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	hynix26nm_read_retry_reg_num
 	.type	hynix26nm_read_retry_reg_num, %object
 	.size	hynix26nm_read_retry_reg_num, 1
-hynix26nm_read_retry_reg_num:
-	.zero	1
+/* hynix26nm_read_retry_reg_num: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	hynix26nm_read_retry_reg_adr
 	.align	3
 	.type	hynix26nm_read_retry_reg_adr, %object
 	.size	hynix26nm_read_retry_reg_adr, 4
-hynix26nm_read_retry_reg_adr:
-	.zero	4
+/* hynix26nm_read_retry_reg_adr: storage in the recovered BSS block below. */
+/* .zero 4: preserve the original source-line positions here. */
 	.global	hynix26nm_read_retry_val
 	.align	3
 	.type	hynix26nm_read_retry_val, %object
 	.size	hynix26nm_read_retry_val, 56
-hynix26nm_read_retry_val:
-	.zero	56
+/* hynix26nm_read_retry_val: storage in the recovered BSS block below. */
+/* .zero 56: preserve the original source-line positions here. */
 	.global	hynix26nm_lsb_mode_reg_adr
 	.align	3
 	.type	hynix26nm_lsb_mode_reg_adr, %object
 	.size	hynix26nm_lsb_mode_reg_adr, 5
-hynix26nm_lsb_mode_reg_adr:
-	.zero	5
+/* hynix26nm_lsb_mode_reg_adr: storage in the recovered BSS block below. */
+/* .zero 5: preserve the original source-line positions here. */
 	.global	hynix26nm_lsb_mode_default_val
 	.align	3
 	.type	hynix26nm_lsb_mode_default_val, %object
 	.size	hynix26nm_lsb_mode_default_val, 5
-hynix26nm_lsb_mode_default_val:
-	.zero	5
+/* hynix26nm_lsb_mode_default_val: storage in the recovered BSS block below. */
+/* .zero 5: preserve the original source-line positions here. */
 	.global	hynix26nm_lsb_mode_val
 	.align	3
 	.type	hynix26nm_lsb_mode_val, %object
 	.size	hynix26nm_lsb_mode_val, 5
-hynix26nm_lsb_mode_val:
-	.zero	5
+/* hynix26nm_lsb_mode_val: storage in the recovered BSS block below. */
+/* .zero 5: preserve the original source-line positions here. */
 	.global	hynix26nm_lsb_mode_reg_num
 	.type	hynix26nm_lsb_mode_reg_num, %object
 	.size	hynix26nm_lsb_mode_reg_num, 1
-hynix26nm_lsb_mode_reg_num:
-	.zero	1
+/* hynix26nm_lsb_mode_reg_num: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	para0
 	.section	.rodata
 	.align	3
@@ -7488,18 +7488,18 @@ hynix26nm_special_exit:
 	.bss
 	.type	sandisk_A19_read_retry_mode, %object
 	.size	sandisk_A19_read_retry_mode, 1
-sandisk_A19_read_retry_mode:
-	.zero	1
+/* sandisk_A19_read_retry_mode: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	sandisk_A19_read_retry_cycle
 	.type	sandisk_A19_read_retry_cycle, %object
 	.size	sandisk_A19_read_retry_cycle, 1
-sandisk_A19_read_retry_cycle:
-	.zero	1
+/* sandisk_A19_read_retry_cycle: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	sandisk_A19_read_retry_reg_cnt
 	.type	sandisk_A19_read_retry_reg_cnt, %object
 	.size	sandisk_A19_read_retry_reg_cnt, 1
-sandisk_A19_read_retry_reg_cnt:
-	.zero	1
+/* sandisk_A19_read_retry_reg_cnt: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	sandisk_A19_read_retry_enable_cmd_1y
 	.data
 	.align	3
@@ -7917,9 +7917,9 @@ sandisk_A19_1z_8g:
 	.byte	12
 	.byte	8
 	.local	sandisk_A19_sclk0_bak
-	.comm	sandisk_A19_sclk0_bak,4,4
+/* sandisk_A19_sclk0_bak: common storage replaced by its recovered BSS slot. */
 	.local	sandisk_A19_sclk1_bak
-	.comm	sandisk_A19_sclk1_bak,4,4
+/* sandisk_A19_sclk1_bak: common storage replaced by its recovered BSS slot. */
 	.text
 	.align	2
 	.global	sandisk_A19_dsp_on
@@ -9261,24 +9261,24 @@ generic_special_exit:
 	.bss
 	.type	hynix16nm_read_retry_mode, %object
 	.size	hynix16nm_read_retry_mode, 1
-hynix16nm_read_retry_mode:
-	.zero	1
+/* hynix16nm_read_retry_mode: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	hynix16nm_read_retry_cycle
 	.type	hynix16nm_read_retry_cycle, %object
 	.size	hynix16nm_read_retry_cycle, 1
-hynix16nm_read_retry_cycle:
-	.zero	1
+/* hynix16nm_read_retry_cycle: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	hynix16nm_read_retry_reg_num
 	.type	hynix16nm_read_retry_reg_num, %object
 	.size	hynix16nm_read_retry_reg_num, 1
-hynix16nm_read_retry_reg_num:
-	.zero	1
+/* hynix16nm_read_retry_reg_num: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	hynix16nm_read_retry_reg_adr
 	.align	3
 	.type	hynix16nm_read_retry_reg_adr, %object
 	.size	hynix16nm_read_retry_reg_adr, 4
-hynix16nm_read_retry_reg_adr:
-	.zero	4
+/* hynix16nm_read_retry_reg_adr: storage in the recovered BSS block below. */
+/* .zero 4: preserve the original source-line positions here. */
 	.text
 	.align	2
 	.global	hynix16nm_vender_set_param
@@ -11323,18 +11323,18 @@ hynix16nm_special_exit:
 	.bss
 	.type	sandisk_read_retry_mode, %object
 	.size	sandisk_read_retry_mode, 1
-sandisk_read_retry_mode:
-	.zero	1
+/* sandisk_read_retry_mode: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	sandisk_read_retry_cycle
 	.type	sandisk_read_retry_cycle, %object
 	.size	sandisk_read_retry_cycle, 1
-sandisk_read_retry_cycle:
-	.zero	1
+/* sandisk_read_retry_cycle: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	sandisk_read_retry_reg_cnt
 	.type	sandisk_read_retry_reg_cnt, %object
 	.size	sandisk_read_retry_reg_cnt, 1
-sandisk_read_retry_reg_cnt:
-	.zero	1
+/* sandisk_read_retry_reg_cnt: storage in the recovered BSS block below. */
+/* .zero 1: preserve the original source-line positions here. */
 	.global	sandisk_acti_start_cmd
 	.data
 	.align	3
@@ -11659,11 +11659,11 @@ sandisk_1y:
 	.byte	112
 	.byte	112
 	.local	sandisk_sclk0_bak
-	.comm	sandisk_sclk0_bak,4,4
+/* sandisk_sclk0_bak: common storage replaced by its recovered BSS slot. */
 	.local	sandisk_sclk1_bak
-	.comm	sandisk_sclk1_bak,4,4
+/* sandisk_sclk1_bak: common storage replaced by its recovered BSS slot. */
 	.local	sandisk_toggle_mode_flag
-	.comm	sandisk_toggle_mode_flag,4,4
+/* sandisk_toggle_mode_flag: common storage replaced by its recovered BSS slot. */
 	.text
 	.align	2
 	.global	sandisk_read_retry_clock_save
@@ -28564,7 +28564,7 @@ read_reclaim:
 	ret
 	.size	read_reclaim, .-read_reclaim
 	.local	gc_src_type
-	.comm	gc_src_type,4,4
+/* gc_src_type: common storage replaced by its recovered BSS slot. */
 	.section	.rodata
 	.align	3
 .LC433:
@@ -32651,3 +32651,227 @@ __func__.8536:
 	.string	"nftl_start"
 	.ident	"GCC: (Linaro GCC 5.3-2016.05) 5.3.1 20160412"
 	.section	.note.GNU-stack,"",@progbits
+
+/* TG3040 #860 NFTL BSS: 51 starts recovered from matching instructions.
+ * Keep the relative offsets, including gaps and neighboring overflow victims.
+ * Vendor get-param loops trust count, and ignore NAND read failures.
+ * TODO: bound those buffers and propagate failures in a separate fix.
+ * The original C declarations and complete original BSS extent are unknown.
+ */
+	.bss
+	.balign	8
+	.type	phyinfo, %object
+	.size	phyinfo, 20
+phyinfo:
+	.zero	20
+	.zero	4	/* recovered gap */
+	.type	nftl_blk_head, %object
+	.size	nftl_blk_head, 136
+nftl_blk_head:
+	.zero	136
+	.type	hynix16nm_read_retry_mode, %object
+	.size	hynix16nm_read_retry_mode, 1
+hynix16nm_read_retry_mode:
+	.zero	1
+	.type	hynix16nm_read_retry_cycle, %object
+	.size	hynix16nm_read_retry_cycle, 1
+hynix16nm_read_retry_cycle:
+	.zero	1
+	.type	hynix16nm_read_retry_reg_num, %object
+	.size	hynix16nm_read_retry_reg_num, 1
+hynix16nm_read_retry_reg_num:
+	.zero	1
+	.zero	5	/* recovered gap */
+	.type	hynix16nm_read_retry_reg_adr, %object
+	.size	hynix16nm_read_retry_reg_adr, 4
+hynix16nm_read_retry_reg_adr:
+	.zero	4
+	.type	samsung_read_retry_mode, %object
+	.size	samsung_read_retry_mode, 1
+samsung_read_retry_mode:
+	.zero	1
+	.type	samsung_read_retry_cycle, %object
+	.size	samsung_read_retry_cycle, 1
+samsung_read_retry_cycle:
+	.zero	1
+	.type	hynix26nm_read_retry_mode, %object
+	.size	hynix26nm_read_retry_mode, 1
+hynix26nm_read_retry_mode:
+	.zero	1
+	.type	hynix26nm_read_retry_cycle, %object
+	.size	hynix26nm_read_retry_cycle, 1
+hynix26nm_read_retry_cycle:
+	.zero	1
+	.type	hynix26nm_read_retry_reg_num, %object
+	.size	hynix26nm_read_retry_reg_num, 1
+hynix26nm_read_retry_reg_num:
+	.zero	1
+	.zero	7	/* recovered gap */
+	.type	hynix26nm_read_retry_reg_adr, %object
+	.size	hynix26nm_read_retry_reg_adr, 4
+hynix26nm_read_retry_reg_adr:
+	.zero	4
+	.zero	4	/* recovered gap */
+	.type	hynix26nm_read_retry_val, %object
+	.size	hynix26nm_read_retry_val, 56
+hynix26nm_read_retry_val:
+	.zero	56
+	.type	hynix26nm_lsb_mode_reg_adr, %object
+	.size	hynix26nm_lsb_mode_reg_adr, 5
+hynix26nm_lsb_mode_reg_adr:
+	.zero	5
+	.zero	3	/* recovered gap */
+	.type	hynix26nm_lsb_mode_default_val, %object
+	.size	hynix26nm_lsb_mode_default_val, 5
+hynix26nm_lsb_mode_default_val:
+	.zero	5
+	.zero	3	/* recovered gap */
+	.type	hynix26nm_lsb_mode_val, %object
+	.size	hynix26nm_lsb_mode_val, 5
+hynix26nm_lsb_mode_val:
+	.zero	5
+	.type	hynix26nm_lsb_mode_reg_num, %object
+	.size	hynix26nm_lsb_mode_reg_num, 1
+hynix26nm_lsb_mode_reg_num:
+	.zero	1
+	.type	sandisk_A19_read_retry_mode, %object
+	.size	sandisk_A19_read_retry_mode, 1
+sandisk_A19_read_retry_mode:
+	.zero	1
+	.type	sandisk_A19_read_retry_cycle, %object
+	.size	sandisk_A19_read_retry_cycle, 1
+sandisk_A19_read_retry_cycle:
+	.zero	1
+	.type	sandisk_A19_read_retry_reg_cnt, %object
+	.size	sandisk_A19_read_retry_reg_cnt, 1
+sandisk_A19_read_retry_reg_cnt:
+	.zero	1
+	.type	toshiba_read_retry_mode, %object
+	.size	toshiba_read_retry_mode, 1
+toshiba_read_retry_mode:
+	.zero	1
+	.type	toshiba_read_retry_cycle, %object
+	.size	toshiba_read_retry_cycle, 1
+toshiba_read_retry_cycle:
+	.zero	1
+	.type	toshiba_read_retry_reg_cnt, %object
+	.size	toshiba_read_retry_reg_cnt, 1
+toshiba_read_retry_reg_cnt:
+	.zero	1
+	.type	micron_read_retry_mode, %object
+	.size	micron_read_retry_mode, 1
+micron_read_retry_mode:
+	.zero	1
+	.type	micron_read_retry_cycle, %object
+	.size	micron_read_retry_cycle, 1
+micron_read_retry_cycle:
+	.zero	1
+	.type	sandisk_read_retry_mode, %object
+	.size	sandisk_read_retry_mode, 1
+sandisk_read_retry_mode:
+	.zero	1
+	.type	sandisk_read_retry_cycle, %object
+	.size	sandisk_read_retry_cycle, 1
+sandisk_read_retry_cycle:
+	.zero	1
+	.type	sandisk_read_retry_reg_cnt, %object
+	.size	sandisk_read_retry_reg_cnt, 1
+sandisk_read_retry_reg_cnt:
+	.zero	1
+	.type	hynix20nm_read_retry_mode, %object
+	.size	hynix20nm_read_retry_mode, 1
+hynix20nm_read_retry_mode:
+	.zero	1
+	.type	hynix20nm_read_retry_cycle, %object
+	.size	hynix20nm_read_retry_cycle, 1
+hynix20nm_read_retry_cycle:
+	.zero	1
+	.type	hynix20nm_read_retry_reg_num, %object
+	.size	hynix20nm_read_retry_reg_num, 1
+hynix20nm_read_retry_reg_num:
+	.zero	1
+	.zero	4	/* recovered gap */
+	.type	hynix20nm_read_retry_reg_adr, %object
+	.size	hynix20nm_read_retry_reg_adr, 8
+hynix20nm_read_retry_reg_adr:
+	.zero	8
+	.type	hynix20nm_lsb_mode_reg_adr, %object
+	.size	hynix20nm_lsb_mode_reg_adr, 4
+hynix20nm_lsb_mode_reg_adr:
+	.zero	4
+	.zero	4	/* recovered gap */
+	.type	hynix20nm_lsb_mode_default_val, %object
+	.size	hynix20nm_lsb_mode_default_val, 4
+hynix20nm_lsb_mode_default_val:
+	.zero	4
+	.zero	4	/* recovered gap */
+	.type	hynix20nm_lsb_mode_val, %object
+	.size	hynix20nm_lsb_mode_val, 4
+hynix20nm_lsb_mode_val:
+	.zero	4
+	.type	hynix20nm_lsb_mode_reg_num, %object
+	.size	hynix20nm_lsb_mode_reg_num, 1
+hynix20nm_lsb_mode_reg_num:
+	.zero	1
+	.zero	3	/* recovered gap */
+	.type	gc_src_type, %object
+	.size	gc_src_type, 4
+gc_src_type:
+	.zero	4
+	.zero	4	/* recovered gap */
+	.type	panic_info, %object
+	.size	panic_info, 40
+panic_info:
+	.zero	40
+	.type	panic_part, %object
+	.size	panic_part, 16
+panic_part:
+	.zero	16
+	.type	nand_on_panic, %object
+	.size	nand_on_panic, 4
+nand_on_panic:
+	.zero	4
+	.type	panic_enable, %object
+	.size	panic_enable, 4
+panic_enable:
+	.zero	4
+	.type	sandisk_A19_sclk0_bak, %object
+	.size	sandisk_A19_sclk0_bak, 4
+sandisk_A19_sclk0_bak:
+	.zero	4
+	.type	sandisk_A19_sclk1_bak, %object
+	.size	sandisk_A19_sclk1_bak, 4
+sandisk_A19_sclk1_bak:
+	.zero	4
+	.type	toshiba_toggle_mode_flag, %object
+	.size	toshiba_toggle_mode_flag, 4
+toshiba_toggle_mode_flag:
+	.zero	4
+	.type	toshiba_retry_flag, %object
+	.size	toshiba_retry_flag, 4
+toshiba_retry_flag:
+	.zero	4
+	.type	toshiba_sclk0_bak, %object
+	.size	toshiba_sclk0_bak, 4
+toshiba_sclk0_bak:
+	.zero	4
+	.type	toshiba_sclk1_bak, %object
+	.size	toshiba_sclk1_bak, 4
+toshiba_sclk1_bak:
+	.zero	4
+	.type	micron_p1, %object
+	.size	micron_p1, 8
+micron_p1:
+	.zero	8
+	.type	sandisk_sclk0_bak, %object
+	.size	sandisk_sclk0_bak, 4
+sandisk_sclk0_bak:
+	.zero	4
+	.type	sandisk_sclk1_bak, %object
+	.size	sandisk_sclk1_bak, 4
+sandisk_sclk1_bak:
+	.zero	4
+	.type	sandisk_toggle_mode_flag, %object
+	.size	sandisk_toggle_mode_flag, 4
+sandisk_toggle_mode_flag:
+	.zero	4
