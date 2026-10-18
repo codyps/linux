@@ -30,14 +30,18 @@ static struct trimui_stock_led_state {
 static unsigned int trimui_limit = 128, trimui_scale_f = 40;
 static unsigned int trimui_scale_lr = 40, trimui_scale_m = 40;
 static int trimui_led_enable = 1;
-static unsigned int * const trimui_scale_by_led[23] = {
+/* Stock has 32 scale pointers although the TG3040 device tree uses 23 LEDs.
+ * Entries 23..31 still select the middle scale. Keep the unchecked indexing
+ * beyond 32 as shipped; TODO: validate the device-tree count in a separate fix.
+ */
+static unsigned int * const trimui_scale_by_led[32] = {
 	&trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m,
 	&trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m,
 	&trimui_scale_f, &trimui_scale_f,
 	&trimui_scale_lr, &trimui_scale_lr, &trimui_scale_lr, &trimui_scale_lr,
 	&trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m,
 	&trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m,
-	&trimui_scale_m,
+	&trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m,
 };
 #define trimui_mask_lr trimui_led_state.mask_lr
 #define trimui_mask_f trimui_led_state.mask_f
@@ -79,6 +83,8 @@ static noinline void trimui_led_power_disable(void)
 static void commit_static_frame(void)
 {
 	struct sunxi_led *led = sunxi_led;
+	/* Preserve the stock diagnostic array, separately from merged literals. */
+	static const char frame_name[] = "sunxi_set_led_rgb32_frame";
 	unsigned int i, scale, rgb, r, g, b;
 	unsigned long flags;
 	struct timeval start, end;
@@ -112,7 +118,7 @@ static void commit_static_frame(void)
 	sunxi_ledc_trans_data(led);
 	if (debug_mask & DEBUG_INFO2) {
 		/* Retain the diagnostic argument emitted by the stock binary. */
-		printk(KERN_WARNING "%s()%d - dump reg:\n", "sunxi_set_led_rgb32_frame", 2744);
+		printk(KERN_WARNING "%s()%d - dump reg:\n", frame_name, 2744);
 		led_dump_reg(led, 0, 0x30);
 	}
 	sunxi_ledc_complete(led);
@@ -930,13 +936,15 @@ static int trimui_board_init(void)
 	}
 	result = class_register(&trimui_motor_class);
 	if (result < 0) {
-		printk(KERN_ERR "%s()%d - class_register err\n", "init_motor_voltage", 3158);
+		static const char motor_name[] = "init_motor_voltage";
+		printk(KERN_ERR "%s()%d - class_register err\n", motor_name, 3158);
 		class_unregister(&trimui_motor_class);
 	}
 	trimui_motor_regulator = regulator_get(NULL, "axp2202-bldo3");
 	result = class_register(&trimui_speaker_class);
 	if (result < 0) {
-		printk(KERN_ERR "%s()%d - class_register err\n", "init_speaker_mute", 3218);
+		static const char speaker_name[] = "init_speaker_mute";
+		printk(KERN_ERR "%s()%d - class_register err\n", speaker_name, 3218);
 		class_unregister(&trimui_speaker_class);
 	}
 	return 0;
