@@ -84,4 +84,12 @@ static int __init alpu_init(void)
 	return 0;
 }
 device_initcall(alpu_init);
+
+/* #860 retains a RET between matched I2C and PHY exit-body windows.
+ * Original ownership/name/registration is unknown. Keep this compatible
+ * return-only slot and its register effects; __used retains built-in code.
+ */
+static void __exit __used alpu_stock_exit(void)
+{
+}
 MODULE_LICENSE("GPL");
