@@ -15,7 +15,7 @@
 static struct {
     u16 block_status;
     u8 reserved_2[2];
-    u32 random_state;
+    volatile u32 random_state;
     u8 key_size;
 } __attribute__((packed)) alpu_initialized __attribute__((aligned(16))) = {
     .block_status = 0xffff, .random_state = 0xa37f1da6, .key_size = 2,
@@ -56,13 +56,23 @@ static struct {
 u8 arelink_random(void)
 {
 	u8 result;
-	/* A zero xorshift seed is absorbing: stock spins here forever.
-	 * TODO: handle zero seeds in a separate behavior change.
+	u32 current, shifted;
+	/* Each stock stage reads the unshifted value first, then reads the
+	 * shifted operand again. Other writers can intervene: preserve those
+	 * mixed-value races and the final fresh word read for the returned byte.
+	 * Without another writer, zero is absorbing and stock spins here.
+	 * TODO: synchronization or seed repair is a separate behavior change.
 	 */
 	do {
-		random_state ^= random_state << 13;
-		random_state ^= random_state >> 17;
-		random_state ^= random_state << 5;
+		current = random_state;
+		shifted = random_state << 13;
+		random_state = current ^ shifted;
+		current = random_state;
+		shifted = random_state >> 17;
+		random_state = current ^ shifted;
+		current = random_state;
+		shifted = random_state << 5;
+		random_state = current ^ shifted;
 		result = random_state;
 		result += result / 255;
 	} while (!result);
