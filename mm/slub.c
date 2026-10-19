@@ -4517,8 +4517,11 @@ static void process_slab(struct loc_track *t, struct kmem_cache *s,
 static int list_locations(struct kmem_cache *s, char *buf,
 					enum track_item alloc)
 {
-	int len = 0, overflow = 0;
+	int len = 0;
 	unsigned long i;
+	int overflow = 0;
+	/* Keep declaration order and stock diagnostic source locations. */
+#line 4522
 	struct loc_track t = { 0, 0, NULL };
 	int node;
 	unsigned long *map = kmalloc(BITS_TO_LONGS(oo_objects(s->max)) *
