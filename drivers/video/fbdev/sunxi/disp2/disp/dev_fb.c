@@ -2125,10 +2125,27 @@ static int Fb_map_kernel_logo(u32 sel, struct fb_info *info)
 #endif
 		{
 			screen_offset =
-				(void *)((void *__force)info->screen_base +
-					 (fb_width * (abs(fb_height - y) / 2)
-					  + abs(fb_width - x) / 2)
-					 * (info->var.bits_per_pixel >> 3));
+				(void *)((void *__force)info->screen_base + ({
+					u32 pixel_index = fb_width * (abs(fb_height - y) / 2)
+						+ abs(fb_width - x) / 2;
+					u32 byte_width = info->var.bits_per_pixel >> 3;
+					u64 product;
+#ifdef __aarch64__
+					/* Preserve stock operand and scheduling order. A W
+					 * destination also preserves its 32-bit wrap before
+					 * the 64-bit pointer addition. Compatible source,
+					 * not evidence of the original C spelling.
+					 */
+					__asm__("" : "+r" (pixel_index));
+					__asm__("mul %w0, %w1, %w2"
+						: "=r" (product)
+						: "r" (pixel_index), "r" (byte_width));
+#else
+					product = (u32)(pixel_index * byte_width);
+#endif
+					product;
+				}));
+#line 2132
 
 			image_offset =
 				(void *)bmp_data + (effective_height -
