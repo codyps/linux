@@ -2484,85 +2484,85 @@ panic_recover_data:
 	.align	3
 	.type	samsung_read_retry_addr, %object
 	.size	samsung_read_retry_addr, 4
-samsung_read_retry_addr:
-	.byte	-89
-	.byte	-92
-	.byte	-91
-	.byte	-90
+/* samsung_read_retry_addr: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	samsung_read_retry_cmd
 	.align	3
 	.type	samsung_read_retry_cmd, %object
 	.size	samsung_read_retry_cmd, 4
-samsung_read_retry_cmd:
-	.byte	-95
-	.byte	-95
-	.byte	-95
-	.byte	-95
+/* samsung_read_retry_cmd: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	samsung_p1
 	.align	3
 	.type	samsung_p1, %object
 	.size	samsung_p1, 60
-samsung_p1:
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	5
-	.byte	10
-	.byte	0
-	.byte	0
-	.byte	40
-	.byte	0
-	.byte	-20
-	.byte	-40
-	.byte	-19
-	.byte	-11
-	.byte	-19
-	.byte	-26
-	.byte	10
-	.byte	15
-	.byte	5
-	.byte	0
-	.byte	15
-	.byte	10
-	.byte	-5
-	.byte	-20
-	.byte	-24
-	.byte	-17
-	.byte	-24
-	.byte	-36
-	.byte	-15
-	.byte	-5
-	.byte	-2
-	.byte	-16
-	.byte	10
-	.byte	0
-	.byte	-5
-	.byte	-20
-	.byte	-48
-	.byte	-30
-	.byte	-48
-	.byte	-62
-	.byte	20
-	.byte	15
-	.byte	-5
-	.byte	-20
-	.byte	-24
-	.byte	-5
-	.byte	-24
-	.byte	-36
-	.byte	30
-	.byte	20
-	.byte	-5
-	.byte	-20
-	.byte	-5
-	.byte	-1
-	.byte	-5
-	.byte	-8
-	.byte	7
-	.byte	12
-	.byte	2
-	.byte	0
+/* samsung_p1: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.section	.rodata
 	.align	3
 .LC35:
@@ -2951,28 +2951,28 @@ samsung_special_exit:
 	.align	3
 	.type	hynix20nm_read_retry_reg_adr_1, %object
 	.size	hynix20nm_read_retry_reg_adr_1, 8
-hynix20nm_read_retry_reg_adr_1:
-	.byte	-52
-	.byte	-65
-	.byte	-86
-	.byte	-85
-	.byte	-51
-	.byte	-83
-	.byte	-82
-	.byte	-81
+/* hynix20nm_read_retry_reg_adr_1: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	hynix20nm_read_retry_reg_adr_2
 	.align	3
 	.type	hynix20nm_read_retry_reg_adr_2, %object
 	.size	hynix20nm_read_retry_reg_adr_2, 8
-hynix20nm_read_retry_reg_adr_2:
-	.byte	-80
-	.byte	-79
-	.byte	-78
-	.byte	-77
-	.byte	-76
-	.byte	-75
-	.byte	-74
-	.byte	-73
+/* hynix20nm_read_retry_reg_adr_2: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	hynix20nm_lsb_mode_reg_adr
 	.bss
 	.align	3
@@ -4569,69 +4569,69 @@ hynix20nm_special_exit:
 	.align	3
 	.type	micron_p1_1, %object
 	.size	micron_p1_1, 10
-micron_p1_1:
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	1
-	.byte	2
-	.byte	3
-	.byte	4
-	.byte	5
-	.byte	6
-	.byte	7
+/* micron_p1_1: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	micron_p1_2
 	.align	3
 	.type	micron_p1_2, %object
 	.size	micron_p1_2, 12
-micron_p1_2:
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	1
-	.byte	2
-	.byte	3
-	.byte	4
-	.byte	5
-	.byte	6
-	.byte	7
-	.byte	8
-	.byte	12
+/* micron_p1_2: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	micron_p1_3
 	.align	3
 	.type	micron_p1_3, %object
 	.size	micron_p1_3, 7
-micron_p1_3:
-	.byte	1
-	.byte	2
-	.byte	3
-	.byte	0
-	.byte	1
-	.byte	2
-	.byte	3
+/* micron_p1_3: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	micron_p1_4
 	.align	3
 	.type	micron_p1_4, %object
 	.size	micron_p1_4, 18
-micron_p1_4:
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	1
-	.byte	2
-	.byte	3
-	.byte	4
-	.byte	5
-	.byte	6
-	.byte	7
-	.byte	8
-	.byte	9
-	.byte	10
-	.byte	11
-	.byte	12
-	.byte	13
-	.byte	14
-	.byte	15
+/* micron_p1_4: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.local	micron_p1
 /* micron_p1: common storage replaced by its recovered BSS slot. */
 	.section	.rodata
@@ -5177,204 +5177,204 @@ micron_special_exit:
 	.align	3
 	.type	toshiba_read_retry_start_cmd, %object
 	.size	toshiba_read_retry_start_cmd, 2
-toshiba_read_retry_start_cmd:
-	.byte	92
-	.byte	-59
+/* toshiba_read_retry_start_cmd: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	toshiba_read_retry_end_cmd
 	.align	3
 	.type	toshiba_read_retry_end_cmd, %object
 	.size	toshiba_read_retry_end_cmd, 2
-toshiba_read_retry_end_cmd:
-	.byte	38
-	.byte	93
+/* toshiba_read_retry_end_cmd: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	toshiba_read_retry_cmd_1
 	.align	3
 	.type	toshiba_read_retry_cmd_1, %object
 	.size	toshiba_read_retry_cmd_1, 4
-toshiba_read_retry_cmd_1:
-	.byte	85
-	.byte	85
-	.byte	85
-	.byte	85
+/* toshiba_read_retry_cmd_1: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	toshiba_read_retry_addr_1
 	.align	3
 	.type	toshiba_read_retry_addr_1, %object
 	.size	toshiba_read_retry_addr_1, 4
-toshiba_read_retry_addr_1:
-	.byte	4
-	.byte	5
-	.byte	6
-	.byte	7
+/* toshiba_read_retry_addr_1: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	toshiba_p1_1
 	.align	3
 	.type	toshiba_p1_1, %object
 	.size	toshiba_p1_1, 28
-toshiba_p1_1:
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	4
-	.byte	4
-	.byte	4
-	.byte	4
-	.byte	124
-	.byte	124
-	.byte	124
-	.byte	124
-	.byte	120
-	.byte	120
-	.byte	120
-	.byte	120
-	.byte	116
-	.byte	116
-	.byte	116
-	.byte	116
-	.byte	8
-	.byte	8
-	.byte	8
-	.byte	8
-	.byte	-1
-	.byte	-1
-	.byte	-1
-	.byte	-1
+/* toshiba_p1_1: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	toshiba_read_retry_cmd_2
 	.align	3
 	.type	toshiba_read_retry_cmd_2, %object
 	.size	toshiba_read_retry_cmd_2, 5
-toshiba_read_retry_cmd_2:
-	.byte	85
-	.byte	85
-	.byte	85
-	.byte	85
-	.byte	85
+/* toshiba_read_retry_cmd_2: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	toshiba_read_retry_addr_2
 	.align	3
 	.type	toshiba_read_retry_addr_2, %object
 	.size	toshiba_read_retry_addr_2, 5
-toshiba_read_retry_addr_2:
-	.byte	4
-	.byte	5
-	.byte	6
-	.byte	7
-	.byte	13
+/* toshiba_read_retry_addr_2: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	toshiba_p1_2
 	.align	3
 	.type	toshiba_p1_2, %object
 	.size	toshiba_p1_2, 40
-toshiba_p1_2:
-	.byte	4
-	.byte	4
-	.byte	124
-	.byte	126
-	.byte	0
-	.byte	0
-	.byte	124
-	.byte	120
-	.byte	120
-	.byte	0
-	.byte	124
-	.byte	118
-	.byte	116
-	.byte	114
-	.byte	0
-	.byte	8
-	.byte	8
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	11
-	.byte	126
-	.byte	118
-	.byte	116
-	.byte	0
-	.byte	16
-	.byte	118
-	.byte	114
-	.byte	112
-	.byte	0
-	.byte	2
-	.byte	0
-	.byte	126
-	.byte	124
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
+/* toshiba_p1_2: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	toshiba_p1_3
 	.align	3
 	.type	toshiba_p1_3, %object
 	.size	toshiba_p1_3, 55
-toshiba_p1_3:
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	2
-	.byte	4
-	.byte	2
-	.byte	0
-	.byte	0
-	.byte	124
-	.byte	0
-	.byte	124
-	.byte	124
-	.byte	0
-	.byte	122
-	.byte	0
-	.byte	122
-	.byte	122
-	.byte	0
-	.byte	120
-	.byte	2
-	.byte	120
-	.byte	122
-	.byte	0
-	.byte	126
-	.byte	4
-	.byte	126
-	.byte	122
-	.byte	0
-	.byte	118
-	.byte	4
-	.byte	118
-	.byte	120
-	.byte	0
-	.byte	4
-	.byte	4
-	.byte	4
-	.byte	118
-	.byte	0
-	.byte	6
-	.byte	10
-	.byte	6
-	.byte	2
-	.byte	0
-	.byte	116
-	.byte	124
-	.byte	116
-	.byte	118
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
+/* toshiba_p1_3: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	toshiba_read_retry_last_cmd
 	.align	3
 	.type	toshiba_read_retry_last_cmd, %object
 	.size	toshiba_read_retry_last_cmd, 1
-toshiba_read_retry_last_cmd:
-	.byte	-77
+/* toshiba_read_retry_last_cmd: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
 	.global	toshiba_read_retry_exit_cmd
 	.align	3
 	.type	toshiba_read_retry_exit_cmd, %object
 	.size	toshiba_read_retry_exit_cmd, 1
-toshiba_read_retry_exit_cmd:
-	.byte	-1
+/* toshiba_read_retry_exit_cmd: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
 	.local	toshiba_toggle_mode_flag
 /* toshiba_toggle_mode_flag: common storage replaced by its recovered BSS slot. */
 	.local	toshiba_retry_flag
@@ -7505,417 +7505,417 @@ hynix26nm_special_exit:
 	.align	3
 	.type	sandisk_A19_read_retry_enable_cmd_1y, %object
 	.size	sandisk_A19_read_retry_enable_cmd_1y, 1
-sandisk_A19_read_retry_enable_cmd_1y:
-	.byte	93
+/* sandisk_A19_read_retry_enable_cmd_1y: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
 	.global	sandisk_A19_read_retry_exit_cmd_1y
 	.align	3
 	.type	sandisk_A19_read_retry_exit_cmd_1y, %object
 	.size	sandisk_A19_read_retry_exit_cmd_1y, 1
-sandisk_A19_read_retry_exit_cmd_1y:
-	.byte	-1
+/* sandisk_A19_read_retry_exit_cmd_1y: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
 	.global	sandisk_A19_read_retry_cmd_1y
 	.align	3
 	.type	sandisk_A19_read_retry_cmd_1y, %object
 	.size	sandisk_A19_read_retry_cmd_1y, 1
-sandisk_A19_read_retry_cmd_1y:
-	.byte	-17
+/* sandisk_A19_read_retry_cmd_1y: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
 	.global	sandisk_A19_read_retry_reg_adr_1y
 	.align	3
 	.type	sandisk_A19_read_retry_reg_adr_1y, %object
 	.size	sandisk_A19_read_retry_reg_adr_1y, 1
-sandisk_A19_read_retry_reg_adr_1y:
-	.byte	17
+/* sandisk_A19_read_retry_reg_adr_1y: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
 	.global	sandisk_A19_1y
 	.align	3
 	.type	sandisk_A19_1y, %object
 	.size	sandisk_A19_1y, 124
-sandisk_A19_1y:
-	.byte	124
-	.byte	0
-	.byte	0
-	.byte	124
-	.byte	4
-	.byte	0
-	.byte	124
-	.byte	120
-	.byte	120
-	.byte	0
-	.byte	120
-	.byte	116
-	.byte	8
-	.byte	124
-	.byte	0
-	.byte	124
-	.byte	0
-	.byte	124
-	.byte	124
-	.byte	120
-	.byte	124
-	.byte	124
-	.byte	120
-	.byte	116
-	.byte	0
-	.byte	124
-	.byte	116
-	.byte	112
-	.byte	0
-	.byte	120
-	.byte	0
-	.byte	124
-	.byte	0
-	.byte	120
-	.byte	124
-	.byte	120
-	.byte	0
-	.byte	120
-	.byte	120
-	.byte	116
-	.byte	0
-	.byte	120
-	.byte	116
-	.byte	112
-	.byte	0
-	.byte	120
-	.byte	112
-	.byte	108
-	.byte	0
-	.byte	4
-	.byte	4
-	.byte	0
-	.byte	0
-	.byte	4
-	.byte	0
-	.byte	124
-	.byte	12
-	.byte	4
-	.byte	124
-	.byte	120
-	.byte	12
-	.byte	4
-	.byte	120
-	.byte	116
-	.byte	16
-	.byte	8
-	.byte	0
-	.byte	124
-	.byte	16
-	.byte	8
-	.byte	4
-	.byte	0
-	.byte	120
-	.byte	116
-	.byte	120
-	.byte	116
-	.byte	120
-	.byte	116
-	.byte	116
-	.byte	112
-	.byte	120
-	.byte	116
-	.byte	112
-	.byte	108
-	.byte	120
-	.byte	116
-	.byte	108
-	.byte	104
-	.byte	120
-	.byte	112
-	.byte	120
-	.byte	116
-	.byte	120
-	.byte	112
-	.byte	116
-	.byte	112
-	.byte	120
-	.byte	112
-	.byte	108
-	.byte	104
-	.byte	120
-	.byte	112
-	.byte	112
-	.byte	108
-	.byte	120
-	.byte	108
-	.byte	112
-	.byte	108
-	.byte	120
-	.byte	108
-	.byte	108
-	.byte	104
-	.byte	120
-	.byte	108
-	.byte	104
-	.byte	100
-	.byte	116
-	.byte	104
-	.byte	108
-	.byte	104
-	.byte	116
-	.byte	104
-	.byte	104
-	.byte	100
+/* sandisk_A19_1y: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	sandisk_A19_1z_16g
 	.align	3
 	.type	sandisk_A19_1z_16g, %object
 	.size	sandisk_A19_1z_16g, 128
-sandisk_A19_1z_16g:
-	.byte	124
-	.byte	0
-	.byte	4
-	.byte	0
-	.byte	4
-	.byte	0
-	.byte	0
-	.byte	124
-	.byte	120
-	.byte	0
-	.byte	8
-	.byte	4
-	.byte	8
-	.byte	0
-	.byte	124
-	.byte	120
-	.byte	124
-	.byte	124
-	.byte	4
-	.byte	0
-	.byte	0
-	.byte	124
-	.byte	0
-	.byte	124
-	.byte	120
-	.byte	124
-	.byte	8
-	.byte	4
-	.byte	4
-	.byte	124
-	.byte	116
-	.byte	120
-	.byte	4
-	.byte	4
-	.byte	4
-	.byte	0
-	.byte	8
-	.byte	4
-	.byte	0
-	.byte	124
-	.byte	0
-	.byte	4
-	.byte	8
-	.byte	4
-	.byte	12
-	.byte	4
-	.byte	124
-	.byte	120
-	.byte	124
-	.byte	4
-	.byte	12
-	.byte	8
-	.byte	120
-	.byte	120
-	.byte	4
-	.byte	0
-	.byte	124
-	.byte	120
-	.byte	0
-	.byte	124
-	.byte	116
-	.byte	120
-	.byte	112
-	.byte	120
-	.byte	8
-	.byte	8
-	.byte	4
-	.byte	0
-	.byte	4
-	.byte	8
-	.byte	8
-	.byte	4
-	.byte	12
-	.byte	8
-	.byte	12
-	.byte	8
-	.byte	0
-	.byte	0
-	.byte	12
-	.byte	8
-	.byte	4
-	.byte	0
-	.byte	120
-	.byte	116
-	.byte	124
-	.byte	124
-	.byte	120
-	.byte	116
-	.byte	120
-	.byte	120
-	.byte	120
-	.byte	116
-	.byte	8
-	.byte	8
-	.byte	0
-	.byte	124
-	.byte	116
-	.byte	116
-	.byte	0
-	.byte	124
-	.byte	120
-	.byte	116
-	.byte	124
-	.byte	120
-	.byte	112
-	.byte	116
-	.byte	116
-	.byte	116
-	.byte	124
-	.byte	116
-	.byte	112
-	.byte	112
-	.byte	12
-	.byte	12
-	.byte	8
-	.byte	4
-	.byte	16
-	.byte	12
-	.byte	12
-	.byte	8
-	.byte	112
-	.byte	112
-	.byte	112
-	.byte	116
-	.byte	116
-	.byte	112
-	.byte	112
-	.byte	112
+/* sandisk_A19_1z_16g: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	sandisk_A19_1z_8g
 	.align	3
 	.type	sandisk_A19_1z_8g, %object
 	.size	sandisk_A19_1z_8g, 124
-sandisk_A19_1z_8g:
-	.byte	4
-	.byte	4
-	.byte	120
-	.byte	120
-	.byte	4
-	.byte	4
-	.byte	124
-	.byte	116
-	.byte	0
-	.byte	0
-	.byte	4
-	.byte	120
-	.byte	4
-	.byte	4
-	.byte	124
-	.byte	124
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	124
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	116
-	.byte	8
-	.byte	8
-	.byte	4
-	.byte	120
-	.byte	124
-	.byte	124
-	.byte	4
-	.byte	120
-	.byte	124
-	.byte	124
-	.byte	0
-	.byte	124
-	.byte	4
-	.byte	4
-	.byte	124
-	.byte	112
-	.byte	124
-	.byte	124
-	.byte	116
-	.byte	116
-	.byte	0
-	.byte	0
-	.byte	120
-	.byte	112
-	.byte	12
-	.byte	12
-	.byte	8
-	.byte	120
-	.byte	120
-	.byte	120
-	.byte	124
-	.byte	124
-	.byte	4
-	.byte	4
-	.byte	8
-	.byte	4
-	.byte	120
-	.byte	120
-	.byte	8
-	.byte	120
-	.byte	124
-	.byte	124
-	.byte	120
-	.byte	112
-	.byte	120
-	.byte	120
-	.byte	112
-	.byte	108
-	.byte	0
-	.byte	0
-	.byte	116
-	.byte	108
-	.byte	8
-	.byte	8
-	.byte	0
-	.byte	116
-	.byte	124
-	.byte	124
-	.byte	120
-	.byte	108
-	.byte	0
-	.byte	0
-	.byte	4
-	.byte	4
-	.byte	116
-	.byte	116
-	.byte	116
-	.byte	108
-	.byte	120
-	.byte	120
-	.byte	124
-	.byte	112
-	.byte	12
-	.byte	12
-	.byte	0
-	.byte	116
-	.byte	4
-	.byte	4
-	.byte	12
-	.byte	8
-	.byte	120
-	.byte	120
-	.byte	124
-	.byte	116
-	.byte	120
-	.byte	120
-	.byte	112
-	.byte	104
-	.byte	8
-	.byte	8
-	.byte	0
-	.byte	112
-	.byte	16
-	.byte	16
-	.byte	12
-	.byte	120
-	.byte	0
-	.byte	0
-	.byte	12
-	.byte	8
+/* sandisk_A19_1z_8g: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.local	sandisk_A19_sclk0_bak
 /* sandisk_A19_sclk0_bak: common storage replaced by its recovered BSS slot. */
 	.local	sandisk_A19_sclk1_bak
@@ -11340,324 +11340,324 @@ hynix16nm_special_exit:
 	.align	3
 	.type	sandisk_acti_start_cmd, %object
 	.size	sandisk_acti_start_cmd, 2
-sandisk_acti_start_cmd:
-	.byte	59
-	.byte	-71
+/* sandisk_acti_start_cmd: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	sandisk_acti_start_addr
 	.align	3
 	.type	sandisk_acti_start_addr, %object
 	.size	sandisk_acti_start_addr, 9
-sandisk_acti_start_addr:
-	.byte	4
-	.byte	5
-	.byte	6
-	.byte	7
-	.byte	8
-	.byte	9
-	.byte	10
-	.byte	11
-	.byte	12
+/* sandisk_acti_start_addr: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	sandisk_read_retry_enable_cmd_19
 	.align	3
 	.type	sandisk_read_retry_enable_cmd_19, %object
 	.size	sandisk_read_retry_enable_cmd_19, 1
-sandisk_read_retry_enable_cmd_19:
-	.byte	-74
+/* sandisk_read_retry_enable_cmd_19: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
 	.global	sandisk_read_retry_disable_cmd_19
 	.align	3
 	.type	sandisk_read_retry_disable_cmd_19, %object
 	.size	sandisk_read_retry_disable_cmd_19, 1
-sandisk_read_retry_disable_cmd_19:
-	.byte	-42
+/* sandisk_read_retry_disable_cmd_19: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
 	.global	sandisk_read_retry_cmd_19
 	.align	3
 	.type	sandisk_read_retry_cmd_19, %object
 	.size	sandisk_read_retry_cmd_19, 3
-sandisk_read_retry_cmd_19:
-	.byte	83
-	.byte	83
-	.byte	83
+/* sandisk_read_retry_cmd_19: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	sandisk_read_retry_reg_adr_19
 	.align	3
 	.type	sandisk_read_retry_reg_adr_19, %object
 	.size	sandisk_read_retry_reg_adr_19, 9
-sandisk_read_retry_reg_adr_19:
-	.byte	4
-	.byte	5
-	.byte	7
-	.zero	6
+/* sandisk_read_retry_reg_adr_19: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	sandisk_19_low
 	.align	3
 	.type	sandisk_19_low, %object
 	.size	sandisk_19_low, 48
-sandisk_19_low:
-	.byte	-16
-	.byte	0
-	.byte	-16
-	.byte	-32
-	.byte	0
-	.byte	-32
-	.byte	-48
-	.byte	0
-	.byte	-48
-	.byte	16
-	.byte	0
-	.byte	16
-	.byte	32
-	.byte	0
-	.byte	32
-	.byte	48
-	.byte	0
-	.byte	48
-	.byte	-64
-	.byte	0
-	.byte	-48
-	.byte	0
-	.byte	0
-	.byte	16
-	.byte	0
-	.byte	0
-	.byte	32
-	.byte	16
-	.byte	0
-	.byte	32
-	.byte	-80
-	.byte	0
-	.byte	-48
-	.byte	-96
-	.byte	0
-	.byte	-48
-	.byte	-112
-	.byte	0
-	.byte	-48
-	.byte	-80
-	.byte	0
-	.byte	-64
-	.byte	-96
-	.byte	0
-	.byte	-64
-	.byte	-112
-	.byte	0
-	.byte	-64
+/* sandisk_19_low: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	sandisk_19_high
 	.align	3
 	.type	sandisk_19_high, %object
 	.size	sandisk_19_high, 60
-sandisk_19_high:
-	.byte	0
-	.byte	-16
-	.byte	0
-	.byte	15
-	.byte	-32
-	.byte	0
-	.byte	15
-	.byte	-48
-	.byte	0
-	.byte	14
-	.byte	-32
-	.byte	0
-	.byte	14
-	.byte	-48
-	.byte	0
-	.byte	13
-	.byte	-16
-	.byte	0
-	.byte	13
-	.byte	-32
-	.byte	0
-	.byte	13
-	.byte	-48
-	.byte	0
-	.byte	1
-	.byte	16
-	.byte	0
-	.byte	2
-	.byte	32
-	.byte	0
-	.byte	2
-	.byte	16
-	.byte	0
-	.byte	3
-	.byte	32
-	.byte	0
-	.byte	15
-	.byte	0
-	.byte	0
-	.byte	14
-	.byte	-16
-	.byte	0
-	.byte	13
-	.byte	-64
-	.byte	0
-	.byte	15
-	.byte	-16
-	.byte	0
-	.byte	1
-	.byte	0
-	.byte	0
-	.byte	2
-	.byte	0
-	.byte	0
-	.byte	13
-	.byte	-80
-	.byte	0
-	.byte	12
-	.byte	-96
-	.byte	0
+/* sandisk_19_high: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	sandisk_read_retry_cmd_24
 	.align	3
 	.type	sandisk_read_retry_cmd_24, %object
 	.size	sandisk_read_retry_cmd_24, 3
-sandisk_read_retry_cmd_24:
-	.byte	83
-	.byte	83
-	.byte	83
+/* sandisk_read_retry_cmd_24: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	sandisk_read_retry_reg_adr_24
 	.align	3
 	.type	sandisk_read_retry_reg_adr_24, %object
 	.size	sandisk_read_retry_reg_adr_24, 9
-sandisk_read_retry_reg_adr_24:
-	.byte	4
-	.byte	5
-	.byte	7
-	.zero	6
+/* sandisk_read_retry_reg_adr_24: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	sandisk_24
 	.align	3
 	.type	sandisk_24, %object
 	.size	sandisk_24, 27
-sandisk_24:
-	.byte	0
-	.byte	-16
-	.byte	0
-	.byte	0
-	.byte	-32
-	.byte	0
-	.byte	-1
-	.byte	-16
-	.byte	-16
-	.byte	-18
-	.byte	-32
-	.byte	-32
-	.byte	-34
-	.byte	-48
-	.byte	-48
-	.byte	-51
-	.byte	-64
-	.byte	-64
-	.byte	1
-	.byte	0
-	.byte	0
-	.byte	2
-	.byte	0
-	.byte	0
-	.byte	3
-	.byte	0
-	.byte	0
+/* sandisk_24: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.global	sandisk_read_retry_enable_cmd_1y
 	.align	3
 	.type	sandisk_read_retry_enable_cmd_1y, %object
 	.size	sandisk_read_retry_enable_cmd_1y, 1
-sandisk_read_retry_enable_cmd_1y:
-	.byte	93
+/* sandisk_read_retry_enable_cmd_1y: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
 	.global	sandisk_read_retry_exit_cmd_1y
 	.align	3
 	.type	sandisk_read_retry_exit_cmd_1y, %object
 	.size	sandisk_read_retry_exit_cmd_1y, 1
-sandisk_read_retry_exit_cmd_1y:
-	.byte	-1
+/* sandisk_read_retry_exit_cmd_1y: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
 	.global	sandisk_read_retry_cmd_1y
 	.align	3
 	.type	sandisk_read_retry_cmd_1y, %object
 	.size	sandisk_read_retry_cmd_1y, 1
-sandisk_read_retry_cmd_1y:
-	.byte	-17
+/* sandisk_read_retry_cmd_1y: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
 	.global	sandisk_read_retry_reg_adr_1y
 	.align	3
 	.type	sandisk_read_retry_reg_adr_1y, %object
 	.size	sandisk_read_retry_reg_adr_1y, 1
-sandisk_read_retry_reg_adr_1y:
-	.byte	17
+/* sandisk_read_retry_reg_adr_1y: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
 	.global	sandisk_1y
 	.align	3
 	.type	sandisk_1y, %object
 	.size	sandisk_1y, 76
-sandisk_1y:
-	.byte	4
-	.byte	0
-	.byte	124
-	.byte	124
-	.byte	8
-	.byte	0
-	.byte	4
-	.byte	4
-	.byte	124
-	.byte	124
-	.byte	0
-	.byte	124
-	.byte	124
-	.byte	124
-	.byte	0
-	.byte	0
-	.byte	12
-	.byte	0
-	.byte	120
-	.byte	120
-	.byte	16
-	.byte	0
-	.byte	8
-	.byte	8
-	.byte	124
-	.byte	124
-	.byte	120
-	.byte	120
-	.byte	124
-	.byte	124
-	.byte	4
-	.byte	4
-	.byte	124
-	.byte	124
-	.byte	120
-	.byte	116
-	.byte	20
-	.byte	4
-	.byte	4
-	.byte	0
-	.byte	120
-	.byte	120
-	.byte	0
-	.byte	124
-	.byte	120
-	.byte	120
-	.byte	120
-	.byte	120
-	.byte	120
-	.byte	120
-	.byte	120
-	.byte	116
-	.byte	120
-	.byte	120
-	.byte	4
-	.byte	0
-	.byte	120
-	.byte	116
-	.byte	120
-	.byte	116
-	.byte	120
-	.byte	116
-	.byte	116
-	.byte	112
-	.byte	120
-	.byte	116
-	.byte	120
-	.byte	120
-	.byte	120
-	.byte	112
-	.byte	120
-	.byte	116
-	.byte	120
-	.byte	112
-	.byte	112
-	.byte	112
+/* sandisk_1y: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
+/* initialized payload moved below */
 	.local	sandisk_sclk0_bak
 /* sandisk_sclk0_bak: common storage replaced by its recovered BSS slot. */
 	.local	sandisk_sclk1_bak
@@ -20922,8 +20922,8 @@ nftl_check_pattern:
 	.align	3
 	.type	patterns, %object
 	.size	patterns, 1
-patterns:
-	.byte	-91
+/* patterns: initialized storage moved below; keep original source-line positions. */
+/* initialized payload moved below */
 	.section	.rodata
 	.align	3
 .LC301:
@@ -32875,3 +32875,1001 @@ sandisk_sclk1_bak:
 	.size	sandisk_toggle_mode_flag, 4
 sandisk_toggle_mode_flag:
 	.zero	4
+
+/* TG3040 #860 initialized NFTL tables. 36 starts are decoded from paired
+ * instructions; the complete 1120-byte candidate span matches stock. Eight
+ * unreferenced payloads retain compatible candidate names, not independently
+ * recovered original symbol identities. Original C declarations are unknown.
+ * Keep shipped table order/padding: unchecked vendor indexes can read neighbors.
+ * TODO: bounds/error handling belongs in a separate behavior-changing fix.
+ */
+	.data
+	.balign	8
+patterns:
+	.byte	-91
+	.balign	8
+samsung_read_retry_addr:
+	.byte	-89
+	.byte	-92
+	.byte	-91
+	.byte	-90
+	.balign	8
+samsung_read_retry_cmd:
+	.byte	-95
+	.byte	-95
+	.byte	-95
+	.byte	-95
+	.balign	8
+samsung_p1:
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	5
+	.byte	10
+	.byte	0
+	.byte	0
+	.byte	40
+	.byte	0
+	.byte	-20
+	.byte	-40
+	.byte	-19
+	.byte	-11
+	.byte	-19
+	.byte	-26
+	.byte	10
+	.byte	15
+	.byte	5
+	.byte	0
+	.byte	15
+	.byte	10
+	.byte	-5
+	.byte	-20
+	.byte	-24
+	.byte	-17
+	.byte	-24
+	.byte	-36
+	.byte	-15
+	.byte	-5
+	.byte	-2
+	.byte	-16
+	.byte	10
+	.byte	0
+	.byte	-5
+	.byte	-20
+	.byte	-48
+	.byte	-30
+	.byte	-48
+	.byte	-62
+	.byte	20
+	.byte	15
+	.byte	-5
+	.byte	-20
+	.byte	-24
+	.byte	-5
+	.byte	-24
+	.byte	-36
+	.byte	30
+	.byte	20
+	.byte	-5
+	.byte	-20
+	.byte	-5
+	.byte	-1
+	.byte	-5
+	.byte	-8
+	.byte	7
+	.byte	12
+	.byte	2
+	.byte	0
+	.balign	8
+sandisk_A19_read_retry_enable_cmd_1y:
+	.byte	93
+	.balign	8
+sandisk_A19_read_retry_exit_cmd_1y:
+	.byte	-1
+	.balign	8
+sandisk_A19_read_retry_cmd_1y:
+	.byte	-17
+	.balign	8
+sandisk_A19_read_retry_reg_adr_1y:
+	.byte	17
+	.balign	8
+sandisk_A19_1y:
+	.byte	124
+	.byte	0
+	.byte	0
+	.byte	124
+	.byte	4
+	.byte	0
+	.byte	124
+	.byte	120
+	.byte	120
+	.byte	0
+	.byte	120
+	.byte	116
+	.byte	8
+	.byte	124
+	.byte	0
+	.byte	124
+	.byte	0
+	.byte	124
+	.byte	124
+	.byte	120
+	.byte	124
+	.byte	124
+	.byte	120
+	.byte	116
+	.byte	0
+	.byte	124
+	.byte	116
+	.byte	112
+	.byte	0
+	.byte	120
+	.byte	0
+	.byte	124
+	.byte	0
+	.byte	120
+	.byte	124
+	.byte	120
+	.byte	0
+	.byte	120
+	.byte	120
+	.byte	116
+	.byte	0
+	.byte	120
+	.byte	116
+	.byte	112
+	.byte	0
+	.byte	120
+	.byte	112
+	.byte	108
+	.byte	0
+	.byte	4
+	.byte	4
+	.byte	0
+	.byte	0
+	.byte	4
+	.byte	0
+	.byte	124
+	.byte	12
+	.byte	4
+	.byte	124
+	.byte	120
+	.byte	12
+	.byte	4
+	.byte	120
+	.byte	116
+	.byte	16
+	.byte	8
+	.byte	0
+	.byte	124
+	.byte	16
+	.byte	8
+	.byte	4
+	.byte	0
+	.byte	120
+	.byte	116
+	.byte	120
+	.byte	116
+	.byte	120
+	.byte	116
+	.byte	116
+	.byte	112
+	.byte	120
+	.byte	116
+	.byte	112
+	.byte	108
+	.byte	120
+	.byte	116
+	.byte	108
+	.byte	104
+	.byte	120
+	.byte	112
+	.byte	120
+	.byte	116
+	.byte	120
+	.byte	112
+	.byte	116
+	.byte	112
+	.byte	120
+	.byte	112
+	.byte	108
+	.byte	104
+	.byte	120
+	.byte	112
+	.byte	112
+	.byte	108
+	.byte	120
+	.byte	108
+	.byte	112
+	.byte	108
+	.byte	120
+	.byte	108
+	.byte	108
+	.byte	104
+	.byte	120
+	.byte	108
+	.byte	104
+	.byte	100
+	.byte	116
+	.byte	104
+	.byte	108
+	.byte	104
+	.byte	116
+	.byte	104
+	.byte	104
+	.byte	100
+	.balign	8
+sandisk_A19_1z_16g:
+	.byte	124
+	.byte	0
+	.byte	4
+	.byte	0
+	.byte	4
+	.byte	0
+	.byte	0
+	.byte	124
+	.byte	120
+	.byte	0
+	.byte	8
+	.byte	4
+	.byte	8
+	.byte	0
+	.byte	124
+	.byte	120
+	.byte	124
+	.byte	124
+	.byte	4
+	.byte	0
+	.byte	0
+	.byte	124
+	.byte	0
+	.byte	124
+	.byte	120
+	.byte	124
+	.byte	8
+	.byte	4
+	.byte	4
+	.byte	124
+	.byte	116
+	.byte	120
+	.byte	4
+	.byte	4
+	.byte	4
+	.byte	0
+	.byte	8
+	.byte	4
+	.byte	0
+	.byte	124
+	.byte	0
+	.byte	4
+	.byte	8
+	.byte	4
+	.byte	12
+	.byte	4
+	.byte	124
+	.byte	120
+	.byte	124
+	.byte	4
+	.byte	12
+	.byte	8
+	.byte	120
+	.byte	120
+	.byte	4
+	.byte	0
+	.byte	124
+	.byte	120
+	.byte	0
+	.byte	124
+	.byte	116
+	.byte	120
+	.byte	112
+	.byte	120
+	.byte	8
+	.byte	8
+	.byte	4
+	.byte	0
+	.byte	4
+	.byte	8
+	.byte	8
+	.byte	4
+	.byte	12
+	.byte	8
+	.byte	12
+	.byte	8
+	.byte	0
+	.byte	0
+	.byte	12
+	.byte	8
+	.byte	4
+	.byte	0
+	.byte	120
+	.byte	116
+	.byte	124
+	.byte	124
+	.byte	120
+	.byte	116
+	.byte	120
+	.byte	120
+	.byte	120
+	.byte	116
+	.byte	8
+	.byte	8
+	.byte	0
+	.byte	124
+	.byte	116
+	.byte	116
+	.byte	0
+	.byte	124
+	.byte	120
+	.byte	116
+	.byte	124
+	.byte	120
+	.byte	112
+	.byte	116
+	.byte	116
+	.byte	116
+	.byte	124
+	.byte	116
+	.byte	112
+	.byte	112
+	.byte	12
+	.byte	12
+	.byte	8
+	.byte	4
+	.byte	16
+	.byte	12
+	.byte	12
+	.byte	8
+	.byte	112
+	.byte	112
+	.byte	112
+	.byte	116
+	.byte	116
+	.byte	112
+	.byte	112
+	.byte	112
+	.balign	8
+sandisk_A19_1z_8g:
+	.byte	4
+	.byte	4
+	.byte	120
+	.byte	120
+	.byte	4
+	.byte	4
+	.byte	124
+	.byte	116
+	.byte	0
+	.byte	0
+	.byte	4
+	.byte	120
+	.byte	4
+	.byte	4
+	.byte	124
+	.byte	124
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	124
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	116
+	.byte	8
+	.byte	8
+	.byte	4
+	.byte	120
+	.byte	124
+	.byte	124
+	.byte	4
+	.byte	120
+	.byte	124
+	.byte	124
+	.byte	0
+	.byte	124
+	.byte	4
+	.byte	4
+	.byte	124
+	.byte	112
+	.byte	124
+	.byte	124
+	.byte	116
+	.byte	116
+	.byte	0
+	.byte	0
+	.byte	120
+	.byte	112
+	.byte	12
+	.byte	12
+	.byte	8
+	.byte	120
+	.byte	120
+	.byte	120
+	.byte	124
+	.byte	124
+	.byte	4
+	.byte	4
+	.byte	8
+	.byte	4
+	.byte	120
+	.byte	120
+	.byte	8
+	.byte	120
+	.byte	124
+	.byte	124
+	.byte	120
+	.byte	112
+	.byte	120
+	.byte	120
+	.byte	112
+	.byte	108
+	.byte	0
+	.byte	0
+	.byte	116
+	.byte	108
+	.byte	8
+	.byte	8
+	.byte	0
+	.byte	116
+	.byte	124
+	.byte	124
+	.byte	120
+	.byte	108
+	.byte	0
+	.byte	0
+	.byte	4
+	.byte	4
+	.byte	116
+	.byte	116
+	.byte	116
+	.byte	108
+	.byte	120
+	.byte	120
+	.byte	124
+	.byte	112
+	.byte	12
+	.byte	12
+	.byte	0
+	.byte	116
+	.byte	4
+	.byte	4
+	.byte	12
+	.byte	8
+	.byte	120
+	.byte	120
+	.byte	124
+	.byte	116
+	.byte	120
+	.byte	120
+	.byte	112
+	.byte	104
+	.byte	8
+	.byte	8
+	.byte	0
+	.byte	112
+	.byte	16
+	.byte	16
+	.byte	12
+	.byte	120
+	.byte	0
+	.byte	0
+	.byte	12
+	.byte	8
+	.balign	8
+toshiba_read_retry_start_cmd:
+	.byte	92
+	.byte	-59
+	.balign	8
+toshiba_read_retry_end_cmd:
+	.byte	38
+	.byte	93
+	.balign	8
+toshiba_read_retry_cmd_1:
+	.byte	85
+	.byte	85
+	.byte	85
+	.byte	85
+	.balign	8
+toshiba_read_retry_addr_1:
+	.byte	4
+	.byte	5
+	.byte	6
+	.byte	7
+	.balign	8
+toshiba_p1_1:
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	4
+	.byte	4
+	.byte	4
+	.byte	4
+	.byte	124
+	.byte	124
+	.byte	124
+	.byte	124
+	.byte	120
+	.byte	120
+	.byte	120
+	.byte	120
+	.byte	116
+	.byte	116
+	.byte	116
+	.byte	116
+	.byte	8
+	.byte	8
+	.byte	8
+	.byte	8
+	.byte	-1
+	.byte	-1
+	.byte	-1
+	.byte	-1
+	.balign	8
+toshiba_read_retry_cmd_2:
+	.byte	85
+	.byte	85
+	.byte	85
+	.byte	85
+	.byte	85
+	.balign	8
+toshiba_read_retry_addr_2:
+	.byte	4
+	.byte	5
+	.byte	6
+	.byte	7
+	.byte	13
+	.balign	8
+toshiba_p1_2:
+	.byte	4
+	.byte	4
+	.byte	124
+	.byte	126
+	.byte	0
+	.byte	0
+	.byte	124
+	.byte	120
+	.byte	120
+	.byte	0
+	.byte	124
+	.byte	118
+	.byte	116
+	.byte	114
+	.byte	0
+	.byte	8
+	.byte	8
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	11
+	.byte	126
+	.byte	118
+	.byte	116
+	.byte	0
+	.byte	16
+	.byte	118
+	.byte	114
+	.byte	112
+	.byte	0
+	.byte	2
+	.byte	0
+	.byte	126
+	.byte	124
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	0
+	.balign	8
+toshiba_p1_3:
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	2
+	.byte	4
+	.byte	2
+	.byte	0
+	.byte	0
+	.byte	124
+	.byte	0
+	.byte	124
+	.byte	124
+	.byte	0
+	.byte	122
+	.byte	0
+	.byte	122
+	.byte	122
+	.byte	0
+	.byte	120
+	.byte	2
+	.byte	120
+	.byte	122
+	.byte	0
+	.byte	126
+	.byte	4
+	.byte	126
+	.byte	122
+	.byte	0
+	.byte	118
+	.byte	4
+	.byte	118
+	.byte	120
+	.byte	0
+	.byte	4
+	.byte	4
+	.byte	4
+	.byte	118
+	.byte	0
+	.byte	6
+	.byte	10
+	.byte	6
+	.byte	2
+	.byte	0
+	.byte	116
+	.byte	124
+	.byte	116
+	.byte	118
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	0
+	.balign	8
+toshiba_read_retry_last_cmd:
+	.byte	-77
+	.balign	8
+toshiba_read_retry_exit_cmd:
+	.byte	-1
+	.balign	8
+micron_p1_1:
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	1
+	.byte	2
+	.byte	3
+	.byte	4
+	.byte	5
+	.byte	6
+	.byte	7
+	.balign	8
+micron_p1_2:
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	1
+	.byte	2
+	.byte	3
+	.byte	4
+	.byte	5
+	.byte	6
+	.byte	7
+	.byte	8
+	.byte	12
+	.balign	8
+micron_p1_3:
+	.byte	1
+	.byte	2
+	.byte	3
+	.byte	0
+	.byte	1
+	.byte	2
+	.byte	3
+	.balign	8
+micron_p1_4:
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	1
+	.byte	2
+	.byte	3
+	.byte	4
+	.byte	5
+	.byte	6
+	.byte	7
+	.byte	8
+	.byte	9
+	.byte	10
+	.byte	11
+	.byte	12
+	.byte	13
+	.byte	14
+	.byte	15
+	.balign	8
+sandisk_acti_start_cmd:
+	.byte	59
+	.byte	-71
+	.balign	8
+sandisk_acti_start_addr:
+	.byte	4
+	.byte	5
+	.byte	6
+	.byte	7
+	.byte	8
+	.byte	9
+	.byte	10
+	.byte	11
+	.byte	12
+	.balign	8
+sandisk_read_retry_enable_cmd_19:
+	.byte	-74
+	.balign	8
+sandisk_read_retry_disable_cmd_19:
+	.byte	-42
+	.balign	8
+sandisk_read_retry_cmd_19:
+	.byte	83
+	.byte	83
+	.byte	83
+	.balign	8
+sandisk_read_retry_reg_adr_19:
+	.byte	4
+	.byte	5
+	.byte	7
+	.zero	6
+	.balign	8
+sandisk_19_low:
+	.byte	-16
+	.byte	0
+	.byte	-16
+	.byte	-32
+	.byte	0
+	.byte	-32
+	.byte	-48
+	.byte	0
+	.byte	-48
+	.byte	16
+	.byte	0
+	.byte	16
+	.byte	32
+	.byte	0
+	.byte	32
+	.byte	48
+	.byte	0
+	.byte	48
+	.byte	-64
+	.byte	0
+	.byte	-48
+	.byte	0
+	.byte	0
+	.byte	16
+	.byte	0
+	.byte	0
+	.byte	32
+	.byte	16
+	.byte	0
+	.byte	32
+	.byte	-80
+	.byte	0
+	.byte	-48
+	.byte	-96
+	.byte	0
+	.byte	-48
+	.byte	-112
+	.byte	0
+	.byte	-48
+	.byte	-80
+	.byte	0
+	.byte	-64
+	.byte	-96
+	.byte	0
+	.byte	-64
+	.byte	-112
+	.byte	0
+	.byte	-64
+	.balign	8
+sandisk_19_high:
+	.byte	0
+	.byte	-16
+	.byte	0
+	.byte	15
+	.byte	-32
+	.byte	0
+	.byte	15
+	.byte	-48
+	.byte	0
+	.byte	14
+	.byte	-32
+	.byte	0
+	.byte	14
+	.byte	-48
+	.byte	0
+	.byte	13
+	.byte	-16
+	.byte	0
+	.byte	13
+	.byte	-32
+	.byte	0
+	.byte	13
+	.byte	-48
+	.byte	0
+	.byte	1
+	.byte	16
+	.byte	0
+	.byte	2
+	.byte	32
+	.byte	0
+	.byte	2
+	.byte	16
+	.byte	0
+	.byte	3
+	.byte	32
+	.byte	0
+	.byte	15
+	.byte	0
+	.byte	0
+	.byte	14
+	.byte	-16
+	.byte	0
+	.byte	13
+	.byte	-64
+	.byte	0
+	.byte	15
+	.byte	-16
+	.byte	0
+	.byte	1
+	.byte	0
+	.byte	0
+	.byte	2
+	.byte	0
+	.byte	0
+	.byte	13
+	.byte	-80
+	.byte	0
+	.byte	12
+	.byte	-96
+	.byte	0
+	.balign	8
+sandisk_read_retry_cmd_24:
+	.byte	83
+	.byte	83
+	.byte	83
+	.balign	8
+sandisk_read_retry_reg_adr_24:
+	.byte	4
+	.byte	5
+	.byte	7
+	.zero	6
+	.balign	8
+sandisk_24:
+	.byte	0
+	.byte	-16
+	.byte	0
+	.byte	0
+	.byte	-32
+	.byte	0
+	.byte	-1
+	.byte	-16
+	.byte	-16
+	.byte	-18
+	.byte	-32
+	.byte	-32
+	.byte	-34
+	.byte	-48
+	.byte	-48
+	.byte	-51
+	.byte	-64
+	.byte	-64
+	.byte	1
+	.byte	0
+	.byte	0
+	.byte	2
+	.byte	0
+	.byte	0
+	.byte	3
+	.byte	0
+	.byte	0
+	.balign	8
+sandisk_read_retry_enable_cmd_1y:
+	.byte	93
+	.balign	8
+sandisk_read_retry_exit_cmd_1y:
+	.byte	-1
+	.balign	8
+sandisk_read_retry_cmd_1y:
+	.byte	-17
+	.balign	8
+sandisk_read_retry_reg_adr_1y:
+	.byte	17
+	.balign	8
+sandisk_1y:
+	.byte	4
+	.byte	0
+	.byte	124
+	.byte	124
+	.byte	8
+	.byte	0
+	.byte	4
+	.byte	4
+	.byte	124
+	.byte	124
+	.byte	0
+	.byte	124
+	.byte	124
+	.byte	124
+	.byte	0
+	.byte	0
+	.byte	12
+	.byte	0
+	.byte	120
+	.byte	120
+	.byte	16
+	.byte	0
+	.byte	8
+	.byte	8
+	.byte	124
+	.byte	124
+	.byte	120
+	.byte	120
+	.byte	124
+	.byte	124
+	.byte	4
+	.byte	4
+	.byte	124
+	.byte	124
+	.byte	120
+	.byte	116
+	.byte	20
+	.byte	4
+	.byte	4
+	.byte	0
+	.byte	120
+	.byte	120
+	.byte	0
+	.byte	124
+	.byte	120
+	.byte	120
+	.byte	120
+	.byte	120
+	.byte	120
+	.byte	120
+	.byte	120
+	.byte	116
+	.byte	120
+	.byte	120
+	.byte	4
+	.byte	0
+	.byte	120
+	.byte	116
+	.byte	120
+	.byte	116
+	.byte	120
+	.byte	116
+	.byte	116
+	.byte	112
+	.byte	120
+	.byte	116
+	.byte	120
+	.byte	120
+	.byte	120
+	.byte	112
+	.byte	120
+	.byte	116
+	.byte	120
+	.byte	112
+	.byte	112
+	.byte	112
+	.balign	8
+hynix20nm_read_retry_reg_adr_1:
+	.byte	-52
+	.byte	-65
+	.byte	-86
+	.byte	-85
+	.byte	-51
+	.byte	-83
+	.byte	-82
+	.byte	-81
+	.balign	8
+hynix20nm_read_retry_reg_adr_2:
+	.byte	-80
+	.byte	-79
+	.byte	-78
+	.byte	-77
+	.byte	-76
+	.byte	-75
+	.byte	-74
+	.byte	-73
