@@ -755,10 +755,29 @@ static u8 arelink_change_password(u8 block, u32 password)
 	return 9;
 }
 
+/* Stock's private blank-page classifier uses byte counters and returns0
+ * for empty input as well as all-zero/all0x49 pages. Preserve that policy and
+ * its private frame; original declarations/compiler flags are unknown.
+ * TODO: input-policy or bounds changes belong in a separate fix.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static u8 DNS_0003_Func(const u8 *input, u8 count)
+{
+ u8 zeros=0, erased=0, i=0, value;
+ for (;i<count;i++) {
+  value=*input++;
+  if (value==0) zeros++;
+  else if (value==0x49) erased++;
+ }
+ if (zeros==count) return 0;
+ if (erased==count) return 0;
+ return 1;
+}
+
 static u8 arelink_page_read(u8 page, u8 *data, u8 encrypted)
 {
 	u8 decoded[16];
-	unsigned int attempt, i, zeros = 0, erased = 0;
+	unsigned int attempt, i;
 	if (!initialized)
 		return 2;
 	if (page >= 30)
@@ -774,11 +793,12 @@ static u8 arelink_page_read(u8 page, u8 *data, u8 encrypted)
 			break;
 	}
 	unpack(receive_buffer, page_buffer, 64);
-	for (i = 0; i < 64; i++) {
-		zeros += page_buffer[i] == 0;
-		erased += page_buffer[i] == 0x49;
-	}
-	if (!(encrypted & 1) || zeros == 64 || erased == 64) {
+	/* Stock normalizes the low flag bit and classifies only encrypted reads.
+	 * Raw mode must not scan the shared page before copying it: an extra
+	 * scan changes observations if another caller writes this unlocked state.
+	 * TODO: synchronization belongs in a separate behavior change.
+	 */
+	if (!(encrypted & 1) || !DNS_0003_Func(page_buffer, 64)) {
 		___memcpy(data, page_buffer, 64);
 		return 0;
 	}
