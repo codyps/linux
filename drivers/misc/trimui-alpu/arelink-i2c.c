@@ -95,8 +95,16 @@ u8 I2CMasterRead(u8 ack)
 		/* Stock tests only the GPIO result's low byte.  Read errors can
 		 * therefore become data bits. TODO: propagate errors separately.
 		 */
-		if ((u8)gpio_get_value(ALPU_SDA))
+		if ((u8)gpio_get_value(ALPU_SDA)) {
+			/* Pin stock's mask-first ORR operand order. This is a
+			 * compatibility instruction choice, not recovered original C.
+			 */
+#ifdef __aarch64__
+			__asm__("orr %w0, %w1, %w0" : "+r" (data) : "r" (mask));
+#else
 			data = mask | data;
+#endif
+		}
 		gpio_direction_output(ALPU_SCL, 0);
 		__udelay(2);
 		mask >>= 1;
