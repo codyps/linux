@@ -310,7 +310,10 @@ static u8 ___strlen(const char *text)
 	return (u8)(end - text) - 1;
 }
 
-__attribute__((__used__, __noinline__, __optimize__("O0")))
+/* Stock has no canary here. Keep its recovered private stack-slot order;
+ * this attribute reproduces the body, not proven original compiler flags.
+ */
+__attribute__((__used__, __noinline__, __optimize__("O0", "no-stack-protector")))
 static void ___memcpy(void *destination, const void *source, u8 count)
 {
 	u8 *dst = destination;
