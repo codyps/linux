@@ -764,13 +764,31 @@ static ssize_t show_frames_enable(struct class *class, struct class_attribute *a
 	return sprintf(buffer, "%d\n", trimui_frames_enable);
 }
 
+/* Compatible address views, not independent allocations or recovered types.
+ * Only the explicitly rooted control/counter fields are accessed. */
+struct trimui_frame_control_view { u8 unused[0x14]; int enable,cycles,fps,len; };
+struct trimui_frame_counter_view { u8 unused[0x9d0]; int index,left; };
+extern struct trimui_frame_control_view trimui_frame_controls;
+extern struct trimui_frame_counter_view trimui_frame_counters;
+__asm__(".local trimui_frame_controls\n.type trimui_frame_controls,%object\n.set trimui_frame_controls,trimui_led_state-8\n.size trimui_frame_controls,36\n"
+        ".local trimui_frame_counters\n.type trimui_frame_counters,%object\n.set trimui_frame_counters,trimui_led_state+0x43f8\n.size trimui_frame_counters,0x9d8\n");
 static ssize_t store_frames_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_frames_enable);
-	trimui_frame_index = 0;
-	trimui_cycles_left = trimui_frames_cycles - 1;
-	if (!trimui_frames_enable) trimui_frames_len = 0;
-	return count;
+ struct trimui_frame_control_view *control;
+ size_t result;
+ int left;
+ /* Compatible native address/count lifetime, not recovered original C.
+  * These symbolic relocations allocate no data and add no locking. */
+ asm("adrp %0, trimui_frame_controls\n\tadd %0, %0, :lo12:trimui_frame_controls\n\tmov %1, %2"
+     : "=&r"(control), "=r"(result) : "r"(count));
+ /* Stock ignores parse errors and still resets/decrements state.
+  * TODO: reject errors only in a separate behavior change. */
+ kstrtoint(buffer,0,&control->enable);
+ left=control->cycles-1;
+ trimui_frame_counters.index=0;
+ trimui_frame_counters.left=left;
+ if(!control->enable)control->len=0;
+ return result;
 }
 
 static ssize_t show_frames_override_m_enable(struct class *class, struct class_attribute *attr, char *buffer)
