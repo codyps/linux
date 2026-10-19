@@ -41,4 +41,9 @@
 # so we just ignore them to let readprofile continue to work.
 # (At least sparc64 has __crc_ in the middle).
 
+# TG3040 stock behavior: the .L expression below has an unescaped dot.
+# It also removes names beginning eL/bL, including
+# eLIBs_CleanFlushDCacheRegion_nand and bLength_show. Their final ELF and
+# kallsyms entries remain present. Keep the shipped filter here.
+# TODO: escape the dot in a separate tooling fix, not stock reconstruction.
 $NM -n $1 | grep -v '\( [aNUw] \)\|\(__crc_\)\|\( \$[adt]\)\|\( .L\)' > $2
