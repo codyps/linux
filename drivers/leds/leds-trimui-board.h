@@ -487,7 +487,7 @@ static noinline u32 get_rgb_hex(const char *buffer)
 	/* Stock ignores conversion failure and publishes the initialized zero.
 	 * TODO: report malformed input in a separate behavior-changing fix.
 	 */
-	sscanf(buffer, "%x", &rgb);
+	sscanf(buffer, "%X", &rgb);
 	return rgb;
 }
 
@@ -556,16 +556,20 @@ static ssize_t show_effect_rgb_hex_lr(struct class *class, struct class_attribut
 	return dump_rgb_hex(buffer, trimui_effect_l.target_rgb);
 }
 
-static ssize_t store_effect_rgb_hex_lr(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+/* Scalar views of recovered fields; these aliases allocate no storage.
+ * Their original C declarations are unknown. */
+extern u32 trimui_target_l,trimui_target_r;
+__asm__(".local trimui_target_l\n.type trimui_target_l,%object\n.set trimui_target_l,trimui_led_state+0x2d9c\n.size trimui_target_l,4\n"
+        ".local trimui_target_r\n.type trimui_target_r,%object\n.set trimui_target_r,trimui_led_state+0x1e7c\n.size trimui_target_r,4\n");
+static ssize_t store_effect_rgb_hex_lr(struct class *class,struct class_attribute *attr,const char *buffer,size_t count)
 {
-	u32 rgb = get_rgb_hex(buffer);
-	/* Stock issues the left store before the right store, without locking.
-	 * Keep that order when these separate stock objects share our aggregate.
-	 * TODO: synchronize the pair with the effect thread in a separate fix.
-	 */
-	WRITE_ONCE(trimui_effect_l.target_rgb, rgb);
-	WRITE_ONCE(trimui_effect_r.target_rgb, rgb);
-	return count;
+ u32 rgb=get_rgb_hex(buffer);
+ /* Stock publishes left before right without synchronization, even after
+  * malformed input produced zero. TODO: reject invalid input and protect
+  * the pair only in a separate behavior change. */
+ WRITE_ONCE(trimui_target_l,rgb);
+ WRITE_ONCE(trimui_target_r,rgb);
+ return count;
 }
 
 static ssize_t show_effect_m(struct class *class, struct class_attribute *attr, char *buffer)
