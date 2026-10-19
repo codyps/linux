@@ -8,27 +8,28 @@
 #include "arelink.h"
 #include "arelink-tables.h"
 
-/* Stock initialized state: keep its order and 16-byte pool alignment.
- * Original C declarations are unknown; the two bytes at2..3 are padding.
+/* Stock initialized slots: version pointer followed by cipher state.
+ * Original declarations are unknown; two bytes after block_status are padding.
  * Invalid stored key sizes and zero PRNG seeds retain the documented behavior.
  */
 static struct {
+    const char * volatile version;
     u16 block_status;
     u8 reserved_2[2];
     volatile u32 random_state;
     u8 key_size;
-} __attribute__((packed)) alpu_initialized __attribute__((aligned(16))) = {
-    .block_status = 0xffff, .random_state = 0xa37f1da6, .key_size = 2,
+} __attribute__((packed)) alpu_initialized __attribute__((aligned(8))) = {
+    .version = arelink_lib_version, .block_status = 0xffff, .random_state = 0xa37f1da6, .key_size = 2,
 };
 #define random_state alpu_initialized.random_state
 #define key_size alpu_initialized.key_size
 #define block_status alpu_initialized.block_status
-/* Local aliases retain the independently decoded semantic reference names.
- * The zero-offset ELF alias inherits the pool extent; its live field is u16.
+/* Local aliases retain the independently decoded field offsets. The first
+ * pointer occupies the previously missing eight-byte initialized slot.
  */
-__asm__(".local block_status\n.type block_status, %object\n.set block_status, alpu_initialized\n.size block_status, 2\n"
-        ".local random_state\n.type random_state, %object\n.set random_state, alpu_initialized+4\n.size random_state, 4\n"
-        ".local key_size\n.type key_size, %object\n.set key_size, alpu_initialized+8\n.size key_size, 1\n");
+__asm__(".local block_status\n.type block_status, %object\n.set block_status, alpu_initialized+8\n.size block_status, 2\n"
+        ".local random_state\n.type random_state, %object\n.set random_state, alpu_initialized+12\n.size random_state, 4\n"
+        ".local key_size\n.type key_size, %object\n.set key_size, alpu_initialized+16\n.size key_size, 1\n");
 /* Stock keeps cipher scratch beside protocol state, without serialization.
  * Keep the shared state and its neighboring overwrite victims. TODO: serialize
  * callers and validate all indices in a separate fix. The byte at offset 528
@@ -51,6 +52,12 @@ static struct {
 #define receive_buffer alpu_state.receive_buffer
 #define page_buffer alpu_state.page_buffer
 #define passwords alpu_state.passwords
+/* A typed alias keeps the getter's single-byte address materialization.
+ * This is the same initialized byte, not separate state or an original name.
+ */
+extern u8 alpu_initialized_flag;
+__asm__(".local alpu_initialized_flag\n.type alpu_initialized_flag, %object\n"
+        ".set alpu_initialized_flag, alpu_state+529\n.size alpu_initialized_flag, 1\n");
 
 
 u8 arelink_random(void)
@@ -289,12 +296,41 @@ u8 arelink_init(u8 *serial)
 	return 0;
 }
 
+/* Stock's private helpers truncate lengths to a byte and copy forwards even
+ * for overlapping buffers. Preserve these effects and the unbounded NUL scan.
+ * TODO: bounded lengths/overlap handling belong in a separate behavior fix.
+ * Their unoptimized bodies and the getter match the recovered stock code.
+ */
+__attribute__((used, noinline, optimize("O0")))
+static u8 ___strlen(const char *text)
+{
+	const char *end = text;
+	while (*end++)
+		;
+	return (u8)(end - text) - 1;
+}
+
+__attribute__((used, noinline, optimize("O0")))
+static void ___memcpy(void *destination, const void *source, u8 count)
+{
+	u8 *dst = destination;
+	const u8 *src = source;
+	while (count--)
+		*dst++ = *src++;
+}
+
+__attribute__((noinline, optimize("O0")))
 u8 get_lib_version(u8 *output, u8 *length)
 {
-	if (!initialized)
+	if (!alpu_initialized_flag)
 		return 2;
-	*length = strlen(arelink_lib_version);
-	memcpy(output, arelink_lib_version, *length);
+	/* Three separate pointer loads can observe intervening writers. Keep
+	 * their order, including capturing the copy source before the second
+	 * length calculation. Do not cache the pointer or add synchronization.
+	 */
+	*length = ___strlen(alpu_initialized.version);
+	___memcpy(output, alpu_initialized.version,
+		 ___strlen(alpu_initialized.version));
 	return 0;
 }
 
