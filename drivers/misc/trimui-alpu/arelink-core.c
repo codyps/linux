@@ -199,6 +199,27 @@ __attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) s
 extern u8 alpu_aes_matrix[4][4];
 __asm__(".local alpu_aes_matrix\n.type alpu_aes_matrix, %object\n"
         ".set alpu_aes_matrix, alpu_state+40\n.size alpu_aes_matrix,16\n");
+/* Keep stock's repeated shared-matrix reads and writes, without locking.
+ * TODO: serialize the cipher only as a separate behavior change.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0107_Func(void)
+{
+ u8 i, Tmp, Tm, t;
+ for (i = 0; i < 4; i++) {
+  t = alpu_aes_matrix[0][i];
+  Tmp = alpu_aes_matrix[0][i] ^ alpu_aes_matrix[1][i] ^ alpu_aes_matrix[2][i] ^ alpu_aes_matrix[3][i];
+  Tm = alpu_aes_matrix[0][i] ^ alpu_aes_matrix[1][i]; Tm = xtime(Tm);
+  alpu_aes_matrix[0][i] ^= Tm ^ Tmp;
+  Tm = alpu_aes_matrix[1][i] ^ alpu_aes_matrix[2][i]; Tm = xtime(Tm);
+  alpu_aes_matrix[1][i] ^= Tm ^ Tmp;
+  Tm = alpu_aes_matrix[2][i] ^ alpu_aes_matrix[3][i]; Tm = xtime(Tm);
+  alpu_aes_matrix[2][i] ^= Tm ^ Tmp;
+  Tm = alpu_aes_matrix[3][i] ^ t; Tm = xtime(Tm);
+  alpu_aes_matrix[3][i] ^= Tm ^ Tmp;
+ }
+}
+
 __attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
 static void DNS_0106_Func(void)
 {
@@ -265,14 +286,7 @@ static void aes_block(const u8 *input, u8 *output, u8 decrypt)
 				STATE(i / 4, i % 4) = decrypt ? arelink_aes_isbox[shifted[i]] :
 					arelink_aes_sbox[shifted[i]];
 			if (!decrypt && round < rounds)
-				for (column = 0; column < 4; column++) {
-					u8 total = STATE(column, 0) ^ STATE(column, 1) ^
-						STATE(column, 2) ^ STATE(column, 3);
-					u8 first = STATE(column, 0);
-					for (i = 0; i < 3; i++)
-						STATE(column, i) ^= total ^ xtime(STATE(column, i) ^ STATE(column, i + 1));
-					STATE(column, 3) ^= total ^ xtime(STATE(column, 3) ^ first);
-				}
+				DNS_0107_Func();
 		}
 		for (i = 0; i < 16; i++)
 			STATE(i / 4, i % 4) ^= expanded[key_round * 16 + i];
