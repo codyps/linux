@@ -37,6 +37,9 @@ static u16 block_status = 0xffff;
 u8 arelink_random(void)
 {
 	u8 result;
+	/* A zero xorshift seed is absorbing: stock spins here forever.
+	 * TODO: handle zero seeds in a separate behavior change.
+	 */
 	do {
 		random_state ^= random_state << 13;
 		random_state ^= random_state >> 17;
@@ -156,7 +159,11 @@ static u8 multiply(u8 x, u8 y)
 static void aes_block(const u8 *input, u8 *output, u8 decrypt)
 {
 	u8 shifted[16], temp[4];
-	unsigned int nk = 4 + 2 * key_size, rounds = nk + 6;
+	/* DNS_0101 selects 256 bits for every stored byte other than 0 or 1,
+	 * even though the public setter rejects bytes above 2. Keep that fallback.
+	 */
+	unsigned int nk = key_size == 0 ? 4 : key_size == 1 ? 6 : 8;
+	unsigned int rounds = nk + 6;
 	unsigned int i, j, round, row, column, source;
 	u8 *expanded = alpu_state.expanded;
 #define STATE(c, r) alpu_state.aes_state[(r) * 4 + (c)]
