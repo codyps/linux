@@ -8,8 +8,27 @@
 #include "arelink.h"
 #include "arelink-tables.h"
 
-static u32 random_state = 0xa37f1da6;
-static u8 key_size = 2;
+/* Stock initialized state: keep its order and 16-byte pool alignment.
+ * Original C declarations are unknown; the two bytes at2..3 are padding.
+ * Invalid stored key sizes and zero PRNG seeds retain the documented behavior.
+ */
+static struct {
+    u16 block_status;
+    u8 reserved_2[2];
+    u32 random_state;
+    u8 key_size;
+} __attribute__((packed)) alpu_initialized __attribute__((aligned(16))) = {
+    .block_status = 0xffff, .random_state = 0xa37f1da6, .key_size = 2,
+};
+#define random_state alpu_initialized.random_state
+#define key_size alpu_initialized.key_size
+#define block_status alpu_initialized.block_status
+/* Local aliases retain the independently decoded semantic reference names.
+ * The zero-offset ELF alias inherits the pool extent; its live field is u16.
+ */
+__asm__(".local block_status\n.type block_status, %object\n.set block_status, alpu_initialized\n.size block_status, 2\n"
+        ".local random_state\n.type random_state, %object\n.set random_state, alpu_initialized+4\n.size random_state, 4\n"
+        ".local key_size\n.type key_size, %object\n.set key_size, alpu_initialized+8\n.size key_size, 1\n");
 /* Stock keeps cipher scratch beside protocol state, without serialization.
  * Keep the shared state and its neighboring overwrite victims. TODO: serialize
  * callers and validate all indices in a separate fix. The byte at offset 528
@@ -32,7 +51,7 @@ static struct {
 #define receive_buffer alpu_state.receive_buffer
 #define page_buffer alpu_state.page_buffer
 #define passwords alpu_state.passwords
-static u16 block_status = 0xffff;
+
 
 u8 arelink_random(void)
 {

@@ -300,7 +300,8 @@ static struct sk_buff *h4_dequeue(struct hci_uart *hu)
 	return skb_dequeue(&h4->txq);
 }
 
-static struct hci_uart_proto h4p = {
+/* The shipped registration table lives with read-only data. */
+static const struct hci_uart_proto h4p = {
 	.id		= HCI_UART_H4,
 	.name		= "H4",
 	.open		= h4_open,

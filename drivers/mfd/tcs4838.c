@@ -5,7 +5,8 @@
 #include <linux/module.h>
 #include <linux/of.h>
 
-static struct mfd_cell tcs4838_cells[] = {
+/* Stock passes a read-only cell table; keep its original section placement. */
+static const struct mfd_cell tcs4838_cells[] = {
 	{ .name = "tcs4838-regulator", },
 };
 
