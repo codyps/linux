@@ -301,7 +301,7 @@ u8 arelink_init(u8 *serial)
  * TODO: bounded lengths/overlap handling belong in a separate behavior fix.
  * Their unoptimized bodies and the getter match the recovered stock code.
  */
-__attribute__((used, noinline, optimize("O0")))
+__attribute__((__used__, __noinline__, __optimize__("O0")))
 static u8 ___strlen(const char *text)
 {
 	const char *end = text;
@@ -310,7 +310,7 @@ static u8 ___strlen(const char *text)
 	return (u8)(end - text) - 1;
 }
 
-__attribute__((used, noinline, optimize("O0")))
+__attribute__((__used__, __noinline__, __optimize__("O0")))
 static void ___memcpy(void *destination, const void *source, u8 count)
 {
 	u8 *dst = destination;
@@ -319,7 +319,7 @@ static void ___memcpy(void *destination, const void *source, u8 count)
 		*dst++ = *src++;
 }
 
-__attribute__((noinline, optimize("O0")))
+__attribute__((__noinline__, __optimize__("O0")))
 u8 get_lib_version(u8 *output, u8 *length)
 {
 	if (!alpu_initialized_flag)
