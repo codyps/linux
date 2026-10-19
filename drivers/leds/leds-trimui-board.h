@@ -80,53 +80,74 @@ static noinline void trimui_led_power_disable(void)
 	gpio_direction_output(107, 0);
 }
 
+/* Compatible views of rooted stock fields; no independent allocation.
+ * Original C declarations are unknown. The config alias inherits the
+ * four-byte ELF extent of its scalar root, not the full C view below. */
+struct trimui_transfer_state_view {
+ u8 prefix[0x7cc]; u8 rgb[512]; int low_battery;
+ u8 unobserved[0x18]; int suspended; u32 wire[128];
+};
+struct trimui_transfer_config_view { u8 prefix[16]; int enable; u32 count,debug; };
+extern struct trimui_transfer_state_view trimui_transfer_state;
+extern struct trimui_transfer_config_view trimui_transfer_config;
+asm(".local trimui_transfer_state\n.type trimui_transfer_state,%object\n.set trimui_transfer_state,trimui_led_state+0x43f8\n.size trimui_transfer_state,0xbec\n"
+    ".local trimui_transfer_config\n.type trimui_transfer_config,%object\n.set trimui_transfer_config,trimui_limit\n.size trimui_transfer_config,4\n");
 static void commit_static_frame(void)
 {
-	struct sunxi_led *led = sunxi_led;
-	/* Preserve the stock diagnostic array, separately from merged literals. */
-	static const char frame_name[] = "sunxi_set_led_rgb32_frame";
-	unsigned int i, scale, rgb, r, g, b;
-	unsigned long flags;
-	struct timeval start, end;
-	unsigned long diff_time;
-
-	mutex_lock(&led->pcdev_group[0].r.cdev.led_access);
-	/* Stock trusts the device-tree count even beyond these arrays.
-	 * TODO: validate that count separately; retain the unchecked accesses.
-	 */
-	for (i = 0; i < trimui_led_count; i++) {
-		scale = *trimui_scale_by_led[i];
-		if (trimui_low_battery && scale > 3)
-			scale = 3;
-		rgb = trimui_frame[i];
-		r = ((((rgb >> 16) & 255) * scale) >> 8) & 255;
-		g = ((((rgb >> 8) & 255) * scale) >> 8) & 255;
-		/* Stock uses an arithmetic shift and leaves blue unmasked.
-		 * TODO: normalize channel widths in a separate fix. */
-		b = (s32)((rgb & 255) * scale) >> 8;
-		trimui_wire_frame[i] = i < 10 ? (r << 16) | (g << 8) | b :
-			(g << 16) | (r << 8) | b;
-	}
-	if (trimui_suspended || !trimui_led_enable)
-		memset(trimui_wire_frame, 0, sizeof(trimui_wire_frame));
-	do_gettimeofday(&start);
-	spin_lock_irqsave(&led->lock, flags);
-	led->length = trimui_led_count;
-	for (i = 0; i < led->length; i++)
-		led->data[i] = trimui_wire_frame[i];
-	spin_unlock_irqrestore(&led->lock, flags);
-	sunxi_ledc_trans_data(led);
-	if (debug_mask & DEBUG_INFO2) {
-		/* Retain the diagnostic argument emitted by the stock binary. */
-		printk(KERN_WARNING "%s()%d - dump reg:\n", frame_name, 2744);
-		led_dump_reg(led, 0, 0x30);
-	}
-	sunxi_ledc_complete(led);
-	do_gettimeofday(&end);
-	diff_time = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
-	if (debug_mask & DEBUG_INFO1)
-		printk(KERN_WARNING "num = %03u, time = %ld us\n", led->length, diff_time);
-	mutex_unlock(&led->pcdev_group[0].r.cdev.led_access);
+ /* Stock keeps this initial mutex even if the global device changes.
+  * TODO: define device lifetime/locking in a separate behavior change. */
+ struct mutex *access=&sunxi_led->pcdev_group[0].r.cdev.led_access;
+ struct sunxi_led *led;
+ static const char frame_name[]="sunxi_set_led_rgb32_frame";
+ unsigned int i,count,scale,red,green; int low,j; s32 blue;
+ unsigned long flags,diff_time;
+ struct timeval start,end;
+ struct trimui_transfer_state_view *state;
+ const volatile u8 *src;
+ u32 *out;
+ mutex_lock(access);
+ state=RELOC_HIDE(&trimui_transfer_state,0);
+ src=state->rgb; out=state->wire;
+ /* Stock snapshots these values after locking, before conversion. */
+ count=READ_ONCE(trimui_transfer_config.count);
+ low=READ_ONCE(state->low_battery);
+ /* Stock trusts the count beyond both arrays and its 32-entry scale table.
+  * TODO: bound it in a separate behavior change. */
+ for(i=0;i<count;i++) {
+  scale=*trimui_scale_by_led[i];
+  if(low && scale>3)scale=3;
+  /* Preserve byte observation order, wrap, and arithmetic blue shift.
+   * TODO: normalize channel widths only as a separate fix. */
+  blue=(u32)src[0]*scale; red=(u32)src[2]*scale; green=(u32)src[1]*scale;
+  if(i<10)out[i]=((red<<8)&0xff0000)|(green&0xff00)|(blue>>8);
+  else out[i]=((green<<8)&0xff0000)|(red&0xff00)|(blue>>8);
+  src+=4;
+ }
+ if(state->suspended || !trimui_transfer_config.enable)
+  memset(state->wire,0,sizeof(state->wire));
+ /* Stock reloads the device here while retaining the initial mutex. */
+ led=READ_ONCE(sunxi_led);
+ do_gettimeofday(&start);
+ /* Lock/transfer/completion results remain ignored as shipped. */
+ spin_lock_irqsave(&led->lock,flags);
+ led->length=count;
+ for(j=0;(unsigned int)j<READ_ONCE(led->length);j++) {
+  u32 *dest=READ_ONCE(led->data);
+  u32 pixel=READ_ONCE(state->wire[j]);
+  WRITE_ONCE(dest[j],pixel);
+ }
+ spin_unlock_irqrestore(&led->lock,flags);
+ sunxi_ledc_trans_data(led);
+ if(trimui_transfer_config.debug & DEBUG_INFO2) {
+  printk(KERN_WARNING "%s()%d - dump reg:\n",frame_name,2744);
+  led_dump_reg(led,0,0x30);
+ }
+ sunxi_ledc_complete(led);
+ do_gettimeofday(&end);
+ diff_time=1000000*(end.tv_sec-start.tv_sec)+end.tv_usec-start.tv_usec;
+ if(trimui_transfer_config.debug & DEBUG_INFO1)
+  printk(KERN_WARNING "num = %03u, time = %ld us\n",led->length,diff_time);
+ mutex_unlock(access);
 }
 
 static int trimui_ledc_run_thread(void *unused)
