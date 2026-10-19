@@ -291,11 +291,10 @@ u8 arelink_init(u8 *serial)
 
 u8 get_lib_version(u8 *output, u8 *length)
 {
-	static const char version[] = "ARELINKNRLDNS FW v1.70 (Sep  4 2023 20:33:42)";
 	if (!initialized)
 		return 2;
-	*length = strlen(version);
-	memcpy(output, version, *length);
+	*length = strlen(arelink_lib_version);
+	memcpy(output, arelink_lib_version, *length);
 	return 0;
 }
 
