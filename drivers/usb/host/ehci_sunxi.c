@@ -337,13 +337,13 @@ static ssize_t ehci_phy_threshold(struct device *dev,
 }
 
 static DEVICE_ATTR(phy_threshold, 0644, show_phy_threshold, ehci_phy_threshold);
-
 static ssize_t show_phy_range(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct sunxi_hci_hcd *sunxi_ehci = NULL;
-
+	/* TODO: guard dev and throttle logs separately; retain stock order here. */
 	sunxi_ehci = dev->platform_data;
+	printk(KERN_WARNING "PHY's rate and range:0x0~0x3ff\n");
 #if defined(CONFIG_ARCH_SUN8IW17) | defined(CONFIG_ARCH_SUN8IW11)
 	return sprintf(buf, "rate:0x%x\n",
 		usb_phyx_tp_read(sunxi_ehci, 0x20, 5));
