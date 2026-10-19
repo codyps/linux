@@ -272,13 +272,19 @@ static void aes_block(const u8 *input, u8 *output, u8 decrypt)
 #undef STATE
 }
 
+/* These private byte operations are also used before their definitions below.
+ * Do not replace them with the kernel's wider/bulk memory implementations.
+ */
+static void *___memset(void *destination, int value, unsigned int count);
+static void ___memcpy(void *destination, const void *source, u8 count);
+
 u8 arelink_init(u8 *serial)
 {
 	u8 decoded[5];
 	unsigned int attempt;
 	decode_constants(arelink_encoded_key, key, 32);
 	decode_constants(arelink_encoded_mask, mask_table, 16);
-	memset(receive_buffer, 255, 6);
+	___memset(receive_buffer, 255, 6);
 	for (attempt = 0; attempt < 24; attempt++) {
 		arelink_delay(1);
 		arelink_read_data(0x5000, 6, receive_buffer);
@@ -288,8 +294,8 @@ u8 arelink_init(u8 *serial)
 	arelink_srand(receive_buffer[0]);
 	unpack(receive_buffer, decoded, 5);
 	if (serial)
-		memcpy(serial, decoded, 5);
-	memcpy(key, decoded, 5);
+		___memcpy(serial, decoded, 5);
+	___memcpy(key, decoded, 5);
 	initialized = 1;
 	protected_block = 0;
 	block_status = 0xffff;
@@ -320,6 +326,39 @@ static void ___memcpy(void *destination, const void *source, u8 count)
 	const u8 *src = source;
 	while (count--)
 		*dst++ = *src++;
+}
+
+/* Stock compares unsigned bytes, left before right, and returns only -1/0/1.
+ * A negative signed count skips all input reads. Preserve the private stack
+ * slots as well; these declarations/attributes are compatible reconstructions.
+ */
+__attribute__((__used__, __noinline__, __optimize__("O0", "no-stack-protector")))
+static int ___memcmp(const void *left, const void *right, int count)
+{
+	const unsigned char *a = left;
+	const unsigned char *b = right;
+	int i = 0;
+	unsigned int x, y;
+	for (; i < count; i++) {
+		x = *a++;
+		y = *b++;
+		if (x != y)
+			return x > y ? 1 : -1;
+	}
+	return 0;
+}
+
+/* Stock writes bytes backward and wraps its 32-bit counter, including zero's
+ * final decrement. TODO: conventional bounds/order changes are separate fixes;
+ * unsynchronized callers can observe the shipped individual byte stores.
+ */
+__attribute__((__used__, __noinline__, __optimize__("O0", "no-stack-protector")))
+static void *___memset(void *destination, int value, unsigned int count)
+{
+	unsigned char *dst = destination;
+	while (count--)
+		dst[count] = value;
+	return destination;
 }
 
 __attribute__((__noinline__, __optimize__("O0")))
@@ -358,7 +397,7 @@ u8 arelink_req_enc_dec(const u8 *input, u8 *output, u8 decrypt)
 		return 2;
 	if (decrypt > 1)
 		return 3;
-	memset(receive_buffer, 0, 17);
+	___memset(receive_buffer, 0, 17);
 	cipher_request(input, decrypt, 1);
 	for (attempt = 0; attempt < 5; attempt++) {
 		arelink_delay(1);
@@ -397,11 +436,11 @@ u8 arelink_req_cypher(const u8 *input, u8 *output)
 	unsigned int attempt;
 	if (!initialized)
 		return 2;
-	memset(receive_buffer, 0, 16);
+	___memset(receive_buffer, 0, 16);
 	reverse(input, frame + 1, 16);
 	send_frame(0, frame, 16);
 	arelink_delay(1);
-	memset(receive_buffer, 0, 17);
+	___memset(receive_buffer, 0, 17);
 	for (attempt = 0; attempt < 5; attempt++) {
 		arelink_read_data(0, 17, receive_buffer);
 		if (receive_buffer[0])
@@ -420,10 +459,10 @@ u8 arelink_authentication(u8 size, u32 seed, const u8 *challenge)
 		arelink_srand(seed);
 	arelink_set_aes_key_size(size);
 	if (!arelink_req_sw_enc_dec(challenge, encrypted, 0)) {
-		memset(response, 0, 16);
+		___memset(response, 0, 16);
 		arelink_delay(2);
 		if (!arelink_req_cypher(encrypted, response) &&
-		    !memcmp(challenge, response, 16))
+		    !___memcmp(challenge, response, 16))
 			authenticated = 1;
 	}
 	return authenticated;
@@ -469,7 +508,7 @@ static u8 check_block_auth_status(u8 block, u8 *result)
 		return 5;
 	if (protected_block && block < protected_block + 1)
 		return 8;
-	memset(receive_buffer, 255, 3);
+	___memset(receive_buffer, 255, 3);
 	for (i = 0; i < 6; i++) {
 		read_block_status(block & 15);
 		if (block_status & (1 << block))
@@ -504,7 +543,7 @@ static u8 arelink_change_password(u8 block, u32 password)
 	for (attempt = 0; attempt < 6; attempt++) {
 		arelink_write_data(0x6020, frame, 6);
 		do {
-			memset(receive_buffer, 0, 2);
+			___memset(receive_buffer, 0, 2);
 			arelink_delay(2);
 			arelink_read_data(0x6030, 2, receive_buffer);
 			unpack(receive_buffer, &status, 1);
@@ -529,7 +568,7 @@ static u8 arelink_page_read(u8 page, u8 *data, u8 encrypted)
 	if (protected_block && page < (protected_block + 1) * 2)
 		return 7;
 	command(0, 8);
-	memset(receive_buffer, 0, 64);
+	___memset(receive_buffer, 0, 64);
 	for (attempt = 0; attempt < 5; attempt++) {
 		arelink_delay(1);
 		arelink_read_data((page + 0x200) * 64, 65, receive_buffer);
@@ -542,10 +581,10 @@ static u8 arelink_page_read(u8 page, u8 *data, u8 encrypted)
 		erased += page_buffer[i] == 0x49;
 	}
 	if (!(encrypted & 1) || zeros == 64 || erased == 64) {
-		memcpy(data, page_buffer, 64);
+		___memcpy(data, page_buffer, 64);
 		return 0;
 	}
-	memset(receive_buffer, 0, 17);
+	___memset(receive_buffer, 0, 17);
 	for (i = 0; i < 64; i += 16) {
 		cipher_request(page_buffer + i, 1, 0);
 		for (attempt = 0; attempt < 5; attempt++) {
