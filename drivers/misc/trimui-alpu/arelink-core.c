@@ -59,7 +59,6 @@ extern u8 alpu_initialized_flag;
 __asm__(".local alpu_initialized_flag\n.type alpu_initialized_flag, %object\n"
         ".set alpu_initialized_flag, alpu_state+529\n.size alpu_initialized_flag, 1\n");
 
-
 u8 arelink_random(void)
 {
 	u8 result;
@@ -180,17 +179,6 @@ static void cipher_request(const u8 *input, u8 decrypt, u8 reverse_input)
  * TODO: generalize high coefficients only as a separate behavior change;
  * stock inverse-mix callers use9,11,13,14 and do not expose that limitation.
  */
-__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) static u8 xtime(u8 x)
-{
- return (x << 1) ^ (((x >> 7) & 1) * 0x1b);
-}
-__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) static u8 Multiply(u8 x, u8 y)
-{
- return ((y & 1) * x) ^ ((y >> 1 & 1) * xtime(x)) ^
-        ((y >> 2 & 1) * xtime(xtime(x))) ^
-        ((y >> 3 & 1) * xtime(xtime(xtime(x)))) ^
-        ((y >> 4 & 1) * xtime(xtime(xtime(xtime(x)))));
-}
 
 /* This typed alias names the independently rooted 16-byte matrix at+40.
  * It allocates no storage; its original C identifier is unknown. Stock lacks
@@ -202,6 +190,173 @@ __asm__(".local alpu_aes_matrix\n.type alpu_aes_matrix, %object\n"
 /* Keep stock's repeated shared-matrix reads and writes, without locking.
  * TODO: serialize the cipher only as a separate behavior change.
  */
+
+/* Stock copies the complete256-byte table to its private stack on
+ * every lookup. Preserve that footprint and all copy accesses. TODO: a direct
+ * const lookup is a separate behavior/performance change. The structure-copy
+ * spelling reproduces the initializer's block copy without duplicate ROM.
+ */
+struct alpu_lookup_table { u8 byte[256]; } __attribute__((__may_alias__));
+
+
+/* Typed alias only; stock does not validate this240-byte table's
+ * index. Rounds15..32 consume neighboring known shared fields. TODO: validate
+ * internal round arguments only as a separate behavior change. Later indices
+ * leave the recovered pool and have only bounded-prefix verification.
+ */
+extern u8 alpu_round_key[240];
+__asm__(".local alpu_round_key\n.type alpu_round_key, %object\n"
+        ".set alpu_round_key, alpu_state+56\n.size alpu_round_key,240\n");
+
+extern int alpu_aes_nr, alpu_aes_nk;
+extern u8 alpu_cipher_key[32];
+extern const u8 alpu_aes_rcon[11];
+__asm__(".local alpu_aes_nr\n.type alpu_aes_nr, %object\n.set alpu_aes_nr, alpu_state\n.size alpu_aes_nr,4\n"
+        ".local alpu_aes_nk\n.type alpu_aes_nk, %object\n.set alpu_aes_nk, alpu_state+4\n.size alpu_aes_nk,4\n"
+        ".local alpu_cipher_key\n.type alpu_cipher_key, %object\n.set alpu_cipher_key, alpu_state+296\n.size alpu_cipher_key,32\n"
+        ".local alpu_aes_rcon\n.type alpu_aes_rcon, %object\n.set alpu_aes_rcon, alpu_constants+512\n.size alpu_aes_rcon,11\n");
+
+extern u8 alpu_aes_input[16], alpu_aes_output[16];
+__asm__(".local alpu_aes_input\n.type alpu_aes_input,%object\n.set alpu_aes_input,alpu_state+8\n.size alpu_aes_input,16\n"
+        ".local alpu_aes_output\n.type alpu_aes_output,%object\n.set alpu_aes_output,alpu_state+24\n.size alpu_aes_output,16\n");
+
+/* Keep the observed native helper order; no padding or extra storage. */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static u8 DNS_0115_Func(u8 x)
+{
+ struct alpu_lookup_table copy = *(const struct alpu_lookup_table *)arelink_aes_isbox;
+ return copy.byte[x];
+}
+
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static u8 DNS_0114_Func(u8 x)
+{
+ struct alpu_lookup_table copy = *(const struct alpu_lookup_table *)arelink_aes_sbox;
+ return copy.byte[x];
+}
+
+/* Stock temporary bytes occupy a four-byte-aligned slot. This spelling
+ * reproduces the observed placement; original padding/declaration is unknown.
+ * Counters wrap at eight bits; Nr/Nk and table indices are unchecked. TODO:
+ * validate only in a separate fix. No claim is made for C division by zero;
+ * the pinned native code retains stock SDIV/MSUB behavior and no new guard.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0113_Func(void)
+{
+ u8 i,j,k;
+ u8 tempa[4] __attribute__((aligned(4)));
+ for(i=0;i<alpu_aes_nk;i++) {
+  alpu_round_key[i*4+0]=alpu_cipher_key[i*4+0];
+  alpu_round_key[i*4+1]=alpu_cipher_key[i*4+1];
+  alpu_round_key[i*4+2]=alpu_cipher_key[i*4+2];
+  alpu_round_key[i*4+3]=alpu_cipher_key[i*4+3];
+ }
+ for(;i<4*(alpu_aes_nr+1);i++) {
+  for(j=0;j<4;j++) tempa[j]=alpu_round_key[(i-1)*4+j];
+  if(i%alpu_aes_nk==0) {
+   k=tempa[0];tempa[0]=tempa[1];tempa[1]=tempa[2];tempa[2]=tempa[3];tempa[3]=k;
+   tempa[0]=DNS_0114_Func(tempa[0]);tempa[1]=DNS_0114_Func(tempa[1]);
+   tempa[2]=DNS_0114_Func(tempa[2]);tempa[3]=DNS_0114_Func(tempa[3]);
+   tempa[0]^=alpu_aes_rcon[i/alpu_aes_nk];
+  } else if(alpu_aes_nk>6 && i%alpu_aes_nk==4) {
+   tempa[0]=DNS_0114_Func(tempa[0]);tempa[1]=DNS_0114_Func(tempa[1]);
+   tempa[2]=DNS_0114_Func(tempa[2]);tempa[3]=DNS_0114_Func(tempa[3]);
+  }
+  alpu_round_key[i*4+0]=alpu_round_key[(i-alpu_aes_nk)*4+0]^tempa[0];
+  alpu_round_key[i*4+1]=alpu_round_key[(i-alpu_aes_nk)*4+1]^tempa[1];
+  alpu_round_key[i*4+2]=alpu_round_key[(i-alpu_aes_nk)*4+2]^tempa[2];
+  alpu_round_key[i*4+3]=alpu_round_key[(i-alpu_aes_nk)*4+3]^tempa[3];
+ }
+}
+
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0112_Func(u8 round)
+{
+ u8 i,j;
+ for(i=0;i<4;i++)
+  for(j=0;j<4;j++)
+   alpu_aes_matrix[j][i] ^= alpu_round_key[(round*4+i)*4+j];
+}
+
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0111_Func(void)
+{
+ u8 i,j;
+ for(i=0;i<4;i++)
+  for(j=0;j<4;j++)
+   alpu_aes_matrix[i][j] = DNS_0114_Func(alpu_aes_matrix[i][j]);
+}
+
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0110_Func(void)
+{
+ u8 i,j;
+ for(i=0;i<4;i++)
+  for(j=0;j<4;j++)
+   alpu_aes_matrix[i][j] = DNS_0115_Func(alpu_aes_matrix[i][j]);
+}
+
+/* Preserve immediate row stores and reuse of one temporary.
+ * Hoisting reads changes stock accesses even when the final matrix agrees.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0109_Func(void)
+{
+ u8 t;
+ t=alpu_aes_matrix[1][0];
+ alpu_aes_matrix[1][0] = alpu_aes_matrix[1][1];
+ alpu_aes_matrix[1][1] = alpu_aes_matrix[1][2];
+ alpu_aes_matrix[1][2] = alpu_aes_matrix[1][3];
+ alpu_aes_matrix[1][3] = t;
+ t=alpu_aes_matrix[2][0];
+ alpu_aes_matrix[2][0] = alpu_aes_matrix[2][2];
+ alpu_aes_matrix[2][2] = t;
+ t=alpu_aes_matrix[2][1];
+ alpu_aes_matrix[2][1] = alpu_aes_matrix[2][3];
+ alpu_aes_matrix[2][3] = t;
+ t=alpu_aes_matrix[3][0];
+ alpu_aes_matrix[3][0] = alpu_aes_matrix[3][3];
+ alpu_aes_matrix[3][3] = alpu_aes_matrix[3][2];
+ alpu_aes_matrix[3][2] = alpu_aes_matrix[3][1];
+ alpu_aes_matrix[3][1] = t;
+}
+
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0108_Func(void)
+{
+ u8 t;
+ t=alpu_aes_matrix[1][3];
+ alpu_aes_matrix[1][3] = alpu_aes_matrix[1][2];
+ alpu_aes_matrix[1][2] = alpu_aes_matrix[1][1];
+ alpu_aes_matrix[1][1] = alpu_aes_matrix[1][0];
+ alpu_aes_matrix[1][0] = t;
+ t=alpu_aes_matrix[2][0];
+ alpu_aes_matrix[2][0] = alpu_aes_matrix[2][2];
+ alpu_aes_matrix[2][2] = t;
+ t=alpu_aes_matrix[2][1];
+ alpu_aes_matrix[2][1] = alpu_aes_matrix[2][3];
+ alpu_aes_matrix[2][3] = t;
+ t=alpu_aes_matrix[3][0];
+ alpu_aes_matrix[3][0] = alpu_aes_matrix[3][1];
+ alpu_aes_matrix[3][1] = alpu_aes_matrix[3][2];
+ alpu_aes_matrix[3][2] = alpu_aes_matrix[3][3];
+ alpu_aes_matrix[3][3] = t;
+}
+
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) static u8 xtime(u8 x)
+{
+ return (x << 1) ^ (((x >> 7) & 1) * 0x1b);
+}
+
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) static u8 Multiply(u8 x, u8 y)
+{
+ return ((y & 1) * x) ^ ((y >> 1 & 1) * xtime(x)) ^
+        ((y >> 2 & 1) * xtime(xtime(x))) ^
+        ((y >> 3 & 1) * xtime(xtime(xtime(x)))) ^
+        ((y >> 4 & 1) * xtime(xtime(xtime(xtime(x)))));
+}
+
 __attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
 static void DNS_0107_Func(void)
 {
@@ -236,69 +391,73 @@ static void DNS_0106_Func(void)
  }
 }
 
-static void aes_block(const u8 *input, u8 *output, u8 decrypt)
+/* Substitute before shifting in encryption. The operations commute only
+ * numerically: shared/private access and helper-entry order remain observable.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0105_Func(void)
 {
-	u8 shifted[16], temp[4];
-	/* DNS_0101 selects 256 bits for every stored byte other than 0 or 1,
-	 * even though the public setter rejects bytes above 2. Keep that fallback.
-	 */
-	unsigned int nk = key_size == 0 ? 4 : key_size == 1 ? 6 : 8;
-	unsigned int rounds = nk + 6;
-	unsigned int i, j, round, row, column, source;
-	u8 *expanded = alpu_state.expanded;
-#define STATE(c, r) alpu_state.aes_state[(r) * 4 + (c)]
-	alpu_state.rounds = rounds;
-	alpu_state.nk = nk;
-	for (i = 0; i < nk * 4; i++)
-		alpu_state.cipher_key[i] = key[i];
-	for (i = 0; i < 16; i++)
-		alpu_state.aes_input[i] = input[i];
-	memcpy(expanded, alpu_state.cipher_key, nk * 4);
-	for (i = nk; i < (rounds + 1) * 4; i++) {
-		memcpy(temp, expanded + (i - 1) * 4, 4);
-		if (!(i % nk)) {
-			u8 first = temp[0];
-			for (j = 0; j < 3; j++)
-				temp[j] = arelink_aes_sbox[temp[j + 1]];
-			temp[3] = arelink_aes_sbox[first];
-			temp[0] ^= arelink_aes_rcon[i / nk];
-		} else if (nk > 6 && i % nk == 4) {
-			for (j = 0; j < 4; j++)
-				temp[j] = arelink_aes_sbox[temp[j]];
-		}
-		for (j = 0; j < 4; j++)
-			expanded[i * 4 + j] = expanded[(i - nk) * 4 + j] ^ temp[j];
-	}
-	/* The stock library transposes its internal state; external blocks use
-	 * standard AES column order. */
-	for (column = 0; column < 4; column++)
-		for (row = 0; row < 4; row++)
-			STATE(column, row) = alpu_state.aes_input[column * 4 + row];
-	for (round = 0; round <= rounds; round++) {
-		unsigned int key_round = decrypt ? rounds - round : round;
-		if (round) {
-			for (row = 0; row < 4; row++)
-				for (column = 0; column < 4; column++) {
-					source = (column + (decrypt ? 4 - row : row)) & 3;
-					shifted[column * 4 + row] = STATE(source, row);
-				}
-			for (i = 0; i < 16; i++)
-				STATE(i / 4, i % 4) = decrypt ? arelink_aes_isbox[shifted[i]] :
-					arelink_aes_sbox[shifted[i]];
-			if (!decrypt && round < rounds)
-				DNS_0107_Func();
-		}
-		for (i = 0; i < 16; i++)
-			STATE(i / 4, i % 4) ^= expanded[key_round * 16 + i];
-		if (decrypt && round && round < rounds)
-			DNS_0106_Func();
-	}
-	for (column = 0; column < 4; column++)
-		for (row = 0; row < 4; row++)
-			alpu_state.aes_output[column * 4 + row] = STATE(column, row);
-	for (i = 0; i < 16; i++)
-		output[i] = alpu_state.aes_output[i];
-#undef STATE
+ /* Preserve the dead entry initialization and the byte round counter.
+  * Corrupt Nr can wrap/underflow into neighboring fields or loop forever. */
+ u8 i,j,round=0;
+ for(i=0;i<4;i++) for(j=0;j<4;j++) alpu_aes_matrix[j][i]=alpu_aes_input[i*4+j];
+ DNS_0112_Func(0);
+ for(round=1;round<alpu_aes_nr;round++) {
+  DNS_0111_Func(); DNS_0109_Func(); DNS_0107_Func(); DNS_0112_Func(round);
+ }
+ DNS_0111_Func(); DNS_0109_Func(); DNS_0112_Func(alpu_aes_nr);
+ for(i=0;i<4;i++) for(j=0;j<4;j++) alpu_aes_output[i*4+j]=alpu_aes_matrix[j][i];
+}
+
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0104_Func(void)
+{
+ /* Preserve the dead entry initialization and the byte round counter.
+  * Corrupt Nr can wrap/underflow into neighboring fields or loop forever. */
+ u8 i,j,round=0;
+ for(i=0;i<4;i++) for(j=0;j<4;j++) alpu_aes_matrix[j][i]=alpu_aes_input[i*4+j];
+ DNS_0112_Func(alpu_aes_nr);
+ for(round=alpu_aes_nr-1;round>0;round--) {
+  DNS_0108_Func(); DNS_0110_Func(); DNS_0112_Func(round); DNS_0106_Func();
+ }
+ DNS_0108_Func(); DNS_0110_Func(); DNS_0112_Func(0);
+ for(i=0;i<4;i++) for(j=0;j<4;j++) alpu_aes_output[i*4+j]=alpu_aes_matrix[j][i];
+}
+
+/* Stored selector bytes other than 0/1 select 256 bits, including values
+ * rejected by the public setter. Preserve signed division and saved-pointer
+ * advancement; replacing this with an unsigned shift changes native behavior.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+void DNS_0101_Func(u8 selector, const u8 *input)
+{
+ u8 i;
+ if(selector==0) alpu_aes_nr=128;
+ else if(selector==1) alpu_aes_nr=192;
+ else alpu_aes_nr=256;
+ alpu_aes_nk=alpu_aes_nr/32;
+ alpu_aes_nr=alpu_aes_nk+6;
+ for(i=0;i<alpu_aes_nk*4;i++) alpu_cipher_key[i]=*input++;
+}
+
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+void DNS_0102_Func(const u8 *input,u8 *output)
+{
+ u8 i;
+ for(i=0;i<16;i++) alpu_aes_input[i]=*input++;
+ DNS_0113_Func();
+ DNS_0105_Func();
+ for(i=0;i<16;i++) *output++=alpu_aes_output[i];
+}
+
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+void DNS_0103_Func(const u8 *input,u8 *output)
+{
+ u8 i;
+ for(i=0;i<16;i++) alpu_aes_input[i]=*input++;
+ DNS_0113_Func();
+ DNS_0104_Func();
+ for(i=0;i<16;i++) *output++=alpu_aes_output[i];
 }
 
 /* These private byte operations are also used before their definitions below.
@@ -439,14 +598,19 @@ u8 arelink_req_enc_dec(const u8 *input, u8 *output, u8 decrypt)
 	return 0;
 }
 
-u8 arelink_req_sw_enc_dec(const u8 *input, u8 *output, u8 decrypt)
+extern u8 alpu_key_size, alpu_key[32];
+__asm__(".local alpu_key_size\n.type alpu_key_size,%object\n.set alpu_key_size,alpu_initialized+16\n.size alpu_key_size,1\n"
+        ".local alpu_key\n.type alpu_key,%object\n.set alpu_key,alpu_state+552\n.size alpu_key,32\n");
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+u8 arelink_req_sw_enc_dec(const u8 *input,u8 *output,u8 decrypt)
 {
-	if (!initialized)
-		return 2;
-	if (decrypt > 1)
-		return 3;
-	aes_block(input, output, decrypt);
-	return 0;
+ if(!alpu_initialized_flag) return 2;
+ if(decrypt>1) return 3;
+ {
+  DNS_0101_Func(alpu_key_size,alpu_key);
+  if(decrypt==0) { DNS_0102_Func(input,output);return 0; }
+  else { DNS_0103_Func(input,output);return 0; }
+ }
 }
 
 u8 arelink_bypass_mode(const u8 *input, u8 *output)
