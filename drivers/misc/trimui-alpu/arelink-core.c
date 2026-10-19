@@ -175,21 +175,44 @@ static void cipher_request(const u8 *input, u8 decrypt, u8 reverse_input)
 	send_frame(0x2000, frame, 17);
 }
 
-static u8 xtime(u8 x)
+/* Compatible source and flags, not recovered original spelling.
+ * Multiply uses only coefficient bits0..4 and always calls xtime ten times.
+ * TODO: generalize high coefficients only as a separate behavior change;
+ * stock inverse-mix callers use9,11,13,14 and do not expose that limitation.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) static u8 xtime(u8 x)
 {
-	return (x << 1) ^ ((x >> 7) * 0x1b);
+ return (x << 1) ^ (((x >> 7) & 1) * 0x1b);
+}
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) static u8 Multiply(u8 x, u8 y)
+{
+ return ((y & 1) * x) ^ ((y >> 1 & 1) * xtime(x)) ^
+        ((y >> 2 & 1) * xtime(xtime(x))) ^
+        ((y >> 3 & 1) * xtime(xtime(xtime(x)))) ^
+        ((y >> 4 & 1) * xtime(xtime(xtime(xtime(x)))));
 }
 
-static u8 multiply(u8 x, u8 y)
+/* This typed alias names the independently rooted 16-byte matrix at+40.
+ * It allocates no storage; its original C identifier is unknown. Stock lacks
+ * serialization around this shared matrix. TODO: locking is a separate fix.
+ */
+extern u8 alpu_aes_matrix[4][4];
+__asm__(".local alpu_aes_matrix\n.type alpu_aes_matrix, %object\n"
+        ".set alpu_aes_matrix, alpu_state+40\n.size alpu_aes_matrix,16\n");
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0106_Func(void)
 {
-	u8 result = 0;
-	while (y) {
-		if (y & 1)
-			result ^= x;
-		x = xtime(x);
-		y >>= 1;
-	}
-	return result;
+ u8 i, a, b, c, d;
+ for (i = 0; i < 4; i++) {
+  a = alpu_aes_matrix[0][i];
+  b = alpu_aes_matrix[1][i];
+  c = alpu_aes_matrix[2][i];
+  d = alpu_aes_matrix[3][i];
+  alpu_aes_matrix[0][i] = Multiply(a,14) ^ Multiply(b,11) ^ Multiply(c,13) ^ Multiply(d,9);
+  alpu_aes_matrix[1][i] = Multiply(a,9) ^ Multiply(b,14) ^ Multiply(c,11) ^ Multiply(d,13);
+  alpu_aes_matrix[2][i] = Multiply(a,13) ^ Multiply(b,9) ^ Multiply(c,14) ^ Multiply(d,11);
+  alpu_aes_matrix[3][i] = Multiply(a,11) ^ Multiply(b,13) ^ Multiply(c,9) ^ Multiply(d,14);
+ }
 }
 
 static void aes_block(const u8 *input, u8 *output, u8 decrypt)
@@ -254,15 +277,7 @@ static void aes_block(const u8 *input, u8 *output, u8 decrypt)
 		for (i = 0; i < 16; i++)
 			STATE(i / 4, i % 4) ^= expanded[key_round * 16 + i];
 		if (decrypt && round && round < rounds)
-			for (column = 0; column < 4; column++) {
-				for (i = 0; i < 4; i++)
-					temp[i] = STATE(column, i);
-				for (i = 0; i < 4; i++)
-					STATE(column, i) = multiply(temp[i], 14) ^
-						multiply(temp[(i + 1) & 3], 11) ^
-						multiply(temp[(i + 2) & 3], 13) ^
-						multiply(temp[(i + 3) & 3], 9);
-			}
+			DNS_0106_Func();
 	}
 	for (column = 0; column < 4; column++)
 		for (row = 0; row < 4; row++)
