@@ -4,32 +4,32 @@
 	.file	"nftl.c"
 	.global	com
 	.section	.rodata
-	.align	3
+// readonly alignment moved below: 	.align	3
 	.type	com, %object
 	.size	com, 11
-com:
-	.byte	99
-	.byte	111
-	.byte	109
-	.byte	112
-	.byte	97
-	.byte	116
-	.byte	105
-	.byte	98
-	.byte	108
-	.byte	101
-	.byte	0
+/* com: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.byte	99
+// readonly payload moved below: 	.byte	111
+// readonly payload moved below: 	.byte	109
+// readonly payload moved below: 	.byte	112
+// readonly payload moved below: 	.byte	97
+// readonly payload moved below: 	.byte	116
+// readonly payload moved below: 	.byte	105
+// readonly payload moved below: 	.byte	98
+// readonly payload moved below: 	.byte	108
+// readonly payload moved below: 	.byte	101
+// readonly payload moved below: 	.byte	0
 	.global	mod
-	.align	3
+// readonly alignment moved below: 	.align	3
 	.type	mod, %object
 	.size	mod, 6
-mod:
-	.byte	109
-	.byte	111
-	.byte	100
-	.byte	101
-	.byte	108
-	.byte	0
+/* mod: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.byte	109
+// readonly payload moved below: 	.byte	111
+// readonly payload moved below: 	.byte	100
+// readonly payload moved below: 	.byte	101
+// readonly payload moved below: 	.byte	108
+// readonly payload moved below: 	.byte	0
 	.global	nftl_blk_head
 	.bss
 	.align	3
@@ -38,9 +38,9 @@ mod:
 /* nftl_blk_head: storage in the recovered BSS block below. */
 /* .zero 136: preserve the original source-line positions here. */
 	.section	.rodata
-	.align	3
-.LC3:
-	.string	"[NE]nftl_build_all error!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC3: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]nftl_build_all error!\n"
 	.text
 	.align	2
 	.global	nftl_build_all
@@ -127,15 +127,15 @@ nftl_build_one:
 	ret
 	.size	nftl_build_one, .-nftl_build_one
 	.section	.rodata
-	.align	3
-.LC4:
-	.string	"[NE]%s:malloc fail for nftl_blk\n"
-	.align	3
-.LC5:
-	.string	"[NE]nftl_initialize failed\n"
-	.align	3
-.LC6:
-	.string	"[ND]nftl_add ok\n"
+// readonly alignment moved below: 	.align	3
+/* .LC4: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc fail for nftl_blk\n"
+// readonly alignment moved below: 	.align	3
+/* .LC5: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]nftl_initialize failed\n"
+// readonly alignment moved below: 	.align	3
+/* .LC6: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]nftl_add ok\n"
 	.text
 	.align	2
 	.global	nftl_add
@@ -219,9 +219,9 @@ nand_ftl_exit:
 	ret
 	.size	nand_ftl_exit, .-nand_ftl_exit
 	.section	.rodata
-	.align	3
-.LC7:
-	.string	"[ND]cap: 0x%08x.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC7: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]cap: 0x%08x.\n"
 	.text
 	.align	2
 	.global	print_all_nftl_blk
@@ -322,9 +322,9 @@ get_first_nftl_cap:
 	ret
 	.size	get_first_nftl_cap, .-get_first_nftl_cap
 	.section	.rodata
-	.align	3
-.LC8:
-	.string	"[NE]parameter error %d,%d !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC8: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]parameter error %d,%d !\n"
 	.text
 	.align	2
 	.global	nftl_read
@@ -549,9 +549,9 @@ nftl_write_end:
 /* phyinfo: storage in the recovered BSS block below. */
 /* .zero 20: preserve the original source-line positions here. */
 	.section	.rodata
-	.align	3
-.LC9:
-	.string	"[NE]malloc size too large %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC9: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]malloc size too large %d!\n"
 	.text
 	.align	2
 	.global	nftl_malloc
@@ -664,27 +664,27 @@ nftl_support_boot_check_crc_from_dts:
 	ret
 	.size	nftl_support_boot_check_crc_from_dts, .-nftl_support_boot_check_crc_from_dts
 	.section	.rodata
-	.align	3
+// readonly alignment moved below: 	.align	3
 /* Stock #860 reports NFTL 5.0.000, built 2020.12.24 at 09:50.
  * Keep both the printed metadata and get_nftl_version copy lengths.
  */
-.LC10:
-	.string	"09:50"
-	.align	3
-.LC11:
-	.string	"2020.12.24"
-	.align	3
-.LC12:
-	.string	"000"
-	.align	3
-.LC13:
-	.string	"0"
-	.align	3
-.LC14:
-	.string	"5"
-	.align	3
-.LC15:
-	.string	"sunxi nftl version %s.%s.%s  %s-%s\n"
+/* .LC10: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"09:50"
+// readonly alignment moved below: 	.align	3
+/* .LC11: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"2020.12.24"
+// readonly alignment moved below: 	.align	3
+/* .LC12: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"000"
+// readonly alignment moved below: 	.align	3
+/* .LC13: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"0"
+// readonly alignment moved below: 	.align	3
+/* .LC14: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"5"
+// readonly alignment moved below: 	.align	3
+/* .LC15: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"sunxi nftl version %s.%s.%s  %s-%s\n"
 	.text
 	.align	2
 	.type	nftl_version, %function
@@ -754,12 +754,12 @@ get_nftl_version:
 	ret
 	.size	get_nftl_version, .-get_nftl_version
 	.section	.rodata
-	.align	3
-.LC16:
-	.string	"[NE]%s:malloc fail for nftl_cfg\n"
-	.align	3
-.LC17:
-	.string	"[ND]max_erase_times = %i\n"
+// readonly alignment moved below: 	.align	3
+/* .LC16: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc fail for nftl_cfg\n"
+// readonly alignment moved below: 	.align	3
+/* .LC17: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]max_erase_times = %i\n"
 	.text
 	.align	2
 	.global	nftl_initialize
@@ -1144,17 +1144,17 @@ nftl_initialize:
 	ret
 	.size	nftl_initialize, .-nftl_initialize
 	.section	.rodata
-	.align	3
-.LC0:
-	.byte	97
-	.byte	108
-	.byte	108
-	.byte	119
-	.byte	105
-	.byte	110
-	.byte	110
-	.byte	101
-	.byte	114
+// readonly alignment moved below: 	.align	3
+/* .LC0: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.byte	97
+// readonly payload moved below: 	.byte	108
+// readonly payload moved below: 	.byte	108
+// readonly payload moved below: 	.byte	119
+// readonly payload moved below: 	.byte	105
+// readonly payload moved below: 	.byte	110
+// readonly payload moved below: 	.byte	110
+// readonly payload moved below: 	.byte	101
+// readonly payload moved below: 	.byte	114
 	.text
 	.align	2
 	.global	nftl_exit
@@ -1587,9 +1587,9 @@ is_panic_enable:
 	ret
 	.size	is_panic_enable, .-is_panic_enable
 	.section	.rodata
-	.align	3
-.LC18:
-	.string	"[ND] panic part %s off %u size %u\n"
+// readonly alignment moved below: 	.align	3
+/* .LC18: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND] panic part %s off %u size %u\n"
 	.text
 	.align	2
 	.global	panic_init_part
@@ -1643,15 +1643,15 @@ panic_init_part:
 	ret
 	.size	panic_init_part, .-panic_init_part
 	.section	.rodata
-	.align	3
-.LC19:
-	.string	"[ND] reserved panic block before %d!\n"
-	.align	3
-.LC20:
-	.string	"[NE] reserved panic block %d!\n"
-	.align	3
-.LC21:
-	.string	"[NE] no reserved panic block!!! quit!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC19: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND] reserved panic block before %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC20: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE] reserved panic block %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC21: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE] no reserved panic block!!! quit!\n"
 	.text
 	.align	2
 	.global	panic_backup_block
@@ -1795,18 +1795,18 @@ panic_read:
 	ret
 	.size	panic_read, .-panic_read
 	.section	.rodata
-	.align	3
-.LC22:
-	.string	"[ND] write panic data : logic addr: %d, sectors %d, pages %d, blocks %d\n"
-	.align	3
-.LC23:
-	.string	"[NE] too much data for panic-write, %d sectors left over\n"
-	.align	3
-.LC24:
-	.string	"[ND] write panic data block: %d page %d !\n"
-	.align	3
-.LC25:
-	.string	"[ND] write dummy data block: %d page %d !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC22: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND] write panic data : logic addr: %d, sectors %d, pages %d, blocks %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC23: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE] too much data for panic-write, %d sectors left over\n"
+// readonly alignment moved below: 	.align	3
+/* .LC24: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND] write panic data block: %d page %d !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC25: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND] write dummy data block: %d page %d !\n"
 	.text
 	.align	2
 	.global	panic_write
@@ -2181,12 +2181,12 @@ is_panic_dummy_page:
 	ret
 	.size	is_panic_dummy_page, .-is_panic_dummy_page
 	.section	.rodata
-	.align	3
-.LC26:
-	.string	"[ND] find panic block : %d\n"
-	.align	3
-.LC27:
-	.string	"[NE] invalid panic block index %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC26: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND] find panic block : %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC27: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE] invalid panic block index %d\n"
 	.text
 	.align	2
 	.global	panic_recover_info
@@ -2227,27 +2227,27 @@ panic_recover_info:
 	ret
 	.size	panic_recover_info, .-panic_recover_info
 	.section	.rodata
-	.align	3
-.LC28:
-	.string	"[ND] not find panic data, no need to recovery!\n"
-	.align	3
-.LC29:
-	.string	"[ND] recovery panic data start!\n"
-	.align	3
-.LC30:
-	.string	"[NE] %s(%d): malloc failed\n"
-	.align	3
-.LC31:
-	.string	"[ND] ignore blk %d page %d as dummy page\n"
-	.align	3
-.LC32:
-	.string	"[ND] exit recovery panic block\n"
-	.align	3
-.LC33:
-	.string	"[ND] invalid blk %d page %d, finish recovery\n"
-	.align	3
-.LC34:
-	.string	"[ND] move blk %d page %d to logic addr %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC28: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND] not find panic data, no need to recovery!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC29: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND] recovery panic data start!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC30: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE] %s(%d): malloc failed\n"
+// readonly alignment moved below: 	.align	3
+/* .LC31: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND] ignore blk %d page %d as dummy page\n"
+// readonly alignment moved below: 	.align	3
+/* .LC32: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND] exit recovery panic block\n"
+// readonly alignment moved below: 	.align	3
+/* .LC33: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND] invalid blk %d page %d, finish recovery\n"
+// readonly alignment moved below: 	.align	3
+/* .LC34: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND] move blk %d page %d to logic addr %d\n"
 	.text
 	.align	2
 	.global	panic_recover_data
@@ -2564,9 +2564,9 @@ panic_recover_data:
 /* initialized payload moved below */
 /* initialized payload moved below */
 	.section	.rodata
-	.align	3
-.LC35:
-	.string	"rr value %x %x %x %x!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC35: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"rr value %x %x %x %x!\n"
 	.text
 	.align	2
 	.global	samsung_vender_set_param
@@ -2612,9 +2612,9 @@ samsung_vender_set_param:
 	ret
 	.size	samsung_vender_set_param, .-samsung_vender_set_param
 	.section	.rodata
-	.align	3
-.LC36:
-	.string	"samsung set readretry error ! %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC36: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"samsung set readretry error ! %x \n"
 	.text
 	.align	2
 	.global	samsung_set_readretry
@@ -2658,12 +2658,12 @@ samsung_set_readretry:
 	ret
 	.size	samsung_set_readretry, .-samsung_set_readretry
 	.section	.rodata
-	.align	3
-.LC37:
-	.string	"samsung retry!\n"
-	.align	3
-.LC38:
-	.string	"samsung ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+// readonly alignment moved below: 	.align	3
+/* .LC37: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"samsung retry!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC38: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"samsung ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
 	.text
 	.align	2
 	.global	samsung_read_page_end
@@ -2763,9 +2763,9 @@ samsung_read_page_end:
 	ret
 	.size	samsung_read_page_end, .-samsung_read_page_end
 	.section	.rodata
-	.align	3
-.LC39:
-	.string	"samsung read retry conut: %d !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC39: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"samsung read retry conut: %d !\n"
 	.text
 	.align	2
 	.global	samsung_readretry_init
@@ -2819,12 +2819,12 @@ samsung_readretry_exit:
 	ret
 	.size	samsung_readretry_exit, .-samsung_readretry_exit
 	.section	.rodata
-	.align	3
-.LC40:
-	.string	" samsung_special_init samsung_read_retry_mode:%d samsung_read_retry_cycle :%d \n"
-	.align	3
-.LC41:
-	.string	" samsung_special_init error samsung_read_retry_mode:%d samsung_read_retry_cycle :%d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC40: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" samsung_special_init samsung_read_retry_mode:%d samsung_read_retry_cycle :%d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC41: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" samsung_special_init error samsung_read_retry_mode:%d samsung_read_retry_cycle :%d \n"
 	.text
 	.align	2
 	.global	samsung_special_init
@@ -2891,9 +2891,9 @@ samsung_special_init:
 	ret
 	.size	samsung_special_init, .-samsung_special_init
 	.section	.rodata
-	.align	3
-.LC42:
-	.string	" samsung_special_exit \n"
+// readonly alignment moved below: 	.align	3
+/* .LC42: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" samsung_special_exit \n"
 	.text
 	.align	2
 	.global	samsung_special_exit
@@ -3055,15 +3055,15 @@ hynix20nm_vender_set_param:
 	ret
 	.size	hynix20nm_vender_set_param, .-hynix20nm_vender_set_param
 	.section	.rodata
-	.align	3
-.LC43:
-	.string	"retry para:"
-	.align	3
-.LC44:
-	.string	" %x "
-	.align	3
-.LC45:
-	.string	"\n"
+// readonly alignment moved below: 	.align	3
+/* .LC43: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"retry para:"
+// readonly alignment moved below: 	.align	3
+/* .LC44: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" %x "
+// readonly alignment moved below: 	.align	3
+/* .LC45: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"\n"
 	.text
 	.align	2
 	.global	hynix20nm_set_readretry
@@ -3158,18 +3158,18 @@ hynix20nm_set_readretry:
 	ret
 	.size	hynix20nm_set_readretry, .-hynix20nm_set_readretry
 	.section	.rodata
-	.align	3
-.LC46:
-	.string	"hynix20nm retry!\n"
-	.align	3
-.LC47:
-	.string	"retry spare all 0xff! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
-	.align	3
-.LC48:
-	.string	"sdata:0x%x %x %x %x "
-	.align	3
-.LC49:
-	.string	"hynix20nm ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+// readonly alignment moved below: 	.align	3
+/* .LC46: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"hynix20nm retry!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC47: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"retry spare all 0xff! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+// readonly alignment moved below: 	.align	3
+/* .LC48: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"sdata:0x%x %x %x %x "
+// readonly alignment moved below: 	.align	3
+/* .LC49: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"hynix20nm ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
 	.text
 	.align	2
 	.global	hynix20nm_read_page_end
@@ -3594,9 +3594,9 @@ hynix20nm_lsb_disable:
 	ret
 	.size	hynix20nm_lsb_disable, .-hynix20nm_lsb_disable
 	.section	.rodata
-	.align	3
-.LC50:
-	.string	"hynix20nm_lsb_exit\n"
+// readonly alignment moved below: 	.align	3
+/* .LC50: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"hynix20nm_lsb_exit\n"
 	.text
 	.align	2
 	.global	hynix20nm_lsb_exit
@@ -3652,15 +3652,15 @@ hynix20nm_lsb_exit:
 	ret
 	.size	hynix20nm_lsb_exit, .-hynix20nm_lsb_exit
 	.section	.rodata
-	.align	3
-.LC51:
-	.string	"hynix OTP RegCount value error: 0x%x, 0x%x \n"
-	.align	3
-.LC52:
-	.string	"otp copy %d is ok!\n"
-	.align	3
-.LC53:
-	.string	"otp copy failed!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC51: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"hynix OTP RegCount value error: 0x%x, 0x%x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC52: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"otp copy %d is ok!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC53: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"otp copy failed!\n"
 	.text
 	.align	2
 	.global	hynix20nm_vender_get_param_otp_hynix
@@ -3948,12 +3948,12 @@ hynix20nm_saveotpvalue:
 	ret
 	.size	hynix20nm_saveotpvalue, .-hynix20nm_saveotpvalue
 	.section	.rodata
-	.align	3
-.LC54:
-	.string	"_vender_get_param_otp_hynix time %d!\n"
-	.align	3
-.LC55:
-	.string	"_vender_get_param_otp_hynix error!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC54: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"_vender_get_param_otp_hynix time %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC55: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"_vender_get_param_otp_hynix error!\n"
 	.text
 	.align	2
 	.global	hynix20nm_getotpparam
@@ -4038,12 +4038,12 @@ hynix20nm_getotpparam:
 	ret
 	.size	hynix20nm_getotpparam, .-hynix20nm_getotpparam
 	.section	.rodata
-	.align	3
-.LC56:
-	.string	"set retry default value: "
-	.align	3
-.LC57:
-	.string	" %x"
+// readonly alignment moved below: 	.align	3
+/* .LC56: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"set retry default value: "
+// readonly alignment moved below: 	.align	3
+/* .LC57: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" %x"
 	.text
 	.align	2
 	.global	hynix20nm_set_default_param
@@ -4122,24 +4122,24 @@ hynix20nm_set_default_param:
 	ret
 	.size	hynix20nm_set_default_param, .-hynix20nm_set_default_param
 	.section	.rodata
-	.align	3
-.LC58:
-	.string	"hynix20nm get default param error !\n"
-	.align	3
-.LC59:
-	.string	"[PHY_GetDefaultParam]:readbuf malloc fail\n"
-	.align	3
-.LC60:
-	.string	"ch %d, chip %d Read Retry value Table from uboot:\n"
-	.align	3
-.LC61:
-	.string	"0x%x "
-	.align	3
-.LC62:
-	.string	"[PHY_DBG] ch %d, can't get right otp value from nand otp blocks, then use otp command\n"
-	.align	3
-.LC63:
-	.string	"[PHY_DBG] repair ch %d otp value end\n"
+// readonly alignment moved below: 	.align	3
+/* .LC58: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"hynix20nm get default param error !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC59: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[PHY_GetDefaultParam]:readbuf malloc fail\n"
+// readonly alignment moved below: 	.align	3
+/* .LC60: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"ch %d, chip %d Read Retry value Table from uboot:\n"
+// readonly alignment moved below: 	.align	3
+/* .LC61: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"0x%x "
+// readonly alignment moved below: 	.align	3
+/* .LC62: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[PHY_DBG] ch %d, can't get right otp value from nand otp blocks, then use otp command\n"
+// readonly alignment moved below: 	.align	3
+/* .LC63: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[PHY_DBG] repair ch %d otp value end\n"
 	.text
 	.align	2
 	.global	hynix20nm_init_readretry_param
@@ -4270,9 +4270,9 @@ hynix20nm_init_readretry_param:
 	ret
 	.size	hynix20nm_init_readretry_param, .-hynix20nm_init_readretry_param
 	.section	.rodata
-	.align	3
-.LC64:
-	.string	"NFC_ReadRetryInit, unknown read retry mode 0x%x\n"
+// readonly alignment moved below: 	.align	3
+/* .LC64: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"NFC_ReadRetryInit, unknown read retry mode 0x%x\n"
 	.text
 	.align	2
 	.global	hynix20nm_readretry_init
@@ -4417,9 +4417,9 @@ hynix20nm_readretry_init:
 	ret
 	.size	hynix20nm_readretry_init, .-hynix20nm_readretry_init
 	.section	.rodata
-	.align	3
-.LC65:
-	.string	"hynix20nm_readretry_exit. \n"
+// readonly alignment moved below: 	.align	3
+/* .LC65: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"hynix20nm_readretry_exit. \n"
 	.text
 	.align	2
 	.global	hynix20nm_readretry_exit
@@ -4440,12 +4440,12 @@ hynix20nm_readretry_exit:
 	ret
 	.size	hynix20nm_readretry_exit, .-hynix20nm_readretry_exit
 	.section	.rodata
-	.align	3
-.LC66:
-	.string	" hynix20nm_special_init hynix20nm_read_retry_mode: %d hynix20nm_read_retry_cycle:%d hynix20nm_read_retry_reg_num:%d\n"
-	.align	3
-.LC67:
-	.string	" hynix20nm_special_init error hynix20nm_read_retry_mode: %d hynix20nm_read_retry_cycle:%d hynix20nm_read_retry_reg_num:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC66: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" hynix20nm_special_init hynix20nm_read_retry_mode: %d hynix20nm_read_retry_cycle:%d hynix20nm_read_retry_reg_num:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC67: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" hynix20nm_special_init error hynix20nm_read_retry_mode: %d hynix20nm_read_retry_cycle:%d hynix20nm_read_retry_reg_num:%d\n"
 	.text
 	.align	2
 	.global	hynix20nm_special_init
@@ -4520,9 +4520,9 @@ hynix20nm_special_init:
 	ret
 	.size	hynix20nm_special_init, .-hynix20nm_special_init
 	.section	.rodata
-	.align	3
-.LC68:
-	.string	" hynix20nm_special_exit \n"
+// readonly alignment moved below: 	.align	3
+/* .LC68: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" hynix20nm_special_exit \n"
 	.text
 	.align	2
 	.global	hynix20nm_special_exit
@@ -4635,9 +4635,9 @@ hynix20nm_special_exit:
 	.local	micron_p1
 /* micron_p1: common storage replaced by its recovered BSS slot. */
 	.section	.rodata
-	.align	3
-.LC69:
-	.string	"set feature(addr %d) p0: %d readretry Configuration failed!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC69: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"set feature(addr %d) p0: %d readretry Configuration failed!\n"
 	.text
 	.align	2
 	.global	micron_intel_set_feature
@@ -4799,12 +4799,12 @@ micron_set_readretry:
 	ret
 	.size	micron_set_readretry, .-micron_set_readretry
 	.section	.rodata
-	.align	3
-.LC70:
-	.string	"micron retry!\n"
-	.align	3
-.LC71:
-	.string	"micron ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+// readonly alignment moved below: 	.align	3
+/* .LC70: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"micron retry!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC71: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"micron ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
 	.text
 	.align	2
 	.global	micron_read_page_end
@@ -4904,12 +4904,12 @@ micron_read_page_end:
 	ret
 	.size	micron_read_page_end, .-micron_read_page_end
 	.section	.rodata
-	.align	3
-.LC72:
-	.string	"micron read retry cannot support!\n"
-	.align	3
-.LC73:
-	.string	"micron read retry conut: %d !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC72: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"micron read retry cannot support!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC73: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"micron read retry conut: %d !\n"
 	.text
 	.align	2
 	.global	micron_readretry_init
@@ -5051,12 +5051,12 @@ micron_readretry_exit:
 	ret
 	.size	micron_readretry_exit, .-micron_readretry_exit
 	.section	.rodata
-	.align	3
-.LC74:
-	.string	" micron_special_init micron_read_retry_mode:%d micron_read_retry_cycle:%d \n"
-	.align	3
-.LC75:
-	.string	" micron_special_init error micron_read_retry_mode:%d micron_read_retry_cycle:%d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC74: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" micron_special_init micron_read_retry_mode:%d micron_read_retry_cycle:%d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC75: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" micron_special_init error micron_read_retry_mode:%d micron_read_retry_cycle:%d \n"
 	.text
 	.align	2
 	.global	micron_special_init
@@ -5123,9 +5123,9 @@ micron_special_init:
 	ret
 	.size	micron_special_init, .-micron_special_init
 	.section	.rodata
-	.align	3
-.LC76:
-	.string	" micron_special_exit \n"
+// readonly alignment moved below: 	.align	3
+/* .LC76: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" micron_special_exit \n"
 	.text
 	.align	2
 	.global	micron_special_exit
@@ -5437,9 +5437,9 @@ toshiba_read_retry_clock_recover:
 	ret
 	.size	toshiba_read_retry_clock_recover, .-toshiba_read_retry_clock_recover
 	.section	.rodata
-	.align	3
-.LC77:
-	.string	"toshiba rr value 3 %x %x %x %x!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC77: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"toshiba rr value 3 %x %x %x %x!\n"
 	.text
 	.align	2
 	.global	toshiba_vender_set_param
@@ -5691,9 +5691,9 @@ toshiba_vender_set_param:
 	ret
 	.size	toshiba_vender_set_param, .-toshiba_vender_set_param
 	.section	.rodata
-	.align	3
-.LC78:
-	.string	"toshiba vender_pre_condition error!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC78: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"toshiba vender_pre_condition error!\n"
 	.text
 	.align	2
 	.global	toshiba_vender_pre_condition
@@ -5862,12 +5862,12 @@ toshiba_set_readretry:
 	ret
 	.size	toshiba_set_readretry, .-toshiba_set_readretry
 	.section	.rodata
-	.align	3
-.LC79:
-	.string	"toshiba retry!\n"
-	.align	3
-.LC80:
-	.string	"toshiba ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+// readonly alignment moved below: 	.align	3
+/* .LC79: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"toshiba retry!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC80: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"toshiba ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
 	.text
 	.align	2
 	.global	toshiba_read_page_end
@@ -5973,9 +5973,9 @@ toshiba_read_page_end:
 	ret
 	.size	toshiba_read_page_end, .-toshiba_read_page_end
 	.section	.rodata
-	.align	3
-.LC81:
-	.string	"toshiba read retry conut: %d !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC81: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"toshiba read retry conut: %d !\n"
 	.text
 	.align	2
 	.global	toshiba_readretry_init
@@ -6134,12 +6134,12 @@ toshiba_exit_readretry:
 	ret
 	.size	toshiba_exit_readretry, .-toshiba_exit_readretry
 	.section	.rodata
-	.align	3
-.LC82:
-	.string	" toshiba_special_init toshiba_read_retry_mode :%d toshiba_read_retry_cycle :%d toshiba_read_retry_reg_cnt :%d \n"
-	.align	3
-.LC83:
-	.string	" toshiba_special_init error toshiba_read_retry_mode :%d toshiba_read_retry_cycle :%d toshiba_read_retry_reg_cnt :%d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC82: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" toshiba_special_init toshiba_read_retry_mode :%d toshiba_read_retry_cycle :%d toshiba_read_retry_reg_cnt :%d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC83: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" toshiba_special_init error toshiba_read_retry_mode :%d toshiba_read_retry_cycle :%d toshiba_read_retry_reg_cnt :%d \n"
 	.text
 	.align	2
 	.global	toshiba_special_init
@@ -6214,9 +6214,9 @@ toshiba_special_init:
 	ret
 	.size	toshiba_special_init, .-toshiba_special_init
 	.section	.rodata
-	.align	3
-.LC84:
-	.string	" toshiba_special_exit \n"
+// readonly alignment moved below: 	.align	3
+/* .LC84: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" toshiba_special_exit \n"
 	.text
 	.align	2
 	.global	toshiba_special_exit
@@ -6300,71 +6300,71 @@ toshiba_special_exit:
 /* .zero 1: preserve the original source-line positions here. */
 	.global	para0
 	.section	.rodata
-	.align	3
+// readonly alignment moved below: 	.align	3
 	.type	para0, %object
 	.size	para0, 56
-para0:
-	.hword	0
-	.hword	0
-	.hword	0
-	.hword	0
-	.hword	0
-	.hword	6
-	.hword	10
-	.hword	6
-	.hword	0
-	.hword	-3
-	.hword	-7
-	.hword	-8
-	.hword	0
-	.hword	-6
-	.hword	-13
-	.hword	-15
-	.hword	0
-	.hword	-11
-	.hword	-20
-	.hword	-23
-	.hword	0
-	.hword	0
-	.hword	-26
-	.hword	-30
-	.hword	0
-	.hword	0
-	.hword	-32
-	.hword	-37
+/* para0: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	6
+// readonly payload moved below: 	.hword	10
+// readonly payload moved below: 	.hword	6
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	-3
+// readonly payload moved below: 	.hword	-7
+// readonly payload moved below: 	.hword	-8
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	-6
+// readonly payload moved below: 	.hword	-13
+// readonly payload moved below: 	.hword	-15
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	-11
+// readonly payload moved below: 	.hword	-20
+// readonly payload moved below: 	.hword	-23
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	-26
+// readonly payload moved below: 	.hword	-30
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	-32
+// readonly payload moved below: 	.hword	-37
 	.global	para1
-	.align	3
+// readonly alignment moved below: 	.align	3
 	.type	para1, %object
 	.size	para1, 56
-para1:
-	.hword	0
-	.hword	0
-	.hword	0
-	.hword	0
-	.hword	0
-	.hword	6
-	.hword	10
-	.hword	6
-	.hword	0
-	.hword	-3
-	.hword	-7
-	.hword	-8
-	.hword	0
-	.hword	-6
-	.hword	-13
-	.hword	-15
-	.hword	0
-	.hword	-9
-	.hword	-20
-	.hword	-23
-	.hword	0
-	.hword	0
-	.hword	-26
-	.hword	-30
-	.hword	0
-	.hword	0
-	.hword	-32
-	.hword	-37
+/* para1: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	6
+// readonly payload moved below: 	.hword	10
+// readonly payload moved below: 	.hword	6
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	-3
+// readonly payload moved below: 	.hword	-7
+// readonly payload moved below: 	.hword	-8
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	-6
+// readonly payload moved below: 	.hword	-13
+// readonly payload moved below: 	.hword	-15
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	-9
+// readonly payload moved below: 	.hword	-20
+// readonly payload moved below: 	.hword	-23
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	-26
+// readonly payload moved below: 	.hword	-30
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	-32
+// readonly payload moved below: 	.hword	-37
 	.text
 	.align	2
 	.global	hynix26nm_vender_set_param
@@ -6441,9 +6441,9 @@ hynix26nm_vender_set_param:
 	ret
 	.size	hynix26nm_vender_set_param, .-hynix26nm_vender_set_param
 	.section	.rodata
-	.align	3
-.LC85:
-	.string	"hynix26nm retry param:"
+// readonly alignment moved below: 	.align	3
+/* .LC85: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"hynix26nm retry param:"
 	.text
 	.align	2
 	.global	hynix26nm_set_readretry
@@ -6588,12 +6588,12 @@ hynix26nm_set_readretry:
 	ret
 	.size	hynix26nm_set_readretry, .-hynix26nm_set_readretry
 	.section	.rodata
-	.align	3
-.LC86:
-	.string	"m0 retry!\n"
-	.align	3
-.LC87:
-	.string	"hynix26nm ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+// readonly alignment moved below: 	.align	3
+/* .LC86: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"m0 retry!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC87: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"hynix26nm ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
 	.text
 	.align	2
 	.global	hynix26nm_read_page_end
@@ -6931,9 +6931,9 @@ hynix26nm_lsb_disable:
 	ret
 	.size	hynix26nm_lsb_disable, .-hynix26nm_lsb_disable
 	.section	.rodata
-	.align	3
-.LC88:
-	.string	"hynix26nm_lsb_exit\n"
+// readonly alignment moved below: 	.align	3
+/* .LC88: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"hynix26nm_lsb_exit\n"
 	.text
 	.align	2
 	.global	hynix26nm_lsb_exit
@@ -7113,9 +7113,9 @@ hynix26nm_setdefaultparam:
 	ret
 	.size	hynix26nm_setdefaultparam, .-hynix26nm_setdefaultparam
 	.section	.rodata
-	.align	3
-.LC89:
-	.string	"hynix26nm_get_default_param: ch: %d, chip: %d, value: 0x%x 0x%x 0x%x 0x%x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC89: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"hynix26nm_get_default_param: ch: %d, chip: %d, value: 0x%x 0x%x 0x%x 0x%x \n"
 	.text
 	.align	2
 	.global	hynix26nm_get_default_param
@@ -7348,9 +7348,9 @@ hynix26nm_readretry_init:
 	ret
 	.size	hynix26nm_readretry_init, .-hynix26nm_readretry_init
 	.section	.rodata
-	.align	3
-.LC90:
-	.string	"hynix26nm_readretry_exit. \n"
+// readonly alignment moved below: 	.align	3
+/* .LC90: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"hynix26nm_readretry_exit. \n"
 	.text
 	.align	2
 	.global	hynix26nm_readretry_exit
@@ -7371,12 +7371,12 @@ hynix26nm_readretry_exit:
 	ret
 	.size	hynix26nm_readretry_exit, .-hynix26nm_readretry_exit
 	.section	.rodata
-	.align	3
-.LC91:
-	.string	" hynix26nm_special_init hynix26nm_read_retry_mode: %d hynix26nm_read_retry_cycle:%d hynix26nm_read_retry_reg_num:%d\n"
-	.align	3
-.LC92:
-	.string	" hynix26nm_special_init error hynix26nm_read_retry_mode: %d hynix26nm_read_retry_cycle:%d hynix26nm_read_retry_reg_num:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC91: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" hynix26nm_special_init hynix26nm_read_retry_mode: %d hynix26nm_read_retry_cycle:%d hynix26nm_read_retry_reg_num:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC92: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" hynix26nm_special_init error hynix26nm_read_retry_mode: %d hynix26nm_read_retry_cycle:%d hynix26nm_read_retry_reg_num:%d\n"
 	.text
 	.align	2
 	.global	hynix26nm_special_init
@@ -7451,9 +7451,9 @@ hynix26nm_special_init:
 	ret
 	.size	hynix26nm_special_init, .-hynix26nm_special_init
 	.section	.rodata
-	.align	3
-.LC93:
-	.string	" hynix26nm_special_exit \n"
+// readonly alignment moved below: 	.align	3
+/* .LC93: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" hynix26nm_special_exit \n"
 	.text
 	.align	2
 	.global	hynix26nm_special_exit
@@ -8087,18 +8087,18 @@ sandisk_A19_set_lmflgfix_next:
 	ret
 	.size	sandisk_A19_set_lmflgfix_next, .-sandisk_A19_set_lmflgfix_next
 	.section	.rodata
-	.align	3
-.LC94:
-	.string	"sandisk_A19 retry!\n"
-	.align	3
-.LC95:
-	.string	"sandisk_A19 set readretry error\n"
-	.align	3
-.LC96:
-	.string	"sandisk_A19 ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
-	.align	3
-.LC97:
-	.string	"sandisk_A19 ReadRetry ok with ecc limit! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+// readonly alignment moved below: 	.align	3
+/* .LC94: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"sandisk_A19 retry!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC95: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"sandisk_A19 set readretry error\n"
+// readonly alignment moved below: 	.align	3
+/* .LC96: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"sandisk_A19 ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+// readonly alignment moved below: 	.align	3
+/* .LC97: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"sandisk_A19 ReadRetry ok with ecc limit! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
 	.text
 	.align	2
 	.global	sandisk_A19_read_page_end
@@ -8656,12 +8656,12 @@ sandisk_A19_read_page_end:
 	ret
 	.size	sandisk_A19_read_page_end, .-sandisk_A19_read_page_end
 	.section	.rodata
-	.align	3
-.LC98:
-	.string	"sandisk_A19 retry mode err : %d !\n"
-	.align	3
-.LC99:
-	.string	"sandisk A19 read retry conut: %d !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC98: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"sandisk_A19 retry mode err : %d !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC99: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"sandisk A19 read retry conut: %d !\n"
 	.text
 	.align	2
 	.global	sandisk_A19_readretry_init
@@ -8939,12 +8939,12 @@ sandisk_A19_exit_readretry:
 	ret
 	.size	sandisk_A19_exit_readretry, .-sandisk_A19_exit_readretry
 	.section	.rodata
-	.align	3
-.LC100:
-	.string	" sandisk_A19_special_init sandisk_A19_read_retry_mode:%d sandisk_A19_read_retry_cycle :%d sandisk_A19_read_retry_reg_cnt %d \n"
-	.align	3
-.LC101:
-	.string	" sandisk_A19_special_init error sandisk_A19_read_retry_mode:%d sandisk_A19_read_retry_cycle :%d sandisk_A19_read_retry_reg_cnt %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC100: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" sandisk_A19_special_init sandisk_A19_read_retry_mode:%d sandisk_A19_read_retry_cycle :%d sandisk_A19_read_retry_reg_cnt %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC101: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" sandisk_A19_special_init error sandisk_A19_read_retry_mode:%d sandisk_A19_read_retry_cycle :%d sandisk_A19_read_retry_reg_cnt %d \n"
 	.text
 	.align	2
 	.global	sandisk_A19_special_init
@@ -9019,12 +9019,12 @@ sandisk_A19_special_init:
 	ret
 	.size	sandisk_A19_special_init, .-sandisk_A19_special_init
 	.section	.rodata
-	.align	3
-.LC102:
-	.string	"%s sandisk toggle vendor specific setting failed!\n"
-	.align	3
-.LC103:
-	.string	" sandisk_A19_special_exit \n"
+// readonly alignment moved below: 	.align	3
+/* .LC102: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"%s sandisk toggle vendor specific setting failed!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC103: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" sandisk_A19_special_exit \n"
 	.text
 	.align	2
 	.global	sandisk_A19_special_exit
@@ -9077,9 +9077,9 @@ sandisk_A19_special_exit:
 	ret
 	.size	sandisk_A19_special_exit, .-sandisk_A19_special_exit
 	.section	.rodata
-	.align	3
-.LC104:
-	.string	"fatal err -0, wrong input parameter, ch: %d  chip: %d/%d  block: %d/%d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC104: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"fatal err -0, wrong input parameter, ch: %d  chip: %d/%d  block: %d/%d \n"
 	.text
 	.align	2
 	.global	sandisk_A19_check_bad_block_first_burn
@@ -9217,9 +9217,9 @@ sandisk_A19_check_bad_block_first_burn:
 	ret
 	.size	sandisk_A19_check_bad_block_first_burn, .-sandisk_A19_check_bad_block_first_burn
 	.section	.rodata
-	.align	3
-.LC105:
-	.string	" generic special init \n"
+// readonly alignment moved below: 	.align	3
+/* .LC105: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" generic special init \n"
 	.text
 	.align	2
 	.global	generic_special_init
@@ -9240,9 +9240,9 @@ generic_special_init:
 	ret
 	.size	generic_special_init, .-generic_special_init
 	.section	.rodata
-	.align	3
-.LC106:
-	.string	" generic special exit \n"
+// readonly alignment moved below: 	.align	3
+/* .LC106: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" generic special exit \n"
 	.text
 	.align	2
 	.global	generic_special_exit
@@ -9419,15 +9419,15 @@ hynix16nm_set_readretry:
 	ret
 	.size	hynix16nm_set_readretry, .-hynix16nm_set_readretry
 	.section	.rodata
-	.align	3
-.LC107:
-	.string	"get_hynix_special_info start!!\n"
-	.align	3
-.LC108:
-	.string	"hynix_special_info:can't find uboot head\n"
-	.align	3
-.LC109:
-	.string	"physic info start_block %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC107: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"get_hynix_special_info start!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC108: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"hynix_special_info:can't find uboot head\n"
+// readonly alignment moved below: 	.align	3
+/* .LC109: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"physic info start_block %d\n"
 	.text
 	.align	2
 	.global	hynix16nm_get_special_info
@@ -9546,12 +9546,12 @@ hynix16nm_get_special_info:
 	ret
 	.size	hynix16nm_get_special_info, .-hynix16nm_get_special_info
 	.section	.rodata
-	.align	3
-.LC110:
-	.string	"m1 retry!\n"
-	.align	3
-.LC111:
-	.string	"m1 ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+// readonly alignment moved below: 	.align	3
+/* .LC110: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"m1 retry!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC111: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"m1 ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
 	.text
 	.align	2
 	.global	hynix16nm_read_page_end
@@ -9667,9 +9667,9 @@ hynix16nm_read_page_end:
 	ret
 	.size	hynix16nm_read_page_end, .-hynix16nm_read_page_end
 	.section	.rodata
-	.align	3
-.LC112:
-	.string	"m1 write page FF wrong\n"
+// readonly alignment moved below: 	.align	3
+/* .LC112: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"m1 write page FF wrong\n"
 	.text
 	.align	2
 	.global	hynix16nm_write_page_FF
@@ -10026,15 +10026,15 @@ hynix16nm_vender_get_param:
 	ret
 	.size	hynix16nm_vender_get_param, .-hynix16nm_vender_get_param
 	.section	.rodata
-	.align	3
-.LC113:
-	.string	"_major_check_byte, wrong input para, level %d, len %d\n"
-	.align	3
-.LC114:
-	.string	"%d:  '1'-'0' : %d - %d\n"
-	.align	3
-.LC115:
-	.string	"get bit %d failed!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC113: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"_major_check_byte, wrong input para, level %d, len %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC114: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"%d:  '1'-'0' : %d - %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC115: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"get bit %d failed!\n"
 	.text
 	.align	2
 	.global	hynix16nm_major_check_byte
@@ -10227,27 +10227,27 @@ hynix16nm_major_check_byte:
 	ret
 	.size	hynix16nm_major_check_byte, .-hynix16nm_major_check_byte
 	.section	.rodata
-	.align	3
-.LC116:
-	.string	"_get_read_retry_parameters, get rr count failed!\n"
-	.align	3
-.LC117:
-	.string	"rr cnt: %d\n"
-	.align	3
-.LC118:
-	.string	"_get_read_retry_parameters, get rr reg count failed!\n"
-	.align	3
-.LC119:
-	.string	"rr reg cnt: %d\n"
-	.align	3
-.LC120:
-	.string	"read retry value from otp error: rr_cnt %d rr_reg_cnt %d!\n"
-	.align	3
-.LC121:
-	.string	"_get_read_retry_parameters, get the %d-th byte of rr table failed!\n"
-	.align	3
-.LC122:
-	.string	"%02x "
+// readonly alignment moved below: 	.align	3
+/* .LC116: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"_get_read_retry_parameters, get rr count failed!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC117: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"rr cnt: %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC118: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"_get_read_retry_parameters, get rr reg count failed!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC119: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"rr reg cnt: %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC120: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"read retry value from otp error: rr_cnt %d rr_reg_cnt %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC121: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"_get_read_retry_parameters, get the %d-th byte of rr table failed!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC122: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"%02x "
 	.text
 	.align	2
 	.global	hynix16nm_get_read_retry_cfg
@@ -10517,12 +10517,12 @@ hynix16nm_get_read_retry_cfg:
 	ret
 	.size	hynix16nm_get_read_retry_cfg, .-hynix16nm_get_read_retry_cfg
 	.section	.rodata
-	.align	3
-.LC123:
-	.string	"start get read retry param from: ce %d, rb %d...\n"
-	.align	3
-.LC124:
-	.string	"invalid buffer for otp info!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC123: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"start get read retry param from: ce %d, rb %d...\n"
+// readonly alignment moved below: 	.align	3
+/* .LC124: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"invalid buffer for otp info!\n"
 	.text
 	.align	2
 	.global	hynix16nm_read_otp_info_hynix
@@ -10716,15 +10716,15 @@ hynix16nm_read_otp_info_hynix:
 	ret
 	.size	hynix16nm_read_otp_info_hynix, .-hynix16nm_read_otp_info_hynix
 	.section	.rodata
-	.align	3
-.LC125:
-	.string	"otp_info_hynix_16nm : allocate memory fail\n"
-	.align	3
-.LC126:
-	.string	"m1 CH %d chip %d get otp info failed!\n"
-	.align	3
-.LC127:
-	.string	"m1 CH %d chip %d get read retry cfg from otp info failed!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC125: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"otp_info_hynix_16nm : allocate memory fail\n"
+// readonly alignment moved below: 	.align	3
+/* .LC126: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"m1 CH %d chip %d get otp info failed!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC127: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"m1 CH %d chip %d get read retry cfg from otp info failed!\n"
 	.text
 	.align	2
 	.global	hynix16nm_get_rr_value_otp_hynix
@@ -10967,12 +10967,12 @@ hynix16nm_set_default_param:
 	ret
 	.size	hynix16nm_set_default_param, .-hynix16nm_set_default_param
 	.section	.rodata
-	.align	3
-.LC128:
-	.string	"ch %d, chip %d Read Retry value Table from uboot\n"
-	.align	3
-.LC129:
-	.string	"[PHY_DBG] repair ch %d chip %d otp value end\n"
+// readonly alignment moved below: 	.align	3
+/* .LC128: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"ch %d, chip %d Read Retry value Table from uboot\n"
+// readonly alignment moved below: 	.align	3
+/* .LC129: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[PHY_DBG] repair ch %d chip %d otp value end\n"
 	.text
 	.align	2
 	.global	hynix16nm_init_readretry_param
@@ -11183,9 +11183,9 @@ hynix16nm_readretry_init:
 	ret
 	.size	hynix16nm_readretry_init, .-hynix16nm_readretry_init
 	.section	.rodata
-	.align	3
-.LC130:
-	.string	"hynix16nm_readretry_exit. \n"
+// readonly alignment moved below: 	.align	3
+/* .LC130: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"hynix16nm_readretry_exit. \n"
 	.text
 	.align	2
 	.global	hynix16nm_readretry_exit
@@ -11206,12 +11206,12 @@ hynix16nm_readretry_exit:
 	ret
 	.size	hynix16nm_readretry_exit, .-hynix16nm_readretry_exit
 	.section	.rodata
-	.align	3
-.LC131:
-	.string	" hynix16nm_special_init hynix16nm_read_retry_mode: %d hynix16nm_read_retry_cycle:%d hynix16nm_read_retry_reg_num:%d\n"
-	.align	3
-.LC132:
-	.string	" hynix16nm_special_init error hynix16nm_read_retry_mode: %d hynix16nm_read_retry_cycle:%d hynix16nm_read_retry_reg_num:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC131: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" hynix16nm_special_init hynix16nm_read_retry_mode: %d hynix16nm_read_retry_cycle:%d hynix16nm_read_retry_reg_num:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC132: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" hynix16nm_special_init error hynix16nm_read_retry_mode: %d hynix16nm_read_retry_cycle:%d hynix16nm_read_retry_reg_num:%d\n"
 	.text
 	.align	2
 	.global	hynix16nm_special_init
@@ -11286,9 +11286,9 @@ hynix16nm_special_init:
 	ret
 	.size	hynix16nm_special_init, .-hynix16nm_special_init
 	.section	.rodata
-	.align	3
-.LC133:
-	.string	" hynix16nm_special_exit \n"
+// readonly alignment moved below: 	.align	3
+/* .LC133: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" hynix16nm_special_exit \n"
 	.text
 	.align	2
 	.global	hynix16nm_special_exit
@@ -12028,12 +12028,12 @@ sandisk_set_readretry:
 	ret
 	.size	sandisk_set_readretry, .-sandisk_set_readretry
 	.section	.rodata
-	.align	3
-.LC134:
-	.string	"sandisk retry!\n"
-	.align	3
-.LC135:
-	.string	"sandisk ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+// readonly alignment moved below: 	.align	3
+/* .LC134: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"sandisk retry!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC135: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"sandisk ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
 	.text
 	.align	2
 	.global	sandisk_read_page_end
@@ -12161,9 +12161,9 @@ sandisk_read_page_end:
 	ret
 	.size	sandisk_read_page_end, .-sandisk_read_page_end
 	.section	.rodata
-	.align	3
-.LC136:
-	.string	"sandisk activation seq fail 0x%x\n"
+// readonly alignment moved below: 	.align	3
+/* .LC136: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"sandisk activation seq fail 0x%x\n"
 	.text
 	.align	2
 	.global	sandisk_activation_seq
@@ -12235,22 +12235,22 @@ sandisk_activation_seq:
 	ret
 	.size	sandisk_activation_seq, .-sandisk_activation_seq
 	.section	.rodata
-	.align	3
-.LC1:
-	.byte	83
-	.byte	83
-	.byte	83
-	.byte	83
-	.byte	83
-	.byte	83
-	.byte	83
-	.byte	83
-	.byte	83
+// readonly alignment moved below: 	.align	3
+/* .LC1: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.byte	83
+// readonly payload moved below: 	.byte	83
+// readonly payload moved below: 	.byte	83
+// readonly payload moved below: 	.byte	83
+// readonly payload moved below: 	.byte	83
+// readonly payload moved below: 	.byte	83
+// readonly payload moved below: 	.byte	83
+// readonly payload moved below: 	.byte	83
+// readonly payload moved below: 	.byte	83
 	.text
 	.section	.rodata
-	.align	3
-.LC137:
-	.string	"sandisk read retry conut: %d !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC137: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"sandisk read retry conut: %d !\n"
 	.text
 	.align	2
 	.global	sandisk_readretry_init
@@ -12444,12 +12444,12 @@ sandisk_exit_readretry:
 	ret
 	.size	sandisk_exit_readretry, .-sandisk_exit_readretry
 	.section	.rodata
-	.align	3
-.LC138:
-	.string	" sandisk_special_init sandisk_read_retry_mode:%d sandisk_read_retry_cycle :%d sandisk_read_retry_reg_cnt %d \n"
-	.align	3
-.LC139:
-	.string	" sandisk_special_init error sandisk_read_retry_mode:%d sandisk_read_retry_cycle :%d sandisk_read_retry_reg_cnt %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC138: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" sandisk_special_init sandisk_read_retry_mode:%d sandisk_read_retry_cycle :%d sandisk_read_retry_reg_cnt %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC139: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" sandisk_special_init error sandisk_read_retry_mode:%d sandisk_read_retry_cycle :%d sandisk_read_retry_reg_cnt %d \n"
 	.text
 	.align	2
 	.global	sandisk_special_init
@@ -12524,9 +12524,9 @@ sandisk_special_init:
 	ret
 	.size	sandisk_special_init, .-sandisk_special_init
 	.section	.rodata
-	.align	3
-.LC140:
-	.string	" sandisk_special_exit \n"
+// readonly alignment moved below: 	.align	3
+/* .LC140: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	" sandisk_special_exit \n"
 	.text
 	.align	2
 	.global	sandisk_special_exit
@@ -12558,9 +12558,9 @@ sandisk_special_exit:
 	ret
 	.size	sandisk_special_exit, .-sandisk_special_exit
 	.section	.rodata
-	.align	3
-.LC141:
-	.string	"[NE]%s:malloc fail for cache_buf!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC141: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc fail for cache_buf!\n"
 	.text
 	.align	2
 	.global	nftl_sector_cache_init
@@ -12924,9 +12924,9 @@ __nand_sector_write:
 	ret
 	.size	__nand_sector_write, .-__nand_sector_write
 	.section	.rodata
-	.align	3
-.LC142:
-	.string	"[NE]nand_sector_cache_read 1!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC142: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]nand_sector_cache_read 1!\n"
 	.text
 	.align	2
 	.global	nand_sector_cache_read
@@ -12979,12 +12979,12 @@ nand_sector_cache_read:
 	ret
 	.size	nand_sector_cache_read, .-nand_sector_cache_read
 	.section	.rodata
-	.align	3
-.LC143:
-	.string	"[NE]nand_sector_cache_write 1!\n"
-	.align	3
-.LC144:
-	.string	"[NE]nand_sector_cache_write 2!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC143: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]nand_sector_cache_write 1!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC144: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]nand_sector_cache_write 2!\n"
 	.text
 	.align	2
 	.global	nand_sector_cache_write
@@ -13082,9 +13082,9 @@ nand_sector_cache_write:
 	ret
 	.size	nand_sector_cache_write, .-nand_sector_cache_write
 	.section	.rodata
-	.align	3
-.LC145:
-	.string	"[NE]nand_flush_write_cache write error\n"
+// readonly alignment moved below: 	.align	3
+/* .LC145: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]nand_flush_write_cache write error\n"
 	.text
 	.align	2
 	.global	__nand_flush_sector_write_cache
@@ -13151,266 +13151,266 @@ __nand_flush_sector_write_cache:
 	ret
 	.size	__nand_flush_sector_write_cache, .-__nand_flush_sector_write_cache
 	.section	.rodata
-	.align	3
+// readonly alignment moved below: 	.align	3
 	.type	nand_crc16_table, %object
 	.size	nand_crc16_table, 512
-nand_crc16_table:
-	.hword	0
-	.hword	-16191
-	.hword	-15999
-	.hword	320
-	.hword	-15615
-	.hword	960
-	.hword	640
-	.hword	-15807
-	.hword	-14847
-	.hword	1728
-	.hword	1920
-	.hword	-14527
-	.hword	1280
-	.hword	-14911
-	.hword	-15231
-	.hword	1088
-	.hword	-13311
-	.hword	3264
-	.hword	3456
-	.hword	-12991
-	.hword	3840
-	.hword	-12351
-	.hword	-12671
-	.hword	3648
-	.hword	2560
-	.hword	-13631
-	.hword	-13439
-	.hword	2880
-	.hword	-14079
-	.hword	2496
-	.hword	2176
-	.hword	-14271
-	.hword	-10239
-	.hword	6336
-	.hword	6528
-	.hword	-9919
-	.hword	6912
-	.hword	-9279
-	.hword	-9599
-	.hword	6720
-	.hword	7680
-	.hword	-8511
-	.hword	-8319
-	.hword	8000
-	.hword	-8959
-	.hword	7616
-	.hword	7296
-	.hword	-9151
-	.hword	5120
-	.hword	-11071
-	.hword	-10879
-	.hword	5440
-	.hword	-10495
-	.hword	6080
-	.hword	5760
-	.hword	-10687
-	.hword	-11775
-	.hword	4800
-	.hword	4992
-	.hword	-11455
-	.hword	4352
-	.hword	-11839
-	.hword	-12159
-	.hword	4160
-	.hword	-4095
-	.hword	12480
-	.hword	12672
-	.hword	-3775
-	.hword	13056
-	.hword	-3135
-	.hword	-3455
-	.hword	12864
-	.hword	13824
-	.hword	-2367
-	.hword	-2175
-	.hword	14144
-	.hword	-2815
-	.hword	13760
-	.hword	13440
-	.hword	-3007
-	.hword	15360
-	.hword	-831
-	.hword	-639
-	.hword	15680
-	.hword	-255
-	.hword	16320
-	.hword	16000
-	.hword	-447
-	.hword	-1535
-	.hword	15040
-	.hword	15232
-	.hword	-1215
-	.hword	14592
-	.hword	-1599
-	.hword	-1919
-	.hword	14400
-	.hword	10240
-	.hword	-5951
-	.hword	-5759
-	.hword	10560
-	.hword	-5375
-	.hword	11200
-	.hword	10880
-	.hword	-5567
-	.hword	-4607
-	.hword	11968
-	.hword	12160
-	.hword	-4287
-	.hword	11520
-	.hword	-4671
-	.hword	-4991
-	.hword	11328
-	.hword	-7167
-	.hword	9408
-	.hword	9600
-	.hword	-6847
-	.hword	9984
-	.hword	-6207
-	.hword	-6527
-	.hword	9792
-	.hword	8704
-	.hword	-7487
-	.hword	-7295
-	.hword	9024
-	.hword	-7935
-	.hword	8640
-	.hword	8320
-	.hword	-8127
-	.hword	-24575
-	.hword	24768
-	.hword	24960
-	.hword	-24255
-	.hword	25344
-	.hword	-23615
-	.hword	-23935
-	.hword	25152
-	.hword	26112
-	.hword	-22847
-	.hword	-22655
-	.hword	26432
-	.hword	-23295
-	.hword	26048
-	.hword	25728
-	.hword	-23487
-	.hword	27648
-	.hword	-21311
-	.hword	-21119
-	.hword	27968
-	.hword	-20735
-	.hword	28608
-	.hword	28288
-	.hword	-20927
-	.hword	-22015
-	.hword	27328
-	.hword	27520
-	.hword	-21695
-	.hword	26880
-	.hword	-22079
-	.hword	-22399
-	.hword	26688
-	.hword	30720
-	.hword	-18239
-	.hword	-18047
-	.hword	31040
-	.hword	-17663
-	.hword	31680
-	.hword	31360
-	.hword	-17855
-	.hword	-16895
-	.hword	32448
-	.hword	32640
-	.hword	-16575
-	.hword	32000
-	.hword	-16959
-	.hword	-17279
-	.hword	31808
-	.hword	-19455
-	.hword	29888
-	.hword	30080
-	.hword	-19135
-	.hword	30464
-	.hword	-18495
-	.hword	-18815
-	.hword	30272
-	.hword	29184
-	.hword	-19775
-	.hword	-19583
-	.hword	29504
-	.hword	-20223
-	.hword	29120
-	.hword	28800
-	.hword	-20415
-	.hword	20480
-	.hword	-28479
-	.hword	-28287
-	.hword	20800
-	.hword	-27903
-	.hword	21440
-	.hword	21120
-	.hword	-28095
-	.hword	-27135
-	.hword	22208
-	.hword	22400
-	.hword	-26815
-	.hword	21760
-	.hword	-27199
-	.hword	-27519
-	.hword	21568
-	.hword	-25599
-	.hword	23744
-	.hword	23936
-	.hword	-25279
-	.hword	24320
-	.hword	-24639
-	.hword	-24959
-	.hword	24128
-	.hword	23040
-	.hword	-25919
-	.hword	-25727
-	.hword	23360
-	.hword	-26367
-	.hword	22976
-	.hword	22656
-	.hword	-26559
-	.hword	-30719
-	.hword	18624
-	.hword	18816
-	.hword	-30399
-	.hword	19200
-	.hword	-29759
-	.hword	-30079
-	.hword	19008
-	.hword	19968
-	.hword	-28991
-	.hword	-28799
-	.hword	20288
-	.hword	-29439
-	.hword	19904
-	.hword	19584
-	.hword	-29631
-	.hword	17408
-	.hword	-31551
-	.hword	-31359
-	.hword	17728
-	.hword	-30975
-	.hword	18368
-	.hword	18048
-	.hword	-31167
-	.hword	-32255
-	.hword	17088
-	.hword	17280
-	.hword	-31935
-	.hword	16640
-	.hword	-32319
-	.hword	-32639
-	.hword	16448
+/* nand_crc16_table: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.hword	0
+// readonly payload moved below: 	.hword	-16191
+// readonly payload moved below: 	.hword	-15999
+// readonly payload moved below: 	.hword	320
+// readonly payload moved below: 	.hword	-15615
+// readonly payload moved below: 	.hword	960
+// readonly payload moved below: 	.hword	640
+// readonly payload moved below: 	.hword	-15807
+// readonly payload moved below: 	.hword	-14847
+// readonly payload moved below: 	.hword	1728
+// readonly payload moved below: 	.hword	1920
+// readonly payload moved below: 	.hword	-14527
+// readonly payload moved below: 	.hword	1280
+// readonly payload moved below: 	.hword	-14911
+// readonly payload moved below: 	.hword	-15231
+// readonly payload moved below: 	.hword	1088
+// readonly payload moved below: 	.hword	-13311
+// readonly payload moved below: 	.hword	3264
+// readonly payload moved below: 	.hword	3456
+// readonly payload moved below: 	.hword	-12991
+// readonly payload moved below: 	.hword	3840
+// readonly payload moved below: 	.hword	-12351
+// readonly payload moved below: 	.hword	-12671
+// readonly payload moved below: 	.hword	3648
+// readonly payload moved below: 	.hword	2560
+// readonly payload moved below: 	.hword	-13631
+// readonly payload moved below: 	.hword	-13439
+// readonly payload moved below: 	.hword	2880
+// readonly payload moved below: 	.hword	-14079
+// readonly payload moved below: 	.hword	2496
+// readonly payload moved below: 	.hword	2176
+// readonly payload moved below: 	.hword	-14271
+// readonly payload moved below: 	.hword	-10239
+// readonly payload moved below: 	.hword	6336
+// readonly payload moved below: 	.hword	6528
+// readonly payload moved below: 	.hword	-9919
+// readonly payload moved below: 	.hword	6912
+// readonly payload moved below: 	.hword	-9279
+// readonly payload moved below: 	.hword	-9599
+// readonly payload moved below: 	.hword	6720
+// readonly payload moved below: 	.hword	7680
+// readonly payload moved below: 	.hword	-8511
+// readonly payload moved below: 	.hword	-8319
+// readonly payload moved below: 	.hword	8000
+// readonly payload moved below: 	.hword	-8959
+// readonly payload moved below: 	.hword	7616
+// readonly payload moved below: 	.hword	7296
+// readonly payload moved below: 	.hword	-9151
+// readonly payload moved below: 	.hword	5120
+// readonly payload moved below: 	.hword	-11071
+// readonly payload moved below: 	.hword	-10879
+// readonly payload moved below: 	.hword	5440
+// readonly payload moved below: 	.hword	-10495
+// readonly payload moved below: 	.hword	6080
+// readonly payload moved below: 	.hword	5760
+// readonly payload moved below: 	.hword	-10687
+// readonly payload moved below: 	.hword	-11775
+// readonly payload moved below: 	.hword	4800
+// readonly payload moved below: 	.hword	4992
+// readonly payload moved below: 	.hword	-11455
+// readonly payload moved below: 	.hword	4352
+// readonly payload moved below: 	.hword	-11839
+// readonly payload moved below: 	.hword	-12159
+// readonly payload moved below: 	.hword	4160
+// readonly payload moved below: 	.hword	-4095
+// readonly payload moved below: 	.hword	12480
+// readonly payload moved below: 	.hword	12672
+// readonly payload moved below: 	.hword	-3775
+// readonly payload moved below: 	.hword	13056
+// readonly payload moved below: 	.hword	-3135
+// readonly payload moved below: 	.hword	-3455
+// readonly payload moved below: 	.hword	12864
+// readonly payload moved below: 	.hword	13824
+// readonly payload moved below: 	.hword	-2367
+// readonly payload moved below: 	.hword	-2175
+// readonly payload moved below: 	.hword	14144
+// readonly payload moved below: 	.hword	-2815
+// readonly payload moved below: 	.hword	13760
+// readonly payload moved below: 	.hword	13440
+// readonly payload moved below: 	.hword	-3007
+// readonly payload moved below: 	.hword	15360
+// readonly payload moved below: 	.hword	-831
+// readonly payload moved below: 	.hword	-639
+// readonly payload moved below: 	.hword	15680
+// readonly payload moved below: 	.hword	-255
+// readonly payload moved below: 	.hword	16320
+// readonly payload moved below: 	.hword	16000
+// readonly payload moved below: 	.hword	-447
+// readonly payload moved below: 	.hword	-1535
+// readonly payload moved below: 	.hword	15040
+// readonly payload moved below: 	.hword	15232
+// readonly payload moved below: 	.hword	-1215
+// readonly payload moved below: 	.hword	14592
+// readonly payload moved below: 	.hword	-1599
+// readonly payload moved below: 	.hword	-1919
+// readonly payload moved below: 	.hword	14400
+// readonly payload moved below: 	.hword	10240
+// readonly payload moved below: 	.hword	-5951
+// readonly payload moved below: 	.hword	-5759
+// readonly payload moved below: 	.hword	10560
+// readonly payload moved below: 	.hword	-5375
+// readonly payload moved below: 	.hword	11200
+// readonly payload moved below: 	.hword	10880
+// readonly payload moved below: 	.hword	-5567
+// readonly payload moved below: 	.hword	-4607
+// readonly payload moved below: 	.hword	11968
+// readonly payload moved below: 	.hword	12160
+// readonly payload moved below: 	.hword	-4287
+// readonly payload moved below: 	.hword	11520
+// readonly payload moved below: 	.hword	-4671
+// readonly payload moved below: 	.hword	-4991
+// readonly payload moved below: 	.hword	11328
+// readonly payload moved below: 	.hword	-7167
+// readonly payload moved below: 	.hword	9408
+// readonly payload moved below: 	.hword	9600
+// readonly payload moved below: 	.hword	-6847
+// readonly payload moved below: 	.hword	9984
+// readonly payload moved below: 	.hword	-6207
+// readonly payload moved below: 	.hword	-6527
+// readonly payload moved below: 	.hword	9792
+// readonly payload moved below: 	.hword	8704
+// readonly payload moved below: 	.hword	-7487
+// readonly payload moved below: 	.hword	-7295
+// readonly payload moved below: 	.hword	9024
+// readonly payload moved below: 	.hword	-7935
+// readonly payload moved below: 	.hword	8640
+// readonly payload moved below: 	.hword	8320
+// readonly payload moved below: 	.hword	-8127
+// readonly payload moved below: 	.hword	-24575
+// readonly payload moved below: 	.hword	24768
+// readonly payload moved below: 	.hword	24960
+// readonly payload moved below: 	.hword	-24255
+// readonly payload moved below: 	.hword	25344
+// readonly payload moved below: 	.hword	-23615
+// readonly payload moved below: 	.hword	-23935
+// readonly payload moved below: 	.hword	25152
+// readonly payload moved below: 	.hword	26112
+// readonly payload moved below: 	.hword	-22847
+// readonly payload moved below: 	.hword	-22655
+// readonly payload moved below: 	.hword	26432
+// readonly payload moved below: 	.hword	-23295
+// readonly payload moved below: 	.hword	26048
+// readonly payload moved below: 	.hword	25728
+// readonly payload moved below: 	.hword	-23487
+// readonly payload moved below: 	.hword	27648
+// readonly payload moved below: 	.hword	-21311
+// readonly payload moved below: 	.hword	-21119
+// readonly payload moved below: 	.hword	27968
+// readonly payload moved below: 	.hword	-20735
+// readonly payload moved below: 	.hword	28608
+// readonly payload moved below: 	.hword	28288
+// readonly payload moved below: 	.hword	-20927
+// readonly payload moved below: 	.hword	-22015
+// readonly payload moved below: 	.hword	27328
+// readonly payload moved below: 	.hword	27520
+// readonly payload moved below: 	.hword	-21695
+// readonly payload moved below: 	.hword	26880
+// readonly payload moved below: 	.hword	-22079
+// readonly payload moved below: 	.hword	-22399
+// readonly payload moved below: 	.hword	26688
+// readonly payload moved below: 	.hword	30720
+// readonly payload moved below: 	.hword	-18239
+// readonly payload moved below: 	.hword	-18047
+// readonly payload moved below: 	.hword	31040
+// readonly payload moved below: 	.hword	-17663
+// readonly payload moved below: 	.hword	31680
+// readonly payload moved below: 	.hword	31360
+// readonly payload moved below: 	.hword	-17855
+// readonly payload moved below: 	.hword	-16895
+// readonly payload moved below: 	.hword	32448
+// readonly payload moved below: 	.hword	32640
+// readonly payload moved below: 	.hword	-16575
+// readonly payload moved below: 	.hword	32000
+// readonly payload moved below: 	.hword	-16959
+// readonly payload moved below: 	.hword	-17279
+// readonly payload moved below: 	.hword	31808
+// readonly payload moved below: 	.hword	-19455
+// readonly payload moved below: 	.hword	29888
+// readonly payload moved below: 	.hword	30080
+// readonly payload moved below: 	.hword	-19135
+// readonly payload moved below: 	.hword	30464
+// readonly payload moved below: 	.hword	-18495
+// readonly payload moved below: 	.hword	-18815
+// readonly payload moved below: 	.hword	30272
+// readonly payload moved below: 	.hword	29184
+// readonly payload moved below: 	.hword	-19775
+// readonly payload moved below: 	.hword	-19583
+// readonly payload moved below: 	.hword	29504
+// readonly payload moved below: 	.hword	-20223
+// readonly payload moved below: 	.hword	29120
+// readonly payload moved below: 	.hword	28800
+// readonly payload moved below: 	.hword	-20415
+// readonly payload moved below: 	.hword	20480
+// readonly payload moved below: 	.hword	-28479
+// readonly payload moved below: 	.hword	-28287
+// readonly payload moved below: 	.hword	20800
+// readonly payload moved below: 	.hword	-27903
+// readonly payload moved below: 	.hword	21440
+// readonly payload moved below: 	.hword	21120
+// readonly payload moved below: 	.hword	-28095
+// readonly payload moved below: 	.hword	-27135
+// readonly payload moved below: 	.hword	22208
+// readonly payload moved below: 	.hword	22400
+// readonly payload moved below: 	.hword	-26815
+// readonly payload moved below: 	.hword	21760
+// readonly payload moved below: 	.hword	-27199
+// readonly payload moved below: 	.hword	-27519
+// readonly payload moved below: 	.hword	21568
+// readonly payload moved below: 	.hword	-25599
+// readonly payload moved below: 	.hword	23744
+// readonly payload moved below: 	.hword	23936
+// readonly payload moved below: 	.hword	-25279
+// readonly payload moved below: 	.hword	24320
+// readonly payload moved below: 	.hword	-24639
+// readonly payload moved below: 	.hword	-24959
+// readonly payload moved below: 	.hword	24128
+// readonly payload moved below: 	.hword	23040
+// readonly payload moved below: 	.hword	-25919
+// readonly payload moved below: 	.hword	-25727
+// readonly payload moved below: 	.hword	23360
+// readonly payload moved below: 	.hword	-26367
+// readonly payload moved below: 	.hword	22976
+// readonly payload moved below: 	.hword	22656
+// readonly payload moved below: 	.hword	-26559
+// readonly payload moved below: 	.hword	-30719
+// readonly payload moved below: 	.hword	18624
+// readonly payload moved below: 	.hword	18816
+// readonly payload moved below: 	.hword	-30399
+// readonly payload moved below: 	.hword	19200
+// readonly payload moved below: 	.hword	-29759
+// readonly payload moved below: 	.hword	-30079
+// readonly payload moved below: 	.hword	19008
+// readonly payload moved below: 	.hword	19968
+// readonly payload moved below: 	.hword	-28991
+// readonly payload moved below: 	.hword	-28799
+// readonly payload moved below: 	.hword	20288
+// readonly payload moved below: 	.hword	-29439
+// readonly payload moved below: 	.hword	19904
+// readonly payload moved below: 	.hword	19584
+// readonly payload moved below: 	.hword	-29631
+// readonly payload moved below: 	.hword	17408
+// readonly payload moved below: 	.hword	-31551
+// readonly payload moved below: 	.hword	-31359
+// readonly payload moved below: 	.hword	17728
+// readonly payload moved below: 	.hword	-30975
+// readonly payload moved below: 	.hword	18368
+// readonly payload moved below: 	.hword	18048
+// readonly payload moved below: 	.hword	-31167
+// readonly payload moved below: 	.hword	-32255
+// readonly payload moved below: 	.hword	17088
+// readonly payload moved below: 	.hword	17280
+// readonly payload moved below: 	.hword	-31935
+// readonly payload moved below: 	.hword	16640
+// readonly payload moved below: 	.hword	-32319
+// readonly payload moved below: 	.hword	-32639
+// readonly payload moved below: 	.hword	16448
 	.text
 	.align	2
 	.type	nand_crc16_byte, %function
@@ -13464,9 +13464,9 @@ nand_crc16:
 	ret
 	.size	nand_crc16, .-nand_crc16
 	.section	.rodata
-	.align	3
-.LC146:
-	.string	"[NE]error nand_write_logic_page_no_gc page_no:%u\n"
+// readonly alignment moved below: 	.align	3
+/* .LC146: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]error nand_write_logic_page_no_gc page_no:%u\n"
 	.text
 	.align	2
 	.global	_nftl_nand_write_logic_page
@@ -13502,12 +13502,12 @@ _nftl_nand_write_logic_page:
 	ret
 	.size	_nftl_nand_write_logic_page, .-_nftl_nand_write_logic_page
 	.section	.rodata
-	.align	3
-.LC147:
-	.string	"[ND]logic_page_map_temp NULL!!\n"
-	.align	3
-.LC148:
-	.string	"[NE]read a page: %d READ_RECLAIM!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC147: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]logic_page_map_temp NULL!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC148: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]read a page: %d READ_RECLAIM!\n"
 	.text
 	.align	2
 	.global	_nftl_nand_read_logic_page
@@ -13624,15 +13624,15 @@ _nftl_discard_logic_page:
 	ret
 	.size	_nftl_discard_logic_page, .-_nftl_discard_logic_page
 	.section	.rodata
-	.align	3
-.LC149:
-	.string	"[NE]no free block\n"
-	.align	3
-.LC150:
-	.string	"[NE]do_write_error erase error sb:%d!\n"
-	.align	3
-.LC151:
-	.string	"[NE]do_write_error sb@%d nftl_nand_copy_page error!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC149: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]no free block\n"
+// readonly alignment moved below: 	.align	3
+/* .LC150: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]do_write_error erase error sb:%d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC151: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]do_write_error sb@%d nftl_nand_copy_page error!\n"
 	.text
 	.align	2
 	.global	do_write_error
@@ -13872,18 +13872,18 @@ do_write_error:
 	ret
 	.size	do_write_error, .-do_write_error
 	.section	.rodata
-	.align	3
-.LC152:
-	.string	"[NE]do after write error1!\n"
-	.align	3
-.LC153:
-	.string	"[NE]do_before_write error!\n"
-	.align	3
-.LC154:
-	.string	"[NE]write data to page error!\n"
-	.align	3
-.LC155:
-	.string	"[NE]do after write error2!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC152: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]do after write error1!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC153: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]do_before_write error!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC154: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]write data to page error!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC155: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]do after write error2!\n"
 	.text
 	.align	2
 	.global	nand_write_data_page
@@ -13970,12 +13970,12 @@ nand_write_logic_page_no_gc:
 	ret
 	.size	nand_write_logic_page_no_gc, .-nand_write_logic_page_no_gc
 	.section	.rodata
-	.align	3
-.LC156:
-	.string	"[NE]get_new_current_block error3!\n"
-	.align	3
-.LC157:
-	.string	"[NE]get_new_current_block error4!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC156: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]get_new_current_block error3!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC157: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]get_new_current_block error4!\n"
 	.text
 	.align	2
 	.global	do_before_write
@@ -14099,15 +14099,15 @@ do_before_write:
 	ret
 	.size	do_before_write, .-do_before_write
 	.section	.rodata
-	.align	3
-.LC158:
-	.string	"[NE]write_phy_page_map_to_current_block error!\n"
-	.align	3
-.LC159:
-	.string	"[NE]get_new_current_block error1!\n"
-	.align	3
-.LC160:
-	.string	"[NE]get_new_current_block error2!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC158: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]write_phy_page_map_to_current_block error!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC159: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]get_new_current_block error1!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC160: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]get_new_current_block error2!\n"
 	.text
 	.align	2
 	.global	do_after_write
@@ -14195,9 +14195,9 @@ do_after_write:
 	ret
 	.size	do_after_write, .-do_after_write
 	.section	.rodata
-	.align	3
-.LC161:
-	.string	"[NE]write logic data to current block error\n"
+// readonly alignment moved below: 	.align	3
+/* .LC161: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]write logic data to current block error\n"
 	.text
 	.align	2
 	.global	write_data_to_page
@@ -14252,18 +14252,18 @@ write_data_to_page:
 	ret
 	.size	write_data_to_page, .-write_data_to_page
 	.section	.rodata
-	.align	3
-.LC162:
-	.string	"[ND]last block can not used to logic page %d!!\n"
-	.align	3
-.LC163:
-	.string	"[ND]last block can not used to power down page %d!!\n"
-	.align	3
-.LC164:
-	.string	"[ND]write_phy_data_to_current_block write error %d!\n"
-	.align	3
-.LC165:
-	.string	"[NE]do_write_error error\n"
+// readonly alignment moved below: 	.align	3
+/* .LC162: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]last block can not used to logic page %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC163: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]last block can not used to power down page %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC164: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]write_phy_data_to_current_block write error %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC165: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]do_write_error error\n"
 	.text
 	.align	2
 	.global	write_phy_data_to_current_block
@@ -14463,9 +14463,9 @@ write_phy_data_to_current_block:
 	ret
 	.size	write_phy_data_to_current_block, .-write_phy_data_to_current_block
 	.section	.rodata
-	.align	3
-.LC166:
-	.string	"[NE]write_phy_data_to_current_block error1\n"
+// readonly alignment moved below: 	.align	3
+/* .LC166: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]write_phy_data_to_current_block error1\n"
 	.text
 	.align	2
 	.global	write_phy_page_map_to_current_block
@@ -14549,21 +14549,21 @@ write_phy_page_map_to_current_block:
 	ret
 	.size	write_phy_page_map_to_current_block, .-write_phy_page_map_to_current_block
 	.section	.rodata
-	.align	3
-.LC167:
-	.string	"[ND]logic_page_map NULL!!\n"
-	.align	3
-.LC168:
-	.string	"[ND]invalid_page_count more than pages_per_blk at write logic data to current block:%d!!\n"
-	.align	3
-.LC169:
-	.string	"[NE]write_phy_data_to_current_block error2\n"
-	.align	3
-.LC170:
-	.string	"[NE]invalid_page_count more than pages_per_blk at write logic data to current block:%d!!\n"
-	.align	3
-.LC171:
-	.string	"[NE]write phy data to current block error2\n"
+// readonly alignment moved below: 	.align	3
+/* .LC167: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]logic_page_map NULL!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC168: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]invalid_page_count more than pages_per_blk at write logic data to current block:%d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC169: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]write_phy_data_to_current_block error2\n"
+// readonly alignment moved below: 	.align	3
+/* .LC170: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]invalid_page_count more than pages_per_blk at write logic data to current block:%d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC171: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]write phy data to current block error2\n"
 	.text
 	.align	2
 	.global	write_logic_data_to_current_block
@@ -14822,12 +14822,12 @@ write_logic_data_to_current_block:
 	ret
 	.size	write_logic_data_to_current_block, .-write_logic_data_to_current_block
 	.section	.rodata
-	.align	3
-.LC172:
-	.string	"[ND]swl: new_cur_blk->alloc ok(max_ec): block_no = %d; ec = %d; \n"
-	.align	3
-.LC173:
-	.string	"[NE]no free block!!!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC172: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]swl: new_cur_blk->alloc ok(max_ec): block_no = %d; ec = %d; \n"
+// readonly alignment moved below: 	.align	3
+/* .LC173: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]no free block!!!!\n"
 	.text
 	.align	2
 	.global	get_new_current_block
@@ -14919,9 +14919,9 @@ get_new_current_block:
 	ret
 	.size	get_new_current_block, .-get_new_current_block
 	.section	.rodata
-	.align	3
-.LC174:
-	.string	"[NE]new_block_init_for_write erase error!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC174: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]new_block_init_for_write erase error!\n"
 	.text
 	.align	2
 	.global	new_block_init_for_write
@@ -15002,9 +15002,9 @@ new_block_init_for_write:
 	ret
 	.size	new_block_init_for_write, .-new_block_init_for_write
 	.section	.rodata
-	.align	3
-.LC175:
-	.string	"[NE]invaild_page num error:[%d] [%d]  used_page:[%d]!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC175: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]invaild_page num error:[%d] [%d]  used_page:[%d]!!\n"
 	.text
 	.align	2
 	.global	check_invalid_page_right
@@ -15462,78 +15462,78 @@ nftl_get_zone_write_cache_nums:
 	ret
 	.size	nftl_get_zone_write_cache_nums, .-nftl_get_zone_write_cache_nums
 	.section	.rodata
-	.align	3
-.LC176:
-	.string	"[ND]smart->version:%x;\n"
-	.align	3
-.LC177:
-	.string	"[ND]smart->total_recv_read_sectors:%lld;\n"
-	.align	3
-.LC178:
-	.string	"[ND]smart->total_recv_write_sectors:%lld;\n"
-	.align	3
-.LC179:
-	.string	"[ND]smart->total_real_read_pages:%lld;\n"
-	.align	3
-.LC180:
-	.string	"[ND]smart->total_real_write_pages:%lld;\n"
-	.align	3
-.LC181:
-	.string	"[ND]smart->total_recv_discard_sectors:%lld;\n"
-	.align	3
-.LC182:
-	.string	"[ND]smart->total_real_discard_sectors:%lld;\n"
-	.align	3
-.LC183:
-	.string	"[ND]smart->total_recv_read_claim_pages:%d;\n"
-	.align	3
-.LC184:
-	.string	"[ND]smart->total_gc_times:%d;\n"
-	.align	3
-.LC185:
-	.string	"[ND]smart->total_gc_pages:%d;\n"
-	.align	3
-.LC186:
-	.string	"[ND]smart->total_wl_times:%d;\n"
-	.align	3
-.LC187:
-	.string	"[ND]smart->total_wl_gc_times:%d;\n"
-	.align	3
-.LC188:
-	.string	"[ND]smart->total_real_read_error_pages:%d;\n"
-	.align	3
-.LC189:
-	.string	"[ND]smart->total_real_write_error_pages:%d;\n"
-	.align	3
-.LC190:
-	.string	"[ND]smart->total_normal_power_cycles:%x;\n"
-	.align	3
-.LC191:
-	.string	"[ND]smart->total_unusual_power_cycles:%x;\n"
-	.align	3
-.LC192:
-	.string	"[ND]smart->max_block_erase_times:%d;\n"
-	.align	3
-.LC193:
-	.string	"[ND]smart->min_block_erase_times:%d;\n"
-	.align	3
-.LC194:
-	.string	"[ND]smart->max_block_used_counter:%d;\n"
-	.align	3
-.LC195:
-	.string	"[ND]smart->min_block_used_counter:%d;\n"
-	.align	3
-.LC196:
-	.string	"[ND]smart->read_reclaim_utc:%d;\n"
-	.align	3
-.LC197:
-	.string	"[ND]smart->cross_talk_times:%d;\n"
-	.align	3
-.LC198:
-	.string	"[ND]smart->read_reclaim_zone_no:%d;\n"
-	.align	3
-.LC199:
-	.string	"[ND]smart->read_reclaim_page_no:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC176: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->version:%x;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC177: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_recv_read_sectors:%lld;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC178: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_recv_write_sectors:%lld;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC179: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_real_read_pages:%lld;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC180: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_real_write_pages:%lld;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC181: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_recv_discard_sectors:%lld;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC182: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_real_discard_sectors:%lld;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC183: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_recv_read_claim_pages:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC184: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_gc_times:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC185: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_gc_pages:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC186: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_wl_times:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC187: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_wl_gc_times:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC188: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_real_read_error_pages:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC189: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_real_write_error_pages:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC190: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_normal_power_cycles:%x;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC191: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->total_unusual_power_cycles:%x;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC192: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->max_block_erase_times:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC193: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->min_block_erase_times:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC194: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->max_block_used_counter:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC195: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->min_block_used_counter:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC196: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->read_reclaim_utc:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC197: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->cross_talk_times:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC198: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->read_reclaim_zone_no:%d;\n"
+// readonly alignment moved below: 	.align	3
+/* .LC199: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]smart->read_reclaim_page_no:%d;\n"
 	.text
 	.align	2
 	.global	print_smart
@@ -15679,9 +15679,9 @@ print_smart:
 	ret
 	.size	print_smart, .-print_smart
 	.section	.rodata
-	.align	3
-.LC200:
-	.string	"%08x: "
+// readonly alignment moved below: 	.align	3
+/* .LC200: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"%08x: "
 	.text
 	.align	2
 	.global	dump_buf
@@ -15740,9 +15740,9 @@ dump_buf:
 	ret
 	.size	dump_buf, .-dump_buf
 	.section	.rodata
-	.align	3
-.LC201:
-	.string	"[NE]exception case wb %04x %04x, len: %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC201: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]exception case wb %04x %04x, len: %d\n"
 	.text
 	.align	2
 	.type	crc_wrong, %function
@@ -15811,24 +15811,24 @@ crc_wrong:
 	ret
 	.size	crc_wrong, .-crc_wrong
 	.section	.rodata
-	.align	3
-.LC202:
-	.string	"[NE]%s:malloc fail for temp_page_buf\n"
-	.align	3
-.LC203:
-	.string	"[NE]%s:malloc fail for logic_page_buf\n"
-	.align	3
-.LC204:
-	.string	"[NE]zone_param_init error2\n"
-	.align	3
-.LC205:
-	.string	"[NE]%s:malloc fail for current_block.user_info.buf\n"
-	.align	3
-.LC206:
-	.string	"[NE]%s:malloc fail for assist_block.user_info.buf\n"
-	.align	3
-.LC207:
-	.string	"[NE]%s:malloc fail for zone_phy_page_map_for_gc.buf\n"
+// readonly alignment moved below: 	.align	3
+/* .LC202: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc fail for temp_page_buf\n"
+// readonly alignment moved below: 	.align	3
+/* .LC203: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc fail for logic_page_buf\n"
+// readonly alignment moved below: 	.align	3
+/* .LC204: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]zone_param_init error2\n"
+// readonly alignment moved below: 	.align	3
+/* .LC205: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc fail for current_block.user_info.buf\n"
+// readonly alignment moved below: 	.align	3
+/* .LC206: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc fail for assist_block.user_info.buf\n"
+// readonly alignment moved below: 	.align	3
+/* .LC207: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc fail for zone_phy_page_map_for_gc.buf\n"
 	.text
 	.align	2
 	.global	zone_param_init
@@ -16246,9 +16246,9 @@ zone_param_exit:
 	ret
 	.size	zone_param_exit, .-zone_param_exit
 	.section	.rodata
-	.align	3
-.LC208:
-	.string	"[NE]mtd size changed !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC208: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]mtd size changed !\n"
 	.text
 	.align	2
 	.global	is_no_use_device
@@ -16464,12 +16464,12 @@ get_vaild_blocks:
 	ret
 	.size	get_vaild_blocks, .-get_vaild_blocks
 	.section	.rodata
-	.align	3
-.LC209:
-	.string	"[ND]build_zone_list_first.\n"
-	.align	3
-.LC210:
-	.string	"[NE]no block %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC209: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]build_zone_list_first.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC210: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]no block %d\n"
 	.text
 	.align	2
 	.global	build_zone_list_first
@@ -16793,18 +16793,18 @@ build_zone_list_first:
 	ret
 	.size	build_zone_list_first, .-build_zone_list_first
 	.section	.rodata
-	.align	3
-.LC211:
-	.string	"[ND]first\n"
-	.align	3
-.LC212:
-	.string	"[NE]init_zone_after_first_scan error\n"
-	.align	3
-.LC213:
-	.string	"[NE]second_scan_all_blocks error\n"
-	.align	3
-.LC214:
-	.string	"[NI]nftl ok!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC211: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]first\n"
+// readonly alignment moved below: 	.align	3
+/* .LC212: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]init_zone_after_first_scan error\n"
+// readonly alignment moved below: 	.align	3
+/* .LC213: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]second_scan_all_blocks error\n"
+// readonly alignment moved below: 	.align	3
+/* .LC214: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]nftl ok!\n"
 	.text
 	.align	2
 	.global	build_zone_list
@@ -16866,51 +16866,51 @@ build_zone_list:
 	ret
 	.size	build_zone_list, .-build_zone_list
 	.section	.rodata
-	.align	3
-.LC215:
-	.string	"[ND]fsab\n"
-	.align	3
-.LC216:
-	.string	"[NI]ftl end block! %d!\n"
-	.align	3
-.LC217:
-	.string	"[ND]READ_RECLAIM!\n"
-	.align	3
-.LC218:
-	.string	"[NI]start page , do nothing\n"
-	.align	3
-.LC219:
-	.string	"[ND]fill block %d\n"
-	.align	3
-.LC220:
-	.string	"[NI]b@%d p@0 unknow spare data:%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x.\n"
-	.align	3
-.LC221:
-	.string	"[NE]nftl bad block: %d\n"
-	.align	3
-.LC222:
-	.string	"[NE]nftl b@%d p@0 ecc error\n"
-	.align	3
-.LC223:
-	.string	"[NE]b@%d last page ok !\n"
-	.align	3
-.LC224:
-	.string	"[NI]READ_RECLAIM!\n"
-	.align	3
-.LC225:
-	.string	"[NE]last page blank ! %d!\n"
-	.align	3
-.LC226:
-	.string	"[NE]last page unkown ! %d!\n"
-	.align	3
-.LC227:
-	.string	"[NE]b@%d first page last page ecc error\n"
-	.align	3
-.LC228:
-	.string	"[NE]b@%d last page spare data %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n"
-	.align	3
-.LC229:
-	.string	"[NI]nftl bad block: %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC215: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]fsab\n"
+// readonly alignment moved below: 	.align	3
+/* .LC216: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]ftl end block! %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC217: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]READ_RECLAIM!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC218: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]start page , do nothing\n"
+// readonly alignment moved below: 	.align	3
+/* .LC219: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]fill block %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC220: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]b@%d p@0 unknow spare data:%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC221: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]nftl bad block: %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC222: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]nftl b@%d p@0 ecc error\n"
+// readonly alignment moved below: 	.align	3
+/* .LC223: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]b@%d last page ok !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC224: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]READ_RECLAIM!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC225: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]last page blank ! %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC226: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]last page unkown ! %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC227: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]b@%d first page last page ecc error\n"
+// readonly alignment moved below: 	.align	3
+/* .LC228: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]b@%d last page spare data %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n"
+// readonly alignment moved below: 	.align	3
+/* .LC229: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]nftl bad block: %d\n"
 	.text
 	.align	2
 	.global	first_scan_all_blocks
@@ -17520,24 +17520,24 @@ first_scan_all_blocks:
 	ret
 	.size	first_scan_all_blocks, .-first_scan_all_blocks
 	.section	.rodata
-	.align	3
-.LC2:
-	.byte	115
-	.byte	117
-	.byte	110
-	.byte	120
-	.byte	105
+// readonly alignment moved below: 	.align	3
+/* .LC2: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.byte	115
+// readonly payload moved below: 	.byte	117
+// readonly payload moved below: 	.byte	110
+// readonly payload moved below: 	.byte	120
+// readonly payload moved below: 	.byte	105
 	.text
 	.section	.rodata
-	.align	3
-.LC230:
-	.string	"[ND]before second %d %d.\n"
-	.align	3
-.LC231:
-	.string	"[NE]only have blocks:%u,logic cap need blocks:%u this zone not enough data block!!\n"
-	.align	3
-.LC232:
-	.string	"[NE]this zone not enough free block %d , %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC230: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]before second %d %d.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC231: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]only have blocks:%u,logic cap need blocks:%u this zone not enough data block!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC232: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]this zone not enough free block %d , %d!!\n"
 	.text
 	.align	2
 	.global	init_zone_after_first_scan
@@ -17672,57 +17672,57 @@ init_zone_after_first_scan:
 	ret
 	.size	init_zone_after_first_scan, .-init_zone_after_first_scan
 	.section	.rodata
-	.align	3
-.LC233:
-	.string	"[NI]NAND_EVENT: 2 current used block found %d,%d!\n"
-	.align	3
-.LC234:
-	.string	"[NE]no crosstalk:2 block used count diff %d,%d %d,%d !\n"
-	.align	3
-.LC235:
-	.string	"[NE]NAND_EVENT: muti current used block found1 %d %d!\n"
-	.align	3
-.LC236:
-	.string	"[NE]NAND_EVENT: muti current used block found2 %d %d!\n"
-	.align	3
-.LC237:
-	.string	"[NE]NAND_EVENT: muti current used block found3 %d %d!\n"
-	.align	3
-.LC238:
-	.string	"[NE]NAND_EVENT: last page spare data %x,%x,%x,%x,%x,%x,%x %x %x %x %x %x %x %x %x %x!!\n"
-	.align	3
-.LC239:
-	.string	"[NI]zone@%d b@%d last page unkown ecc ok.\n"
-	.align	3
-.LC240:
-	.string	"[NE]zone@%d b@%d last page ecc error.\n"
-	.align	3
-.LC241:
-	.string	"[NE]something strange %d,%d!!\n"
-	.align	3
-.LC242:
-	.string	"[NI]all block full!!\n"
-	.align	3
-.LC243:
-	.string	"[ND]corss talk rebuild 0 %d %d!!\n"
-	.align	3
-.LC244:
-	.string	"[NE]1st current block:%d 1st current block uc:%d muti current used block 1st.\n"
-	.align	3
-.LC245:
-	.string	"[ND]2nd current block:%d 2nd current block uc:%d muti current used block 2nd.\n"
-	.align	3
-.LC246:
-	.string	"[NE]something is error here 7!\n"
-	.align	3
-.LC247:
-	.string	"[NE]p_phy_block_info_last %d %d.\n"
-	.align	3
-.LC248:
-	.string	"[NE]get_current_used_block fail.\n"
-	.align	3
-.LC249:
-	.string	"[ND]free block nums is %d, aec: %d, iec: %d, a_buc: %d, i_buc: %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC233: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]NAND_EVENT: 2 current used block found %d,%d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC234: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]no crosstalk:2 block used count diff %d,%d %d,%d !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC235: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]NAND_EVENT: muti current used block found1 %d %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC236: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]NAND_EVENT: muti current used block found2 %d %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC237: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]NAND_EVENT: muti current used block found3 %d %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC238: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]NAND_EVENT: last page spare data %x,%x,%x,%x,%x,%x,%x %x %x %x %x %x %x %x %x %x!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC239: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]zone@%d b@%d last page unkown ecc ok.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC240: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]zone@%d b@%d last page ecc error.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC241: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]something strange %d,%d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC242: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]all block full!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC243: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]corss talk rebuild 0 %d %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC244: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]1st current block:%d 1st current block uc:%d muti current used block 1st.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC245: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]2nd current block:%d 2nd current block uc:%d muti current used block 2nd.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC246: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]something is error here 7!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC247: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]p_phy_block_info_last %d %d.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC248: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]get_current_used_block fail.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC249: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]free block nums is %d, aec: %d, iec: %d, a_buc: %d, i_buc: %d!\n"
 	.text
 	.align	2
 	.global	second_scan_all_blocks
@@ -18678,42 +18678,42 @@ is_all_byte_ff:
 	ret
 	.size	is_all_byte_ff, .-is_all_byte_ff
 	.section	.rodata
-	.align	3
-.LC250:
-	.string	"[NE]current_block ecc error %d!\n"
-	.align	3
-.LC251:
-	.string	"[NE]error! no free block!\n"
-	.align	3
-.LC252:
-	.string	"[ND]recover %d %d\n"
-	.align	3
-.LC253:
-	.string	"[NE]page used:%d invalid page count:%d error\n"
-	.align	3
-.LC254:
-	.string	"[NE]new_block_init_for_write error here!\n"
-	.align	3
-.LC255:
-	.string	"[NE]something is error here 10!\n"
-	.align	3
-.LC256:
-	.string	"[NE]something is error here 11!\n"
-	.align	3
-.LC257:
-	.string	"[NE]assist block page used:%d current block page used:%d something is error here 12.\n"
-	.align	3
-.LC258:
-	.string	"[NE]assist block page used:%d current block page used:%d something is error here 17.\n"
-	.align	3
-.LC259:
-	.string	"[NE]something is error here 16!\n"
-	.align	3
-.LC260:
-	.string	"[ND]get a new free block\n"
-	.align	3
-.LC261:
-	.string	"[NE]no free block to use!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC250: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]current_block ecc error %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC251: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]error! no free block!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC252: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]recover %d %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC253: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]page used:%d invalid page count:%d error\n"
+// readonly alignment moved below: 	.align	3
+/* .LC254: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]new_block_init_for_write error here!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC255: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]something is error here 10!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC256: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]something is error here 11!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC257: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]assist block page used:%d current block page used:%d something is error here 12.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC258: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]assist block page used:%d current block page used:%d something is error here 17.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC259: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]something is error here 16!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC260: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]get a new free block\n"
+// readonly alignment moved below: 	.align	3
+/* .LC261: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]no free block to use!\n"
 	.text
 	.align	2
 	.global	get_current_used_block
@@ -19103,27 +19103,27 @@ get_current_used_block:
 	ret
 	.size	get_current_used_block, .-get_current_used_block
 	.section	.rodata
-	.align	3
-.LC262:
-	.string	"[NE]sb@%d sp@%d recover_phy_page_mapping no used page\n"
-	.align	3
-.LC263:
-	.string	"[NE]sb@%d sp@%d power off ecc error1.\n"
-	.align	3
-.LC264:
-	.string	"[NE]invalid logic_page block:%d page:%d,logic_page 0x%x.\n"
-	.align	3
-.LC265:
-	.string	"[NE]rppm invalid page %d!!\n"
-	.align	3
-.LC266:
-	.string	"[NI]power_down page %d!!\n"
-	.align	3
-.LC267:
-	.string	"[NE]recover_phy_page_mapping unkown page data %d!!\n"
-	.align	3
-.LC268:
-	.string	"[NE]recover_phy_page_mapping ecc error block:%d;page:%d.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC262: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]sb@%d sp@%d recover_phy_page_mapping no used page\n"
+// readonly alignment moved below: 	.align	3
+/* .LC263: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]sb@%d sp@%d power off ecc error1.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC264: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]invalid logic_page block:%d page:%d,logic_page 0x%x.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC265: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]rppm invalid page %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC266: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]power_down page %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC267: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]recover_phy_page_mapping unkown page data %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC268: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]recover_phy_page_mapping ecc error block:%d;page:%d.\n"
 	.text
 	.align	2
 	.global	recover_phy_page_mapping
@@ -19332,18 +19332,18 @@ recover_phy_page_mapping:
 	ret
 	.size	recover_phy_page_mapping, .-recover_phy_page_mapping
 	.section	.rodata
-	.align	3
-.LC269:
-	.string	"[NE]ret:%d read fail %d %d,read one more time!!\n"
-	.align	3
-.LC270:
-	.string	"[NE]ret:%d read fail %d %d,%d times,don't read more!!\n"
-	.align	3
-.LC271:
-	.string	"[NE]power off ecc error 3!!\n"
-	.align	3
-.LC272:
-	.string	"[NE]recover sb@%d sp@%d phy page mapping error.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC269: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]ret:%d read fail %d %d,read one more time!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC270: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]ret:%d read fail %d %d,%d times,don't read more!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC271: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]power off ecc error 3!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC272: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]recover sb@%d sp@%d phy page mapping error.\n"
 	.text
 	.align	2
 	.global	recover_block_phy_page_mapping
@@ -19534,18 +19534,18 @@ recover_block_phy_page_mapping:
 	ret
 	.size	recover_block_phy_page_mapping, .-recover_block_phy_page_mapping
 	.section	.rodata
-	.align	3
-.LC273:
-	.string	"[NI]logic_page_map is NULL\n"
-	.align	3
-.LC274:
-	.string	"[NE]invalid_page_count more than pages_per_blk :%d\n"
-	.align	3
-.LC275:
-	.string	"[NE]invalid_page data block:%d page:%d,logic_page 0x%x!!\n"
-	.align	3
-.LC276:
-	.string	"[NE]build invalid_page_count more than pages_per_blk!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC273: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]logic_page_map is NULL\n"
+// readonly alignment moved below: 	.align	3
+/* .LC274: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]invalid_page_count more than pages_per_blk :%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC275: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]invalid_page data block:%d page:%d,logic_page 0x%x!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC276: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]build invalid_page_count more than pages_per_blk!!\n"
 	.text
 	.align	2
 	.global	recover_logic_page_mapping
@@ -19686,12 +19686,12 @@ recover_logic_page_mapping:
 	ret
 	.size	recover_logic_page_mapping, .-recover_logic_page_mapping
 	.section	.rodata
-	.align	3
-.LC277:
-	.string	"[NE]NAND EVENT:do_write_error erase error1!\n"
-	.align	3
-.LC278:
-	.string	"[NE]NAND EVENT:do_write_error erase error2!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC277: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]NAND EVENT:do_write_error erase error1!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC278: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]NAND EVENT:do_write_error erase error2!\n"
 	.text
 	.align	2
 	.global	do_write_error_in_build_list
@@ -19809,21 +19809,21 @@ do_write_error_in_build_list:
 	ret
 	.size	do_write_error_in_build_list, .-do_write_error_in_build_list
 	.section	.rodata
-	.align	3
-.LC279:
-	.string	"%s %d:fail 1\n"
-	.align	3
-.LC280:
-	.string	"%s %d:fail 2\n"
-	.align	3
-.LC281:
-	.string	"%s %d:fail 3\n"
-	.align	3
-.LC282:
-	.string	"%s %d:fail 4\n"
-	.align	3
-.LC283:
-	.string	"[NE]pages_per_blk: %d, %p, %p, %p, %p\n"
+// readonly alignment moved below: 	.align	3
+/* .LC279: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"%s %d:fail 1\n"
+// readonly alignment moved below: 	.align	3
+/* .LC280: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"%s %d:fail 2\n"
+// readonly alignment moved below: 	.align	3
+/* .LC281: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"%s %d:fail 3\n"
+// readonly alignment moved below: 	.align	3
+/* .LC282: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"%s %d:fail 4\n"
+// readonly alignment moved below: 	.align	3
+/* .LC283: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]pages_per_blk: %d, %p, %p, %p, %p\n"
 	.text
 	.align	2
 	.global	init_nrc
@@ -20015,36 +20015,36 @@ free_nrc:
 	ret
 	.size	free_nrc, .-free_nrc
 	.section	.rodata
-	.align	3
-.LC284:
-	.string	"[NE]cross_talk_rebuild_current_block fail 1\n"
-	.align	3
-.LC285:
-	.string	"[NE]cross_talk_rebuild_current_block!! %d,%d,%d!\n"
-	.align	3
-.LC286:
-	.string	"[NE]cross_talk_rebuild_current_block fail 2\n"
-	.align	3
-.LC287:
-	.string	"[NE]cross_talk_rebuild_current_block!! %d,%d,%d,%d,%d,%d!\n"
-	.align	3
-.LC288:
-	.string	"[NE]cross_talk_rebuild_current_block fail 3\n"
-	.align	3
-.LC289:
-	.string	"[NE]corss talk rebuild 1 %d %d %d!\n"
-	.align	3
-.LC290:
-	.string	"[NE]corss talk rebuild 2 %d %d %d!\n"
-	.align	3
-.LC291:
-	.string	"[NE]get free block fail!\n"
-	.align	3
-.LC292:
-	.string	"[NE]something is error here 14!\n"
-	.align	3
-.LC293:
-	.string	"[NE]page lost %d %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC284: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]cross_talk_rebuild_current_block fail 1\n"
+// readonly alignment moved below: 	.align	3
+/* .LC285: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]cross_talk_rebuild_current_block!! %d,%d,%d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC286: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]cross_talk_rebuild_current_block fail 2\n"
+// readonly alignment moved below: 	.align	3
+/* .LC287: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]cross_talk_rebuild_current_block!! %d,%d,%d,%d,%d,%d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC288: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]cross_talk_rebuild_current_block fail 3\n"
+// readonly alignment moved below: 	.align	3
+/* .LC289: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]corss talk rebuild 1 %d %d %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC290: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]corss talk rebuild 2 %d %d %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC291: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]get free block fail!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC292: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]something is error here 14!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC293: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]page lost %d %d\n"
 	.text
 	.align	2
 	.global	cross_talk_rebuild_current_block
@@ -20388,21 +20388,21 @@ cross_talk_rebuild_current_block:
 	ret
 	.size	cross_talk_rebuild_current_block, .-cross_talk_rebuild_current_block
 	.section	.rodata
-	.align	3
-.LC294:
-	.string	"[NI]nctrcb1 %d,%d,%d!\n"
-	.align	3
-.LC295:
-	.string	"[NE]no_cross_talk_rebuild_current_block fail 2\n"
-	.align	3
-.LC296:
-	.string	"[NI]nctrcb2 %d,%d,%d,%d,%d,%d!\n"
-	.align	3
-.LC297:
-	.string	"[NE]no_cross_talk_rebuild_current_block fail 4\n"
-	.align	3
-.LC298:
-	.string	"[NE]no_cross_talk_rebuild_current_block erase block fail %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC294: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]nctrcb1 %d,%d,%d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC295: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]no_cross_talk_rebuild_current_block fail 2\n"
+// readonly alignment moved below: 	.align	3
+/* .LC296: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]nctrcb2 %d,%d,%d,%d,%d,%d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC297: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]no_cross_talk_rebuild_current_block fail 4\n"
+// readonly alignment moved below: 	.align	3
+/* .LC298: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]no_cross_talk_rebuild_current_block erase block fail %d!\n"
 	.text
 	.align	2
 	.global	no_cross_talk_rebuild_current_block
@@ -20792,12 +20792,12 @@ no_cross_talk_rebuild_current_block:
 	ret
 	.size	no_cross_talk_rebuild_current_block, .-no_cross_talk_rebuild_current_block
 	.section	.rodata
-	.align	3
-.LC299:
-	.string	"[NI]erase_block block %d!\n"
-	.align	3
-.LC300:
-	.string	"[NE]erase_block block fail %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC299: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]erase_block block %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC300: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]erase_block block fail %d!\n"
 	.text
 	.align	2
 	.global	erase_block
@@ -20925,24 +20925,24 @@ nftl_check_pattern:
 /* patterns: initialized storage moved below; keep original source-line positions. */
 /* initialized payload moved below */
 	.section	.rodata
-	.align	3
-.LC301:
-	.string	"[NI]torture b@%d.\n"
-	.align	3
-.LC302:
-	.string	"[NE]%s write b@%d p@%d err\n"
-	.align	3
-.LC303:
-	.string	"[NE]%s read b@%d p@%d err\n"
-	.align	3
-.LC304:
-	.string	"[NE]%s b@%d p@%d patt %02x checking main data fail\n"
-	.align	3
-.LC305:
-	.string	"[NE]%s b@%d p@%d patt %02x checking spare data fail\n"
-	.align	3
-.LC306:
-	.string	"[NE][NE]erase_block block fail %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC301: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]torture b@%d.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC302: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s write b@%d p@%d err\n"
+// readonly alignment moved below: 	.align	3
+/* .LC303: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s read b@%d p@%d err\n"
+// readonly alignment moved below: 	.align	3
+/* .LC304: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s b@%d p@%d patt %02x checking main data fail\n"
+// readonly alignment moved below: 	.align	3
+/* .LC305: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s b@%d p@%d patt %02x checking spare data fail\n"
+// readonly alignment moved below: 	.align	3
+/* .LC306: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE][NE]erase_block block fail %d!\n"
 	.text
 	.align	2
 	.global	torture_block_and_mark
@@ -21486,15 +21486,15 @@ get_phy_block_addr:
 	ret
 	.size	get_phy_block_addr, .-get_phy_block_addr
 	.section	.rodata
-	.align	3
-.LC307:
-	.string	"[NE]get_used_page_num ecc error block:%d page:%d!\n"
-	.align	3
-.LC308:
-	.string	"[NE]power off ecc error 4!!\n"
-	.align	3
-.LC309:
-	.string	"[NE]sb@%d sp@%d get_used_page_num used spare data %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n"
+// readonly alignment moved below: 	.align	3
+/* .LC307: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]get_used_page_num ecc error block:%d page:%d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC308: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]power off ecc error 4!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC309: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]sb@%d sp@%d get_used_page_num used spare data %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n"
 	.text
 	.align	2
 	.global	get_used_page_num
@@ -21882,15 +21882,15 @@ get_used_page_num:
 	ret
 	.size	get_used_page_num, .-get_used_page_num
 	.section	.rodata
-	.align	3
-.LC310:
-	.string	"[NE]gupnnc ecc err b:%d p:%d!\n"
-	.align	3
-.LC311:
-	.string	"[NE]gupnnc power off ecc err!!\n"
-	.align	3
-.LC312:
-	.string	"[NE]cross talk block:%d total_good_num %d good_page_num: %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC310: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]gupnnc ecc err b:%d p:%d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC311: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]gupnnc power off ecc err!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC312: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]cross talk block:%d total_good_num %d good_page_num: %d!\n"
 	.text
 	.align	2
 	.global	get_used_page_num_no_crosstalk
@@ -22369,30 +22369,30 @@ get_used_block_count:
 	ret
 	.size	get_used_block_count, .-get_used_block_count
 	.section	.rodata
-	.align	3
-.LC313:
-	.string	"[NE]current_block_ecc_error no free block!!!\n"
-	.align	3
-.LC314:
-	.string	"[NE]do current_block_ecc_error %d!!\n"
-	.align	3
-.LC315:
-	.string	"[NE]power off ecc error 2.\n"
-	.align	3
-.LC316:
-	.string	"[NE]current_block_ecc ok page %d %d!!\n"
-	.align	3
-.LC317:
-	.string	"[NE]current_block_ecc_error page %d!!\n"
-	.align	3
-.LC318:
-	.string	"[NE]current_block_ecc_error invalid page data %d!!\n"
-	.align	3
-.LC319:
-	.string	"[NE]current_block_ecc_error unkown page data %d!!\n"
-	.align	3
-.LC320:
-	.string	"[ND]do current_block_ecc_error end %d %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC313: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]current_block_ecc_error no free block!!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC314: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]do current_block_ecc_error %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC315: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]power off ecc error 2.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC316: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]current_block_ecc ok page %d %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC317: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]current_block_ecc_error page %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC318: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]current_block_ecc_error invalid page data %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC319: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]current_block_ecc_error unkown page data %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC320: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]do current_block_ecc_error end %d %d!!\n"
 	.text
 	.align	2
 	.global	current_block_ecc_error
@@ -22585,24 +22585,24 @@ current_block_ecc_error:
 	ret
 	.size	current_block_ecc_error, .-current_block_ecc_error
 	.section	.rodata
-	.align	3
-.LC321:
-	.string	"[NE]do block_last_page_ecc_error!!\n"
-	.align	3
-.LC322:
-	.string	"[NE]%s:malloc fail 1!\n"
-	.align	3
-.LC323:
-	.string	"[NE]%s:malloc fail 2!\n"
-	.align	3
-.LC324:
-	.string	"[NE]current_block_ecc_error invalid page data!!\n"
-	.align	3
-.LC325:
-	.string	"[NE]current_block_ecc_error unkown page data!!\n"
-	.align	3
-.LC326:
-	.string	"[NE]do block_last_page_ecc_error end!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC321: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]do block_last_page_ecc_error!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC322: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc fail 1!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC323: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc fail 2!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC324: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]current_block_ecc_error invalid page data!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC325: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]current_block_ecc_error unkown page data!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC326: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]do block_last_page_ecc_error end!!\n"
 	.text
 	.align	2
 	.global	block_last_page_ecc_error
@@ -22898,12 +22898,12 @@ block_last_page_ecc_error:
 	ret
 	.size	block_last_page_ecc_error, .-block_last_page_ecc_error
 	.section	.rodata
-	.align	3
-.LC327:
-	.string	"[NE]adjust free list fail!!\n"
-	.align	3
-.LC328:
-	.string	"[NI]adjust free list : %d %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC327: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]adjust free list fail!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC328: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]adjust free list : %d %d!!\n"
 	.text
 	.align	2
 	.global	adjust_free_list
@@ -22963,165 +22963,165 @@ nftl_get_bad_block_cnt:
 	ret
 	.size	nftl_get_bad_block_cnt, .-nftl_get_bad_block_cnt
 	.section	.rodata
-	.align	3
-.LC329:
-	.string	"[ND]nand3.x \n"
-	.align	3
-.LC330:
-	.string	"[ND]zone->nand_chip->blk_per_chip: %d \n"
-	.align	3
-.LC331:
-	.string	"[ND]zone->nand_chip->bytes_per_page: %d \n"
-	.align	3
-.LC332:
-	.string	"[ND]zone->nand_chip->pages_per_blk: %d \n"
-	.align	3
-.LC333:
-	.string	"[ND]zone->nand_chip->max_erase_times: %d \n"
-	.align	3
-.LC334:
-	.string	"[ND]zone->nand_chip->support_read_reclaim: %d \n"
-	.align	3
-.LC335:
-	.string	"[ND]zone->test: %d \n"
-	.align	3
-.LC336:
-	.string	"[ND]zone->zone_no: %d \n"
-	.align	3
-.LC337:
-	.string	"[ND]zone->zone_attr: %d \n"
-	.align	3
-.LC338:
-	.string	"[ND]zone->blocks: %d \n"
-	.align	3
-.LC339:
-	.string	"[ND]zone->bad_block: %d \n"
-	.align	3
-.LC340:
-	.string	"[ND]zone->logic_cap_in_sects: %d \n"
-	.align	3
-.LC341:
-	.string	"[ND]zone->backup_cap_in_sects: %d \n"
-	.align	3
-.LC342:
-	.string	"[ND]zone->free_block_num: %d \n"
-	.align	3
-.LC343:
-	.string	"[ND]zone->gc_strategy.start_gc_free_blocks: %d \n"
-	.align	3
-.LC344:
-	.string	"[ND]zone->gc_strategy.stop_gc_free_blocks: %d \n"
-	.align	3
-.LC345:
-	.string	"[ND]zone->gc_strategy.gc_page: %d \n"
-	.align	3
-.LC346:
-	.string	"[ND]zone->gc_strategy.process: %d \n"
-	.align	3
-.LC347:
-	.string	"[ND]zone->prio_gc.prio_type : %d \n"
-	.align	3
-.LC348:
-	.string	"[ND]zone->zone_start_phy_block->phy_block.Block_NO: %d \n"
-	.align	3
-.LC349:
-	.string	"[ND]zone->zone_end_phy_block->phy_block.Block_NO: %d \n"
-	.align	3
-.LC350:
-	.string	"[ND]zone->zone_phy_page_map_for_gc: %x \n"
-	.align	3
-.LC351:
-	.string	"[ND]zone->current_block.user_info: %x \n"
-	.align	3
-.LC352:
-	.string	"[ND]zone->current_block.block_info: %x \n"
-	.align	3
-.LC353:
-	.string	"[ND]zone->current_block.block_info->phy_block.Block_NO: %d \n"
-	.align	3
-.LC354:
-	.string	"[ND]zone->current_block.page_used: %d \n"
-	.align	3
-.LC355:
-	.string	"[ND]zone->current_block.block_info->block_used_count: %d \n"
-	.align	3
-.LC356:
-	.string	"[ND]zone->recv_free_block: %d %d!!\n"
-	.align	3
-.LC357:
-	.string	"[ND]zone->assist_block.user_info: %x \n"
-	.align	3
-.LC358:
-	.string	"[ND]zone->assist_block.block_info: %x \n"
-	.align	3
-.LC359:
-	.string	"[ND]zone->assist_block.block_info->phy_block.Block_NO: %d \n"
-	.align	3
-.LC360:
-	.string	"[ND]zone->assist_block.page_used: %d \n"
-	.align	3
-.LC361:
-	.string	"[ND]zone->assist_block.block_info->block_used_count: %d \n"
-	.align	3
-.LC362:
-	.string	"[ND]zone->read_reclaim_complete: %x \n"
-	.align	3
-.LC363:
-	.string	"[ND]zone->temp_page_buf: %x \n"
-	.align	3
-.LC364:
-	.string	"[ND]zone->max_erase_num: %d \n"
-	.align	3
-.LC365:
-	.string	"[ND]zone->cache.cache_totals: %x \n"
-	.align	3
-.LC366:
-	.string	"[ND]zone->wl_gc_count: %d \n"
-	.align	3
-.LC367:
-	.string	"[ND]zone->wl_gc_page_num: %d \n"
-	.align	3
-.LC368:
-	.string	"[ND]zone->cfg->nftl_dont_use_cache: %x \n"
-	.align	3
-.LC369:
-	.string	"[ND]zone->cfg->nftl_use_cache_sort: %x \n"
-	.align	3
-.LC370:
-	.string	"[ND]zone->cfg->nftl_support_gc_read_reclaim: %x \n"
-	.align	3
-.LC371:
-	.string	"[ND]zone->cfg->nftl_support_wear_leveling: %x \n"
-	.align	3
-.LC372:
-	.string	"[ND]zone->cfg->nftl_need_erase: %x \n"
-	.align	3
-.LC373:
-	.string	"[ND]zone->cfg->nftl_min_free_block_num: %x \n"
-	.align	3
-.LC374:
-	.string	"[ND]zone->cfg->nftl_gc_threshold_free_block_num: %x \n"
-	.align	3
-.LC375:
-	.string	"[ND]zone->cfg->nftl_min_free_block: %x \n"
-	.align	3
-.LC376:
-	.string	"[ND]zone->cfg->nftl_gc_threshold_ratio_numerator: %x \n"
-	.align	3
-.LC377:
-	.string	"[ND]zone->cfg->nftl_gc_threshold_ratio_denominator: %x \n"
-	.align	3
-.LC378:
-	.string	"[ND]zone->cfg->nftl_max_cache_num: %d \n"
-	.align	3
-.LC379:
-	.string	"[ND]zone->cfg->nftl_max_cache_write_num: %d \n"
-	.align	3
-.LC380:
-	.string	"[ND]zone->cfg->nftl_cross_talk: %x \n"
-	.align	3
-.LC381:
-	.string	"[ND]zone->cfg->nftl_read_claim_interval: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC329: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]nand3.x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC330: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->nand_chip->blk_per_chip: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC331: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->nand_chip->bytes_per_page: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC332: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->nand_chip->pages_per_blk: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC333: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->nand_chip->max_erase_times: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC334: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->nand_chip->support_read_reclaim: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC335: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->test: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC336: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->zone_no: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC337: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->zone_attr: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC338: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->blocks: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC339: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->bad_block: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC340: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->logic_cap_in_sects: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC341: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->backup_cap_in_sects: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC342: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->free_block_num: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC343: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->gc_strategy.start_gc_free_blocks: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC344: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->gc_strategy.stop_gc_free_blocks: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC345: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->gc_strategy.gc_page: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC346: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->gc_strategy.process: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC347: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->prio_gc.prio_type : %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC348: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->zone_start_phy_block->phy_block.Block_NO: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC349: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->zone_end_phy_block->phy_block.Block_NO: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC350: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->zone_phy_page_map_for_gc: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC351: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->current_block.user_info: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC352: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->current_block.block_info: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC353: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->current_block.block_info->phy_block.Block_NO: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC354: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->current_block.page_used: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC355: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->current_block.block_info->block_used_count: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC356: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->recv_free_block: %d %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC357: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->assist_block.user_info: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC358: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->assist_block.block_info: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC359: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->assist_block.block_info->phy_block.Block_NO: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC360: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->assist_block.page_used: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC361: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->assist_block.block_info->block_used_count: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC362: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->read_reclaim_complete: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC363: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->temp_page_buf: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC364: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->max_erase_num: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC365: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cache.cache_totals: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC366: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->wl_gc_count: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC367: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->wl_gc_page_num: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC368: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_dont_use_cache: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC369: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_use_cache_sort: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC370: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_support_gc_read_reclaim: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC371: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_support_wear_leveling: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC372: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_need_erase: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC373: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_min_free_block_num: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC374: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_gc_threshold_free_block_num: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC375: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_min_free_block: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC376: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_gc_threshold_ratio_numerator: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC377: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_gc_threshold_ratio_denominator: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC378: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_max_cache_num: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC379: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_max_cache_write_num: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC380: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_cross_talk: %x \n"
+// readonly alignment moved below: 	.align	3
+/* .LC381: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_read_claim_interval: %d \n"
 	.text
 	.align	2
 	.global	print_nftl_zone
@@ -23506,15 +23506,15 @@ print_nftl_zone:
 	ret
 	.size	print_nftl_zone, .-print_nftl_zone
 	.section	.rodata
-	.align	3
-.LC382:
-	.string	"[NE]%s:malloc 4096 fail!\n"
-	.align	3
-.LC383:
-	.string	"[ND]spare: %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x"
-	.align	3
-.LC384:
-	.string	"[ND]buf:%x %x %x %x %x %x %x %x %x %x %x.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC382: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc 4096 fail!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC383: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]spare: %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x"
+// readonly alignment moved below: 	.align	3
+/* .LC384: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]buf:%x %x %x %x %x %x %x %x %x %x %x.\n"
 	.text
 	.align	2
 	.global	nand_dbg_phy_read
@@ -23814,9 +23814,9 @@ nand_dbg_zone_phy_read:
 	ret
 	.size	nand_dbg_zone_phy_read, .-nand_dbg_zone_phy_read
 	.section	.rodata
-	.align	3
-.LC385:
-	.string	"[NE]%s:malloc 8192 fail!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC385: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc 8192 fail!\n"
 	.text
 	.align	2
 	.global	nand_dbg_zone_phy_write
@@ -24084,12 +24084,12 @@ clean_block_list:
 	ret
 	.size	clean_block_list, .-clean_block_list
 	.section	.rodata
-	.align	3
-.LC386:
-	.string	"[ND]zoneNO:%d total_pages: %d\n"
-	.align	3
-.LC387:
-	.string	"[ND]nand_memset bytes: %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC386: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]zoneNO:%d total_pages: %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC387: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]nand_memset bytes: %d\n"
 	.text
 	.align	2
 	.global	nand_clean_zone_table2
@@ -24299,18 +24299,18 @@ nand_clean_zone_table:
 	ret
 	.size	nand_clean_zone_table, .-nand_clean_zone_table
 	.section	.rodata
-	.align	3
-.LC388:
-	.string	"[ND]build_zone_list start\n"
-	.align	3
-.LC389:
-	.string	"[ND]nftl_cache_init start\n"
-	.align	3
-.LC390:
-	.string	"[ND]=================================2=======================================\n"
-	.align	3
-.LC391:
-	.string	"[ND]nand_find_zone_table end\n"
+// readonly alignment moved below: 	.align	3
+/* .LC388: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]build_zone_list start\n"
+// readonly alignment moved below: 	.align	3
+/* .LC389: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]nftl_cache_init start\n"
+// readonly alignment moved below: 	.align	3
+/* .LC390: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]=================================2=======================================\n"
+// readonly alignment moved below: 	.align	3
+/* .LC391: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]nand_find_zone_table end\n"
 	.text
 	.align	2
 	.global	nand_find_zone_table
@@ -24353,9 +24353,9 @@ nand_find_zone_table:
 	ret
 	.size	nand_find_zone_table, .-nand_find_zone_table
 	.section	.rodata
-	.align	3
-.LC392:
-	.string	"[NE][NE]%s:malloc 512 fail!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC392: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE][NE]%s:malloc 512 fail!\n"
 	.text
 	.align	2
 	.global	write_data_to_nand
@@ -24404,9 +24404,9 @@ write_data_to_nand:
 	ret
 	.size	write_data_to_nand, .-write_data_to_nand
 	.section	.rodata
-	.align	3
-.LC393:
-	.string	"[ND]==========================\n"
+// readonly alignment moved below: 	.align	3
+/* .LC393: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]==========================\n"
 	.text
 	.align	2
 	.global	nand_check_table
@@ -24445,9 +24445,9 @@ nand_check_table:
 	ret
 	.size	nand_check_table, .-nand_check_table
 	.section	.rodata
-	.align	3
-.LC394:
-	.string	"%.2x "
+// readonly alignment moved below: 	.align	3
+/* .LC394: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"%.2x "
 	.text
 	.align	2
 	.type	_DumpHexData, %function
@@ -24496,21 +24496,21 @@ _DumpHexData:
 	ret
 	.size	_DumpHexData, .-_DumpHexData
 	.section	.rodata
-	.align	3
-.LC395:
-	.string	"[NE]exception case bad block\n"
-	.align	3
-.LC396:
-	.string	"[NE]exception case wbc\n"
-	.align	3
-.LC397:
-	.string	"[NE]exception case gd\n"
-	.align	3
-.LC398:
-	.string	"[NE]%s %d, flag = %d\n"
-	.align	3
-.LC399:
-	.string	"[NE]OOB :"
+// readonly alignment moved below: 	.align	3
+/* .LC395: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]exception case bad block\n"
+// readonly alignment moved below: 	.align	3
+/* .LC396: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]exception case wbc\n"
+// readonly alignment moved below: 	.align	3
+/* .LC397: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]exception case gd\n"
+// readonly alignment moved below: 	.align	3
+/* .LC398: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s %d, flag = %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC399: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]OOB :"
 	.text
 	.align	2
 	.global	nand_power_off_ecc_error
@@ -24771,18 +24771,18 @@ is_block_in_free_list:
 	ret
 	.size	is_block_in_free_list, .-is_block_in_free_list
 	.section	.rodata
-	.align	3
-.LC400:
-	.string	"[ND]free list: \n"
-	.align	3
-.LC401:
-	.string	"[ND]block NO:%4d; erase:%3d; "
-	.align	3
-.LC402:
-	.string	"[ND]count:%4d; "
-	.align	3
-.LC403:
-	.string	"[ND]info:0x%x\n"
+// readonly alignment moved below: 	.align	3
+/* .LC400: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]free list: \n"
+// readonly alignment moved below: 	.align	3
+/* .LC401: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]block NO:%4d; erase:%3d; "
+// readonly alignment moved below: 	.align	3
+/* .LC402: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]count:%4d; "
+// readonly alignment moved below: 	.align	3
+/* .LC403: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]info:0x%x\n"
 	.text
 	.align	2
 	.global	print_free_list
@@ -25017,12 +25017,12 @@ is_block_in_invalid_list:
 	ret
 	.size	is_block_in_invalid_list, .-is_block_in_invalid_list
 	.section	.rodata
-	.align	3
-.LC404:
-	.string	"[ND]invalid_page_count list: \n"
-	.align	3
-.LC405:
-	.string	"[ND]count:%4d; invalid:%3d;"
+// readonly alignment moved below: 	.align	3
+/* .LC404: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]invalid_page_count list: \n"
+// readonly alignment moved below: 	.align	3
+/* .LC405: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]count:%4d; invalid:%3d;"
 	.text
 	.align	2
 	.global	print_block_invalid_list
@@ -25216,15 +25216,15 @@ del_block_count_by_block:
 	ret
 	.size	del_block_count_by_block, .-del_block_count_by_block
 	.section	.rodata
-	.align	3
-.LC406:
-	.string	"[ND]block_used_count list: \n"
-	.align	3
-.LC407:
-	.string	"[ND]block NO: %d "
-	.align	3
-.LC408:
-	.string	"[ND]block_used_count: %d \n"
+// readonly alignment moved below: 	.align	3
+/* .LC406: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]block_used_count list: \n"
+// readonly alignment moved below: 	.align	3
+/* .LC407: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]block NO: %d "
+// readonly alignment moved below: 	.align	3
+/* .LC408: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]block_used_count: %d \n"
 	.text
 	.align	2
 	.global	print_block_count_list
@@ -25274,9 +25274,9 @@ print_block_count_list:
 	ret
 	.size	print_block_count_list, .-print_block_count_list
 	.section	.rodata
-	.align	3
-.LC409:
-	.string	"[ND]free_list error !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC409: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]free_list error !\n"
 	.text
 	.align	2
 	.global	put_phy_block_to_free_list
@@ -25745,9 +25745,9 @@ out_phy_block_from_free_list_by_block:
 	ret
 	.size	out_phy_block_from_free_list_by_block, .-out_phy_block_from_free_list_by_block
 	.section	.rodata
-	.align	3
-.LC410:
-	.string	"[ND]add invalid_list error !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC410: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]add invalid_list error !\n"
 	.text
 	.align	2
 	.global	put_phy_block_to_invalid_page_list
@@ -25829,12 +25829,12 @@ out_phy_block_from_invalid_page_list_by_block:
 	ret
 	.size	out_phy_block_from_invalid_page_list_by_block, .-out_phy_block_from_invalid_page_list_by_block
 	.section	.rodata
-	.align	3
-.LC411:
-	.string	"[ND]invalid_page_count more than pages per blk 0 %d %d!!\n"
-	.align	3
-.LC412:
-	.string	"[ND]invalid_page_count more than pages per blk 1!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC411: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]invalid_page_count more than pages per blk 0 %d %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC412: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]invalid_page_count more than pages per blk 1!!\n"
 	.text
 	.align	2
 	.global	phy_block_from_invalid_page_incr
@@ -25997,12 +25997,12 @@ adjust_invaild_list:
 	ret
 	.size	adjust_invaild_list, .-adjust_invaild_list
 	.section	.rodata
-	.align	3
-.LC413:
-	.string	"[NE]%s:malloc fail for cache_node!\n"
-	.align	3
-.LC414:
-	.string	"[NE]%s:malloc fail for cache_page_buf!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC413: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc fail for cache_node!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC414: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc fail for cache_page_buf!\n"
 	.text
 	.align	2
 	.global	nftl_cache_init
@@ -26739,9 +26739,9 @@ get_empty_cahce_node:
 	ret
 	.size	get_empty_cahce_node, .-get_empty_cahce_node
 	.section	.rodata
-	.align	3
-.LC415:
-	.string	"[ND]read sector:0x%x,len:0x%x\n"
+// readonly alignment moved below: 	.align	3
+/* .LC415: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]read sector:0x%x,len:0x%x\n"
 	.text
 	.align	2
 	.global	__nand_read
@@ -26783,9 +26783,9 @@ __nand_read:
 	ret
 	.size	__nand_read, .-__nand_read
 	.section	.rodata
-	.align	3
-.LC416:
-	.string	"[ND]write sector:0x%x,len:0x%x\n"
+// readonly alignment moved below: 	.align	3
+/* .LC416: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]write sector:0x%x,len:0x%x\n"
 	.text
 	.align	2
 	.global	__nand_write
@@ -26827,9 +26827,9 @@ __nand_write:
 	ret
 	.size	__nand_write, .-__nand_write
 	.section	.rodata
-	.align	3
-.LC417:
-	.string	"[ND]dicard sector:0x%x,len:0x%x\n"
+// readonly alignment moved below: 	.align	3
+/* .LC417: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]dicard sector:0x%x,len:0x%x\n"
 	.text
 	.align	2
 	.global	__nand_discard
@@ -26860,9 +26860,9 @@ __nand_discard:
 	ret
 	.size	__nand_discard, .-__nand_discard
 	.section	.rodata
-	.align	3
-.LC418:
-	.string	"[NE]paramter error. beyond reality capacity\n"
+// readonly alignment moved below: 	.align	3
+/* .LC418: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]paramter error. beyond reality capacity\n"
 	.text
 	.align	2
 	.global	nand_op
@@ -27043,12 +27043,12 @@ nand_op:
 	ret
 	.size	nand_op, .-nand_op
 	.section	.rodata
-	.align	3
-.LC419:
-	.string	"[NI]nand_cache_read error buf is  NULL!\n"
-	.align	3
-.LC420:
-	.string	"[NE]error1 node %d,%d,%d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC419: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]nand_cache_read error buf is  NULL!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC420: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]error1 node %d,%d,%d!\n"
 	.text
 	.align	2
 	.global	nand_cache_read
@@ -27330,21 +27330,21 @@ nand_cache_read:
 	ret
 	.size	nand_cache_read, .-nand_cache_read
 	.section	.rodata
-	.align	3
-.LC421:
-	.string	"[NE]error1 bitmap %x!\n"
-	.align	3
-.LC422:
-	.string	"[NE]ECC_LIMIT happened 12! page:%d!\n"
-	.align	3
-.LC423:
-	.string	"[NE]error1 flush write cache to nand\n"
-	.align	3
-.LC424:
-	.string	"[NE]error2 flush write cache to nand\n"
-	.align	3
-.LC425:
-	.string	"[NI]ECC_LIMIT happened 11! page:%d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC421: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]error1 bitmap %x!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC422: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]ECC_LIMIT happened 12! page:%d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC423: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]error1 flush write cache to nand\n"
+// readonly alignment moved below: 	.align	3
+/* .LC424: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]error2 flush write cache to nand\n"
+// readonly alignment moved below: 	.align	3
+/* .LC425: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]ECC_LIMIT happened 11! page:%d!\n"
 	.text
 	.align	2
 	.global	nand_cache_write
@@ -27720,15 +27720,15 @@ nand_cache_write:
 	ret
 	.size	nand_cache_write, .-nand_cache_write
 	.section	.rodata
-	.align	3
-.LC426:
-	.string	"[NE]flush write cache to nand no cache!\n"
-	.align	3
-.LC427:
-	.string	"[NE]ECC_LIMIT happened 10! page:%d cache: %d!\n"
-	.align	3
-.LC428:
-	.string	"[NE]flush write cache to nand error!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC426: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]flush write cache to nand no cache!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC427: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]ECC_LIMIT happened 10! page:%d cache: %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC428: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]flush write cache to nand error!\n"
 	.text
 	.align	2
 	.global	flush_write_cache_to_nand
@@ -27932,9 +27932,9 @@ flush_write_cache_to_nand:
 	ret
 	.size	flush_write_cache_to_nand, .-flush_write_cache_to_nand
 	.section	.rodata
-	.align	3
-.LC429:
-	.string	"[ND]flush cache %d %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC429: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]flush cache %d %d!\n"
 	.text
 	.align	2
 	.global	__nand_flush_write_cache
@@ -28003,9 +28003,9 @@ __nand_flush_write_cache:
 	ret
 	.size	__nand_flush_write_cache, .-__nand_flush_write_cache
 	.section	.rodata
-	.align	3
-.LC430:
-	.string	"[NE]nand_discard paramter error!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC430: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]nand_discard paramter error!\n"
 	.text
 	.align	2
 	.global	nand_discard
@@ -28175,12 +28175,12 @@ __shutdown_op:
 	ret
 	.size	__shutdown_op, .-__shutdown_op
 	.section	.rodata
-	.align	3
-.LC431:
-	.string	"[NI]page_map NULL!!\n"
-	.align	3
-.LC432:
-	.string	"[ND]%4d:<%4d %3d><%d>\n"
+// readonly alignment moved below: 	.align	3
+/* .LC431: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]page_map NULL!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC432: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]%4d:<%4d %3d><%d>\n"
 	.text
 	.align	2
 	.global	print_logic_page_map
@@ -28566,15 +28566,15 @@ read_reclaim:
 	.local	gc_src_type
 /* gc_src_type: common storage replaced by its recovered BSS slot. */
 	.section	.rodata
-	.align	3
-.LC433:
-	.string	"[NE]garbage_collect phy_block null\n"
-	.align	3
-.LC434:
-	.string	"[ND]garbage too frequency! %d:%d\n"
-	.align	3
-.LC435:
-	.string	"[NE]garbage_collect_first wrong fbn:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC433: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]garbage_collect phy_block null\n"
+// readonly alignment moved below: 	.align	3
+/* .LC434: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]garbage too frequency! %d:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC435: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]garbage_collect_first wrong fbn:%d\n"
 	.text
 	.align	2
 	.global	garbage_collect
@@ -28729,39 +28729,39 @@ garbage_collect:
 	ret
 	.size	garbage_collect, .-garbage_collect
 	.section	.rodata
-	.align	3
-.LC436:
-	.string	"[NI]garbage_collect_first none!!\n"
-	.align	3
-.LC437:
-	.string	"[ND]garbage_collect_first wrong!!\n"
-	.align	3
-.LC438:
-	.string	"[ND]garbage_collect_first cannot find PHY_MAPPING_PAGE%d %d %d %d!!\n"
-	.align	3
-.LC439:
-	.string	"[ND]garbage_collect_first cannot find PHY_MAPPING_PAGE%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x.\n"
-	.align	3
-.LC440:
-	.string	"[ND][NE]garbage_collect_first rebuild %d,%d!!\n"
-	.align	3
-.LC441:
-	.string	"[ND]garbage_collect_first PHY_MAPPING_PAGEecc err block:%d !!\n"
-	.align	3
-.LC442:
-	.string	"[NE]garbage_collect_first invaild_page num error!!\n"
-	.align	3
-.LC443:
-	.string	"[ND]garbage_collect_first read a logic page error%d %d %d %d spare data:\n"
-	.align	3
-.LC444:
-	.string	"%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n"
-	.align	3
-.LC445:
-	.string	"[NE]nand_write_logic_page_no_gc gc fail!!\n"
-	.align	3
-.LC446:
-	.string	"[NE]erase ecc error block\n"
+// readonly alignment moved below: 	.align	3
+/* .LC436: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]garbage_collect_first none!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC437: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]garbage_collect_first wrong!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC438: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]garbage_collect_first cannot find PHY_MAPPING_PAGE%d %d %d %d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC439: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]garbage_collect_first cannot find PHY_MAPPING_PAGE%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x.\n"
+// readonly alignment moved below: 	.align	3
+/* .LC440: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND][NE]garbage_collect_first rebuild %d,%d!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC441: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]garbage_collect_first PHY_MAPPING_PAGEecc err block:%d !!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC442: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]garbage_collect_first invaild_page num error!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC443: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]garbage_collect_first read a logic page error%d %d %d %d spare data:\n"
+// readonly alignment moved below: 	.align	3
+/* .LC444: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n"
+// readonly alignment moved below: 	.align	3
+/* .LC445: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]nand_write_logic_page_no_gc gc fail!!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC446: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]erase ecc error block\n"
 	.text
 	.align	2
 	.global	garbage_collect_first
@@ -29453,21 +29453,21 @@ add_prio_gc:
 	ret
 	.size	add_prio_gc, .-add_prio_gc
 	.section	.rodata
-	.align	3
-.LC447:
-	.string	"[ND]no block to prio gc\n"
-	.align	3
-.LC448:
-	.string	"[ND]no need gc:%d, type:%d\n"
-	.align	3
-.LC449:
-	.string	"[NE]do_prio_gc garbage_collect_first fail:%d, type:%d\n"
-	.align	3
-.LC450:
-	.string	"[ND]prio gc fail1:%d, type:%d\n"
-	.align	3
-.LC451:
-	.string	"[ND]prio gc fail2:%d, type:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC447: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]no block to prio gc\n"
+// readonly alignment moved below: 	.align	3
+/* .LC448: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]no need gc:%d, type:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC449: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]do_prio_gc garbage_collect_first fail:%d, type:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC450: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]prio gc fail1:%d, type:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC451: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]prio gc fail2:%d, type:%d\n"
 	.text
 	.align	2
 	.global	do_prio_gc
@@ -29745,15 +29745,15 @@ prio_gc_all:
 	ret
 	.size	prio_gc_all, .-prio_gc_all
 	.section	.rodata
-	.align	3
-.LC452:
-	.string	"[ND]swl: static WL need to do(%d : %d)\n"
-	.align	3
-.LC453:
-	.string	"[ND]swl: min_ec_blk_no = %d,\n"
-	.align	3
-.LC454:
-	.string	"[ND]swl: zone->blocks = %d)\n"
+// readonly alignment moved below: 	.align	3
+/* .LC452: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]swl: static WL need to do(%d : %d)\n"
+// readonly alignment moved below: 	.align	3
+/* .LC453: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]swl: min_ec_blk_no = %d,\n"
+// readonly alignment moved below: 	.align	3
+/* .LC454: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]swl: zone->blocks = %d)\n"
 	.text
 	.align	2
 	.global	check_static_wear_leveling
@@ -29975,18 +29975,18 @@ check_static_wear_leveling:
 	ret
 	.size	check_static_wear_leveling, .-check_static_wear_leveling
 	.section	.rodata
-	.align	3
-.LC455:
-	.string	"[ND]swl: the block(%d) for static WL is not in invalid_list\n"
-	.align	3
-.LC456:
-	.string	"[ND]swl: done_static_wear_leveling(min_ec) block:%d, erase_count:%d\n"
-	.align	3
-.LC457:
-	.string	"[NE]swl: garbage_collect_first fail:%d\n"
-	.align	3
-.LC458:
-	.string	"[NE]swl: last->check fail:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC455: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]swl: the block(%d) for static WL is not in invalid_list\n"
+// readonly alignment moved below: 	.align	3
+/* .LC456: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]swl: done_static_wear_leveling(min_ec) block:%d, erase_count:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC457: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]swl: garbage_collect_first fail:%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC458: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]swl: last->check fail:%d\n"
 	.text
 	.align	2
 	.global	done_static_wear_leveling
@@ -30188,12 +30188,12 @@ prio_gc_one:
 	ret
 	.size	prio_gc_one, .-prio_gc_one
 	.section	.rodata
-	.align	3
-.LC459:
-	.string	"[ND]gc_one ok! from: %d [%d %d %d] @%s %d\n"
-	.align	3
-.LC460:
-	.string	"[NE][NE]gc_one error!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC459: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]gc_one ok! from: %d [%d %d %d] @%s %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC460: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE][NE]gc_one error!\n"
 	.text
 	.align	2
 	.global	gc_one
@@ -30514,9 +30514,9 @@ gc_all_base_on_free_blks:
 	ret
 	.size	gc_all_base_on_free_blks, .-gc_all_base_on_free_blks
 	.section	.rodata
-	.align	3
-.LC461:
-	.string	"[ND][NE] gc_win_block gc_one error \n"
+// readonly alignment moved below: 	.align	3
+/* .LC461: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND][NE] gc_win_block gc_one error \n"
 	.text
 	.align	2
 	.global	gc_win_block
@@ -30709,15 +30709,15 @@ static_wear_leveling:
 	ret
 	.size	static_wear_leveling, .-static_wear_leveling
 	.section	.rodata
-	.align	3
-.LC462:
-	.string	"[ND]not power on gc [%d, %d, %d], [%d %d %d]!\n"
-	.align	3
-.LC463:
-	.string	"[ND]emergency power on gc %d !\n"
-	.align	3
-.LC464:
-	.string	"[ND]power on gc %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC462: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]not power on gc [%d, %d, %d], [%d %d %d]!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC463: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]emergency power on gc %d !\n"
+// readonly alignment moved below: 	.align	3
+/* .LC464: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]power on gc %d!\n"
 	.text
 	.align	2
 	.global	power_on_gc
@@ -30883,15 +30883,15 @@ all_time_gc:
 	ret
 	.size	all_time_gc, .-all_time_gc
 	.section	.rodata
-	.align	3
-.LC465:
-	.string	"[ND]%s %p %d %d %d %\n"
-	.align	3
-.LC466:
-	.string	"[NI]shutdown_on_gc end! [%d %d %d]\n"
-	.align	3
-.LC467:
-	.string	"[ND]shutdown_on_gc one ok! [%d %d %d]\n"
+// readonly alignment moved below: 	.align	3
+/* .LC465: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]%s %p %d %d %d %\n"
+// readonly alignment moved below: 	.align	3
+/* .LC466: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]shutdown_on_gc end! [%d %d %d]\n"
+// readonly alignment moved below: 	.align	3
+/* .LC467: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]shutdown_on_gc one ok! [%d %d %d]\n"
 	.text
 	.align	2
 	.global	shutdown_on_gc
@@ -30983,12 +30983,12 @@ shutdown_on_gc:
 	ret
 	.size	shutdown_on_gc, .-shutdown_on_gc
 	.section	.rodata
-	.align	3
-.LC468:
-	.string	"%d %d %d %d %d %d/%d %d/%d\n"
-	.align	3
-.LC469:
-	.string	"%08d:%04d "
+// readonly alignment moved below: 	.align	3
+/* .LC468: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"%d %d %d %d %d %d/%d %d/%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC469: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"%08d:%04d "
 	.text
 	.align	2
 	.global	nftl_get_gc_info
@@ -31801,9 +31801,9 @@ is_power_down_info_page:
 	ret
 	.size	is_power_down_info_page, .-is_power_down_info_page
 	.section	.rodata
-	.align	3
-.LC470:
-	.string	"[NE]%s:logic_page:0x%x >= total_pages:0x%x\n"
+// readonly alignment moved below: 	.align	3
+/* .LC470: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:logic_page:0x%x >= total_pages:0x%x\n"
 	.text
 	.align	2
 	.global	get_logic_page_map
@@ -31866,15 +31866,15 @@ get_logic_page_map:
 	ret
 	.size	get_logic_page_map, .-get_logic_page_map
 	.section	.rodata
-	.align	3
-.LC471:
-	.string	"[NE]%s:malloc fail for logic_page_map %d\n"
-	.align	3
-.LC472:
-	.string	"[NE]%s: malloc fail for logic_page_map %d\n"
-	.align	3
-.LC473:
-	.string	"[NE]zone_param_init malloc_logic_page_map error %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC471: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s:malloc fail for logic_page_map %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC472: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s: malloc fail for logic_page_map %d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC473: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]zone_param_init malloc_logic_page_map error %d\n"
 	.text
 	.align	2
 	.global	malloc_logic_page_map
@@ -32081,33 +32081,33 @@ set_physic_op_par:
 	ret
 	.size	set_physic_op_par, .-set_physic_op_par
 	.section	.rodata
-	.align	3
-.LC474:
-	.string	"[NE]%s: malloc fail for zone\n"
-	.align	3
-.LC475:
-	.string	"[NE]%s: malloc fail for nand_chip\n"
-	.align	3
-.LC476:
-	.string	"[NE]%s: malloc fail for nand_block_info\n"
-	.align	3
-.LC477:
-	.string	"[NE]not enough blocks %d!\n"
-	.align	3
-.LC478:
-	.string	"[ND]nftl start:%d,%d\n"
-	.align	3
-.LC479:
-	.string	"[NE]zone_param_init fail!\n"
-	.align	3
-.LC480:
-	.string	"[NE]build_zone_list_first fail!\n"
-	.align	3
-.LC481:
-	.string	"[NE]build_zone_list fail!\n"
-	.align	3
-.LC482:
-	.string	"[NI]try again\n"
+// readonly alignment moved below: 	.align	3
+/* .LC474: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s: malloc fail for zone\n"
+// readonly alignment moved below: 	.align	3
+/* .LC475: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s: malloc fail for nand_chip\n"
+// readonly alignment moved below: 	.align	3
+/* .LC476: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]%s: malloc fail for nand_block_info\n"
+// readonly alignment moved below: 	.align	3
+/* .LC477: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]not enough blocks %d!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC478: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[ND]nftl start:%d,%d\n"
+// readonly alignment moved below: 	.align	3
+/* .LC479: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]zone_param_init fail!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC480: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]build_zone_list_first fail!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC481: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NE]build_zone_list fail!\n"
+// readonly alignment moved below: 	.align	3
+/* .LC482: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"[NI]try again\n"
 	.text
 	.align	2
 	.global	nftl_start
@@ -32554,101 +32554,101 @@ nftl_zone_release:
 	ret
 	.size	nftl_zone_release, .-nftl_zone_release
 	.section	.rodata
-	.align	3
+// readonly alignment moved below: 	.align	3
 	.type	__func__.5194, %object
 	.size	__func__.5194, 9
-__func__.5194:
-	.string	"nftl_add"
-	.align	3
+/* __func__.5194: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"nftl_add"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.5346, %object
 	.size	__func__.5346, 16
-__func__.5346:
-	.string	"nftl_initialize"
-	.align	3
+/* __func__.5346: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"nftl_initialize"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.5524, %object
 	.size	__func__.5524, 19
-__func__.5524:
-	.string	"panic_recover_data"
-	.align	3
+/* __func__.5524: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"panic_recover_data"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.6409, %object
 	.size	__func__.6409, 25
-__func__.6409:
-	.string	"sandisk_A19_special_exit"
-	.align	3
+/* __func__.6409: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"sandisk_A19_special_exit"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.6755, %object
 	.size	__func__.6755, 23
-__func__.6755:
-	.string	"nftl_sector_cache_init"
-	.align	3
+/* __func__.6755: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"nftl_sector_cache_init"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.7098, %object
 	.size	__func__.7098, 16
-__func__.7098:
-	.string	"zone_param_init"
-	.align	3
+/* __func__.7098: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"zone_param_init"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.7312, %object
 	.size	__func__.7312, 9
-__func__.7312:
-	.string	"init_nrc"
-	.align	3
+/* __func__.7312: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"init_nrc"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.7402, %object
 	.size	__func__.7402, 23
-__func__.7402:
-	.string	"torture_block_and_mark"
-	.align	3
+/* __func__.7402: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"torture_block_and_mark"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.7526, %object
 	.size	__func__.7526, 26
-__func__.7526:
-	.string	"block_last_page_ecc_error"
-	.align	3
+/* __func__.7526: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"block_last_page_ecc_error"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.7558, %object
 	.size	__func__.7558, 18
-__func__.7558:
-	.string	"nand_dbg_phy_read"
-	.align	3
+/* __func__.7558: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"nand_dbg_phy_read"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.7569, %object
 	.size	__func__.7569, 23
-__func__.7569:
-	.string	"nand_dbg_zone_phy_read"
-	.align	3
+/* __func__.7569: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"nand_dbg_zone_phy_read"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.7580, %object
 	.size	__func__.7580, 24
-__func__.7580:
-	.string	"nand_dbg_zone_phy_write"
-	.align	3
+/* __func__.7580: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"nand_dbg_zone_phy_write"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.7589, %object
 	.size	__func__.7589, 19
-__func__.7589:
-	.string	"nand_dbg_phy_write"
-	.align	3
+/* __func__.7589: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"nand_dbg_phy_write"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.7642, %object
 	.size	__func__.7642, 19
-__func__.7642:
-	.string	"write_data_to_nand"
-	.align	3
+/* __func__.7642: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"write_data_to_nand"
+// readonly alignment moved below: 	.align	3
 	.type	__FUNCTION__.7666, %object
 	.size	__FUNCTION__.7666, 25
-__FUNCTION__.7666:
-	.string	"nand_power_off_ecc_error"
-	.align	3
+/* __FUNCTION__.7666: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"nand_power_off_ecc_error"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.7884, %object
 	.size	__func__.7884, 16
-__func__.7884:
-	.string	"nftl_cache_init"
-	.align	3
+/* __func__.7884: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"nftl_cache_init"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.8331, %object
 	.size	__func__.8331, 15
-__func__.8331:
-	.string	"shutdown_on_gc"
-	.align	3
+/* __func__.8331: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"shutdown_on_gc"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.8479, %object
 	.size	__func__.8479, 19
-__func__.8479:
-	.string	"get_logic_page_map"
-	.align	3
+/* __func__.8479: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"get_logic_page_map"
+// readonly alignment moved below: 	.align	3
 	.type	__func__.8536, %object
 	.size	__func__.8536, 11
-__func__.8536:
-	.string	"nftl_start"
+/* __func__.8536: relocated in rooted readonly order below. */
+// readonly payload moved below: 	.string	"nftl_start"
 	.ident	"GCC: (Linaro GCC 5.3-2016.05) 5.3.1 20160412"
 	.section	.note.GNU-stack,"",@progbits
 
@@ -33873,3 +33873,1874 @@ hynix20nm_read_retry_reg_adr_2:
 	.byte	-75
 	.byte	-74
 	.byte	-73
+
+/* TG3040 #860 readonly starts recovered from507 independent labels.
+ * Payload directives are retained; original C declarations and complete
+ * contribution boundaries remain unknown. Keep the observed order.
+ */
+	.section	.rodata
+	.balign	8
+com:
+	.byte	99
+	.byte	111
+	.byte	109
+	.byte	112
+	.byte	97
+	.byte	116
+	.byte	105
+	.byte	98
+	.byte	108
+	.byte	101
+	.byte	0
+	.balign	8
+mod:
+	.byte	109
+	.byte	111
+	.byte	100
+	.byte	101
+	.byte	108
+	.byte	0
+	.balign	8
+.LC9:
+	.string	"[NE]malloc size too large %d!\n"
+	.balign	8
+.LC10:
+	.string	"09:50"
+	.balign	8
+.LC11:
+	.string	"2020.12.24"
+	.balign	8
+.LC12:
+	.string	"000"
+	.balign	8
+.LC13:
+	.string	"0"
+	.balign	8
+.LC14:
+	.string	"5"
+	.balign	8
+.LC15:
+	.string	"sunxi nftl version %s.%s.%s  %s-%s\n"
+	.balign	8
+.LC16:
+	.string	"[NE]%s:malloc fail for nftl_cfg\n"
+	.balign	8
+.LC17:
+	.string	"[ND]max_erase_times = %i\n"
+	.balign	8
+.LC0:
+	.byte	97
+	.byte	108
+	.byte	108
+	.byte	119
+	.byte	105
+	.byte	110
+	.byte	110
+	.byte	101
+	.byte	114
+	.balign	8
+.LC3:
+	.string	"[NE]nftl_build_all error!\n"
+	.balign	8
+.LC4:
+	.string	"[NE]%s:malloc fail for nftl_blk\n"
+	.balign	8
+.LC5:
+	.string	"[NE]nftl_initialize failed\n"
+	.balign	8
+.LC6:
+	.string	"[ND]nftl_add ok\n"
+	.balign	8
+.LC7:
+	.string	"[ND]cap: 0x%08x.\n"
+	.balign	8
+.LC8:
+	.string	"[NE]parameter error %d,%d !\n"
+	.balign	8
+.LC400:
+	.string	"[ND]free list: \n"
+	.balign	8
+.LC401:
+	.string	"[ND]block NO:%4d; erase:%3d; "
+	.balign	8
+.LC402:
+	.string	"[ND]count:%4d; "
+	.balign	8
+.LC403:
+	.string	"[ND]info:0x%x\n"
+	.balign	8
+.LC404:
+	.string	"[ND]invalid_page_count list: \n"
+	.balign	8
+.LC405:
+	.string	"[ND]count:%4d; invalid:%3d;"
+	.balign	8
+.LC406:
+	.string	"[ND]block_used_count list: \n"
+	.balign	8
+.LC407:
+	.string	"[ND]block NO: %d "
+	.balign	8
+.LC408:
+	.string	"[ND]block_used_count: %d \n"
+	.balign	8
+.LC409:
+	.string	"[ND]free_list error !\n"
+	.balign	8
+.LC410:
+	.string	"[ND]add invalid_list error !\n"
+	.balign	8
+.LC411:
+	.string	"[ND]invalid_page_count more than pages per blk 0 %d %d!!\n"
+	.balign	8
+.LC412:
+	.string	"[ND]invalid_page_count more than pages per blk 1!!\n"
+	.balign	8
+.LC45:
+	.string	"\n"
+	.balign	8
+.LC200:
+	.string	"%08x: "
+	.balign	8
+.LC122:
+	.string	"%02x "
+	.balign	8
+.LC201:
+	.string	"[NE]exception case wb %04x %04x, len: %d\n"
+	.balign	8
+.LC202:
+	.string	"[NE]%s:malloc fail for temp_page_buf\n"
+	.balign	8
+.LC203:
+	.string	"[NE]%s:malloc fail for logic_page_buf\n"
+	.balign	8
+.LC204:
+	.string	"[NE]zone_param_init error2\n"
+	.balign	8
+.LC205:
+	.string	"[NE]%s:malloc fail for current_block.user_info.buf\n"
+	.balign	8
+.LC206:
+	.string	"[NE]%s:malloc fail for assist_block.user_info.buf\n"
+	.balign	8
+.LC207:
+	.string	"[NE]%s:malloc fail for zone_phy_page_map_for_gc.buf\n"
+	.balign	8
+.LC208:
+	.string	"[NE]mtd size changed !\n"
+	.balign	8
+.LC209:
+	.string	"[ND]build_zone_list_first.\n"
+	.balign	8
+.LC210:
+	.string	"[NE]no block %d\n"
+	.balign	8
+.LC211:
+	.string	"[ND]first\n"
+	.balign	8
+.LC212:
+	.string	"[NE]init_zone_after_first_scan error\n"
+	.balign	8
+.LC213:
+	.string	"[NE]second_scan_all_blocks error\n"
+	.balign	8
+.LC214:
+	.string	"[NI]nftl ok!\n"
+	.balign	8
+.LC215:
+	.string	"[ND]fsab\n"
+	.balign	8
+.LC216:
+	.string	"[NI]ftl end block! %d!\n"
+	.balign	8
+.LC217:
+	.string	"[ND]READ_RECLAIM!\n"
+	.balign	8
+.LC218:
+	.string	"[NI]start page , do nothing\n"
+	.balign	8
+.LC219:
+	.string	"[ND]fill block %d\n"
+	.balign	8
+.LC220:
+	.string	"[NI]b@%d p@0 unknow spare data:%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x.\n"
+	.balign	8
+.LC221:
+	.string	"[NE]nftl bad block: %d\n"
+	.balign	8
+.LC222:
+	.string	"[NE]nftl b@%d p@0 ecc error\n"
+	.balign	8
+.LC223:
+	.string	"[NE]b@%d last page ok !\n"
+	.balign	8
+.LC224:
+	.string	"[NI]READ_RECLAIM!\n"
+	.balign	8
+.LC225:
+	.string	"[NE]last page blank ! %d!\n"
+	.balign	8
+.LC226:
+	.string	"[NE]last page unkown ! %d!\n"
+	.balign	8
+.LC227:
+	.string	"[NE]b@%d first page last page ecc error\n"
+	.balign	8
+.LC228:
+	.string	"[NE]b@%d last page spare data %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n"
+	.balign	8
+.LC229:
+	.string	"[NI]nftl bad block: %d\n"
+	.balign	8
+.LC2:
+	.byte	115
+	.byte	117
+	.byte	110
+	.byte	120
+	.byte	105
+	.balign	8
+.LC230:
+	.string	"[ND]before second %d %d.\n"
+	.balign	8
+.LC231:
+	.string	"[NE]only have blocks:%u,logic cap need blocks:%u this zone not enough data block!!\n"
+	.balign	8
+.LC232:
+	.string	"[NE]this zone not enough free block %d , %d!!\n"
+	.balign	8
+.LC233:
+	.string	"[NI]NAND_EVENT: 2 current used block found %d,%d!\n"
+	.balign	8
+.LC234:
+	.string	"[NE]no crosstalk:2 block used count diff %d,%d %d,%d !\n"
+	.balign	8
+.LC235:
+	.string	"[NE]NAND_EVENT: muti current used block found1 %d %d!\n"
+	.balign	8
+.LC236:
+	.string	"[NE]NAND_EVENT: muti current used block found2 %d %d!\n"
+	.balign	8
+.LC237:
+	.string	"[NE]NAND_EVENT: muti current used block found3 %d %d!\n"
+	.balign	8
+.LC238:
+	.string	"[NE]NAND_EVENT: last page spare data %x,%x,%x,%x,%x,%x,%x %x %x %x %x %x %x %x %x %x!!\n"
+	.balign	8
+.LC239:
+	.string	"[NI]zone@%d b@%d last page unkown ecc ok.\n"
+	.balign	8
+.LC240:
+	.string	"[NE]zone@%d b@%d last page ecc error.\n"
+	.balign	8
+.LC241:
+	.string	"[NE]something strange %d,%d!!\n"
+	.balign	8
+.LC242:
+	.string	"[NI]all block full!!\n"
+	.balign	8
+.LC243:
+	.string	"[ND]corss talk rebuild 0 %d %d!!\n"
+	.balign	8
+.LC244:
+	.string	"[NE]1st current block:%d 1st current block uc:%d muti current used block 1st.\n"
+	.balign	8
+.LC245:
+	.string	"[ND]2nd current block:%d 2nd current block uc:%d muti current used block 2nd.\n"
+	.balign	8
+.LC246:
+	.string	"[NE]something is error here 7!\n"
+	.balign	8
+.LC247:
+	.string	"[NE]p_phy_block_info_last %d %d.\n"
+	.balign	8
+.LC248:
+	.string	"[NE]get_current_used_block fail.\n"
+	.balign	8
+.LC249:
+	.string	"[ND]free block nums is %d, aec: %d, iec: %d, a_buc: %d, i_buc: %d!\n"
+	.balign	8
+.LC250:
+	.string	"[NE]current_block ecc error %d!\n"
+	.balign	8
+.LC251:
+	.string	"[NE]error! no free block!\n"
+	.balign	8
+.LC252:
+	.string	"[ND]recover %d %d\n"
+	.balign	8
+.LC253:
+	.string	"[NE]page used:%d invalid page count:%d error\n"
+	.balign	8
+.LC254:
+	.string	"[NE]new_block_init_for_write error here!\n"
+	.balign	8
+.LC255:
+	.string	"[NE]something is error here 10!\n"
+	.balign	8
+.LC256:
+	.string	"[NE]something is error here 11!\n"
+	.balign	8
+.LC257:
+	.string	"[NE]assist block page used:%d current block page used:%d something is error here 12.\n"
+	.balign	8
+.LC258:
+	.string	"[NE]assist block page used:%d current block page used:%d something is error here 17.\n"
+	.balign	8
+.LC259:
+	.string	"[NE]something is error here 16!\n"
+	.balign	8
+.LC260:
+	.string	"[ND]get a new free block\n"
+	.balign	8
+.LC261:
+	.string	"[NE]no free block to use!\n"
+	.balign	8
+.LC262:
+	.string	"[NE]sb@%d sp@%d recover_phy_page_mapping no used page\n"
+	.balign	8
+.LC263:
+	.string	"[NE]sb@%d sp@%d power off ecc error1.\n"
+	.balign	8
+.LC264:
+	.string	"[NE]invalid logic_page block:%d page:%d,logic_page 0x%x.\n"
+	.balign	8
+.LC265:
+	.string	"[NE]rppm invalid page %d!!\n"
+	.balign	8
+.LC266:
+	.string	"[NI]power_down page %d!!\n"
+	.balign	8
+.LC267:
+	.string	"[NE]recover_phy_page_mapping unkown page data %d!!\n"
+	.balign	8
+.LC268:
+	.string	"[NE]recover_phy_page_mapping ecc error block:%d;page:%d.\n"
+	.balign	8
+.LC269:
+	.string	"[NE]ret:%d read fail %d %d,read one more time!!\n"
+	.balign	8
+.LC270:
+	.string	"[NE]ret:%d read fail %d %d,%d times,don't read more!!\n"
+	.balign	8
+.LC271:
+	.string	"[NE]power off ecc error 3!!\n"
+	.balign	8
+.LC272:
+	.string	"[NE]recover sb@%d sp@%d phy page mapping error.\n"
+	.balign	8
+.LC273:
+	.string	"[NI]logic_page_map is NULL\n"
+	.balign	8
+.LC274:
+	.string	"[NE]invalid_page_count more than pages_per_blk :%d\n"
+	.balign	8
+.LC275:
+	.string	"[NE]invalid_page data block:%d page:%d,logic_page 0x%x!!\n"
+	.balign	8
+.LC276:
+	.string	"[NE]build invalid_page_count more than pages_per_blk!!\n"
+	.balign	8
+.LC277:
+	.string	"[NE]NAND EVENT:do_write_error erase error1!\n"
+	.balign	8
+.LC278:
+	.string	"[NE]NAND EVENT:do_write_error erase error2!\n"
+	.balign	8
+.LC279:
+	.string	"%s %d:fail 1\n"
+	.balign	8
+.LC280:
+	.string	"%s %d:fail 2\n"
+	.balign	8
+.LC281:
+	.string	"%s %d:fail 3\n"
+	.balign	8
+.LC282:
+	.string	"%s %d:fail 4\n"
+	.balign	8
+.LC283:
+	.string	"[NE]pages_per_blk: %d, %p, %p, %p, %p\n"
+	.balign	8
+.LC284:
+	.string	"[NE]cross_talk_rebuild_current_block fail 1\n"
+	.balign	8
+.LC285:
+	.string	"[NE]cross_talk_rebuild_current_block!! %d,%d,%d!\n"
+	.balign	8
+.LC286:
+	.string	"[NE]cross_talk_rebuild_current_block fail 2\n"
+	.balign	8
+.LC287:
+	.string	"[NE]cross_talk_rebuild_current_block!! %d,%d,%d,%d,%d,%d!\n"
+	.balign	8
+.LC288:
+	.string	"[NE]cross_talk_rebuild_current_block fail 3\n"
+	.balign	8
+.LC289:
+	.string	"[NE]corss talk rebuild 1 %d %d %d!\n"
+	.balign	8
+.LC290:
+	.string	"[NE]corss talk rebuild 2 %d %d %d!\n"
+	.balign	8
+.LC291:
+	.string	"[NE]get free block fail!\n"
+	.balign	8
+.LC292:
+	.string	"[NE]something is error here 14!\n"
+	.balign	8
+.LC293:
+	.string	"[NE]page lost %d %d\n"
+	.balign	8
+.LC294:
+	.string	"[NI]nctrcb1 %d,%d,%d!\n"
+	.balign	8
+.LC295:
+	.string	"[NE]no_cross_talk_rebuild_current_block fail 2\n"
+	.balign	8
+.LC296:
+	.string	"[NI]nctrcb2 %d,%d,%d,%d,%d,%d!\n"
+	.balign	8
+.LC297:
+	.string	"[NE]no_cross_talk_rebuild_current_block fail 4\n"
+	.balign	8
+.LC298:
+	.string	"[NE]no_cross_talk_rebuild_current_block erase block fail %d!\n"
+	.balign	8
+.LC299:
+	.string	"[NI]erase_block block %d!\n"
+	.balign	8
+.LC300:
+	.string	"[NE]erase_block block fail %d!\n"
+	.balign	8
+.LC301:
+	.string	"[NI]torture b@%d.\n"
+	.balign	8
+.LC302:
+	.string	"[NE]%s write b@%d p@%d err\n"
+	.balign	8
+.LC303:
+	.string	"[NE]%s read b@%d p@%d err\n"
+	.balign	8
+.LC304:
+	.string	"[NE]%s b@%d p@%d patt %02x checking main data fail\n"
+	.balign	8
+.LC305:
+	.string	"[NE]%s b@%d p@%d patt %02x checking spare data fail\n"
+	.balign	8
+.LC306:
+	.string	"[NE][NE]erase_block block fail %d!\n"
+	.balign	8
+.LC307:
+	.string	"[NE]get_used_page_num ecc error block:%d page:%d!\n"
+	.balign	8
+.LC308:
+	.string	"[NE]power off ecc error 4!!\n"
+	.balign	8
+.LC309:
+	.string	"[NE]sb@%d sp@%d get_used_page_num used spare data %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n"
+	.balign	8
+.LC310:
+	.string	"[NE]gupnnc ecc err b:%d p:%d!\n"
+	.balign	8
+.LC311:
+	.string	"[NE]gupnnc power off ecc err!!\n"
+	.balign	8
+.LC312:
+	.string	"[NE]cross talk block:%d total_good_num %d good_page_num: %d!\n"
+	.balign	8
+.LC313:
+	.string	"[NE]current_block_ecc_error no free block!!!\n"
+	.balign	8
+.LC314:
+	.string	"[NE]do current_block_ecc_error %d!!\n"
+	.balign	8
+.LC315:
+	.string	"[NE]power off ecc error 2.\n"
+	.balign	8
+.LC316:
+	.string	"[NE]current_block_ecc ok page %d %d!!\n"
+	.balign	8
+.LC317:
+	.string	"[NE]current_block_ecc_error page %d!!\n"
+	.balign	8
+.LC318:
+	.string	"[NE]current_block_ecc_error invalid page data %d!!\n"
+	.balign	8
+.LC319:
+	.string	"[NE]current_block_ecc_error unkown page data %d!!\n"
+	.balign	8
+.LC320:
+	.string	"[ND]do current_block_ecc_error end %d %d!!\n"
+	.balign	8
+.LC321:
+	.string	"[NE]do block_last_page_ecc_error!!\n"
+	.balign	8
+.LC322:
+	.string	"[NE]%s:malloc fail 1!\n"
+	.balign	8
+.LC323:
+	.string	"[NE]%s:malloc fail 2!\n"
+	.balign	8
+.LC324:
+	.string	"[NE]current_block_ecc_error invalid page data!!\n"
+	.balign	8
+.LC325:
+	.string	"[NE]current_block_ecc_error unkown page data!!\n"
+	.balign	8
+.LC326:
+	.string	"[NE]do block_last_page_ecc_error end!!\n"
+	.balign	8
+.LC327:
+	.string	"[NE]adjust free list fail!!\n"
+	.balign	8
+.LC328:
+	.string	"[NI]adjust free list : %d %d!!\n"
+	.balign	8
+.LC329:
+	.string	"[ND]nand3.x \n"
+	.balign	8
+.LC330:
+	.string	"[ND]zone->nand_chip->blk_per_chip: %d \n"
+	.balign	8
+.LC331:
+	.string	"[ND]zone->nand_chip->bytes_per_page: %d \n"
+	.balign	8
+.LC332:
+	.string	"[ND]zone->nand_chip->pages_per_blk: %d \n"
+	.balign	8
+.LC333:
+	.string	"[ND]zone->nand_chip->max_erase_times: %d \n"
+	.balign	8
+.LC334:
+	.string	"[ND]zone->nand_chip->support_read_reclaim: %d \n"
+	.balign	8
+.LC335:
+	.string	"[ND]zone->test: %d \n"
+	.balign	8
+.LC336:
+	.string	"[ND]zone->zone_no: %d \n"
+	.balign	8
+.LC337:
+	.string	"[ND]zone->zone_attr: %d \n"
+	.balign	8
+.LC338:
+	.string	"[ND]zone->blocks: %d \n"
+	.balign	8
+.LC339:
+	.string	"[ND]zone->bad_block: %d \n"
+	.balign	8
+.LC340:
+	.string	"[ND]zone->logic_cap_in_sects: %d \n"
+	.balign	8
+.LC341:
+	.string	"[ND]zone->backup_cap_in_sects: %d \n"
+	.balign	8
+.LC342:
+	.string	"[ND]zone->free_block_num: %d \n"
+	.balign	8
+.LC343:
+	.string	"[ND]zone->gc_strategy.start_gc_free_blocks: %d \n"
+	.balign	8
+.LC344:
+	.string	"[ND]zone->gc_strategy.stop_gc_free_blocks: %d \n"
+	.balign	8
+.LC345:
+	.string	"[ND]zone->gc_strategy.gc_page: %d \n"
+	.balign	8
+.LC346:
+	.string	"[ND]zone->gc_strategy.process: %d \n"
+	.balign	8
+.LC347:
+	.string	"[ND]zone->prio_gc.prio_type : %d \n"
+	.balign	8
+.LC348:
+	.string	"[ND]zone->zone_start_phy_block->phy_block.Block_NO: %d \n"
+	.balign	8
+.LC349:
+	.string	"[ND]zone->zone_end_phy_block->phy_block.Block_NO: %d \n"
+	.balign	8
+.LC350:
+	.string	"[ND]zone->zone_phy_page_map_for_gc: %x \n"
+	.balign	8
+.LC351:
+	.string	"[ND]zone->current_block.user_info: %x \n"
+	.balign	8
+.LC352:
+	.string	"[ND]zone->current_block.block_info: %x \n"
+	.balign	8
+.LC353:
+	.string	"[ND]zone->current_block.block_info->phy_block.Block_NO: %d \n"
+	.balign	8
+.LC354:
+	.string	"[ND]zone->current_block.page_used: %d \n"
+	.balign	8
+.LC355:
+	.string	"[ND]zone->current_block.block_info->block_used_count: %d \n"
+	.balign	8
+.LC356:
+	.string	"[ND]zone->recv_free_block: %d %d!!\n"
+	.balign	8
+.LC357:
+	.string	"[ND]zone->assist_block.user_info: %x \n"
+	.balign	8
+.LC358:
+	.string	"[ND]zone->assist_block.block_info: %x \n"
+	.balign	8
+.LC359:
+	.string	"[ND]zone->assist_block.block_info->phy_block.Block_NO: %d \n"
+	.balign	8
+.LC360:
+	.string	"[ND]zone->assist_block.page_used: %d \n"
+	.balign	8
+.LC361:
+	.string	"[ND]zone->assist_block.block_info->block_used_count: %d \n"
+	.balign	8
+.LC362:
+	.string	"[ND]zone->read_reclaim_complete: %x \n"
+	.balign	8
+.LC363:
+	.string	"[ND]zone->temp_page_buf: %x \n"
+	.balign	8
+.LC364:
+	.string	"[ND]zone->max_erase_num: %d \n"
+	.balign	8
+.LC365:
+	.string	"[ND]zone->cache.cache_totals: %x \n"
+	.balign	8
+.LC366:
+	.string	"[ND]zone->wl_gc_count: %d \n"
+	.balign	8
+.LC367:
+	.string	"[ND]zone->wl_gc_page_num: %d \n"
+	.balign	8
+.LC368:
+	.string	"[ND]zone->cfg->nftl_dont_use_cache: %x \n"
+	.balign	8
+.LC369:
+	.string	"[ND]zone->cfg->nftl_use_cache_sort: %x \n"
+	.balign	8
+.LC370:
+	.string	"[ND]zone->cfg->nftl_support_gc_read_reclaim: %x \n"
+	.balign	8
+.LC371:
+	.string	"[ND]zone->cfg->nftl_support_wear_leveling: %x \n"
+	.balign	8
+.LC372:
+	.string	"[ND]zone->cfg->nftl_need_erase: %x \n"
+	.balign	8
+.LC373:
+	.string	"[ND]zone->cfg->nftl_min_free_block_num: %x \n"
+	.balign	8
+.LC374:
+	.string	"[ND]zone->cfg->nftl_gc_threshold_free_block_num: %x \n"
+	.balign	8
+.LC375:
+	.string	"[ND]zone->cfg->nftl_min_free_block: %x \n"
+	.balign	8
+.LC376:
+	.string	"[ND]zone->cfg->nftl_gc_threshold_ratio_numerator: %x \n"
+	.balign	8
+.LC377:
+	.string	"[ND]zone->cfg->nftl_gc_threshold_ratio_denominator: %x \n"
+	.balign	8
+.LC378:
+	.string	"[ND]zone->cfg->nftl_max_cache_num: %d \n"
+	.balign	8
+.LC379:
+	.string	"[ND]zone->cfg->nftl_max_cache_write_num: %d \n"
+	.balign	8
+.LC380:
+	.string	"[ND]zone->cfg->nftl_cross_talk: %x \n"
+	.balign	8
+.LC381:
+	.string	"[ND]zone->cfg->nftl_read_claim_interval: %d \n"
+	.balign	8
+.LC382:
+	.string	"[NE]%s:malloc 4096 fail!\n"
+	.balign	8
+.LC383:
+	.string	"[ND]spare: %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x"
+	.balign	8
+.LC384:
+	.string	"[ND]buf:%x %x %x %x %x %x %x %x %x %x %x.\n"
+	.balign	8
+.LC385:
+	.string	"[NE]%s:malloc 8192 fail!\n"
+	.balign	8
+.LC386:
+	.string	"[ND]zoneNO:%d total_pages: %d\n"
+	.balign	8
+.LC387:
+	.string	"[ND]nand_memset bytes: %d\n"
+	.balign	8
+.LC388:
+	.string	"[ND]build_zone_list start\n"
+	.balign	8
+.LC389:
+	.string	"[ND]nftl_cache_init start\n"
+	.balign	8
+.LC390:
+	.string	"[ND]=================================2=======================================\n"
+	.balign	8
+.LC391:
+	.string	"[ND]nand_find_zone_table end\n"
+	.balign	8
+.LC392:
+	.string	"[NE][NE]%s:malloc 512 fail!\n"
+	.balign	8
+.LC393:
+	.string	"[ND]==========================\n"
+	.balign	8
+.LC394:
+	.string	"%.2x "
+	.balign	8
+.LC395:
+	.string	"[NE]exception case bad block\n"
+	.balign	8
+.LC396:
+	.string	"[NE]exception case wbc\n"
+	.balign	8
+.LC397:
+	.string	"[NE]exception case gd\n"
+	.balign	8
+.LC398:
+	.string	"[NE]%s %d, flag = %d\n"
+	.balign	8
+.LC399:
+	.string	"[NE]OOB :"
+	.balign	8
+.LC141:
+	.string	"[NE]%s:malloc fail for cache_buf!\n"
+	.balign	8
+.LC142:
+	.string	"[NE]nand_sector_cache_read 1!\n"
+	.balign	8
+.LC143:
+	.string	"[NE]nand_sector_cache_write 1!\n"
+	.balign	8
+.LC144:
+	.string	"[NE]nand_sector_cache_write 2!\n"
+	.balign	8
+.LC145:
+	.string	"[NE]nand_flush_write_cache write error\n"
+	.balign	8
+.LC470:
+	.string	"[NE]%s:logic_page:0x%x >= total_pages:0x%x\n"
+	.balign	8
+.LC471:
+	.string	"[NE]%s:malloc fail for logic_page_map %d\n"
+	.balign	8
+.LC472:
+	.string	"[NE]%s: malloc fail for logic_page_map %d\n"
+	.balign	8
+.LC473:
+	.string	"[NE]zone_param_init malloc_logic_page_map error %d\n"
+	.balign	8
+.LC176:
+	.string	"[ND]smart->version:%x;\n"
+	.balign	8
+.LC177:
+	.string	"[ND]smart->total_recv_read_sectors:%lld;\n"
+	.balign	8
+.LC178:
+	.string	"[ND]smart->total_recv_write_sectors:%lld;\n"
+	.balign	8
+.LC179:
+	.string	"[ND]smart->total_real_read_pages:%lld;\n"
+	.balign	8
+.LC180:
+	.string	"[ND]smart->total_real_write_pages:%lld;\n"
+	.balign	8
+.LC181:
+	.string	"[ND]smart->total_recv_discard_sectors:%lld;\n"
+	.balign	8
+.LC182:
+	.string	"[ND]smart->total_real_discard_sectors:%lld;\n"
+	.balign	8
+.LC183:
+	.string	"[ND]smart->total_recv_read_claim_pages:%d;\n"
+	.balign	8
+.LC184:
+	.string	"[ND]smart->total_gc_times:%d;\n"
+	.balign	8
+.LC185:
+	.string	"[ND]smart->total_gc_pages:%d;\n"
+	.balign	8
+.LC186:
+	.string	"[ND]smart->total_wl_times:%d;\n"
+	.balign	8
+.LC187:
+	.string	"[ND]smart->total_wl_gc_times:%d;\n"
+	.balign	8
+.LC188:
+	.string	"[ND]smart->total_real_read_error_pages:%d;\n"
+	.balign	8
+.LC189:
+	.string	"[ND]smart->total_real_write_error_pages:%d;\n"
+	.balign	8
+.LC190:
+	.string	"[ND]smart->total_normal_power_cycles:%x;\n"
+	.balign	8
+.LC191:
+	.string	"[ND]smart->total_unusual_power_cycles:%x;\n"
+	.balign	8
+.LC192:
+	.string	"[ND]smart->max_block_erase_times:%d;\n"
+	.balign	8
+.LC193:
+	.string	"[ND]smart->min_block_erase_times:%d;\n"
+	.balign	8
+.LC194:
+	.string	"[ND]smart->max_block_used_counter:%d;\n"
+	.balign	8
+.LC195:
+	.string	"[ND]smart->min_block_used_counter:%d;\n"
+	.balign	8
+.LC196:
+	.string	"[ND]smart->read_reclaim_utc:%d;\n"
+	.balign	8
+.LC197:
+	.string	"[ND]smart->cross_talk_times:%d;\n"
+	.balign	8
+.LC198:
+	.string	"[ND]smart->read_reclaim_zone_no:%d;\n"
+	.balign	8
+.LC199:
+	.string	"[ND]smart->read_reclaim_page_no:%d;\n"
+	.balign	8
+nand_crc16_table:
+	.hword	0
+	.hword	-16191
+	.hword	-15999
+	.hword	320
+	.hword	-15615
+	.hword	960
+	.hword	640
+	.hword	-15807
+	.hword	-14847
+	.hword	1728
+	.hword	1920
+	.hword	-14527
+	.hword	1280
+	.hword	-14911
+	.hword	-15231
+	.hword	1088
+	.hword	-13311
+	.hword	3264
+	.hword	3456
+	.hword	-12991
+	.hword	3840
+	.hword	-12351
+	.hword	-12671
+	.hword	3648
+	.hword	2560
+	.hword	-13631
+	.hword	-13439
+	.hword	2880
+	.hword	-14079
+	.hword	2496
+	.hword	2176
+	.hword	-14271
+	.hword	-10239
+	.hword	6336
+	.hword	6528
+	.hword	-9919
+	.hword	6912
+	.hword	-9279
+	.hword	-9599
+	.hword	6720
+	.hword	7680
+	.hword	-8511
+	.hword	-8319
+	.hword	8000
+	.hword	-8959
+	.hword	7616
+	.hword	7296
+	.hword	-9151
+	.hword	5120
+	.hword	-11071
+	.hword	-10879
+	.hword	5440
+	.hword	-10495
+	.hword	6080
+	.hword	5760
+	.hword	-10687
+	.hword	-11775
+	.hword	4800
+	.hword	4992
+	.hword	-11455
+	.hword	4352
+	.hword	-11839
+	.hword	-12159
+	.hword	4160
+	.hword	-4095
+	.hword	12480
+	.hword	12672
+	.hword	-3775
+	.hword	13056
+	.hword	-3135
+	.hword	-3455
+	.hword	12864
+	.hword	13824
+	.hword	-2367
+	.hword	-2175
+	.hword	14144
+	.hword	-2815
+	.hword	13760
+	.hword	13440
+	.hword	-3007
+	.hword	15360
+	.hword	-831
+	.hword	-639
+	.hword	15680
+	.hword	-255
+	.hword	16320
+	.hword	16000
+	.hword	-447
+	.hword	-1535
+	.hword	15040
+	.hword	15232
+	.hword	-1215
+	.hword	14592
+	.hword	-1599
+	.hword	-1919
+	.hword	14400
+	.hword	10240
+	.hword	-5951
+	.hword	-5759
+	.hword	10560
+	.hword	-5375
+	.hword	11200
+	.hword	10880
+	.hword	-5567
+	.hword	-4607
+	.hword	11968
+	.hword	12160
+	.hword	-4287
+	.hword	11520
+	.hword	-4671
+	.hword	-4991
+	.hword	11328
+	.hword	-7167
+	.hword	9408
+	.hword	9600
+	.hword	-6847
+	.hword	9984
+	.hword	-6207
+	.hword	-6527
+	.hword	9792
+	.hword	8704
+	.hword	-7487
+	.hword	-7295
+	.hword	9024
+	.hword	-7935
+	.hword	8640
+	.hword	8320
+	.hword	-8127
+	.hword	-24575
+	.hword	24768
+	.hword	24960
+	.hword	-24255
+	.hword	25344
+	.hword	-23615
+	.hword	-23935
+	.hword	25152
+	.hword	26112
+	.hword	-22847
+	.hword	-22655
+	.hword	26432
+	.hword	-23295
+	.hword	26048
+	.hword	25728
+	.hword	-23487
+	.hword	27648
+	.hword	-21311
+	.hword	-21119
+	.hword	27968
+	.hword	-20735
+	.hword	28608
+	.hword	28288
+	.hword	-20927
+	.hword	-22015
+	.hword	27328
+	.hword	27520
+	.hword	-21695
+	.hword	26880
+	.hword	-22079
+	.hword	-22399
+	.hword	26688
+	.hword	30720
+	.hword	-18239
+	.hword	-18047
+	.hword	31040
+	.hword	-17663
+	.hword	31680
+	.hword	31360
+	.hword	-17855
+	.hword	-16895
+	.hword	32448
+	.hword	32640
+	.hword	-16575
+	.hword	32000
+	.hword	-16959
+	.hword	-17279
+	.hword	31808
+	.hword	-19455
+	.hword	29888
+	.hword	30080
+	.hword	-19135
+	.hword	30464
+	.hword	-18495
+	.hword	-18815
+	.hword	30272
+	.hword	29184
+	.hword	-19775
+	.hword	-19583
+	.hword	29504
+	.hword	-20223
+	.hword	29120
+	.hword	28800
+	.hword	-20415
+	.hword	20480
+	.hword	-28479
+	.hword	-28287
+	.hword	20800
+	.hword	-27903
+	.hword	21440
+	.hword	21120
+	.hword	-28095
+	.hword	-27135
+	.hword	22208
+	.hword	22400
+	.hword	-26815
+	.hword	21760
+	.hword	-27199
+	.hword	-27519
+	.hword	21568
+	.hword	-25599
+	.hword	23744
+	.hword	23936
+	.hword	-25279
+	.hword	24320
+	.hword	-24639
+	.hword	-24959
+	.hword	24128
+	.hword	23040
+	.hword	-25919
+	.hword	-25727
+	.hword	23360
+	.hword	-26367
+	.hword	22976
+	.hword	22656
+	.hword	-26559
+	.hword	-30719
+	.hword	18624
+	.hword	18816
+	.hword	-30399
+	.hword	19200
+	.hword	-29759
+	.hword	-30079
+	.hword	19008
+	.hword	19968
+	.hword	-28991
+	.hword	-28799
+	.hword	20288
+	.hword	-29439
+	.hword	19904
+	.hword	19584
+	.hword	-29631
+	.hword	17408
+	.hword	-31551
+	.hword	-31359
+	.hword	17728
+	.hword	-30975
+	.hword	18368
+	.hword	18048
+	.hword	-31167
+	.hword	-32255
+	.hword	17088
+	.hword	17280
+	.hword	-31935
+	.hword	16640
+	.hword	-32319
+	.hword	-32639
+	.hword	16448
+	.balign	8
+.LC146:
+	.string	"[NE]error nand_write_logic_page_no_gc page_no:%u\n"
+	.balign	8
+.LC147:
+	.string	"[ND]logic_page_map_temp NULL!!\n"
+	.balign	8
+.LC148:
+	.string	"[NE]read a page: %d READ_RECLAIM!\n"
+	.balign	8
+.LC149:
+	.string	"[NE]no free block\n"
+	.balign	8
+.LC150:
+	.string	"[NE]do_write_error erase error sb:%d!\n"
+	.balign	8
+.LC151:
+	.string	"[NE]do_write_error sb@%d nftl_nand_copy_page error!\n"
+	.balign	8
+.LC152:
+	.string	"[NE]do after write error1!\n"
+	.balign	8
+.LC153:
+	.string	"[NE]do_before_write error!\n"
+	.balign	8
+.LC154:
+	.string	"[NE]write data to page error!\n"
+	.balign	8
+.LC155:
+	.string	"[NE]do after write error2!\n"
+	.balign	8
+.LC156:
+	.string	"[NE]get_new_current_block error3!\n"
+	.balign	8
+.LC157:
+	.string	"[NE]get_new_current_block error4!\n"
+	.balign	8
+.LC158:
+	.string	"[NE]write_phy_page_map_to_current_block error!\n"
+	.balign	8
+.LC159:
+	.string	"[NE]get_new_current_block error1!\n"
+	.balign	8
+.LC160:
+	.string	"[NE]get_new_current_block error2!\n"
+	.balign	8
+.LC161:
+	.string	"[NE]write logic data to current block error\n"
+	.balign	8
+.LC162:
+	.string	"[ND]last block can not used to logic page %d!!\n"
+	.balign	8
+.LC163:
+	.string	"[ND]last block can not used to power down page %d!!\n"
+	.balign	8
+.LC164:
+	.string	"[ND]write_phy_data_to_current_block write error %d!\n"
+	.balign	8
+.LC165:
+	.string	"[NE]do_write_error error\n"
+	.balign	8
+.LC166:
+	.string	"[NE]write_phy_data_to_current_block error1\n"
+	.balign	8
+.LC167:
+	.string	"[ND]logic_page_map NULL!!\n"
+	.balign	8
+.LC168:
+	.string	"[ND]invalid_page_count more than pages_per_blk at write logic data to current block:%d!!\n"
+	.balign	8
+.LC169:
+	.string	"[NE]write_phy_data_to_current_block error2\n"
+	.balign	8
+.LC170:
+	.string	"[NE]invalid_page_count more than pages_per_blk at write logic data to current block:%d!!\n"
+	.balign	8
+.LC171:
+	.string	"[NE]write phy data to current block error2\n"
+	.balign	8
+.LC172:
+	.string	"[ND]swl: new_cur_blk->alloc ok(max_ec): block_no = %d; ec = %d; \n"
+	.balign	8
+.LC173:
+	.string	"[NE]no free block!!!!\n"
+	.balign	8
+.LC174:
+	.string	"[NE]new_block_init_for_write erase error!\n"
+	.balign	8
+.LC175:
+	.string	"[NE]invaild_page num error:[%d] [%d]  used_page:[%d]!!\n"
+	.balign	8
+.LC413:
+	.string	"[NE]%s:malloc fail for cache_node!\n"
+	.balign	8
+.LC414:
+	.string	"[NE]%s:malloc fail for cache_page_buf!\n"
+	.balign	8
+.LC415:
+	.string	"[ND]read sector:0x%x,len:0x%x\n"
+	.balign	8
+.LC416:
+	.string	"[ND]write sector:0x%x,len:0x%x\n"
+	.balign	8
+.LC417:
+	.string	"[ND]dicard sector:0x%x,len:0x%x\n"
+	.balign	8
+.LC418:
+	.string	"[NE]paramter error. beyond reality capacity\n"
+	.balign	8
+.LC419:
+	.string	"[NI]nand_cache_read error buf is  NULL!\n"
+	.balign	8
+.LC420:
+	.string	"[NE]error1 node %d,%d,%d!\n"
+	.balign	8
+.LC421:
+	.string	"[NE]error1 bitmap %x!\n"
+	.balign	8
+.LC422:
+	.string	"[NE]ECC_LIMIT happened 12! page:%d!\n"
+	.balign	8
+.LC423:
+	.string	"[NE]error1 flush write cache to nand\n"
+	.balign	8
+.LC424:
+	.string	"[NE]error2 flush write cache to nand\n"
+	.balign	8
+.LC425:
+	.string	"[NI]ECC_LIMIT happened 11! page:%d!\n"
+	.balign	8
+.LC426:
+	.string	"[NE]flush write cache to nand no cache!\n"
+	.balign	8
+.LC427:
+	.string	"[NE]ECC_LIMIT happened 10! page:%d cache: %d!\n"
+	.balign	8
+.LC428:
+	.string	"[NE]flush write cache to nand error!\n"
+	.balign	8
+.LC429:
+	.string	"[ND]flush cache %d %d!\n"
+	.balign	8
+.LC430:
+	.string	"[NE]nand_discard paramter error!\n"
+	.balign	8
+.LC431:
+	.string	"[NI]page_map NULL!!\n"
+	.balign	8
+.LC432:
+	.string	"[ND]%4d:<%4d %3d><%d>\n"
+	.balign	8
+.LC474:
+	.string	"[NE]%s: malloc fail for zone\n"
+	.balign	8
+.LC475:
+	.string	"[NE]%s: malloc fail for nand_chip\n"
+	.balign	8
+.LC476:
+	.string	"[NE]%s: malloc fail for nand_block_info\n"
+	.balign	8
+.LC477:
+	.string	"[NE]not enough blocks %d!\n"
+	.balign	8
+.LC478:
+	.string	"[ND]nftl start:%d,%d\n"
+	.balign	8
+.LC479:
+	.string	"[NE]zone_param_init fail!\n"
+	.balign	8
+.LC480:
+	.string	"[NE]build_zone_list_first fail!\n"
+	.balign	8
+.LC481:
+	.string	"[NE]build_zone_list fail!\n"
+	.balign	8
+.LC482:
+	.string	"[NI]try again\n"
+	.balign	8
+.LC433:
+	.string	"[NE]garbage_collect phy_block null\n"
+	.balign	8
+.LC434:
+	.string	"[ND]garbage too frequency! %d:%d\n"
+	.balign	8
+.LC435:
+	.string	"[NE]garbage_collect_first wrong fbn:%d\n"
+	.balign	8
+.LC436:
+	.string	"[NI]garbage_collect_first none!!\n"
+	.balign	8
+.LC437:
+	.string	"[ND]garbage_collect_first wrong!!\n"
+	.balign	8
+.LC438:
+	.string	"[ND]garbage_collect_first cannot find PHY_MAPPING_PAGE%d %d %d %d!!\n"
+	.balign	8
+.LC439:
+	.string	"[ND]garbage_collect_first cannot find PHY_MAPPING_PAGE%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x.\n"
+	.balign	8
+.LC440:
+	.string	"[ND][NE]garbage_collect_first rebuild %d,%d!!\n"
+	.balign	8
+.LC441:
+	.string	"[ND]garbage_collect_first PHY_MAPPING_PAGEecc err block:%d !!\n"
+	.balign	8
+.LC442:
+	.string	"[NE]garbage_collect_first invaild_page num error!!\n"
+	.balign	8
+.LC443:
+	.string	"[ND]garbage_collect_first read a logic page error%d %d %d %d spare data:\n"
+	.balign	8
+.LC444:
+	.string	"%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n"
+	.balign	8
+.LC445:
+	.string	"[NE]nand_write_logic_page_no_gc gc fail!!\n"
+	.balign	8
+.LC446:
+	.string	"[NE]erase ecc error block\n"
+	.balign	8
+.LC447:
+	.string	"[ND]no block to prio gc\n"
+	.balign	8
+.LC448:
+	.string	"[ND]no need gc:%d, type:%d\n"
+	.balign	8
+.LC449:
+	.string	"[NE]do_prio_gc garbage_collect_first fail:%d, type:%d\n"
+	.balign	8
+.LC450:
+	.string	"[ND]prio gc fail1:%d, type:%d\n"
+	.balign	8
+.LC451:
+	.string	"[ND]prio gc fail2:%d, type:%d\n"
+	.balign	8
+.LC452:
+	.string	"[ND]swl: static WL need to do(%d : %d)\n"
+	.balign	8
+.LC453:
+	.string	"[ND]swl: min_ec_blk_no = %d,\n"
+	.balign	8
+.LC454:
+	.string	"[ND]swl: zone->blocks = %d)\n"
+	.balign	8
+.LC455:
+	.string	"[ND]swl: the block(%d) for static WL is not in invalid_list\n"
+	.balign	8
+.LC456:
+	.string	"[ND]swl: done_static_wear_leveling(min_ec) block:%d, erase_count:%d\n"
+	.balign	8
+.LC457:
+	.string	"[NE]swl: garbage_collect_first fail:%d\n"
+	.balign	8
+.LC458:
+	.string	"[NE]swl: last->check fail:%d\n"
+	.balign	8
+.LC459:
+	.string	"[ND]gc_one ok! from: %d [%d %d %d] @%s %d\n"
+	.balign	8
+.LC460:
+	.string	"[NE][NE]gc_one error!\n"
+	.balign	8
+.LC461:
+	.string	"[ND][NE] gc_win_block gc_one error \n"
+	.balign	8
+.LC462:
+	.string	"[ND]not power on gc [%d, %d, %d], [%d %d %d]!\n"
+	.balign	8
+.LC463:
+	.string	"[ND]emergency power on gc %d !\n"
+	.balign	8
+.LC464:
+	.string	"[ND]power on gc %d!\n"
+	.balign	8
+.LC465:
+	.string	"[ND]%s %p %d %d %d %\n"
+	.balign	8
+.LC466:
+	.string	"[NI]shutdown_on_gc end! [%d %d %d]\n"
+	.balign	8
+.LC467:
+	.string	"[ND]shutdown_on_gc one ok! [%d %d %d]\n"
+	.balign	8
+.LC468:
+	.string	"%d %d %d %d %d %d/%d %d/%d\n"
+	.balign	8
+.LC469:
+	.string	"%08d:%04d "
+	.balign	8
+.LC18:
+	.string	"[ND] panic part %s off %u size %u\n"
+	.balign	8
+.LC19:
+	.string	"[ND] reserved panic block before %d!\n"
+	.balign	8
+.LC20:
+	.string	"[NE] reserved panic block %d!\n"
+	.balign	8
+.LC21:
+	.string	"[NE] no reserved panic block!!! quit!\n"
+	.balign	8
+.LC22:
+	.string	"[ND] write panic data : logic addr: %d, sectors %d, pages %d, blocks %d\n"
+	.balign	8
+.LC23:
+	.string	"[NE] too much data for panic-write, %d sectors left over\n"
+	.balign	8
+.LC24:
+	.string	"[ND] write panic data block: %d page %d !\n"
+	.balign	8
+.LC25:
+	.string	"[ND] write dummy data block: %d page %d !\n"
+	.balign	8
+.LC26:
+	.string	"[ND] find panic block : %d\n"
+	.balign	8
+.LC27:
+	.string	"[NE] invalid panic block index %d\n"
+	.balign	8
+.LC28:
+	.string	"[ND] not find panic data, no need to recovery!\n"
+	.balign	8
+.LC29:
+	.string	"[ND] recovery panic data start!\n"
+	.balign	8
+.LC30:
+	.string	"[NE] %s(%d): malloc failed\n"
+	.balign	8
+.LC31:
+	.string	"[ND] ignore blk %d page %d as dummy page\n"
+	.balign	8
+.LC32:
+	.string	"[ND] exit recovery panic block\n"
+	.balign	8
+.LC33:
+	.string	"[ND] invalid blk %d page %d, finish recovery\n"
+	.balign	8
+.LC34:
+	.string	"[ND] move blk %d page %d to logic addr %d\n"
+	.balign	8
+.LC35:
+	.string	"rr value %x %x %x %x!\n"
+	.balign	8
+.LC107:
+	.string	"get_hynix_special_info start!!\n"
+	.balign	8
+.LC108:
+	.string	"hynix_special_info:can't find uboot head\n"
+	.balign	8
+.LC109:
+	.string	"physic info start_block %d\n"
+	.balign	8
+.LC110:
+	.string	"m1 retry!\n"
+	.balign	8
+.LC111:
+	.string	"m1 ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+	.balign	8
+.LC104:
+	.string	"fatal err -0, wrong input parameter, ch: %d  chip: %d/%d  block: %d/%d \n"
+	.balign	8
+.LC112:
+	.string	"m1 write page FF wrong\n"
+	.balign	8
+.LC113:
+	.string	"_major_check_byte, wrong input para, level %d, len %d\n"
+	.balign	8
+.LC114:
+	.string	"%d:  '1'-'0' : %d - %d\n"
+	.balign	8
+.LC115:
+	.string	"get bit %d failed!\n"
+	.balign	8
+.LC116:
+	.string	"_get_read_retry_parameters, get rr count failed!\n"
+	.balign	8
+.LC117:
+	.string	"rr cnt: %d\n"
+	.balign	8
+.LC118:
+	.string	"_get_read_retry_parameters, get rr reg count failed!\n"
+	.balign	8
+.LC119:
+	.string	"rr reg cnt: %d\n"
+	.balign	8
+.LC120:
+	.string	"read retry value from otp error: rr_cnt %d rr_reg_cnt %d!\n"
+	.balign	8
+.LC121:
+	.string	"_get_read_retry_parameters, get the %d-th byte of rr table failed!\n"
+	.balign	8
+.LC123:
+	.string	"start get read retry param from: ce %d, rb %d...\n"
+	.balign	8
+.LC124:
+	.string	"invalid buffer for otp info!\n"
+	.balign	8
+.LC51:
+	.string	"hynix OTP RegCount value error: 0x%x, 0x%x \n"
+	.balign	8
+.LC125:
+	.string	"otp_info_hynix_16nm : allocate memory fail\n"
+	.balign	8
+.LC126:
+	.string	"m1 CH %d chip %d get otp info failed!\n"
+	.balign	8
+.LC127:
+	.string	"m1 CH %d chip %d get read retry cfg from otp info failed!\n"
+	.balign	8
+.LC54:
+	.string	"_vender_get_param_otp_hynix time %d!\n"
+	.balign	8
+.LC56:
+	.string	"set retry default value: "
+	.balign	8
+.LC57:
+	.string	" %x"
+	.balign	8
+.LC59:
+	.string	"[PHY_GetDefaultParam]:readbuf malloc fail\n"
+	.balign	8
+.LC128:
+	.string	"ch %d, chip %d Read Retry value Table from uboot\n"
+	.balign	8
+.LC61:
+	.string	"0x%x "
+	.balign	8
+.LC62:
+	.string	"[PHY_DBG] ch %d, can't get right otp value from nand otp blocks, then use otp command\n"
+	.balign	8
+.LC129:
+	.string	"[PHY_DBG] repair ch %d chip %d otp value end\n"
+	.balign	8
+.LC64:
+	.string	"NFC_ReadRetryInit, unknown read retry mode 0x%x\n"
+	.balign	8
+.LC130:
+	.string	"hynix16nm_readretry_exit. \n"
+	.balign	8
+.LC131:
+	.string	" hynix16nm_special_init hynix16nm_read_retry_mode: %d hynix16nm_read_retry_cycle:%d hynix16nm_read_retry_reg_num:%d\n"
+	.balign	8
+.LC132:
+	.string	" hynix16nm_special_init error hynix16nm_read_retry_mode: %d hynix16nm_read_retry_cycle:%d hynix16nm_read_retry_reg_num:%d\n"
+	.balign	8
+.LC133:
+	.string	" hynix16nm_special_exit \n"
+	.balign	8
+.LC36:
+	.string	"samsung set readretry error ! %x \n"
+	.balign	8
+.LC37:
+	.string	"samsung retry!\n"
+	.balign	8
+.LC38:
+	.string	"samsung ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+	.balign	8
+.LC39:
+	.string	"samsung read retry conut: %d !\n"
+	.balign	8
+.LC40:
+	.string	" samsung_special_init samsung_read_retry_mode:%d samsung_read_retry_cycle :%d \n"
+	.balign	8
+.LC41:
+	.string	" samsung_special_init error samsung_read_retry_mode:%d samsung_read_retry_cycle :%d \n"
+	.balign	8
+.LC42:
+	.string	" samsung_special_exit \n"
+	.balign	8
+para0:
+	.hword	0
+	.hword	0
+	.hword	0
+	.hword	0
+	.hword	0
+	.hword	6
+	.hword	10
+	.hword	6
+	.hword	0
+	.hword	-3
+	.hword	-7
+	.hword	-8
+	.hword	0
+	.hword	-6
+	.hword	-13
+	.hword	-15
+	.hword	0
+	.hword	-11
+	.hword	-20
+	.hword	-23
+	.hword	0
+	.hword	0
+	.hword	-26
+	.hword	-30
+	.hword	0
+	.hword	0
+	.hword	-32
+	.hword	-37
+	.balign	8
+para1:
+	.hword	0
+	.hword	0
+	.hword	0
+	.hword	0
+	.hword	0
+	.hword	6
+	.hword	10
+	.hword	6
+	.hword	0
+	.hword	-3
+	.hword	-7
+	.hword	-8
+	.hword	0
+	.hword	-6
+	.hword	-13
+	.hword	-15
+	.hword	0
+	.hword	-9
+	.hword	-20
+	.hword	-23
+	.hword	0
+	.hword	0
+	.hword	-26
+	.hword	-30
+	.hword	0
+	.hword	0
+	.hword	-32
+	.hword	-37
+	.balign	8
+.LC85:
+	.string	"hynix26nm retry param:"
+	.balign	8
+.LC44:
+	.string	" %x "
+	.balign	8
+.LC86:
+	.string	"m0 retry!\n"
+	.balign	8
+.LC87:
+	.string	"hynix26nm ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+	.balign	8
+.LC88:
+	.string	"hynix26nm_lsb_exit\n"
+	.balign	8
+.LC89:
+	.string	"hynix26nm_get_default_param: ch: %d, chip: %d, value: 0x%x 0x%x 0x%x 0x%x \n"
+	.balign	8
+.LC90:
+	.string	"hynix26nm_readretry_exit. \n"
+	.balign	8
+.LC91:
+	.string	" hynix26nm_special_init hynix26nm_read_retry_mode: %d hynix26nm_read_retry_cycle:%d hynix26nm_read_retry_reg_num:%d\n"
+	.balign	8
+.LC92:
+	.string	" hynix26nm_special_init error hynix26nm_read_retry_mode: %d hynix26nm_read_retry_cycle:%d hynix26nm_read_retry_reg_num:%d\n"
+	.balign	8
+.LC93:
+	.string	" hynix26nm_special_exit \n"
+	.balign	8
+.LC94:
+	.string	"sandisk_A19 retry!\n"
+	.balign	8
+.LC95:
+	.string	"sandisk_A19 set readretry error\n"
+	.balign	8
+.LC47:
+	.string	"retry spare all 0xff! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+	.balign	8
+.LC96:
+	.string	"sandisk_A19 ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+	.balign	8
+.LC97:
+	.string	"sandisk_A19 ReadRetry ok with ecc limit! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+	.balign	8
+.LC98:
+	.string	"sandisk_A19 retry mode err : %d !\n"
+	.balign	8
+.LC99:
+	.string	"sandisk A19 read retry conut: %d !\n"
+	.balign	8
+.LC100:
+	.string	" sandisk_A19_special_init sandisk_A19_read_retry_mode:%d sandisk_A19_read_retry_cycle :%d sandisk_A19_read_retry_reg_cnt %d \n"
+	.balign	8
+.LC101:
+	.string	" sandisk_A19_special_init error sandisk_A19_read_retry_mode:%d sandisk_A19_read_retry_cycle :%d sandisk_A19_read_retry_reg_cnt %d \n"
+	.balign	8
+.LC102:
+	.string	"%s sandisk toggle vendor specific setting failed!\n"
+	.balign	8
+.LC103:
+	.string	" sandisk_A19_special_exit \n"
+	.balign	8
+.LC105:
+	.string	" generic special init \n"
+	.balign	8
+.LC106:
+	.string	" generic special exit \n"
+	.balign	8
+.LC77:
+	.string	"toshiba rr value 3 %x %x %x %x!\n"
+	.balign	8
+.LC78:
+	.string	"toshiba vender_pre_condition error!\n"
+	.balign	8
+.LC79:
+	.string	"toshiba retry!\n"
+	.balign	8
+.LC80:
+	.string	"toshiba ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+	.balign	8
+.LC81:
+	.string	"toshiba read retry conut: %d !\n"
+	.balign	8
+.LC82:
+	.string	" toshiba_special_init toshiba_read_retry_mode :%d toshiba_read_retry_cycle :%d toshiba_read_retry_reg_cnt :%d \n"
+	.balign	8
+.LC83:
+	.string	" toshiba_special_init error toshiba_read_retry_mode :%d toshiba_read_retry_cycle :%d toshiba_read_retry_reg_cnt :%d \n"
+	.balign	8
+.LC84:
+	.string	" toshiba_special_exit \n"
+	.balign	8
+.LC69:
+	.string	"set feature(addr %d) p0: %d readretry Configuration failed!\n"
+	.balign	8
+.LC70:
+	.string	"micron retry!\n"
+	.balign	8
+.LC71:
+	.string	"micron ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+	.balign	8
+.LC72:
+	.string	"micron read retry cannot support!\n"
+	.balign	8
+.LC73:
+	.string	"micron read retry conut: %d !\n"
+	.balign	8
+.LC74:
+	.string	" micron_special_init micron_read_retry_mode:%d micron_read_retry_cycle:%d \n"
+	.balign	8
+.LC75:
+	.string	" micron_special_init error micron_read_retry_mode:%d micron_read_retry_cycle:%d \n"
+	.balign	8
+.LC76:
+	.string	" micron_special_exit \n"
+	.balign	8
+.LC134:
+	.string	"sandisk retry!\n"
+	.balign	8
+.LC135:
+	.string	"sandisk ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+	.balign	8
+.LC136:
+	.string	"sandisk activation seq fail 0x%x\n"
+	.balign	8
+.LC1:
+	.byte	83
+	.byte	83
+	.byte	83
+	.byte	83
+	.byte	83
+	.byte	83
+	.byte	83
+	.byte	83
+	.byte	83
+	.balign	8
+.LC137:
+	.string	"sandisk read retry conut: %d !\n"
+	.balign	8
+.LC138:
+	.string	" sandisk_special_init sandisk_read_retry_mode:%d sandisk_read_retry_cycle :%d sandisk_read_retry_reg_cnt %d \n"
+	.balign	8
+.LC139:
+	.string	" sandisk_special_init error sandisk_read_retry_mode:%d sandisk_read_retry_cycle :%d sandisk_read_retry_reg_cnt %d \n"
+	.balign	8
+.LC140:
+	.string	" sandisk_special_exit \n"
+	.balign	8
+.LC43:
+	.string	"retry para:"
+	.balign	8
+.LC46:
+	.string	"hynix20nm retry!\n"
+	.balign	8
+.LC48:
+	.string	"sdata:0x%x %x %x %x "
+	.balign	8
+.LC49:
+	.string	"hynix20nm ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
+	.balign	8
+.LC50:
+	.string	"hynix20nm_lsb_exit\n"
+	.balign	8
+.LC52:
+	.string	"otp copy %d is ok!\n"
+	.balign	8
+.LC53:
+	.string	"otp copy failed!\n"
+	.balign	8
+.LC55:
+	.string	"_vender_get_param_otp_hynix error!\n"
+	.balign	8
+.LC58:
+	.string	"hynix20nm get default param error !\n"
+	.balign	8
+.LC60:
+	.string	"ch %d, chip %d Read Retry value Table from uboot:\n"
+	.balign	8
+.LC63:
+	.string	"[PHY_DBG] repair ch %d otp value end\n"
+	.balign	8
+.LC65:
+	.string	"hynix20nm_readretry_exit. \n"
+	.balign	8
+.LC66:
+	.string	" hynix20nm_special_init hynix20nm_read_retry_mode: %d hynix20nm_read_retry_cycle:%d hynix20nm_read_retry_reg_num:%d\n"
+	.balign	8
+.LC67:
+	.string	" hynix20nm_special_init error hynix20nm_read_retry_mode: %d hynix20nm_read_retry_cycle:%d hynix20nm_read_retry_reg_num:%d\n"
+	.balign	8
+.LC68:
+	.string	" hynix20nm_special_exit \n"
+	.balign	8
+__func__.5346:
+	.string	"nftl_initialize"
+	.balign	8
+__func__.5194:
+	.string	"nftl_add"
+	.balign	8
+__func__.7098:
+	.string	"zone_param_init"
+	.balign	8
+__func__.7312:
+	.string	"init_nrc"
+	.balign	8
+__func__.7402:
+	.string	"torture_block_and_mark"
+	.balign	8
+__func__.7526:
+	.string	"block_last_page_ecc_error"
+	.balign	8
+__func__.7558:
+	.string	"nand_dbg_phy_read"
+	.balign	8
+__func__.7569:
+	.string	"nand_dbg_zone_phy_read"
+	.balign	8
+__func__.7580:
+	.string	"nand_dbg_zone_phy_write"
+	.balign	8
+__func__.7589:
+	.string	"nand_dbg_phy_write"
+	.balign	8
+__func__.7642:
+	.string	"write_data_to_nand"
+	.balign	8
+__FUNCTION__.7666:
+	.string	"nand_power_off_ecc_error"
+	.balign	8
+__func__.6755:
+	.string	"nftl_sector_cache_init"
+	.balign	8
+__func__.8479:
+	.string	"get_logic_page_map"
+	.balign	8
+__func__.7884:
+	.string	"nftl_cache_init"
+	.balign	8
+__func__.8536:
+	.string	"nftl_start"
+	.balign	8
+__func__.8331:
+	.string	"shutdown_on_gc"
+	.balign	8
+__func__.5524:
+	.string	"panic_recover_data"
+	.balign	8
+__func__.6409:
+	.string	"sandisk_A19_special_exit"
