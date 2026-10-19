@@ -90,15 +90,20 @@ void arelink_srand(u32 seed)
 	random_state = seed;
 }
 
-/* DNS_0002: feedback decoding, with 16-bit wrap at every iteration. */
-static void decode_constants(const u8 *input, u8 *output, u8 count)
+/* Stock truncates the count and feedback seed to8/16 bits. Its second input
+ * read occurs AFTER the output write, so overlapping buffers can change the
+ * next feedback state. TODO: overlap handling is a separate behavior change.
+ * These attributes reproduce the native private frame; original flags/spelling
+ * are unknown. Keep the retained helper and its two initialization call sites.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0002_Func(const u8 *input, u8 *output, u8 count, u16 state)
 {
-	u16 state = 0xab36;
-	unsigned int i;
-	for (i = 0; i < count; i++) {
-		output[i] = input[i] ^ (state >> 8);
-		state = (input[i] + state) * -0x3193 + 0x58bf;
-	}
+ u8 i = 0;
+ for (; i < count; i++) {
+  *output++ = input[i] ^ (state >> 8);
+  state = (input[i] + state) * -0x3193 + 0x58bf;
+ }
 }
 
 /* DNS_0004: gather selected bits from two nibbles into a framing mask. */
@@ -470,8 +475,8 @@ u8 arelink_init(u8 *serial)
 {
 	u8 decoded[5];
 	unsigned int attempt;
-	decode_constants(arelink_encoded_key, key, 32);
-	decode_constants(arelink_encoded_mask, mask_table, 16);
+	DNS_0002_Func(arelink_encoded_key, key, 32, 0xab36);
+	DNS_0002_Func(arelink_encoded_mask, mask_table, 16, 0xab36);
 	___memset(receive_buffer, 255, 6);
 	for (attempt = 0; attempt < 24; attempt++) {
 		arelink_delay(1);
