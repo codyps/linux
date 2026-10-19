@@ -203,25 +203,31 @@ static int sun50i_h616_ths_calibrate_wrap(struct ths_device *tmdev,
 	if (IS_ERR(sid)) {
 		if (PTR_ERR(sid) == -EPROBE_DEFER)
 			return PTR_ERR(sid);
+		/* Stock shares this fallback with unsupported SID revisions. */
+fallback:
 		return sun50i_h616_ths_calibrate(tmdev, caldata, callen);
 	}
 
 	/* Stock ignores read errors and may use uninitialized version/trim.
-	 * TODO: validate reads and lengths as a separate change.
+	 * TODO: validate reads and lengths as a separate behavior change.
 	 */
 	nvmem_device_read(sid, 0, sizeof(version), &version);
 	switch (version) {
 	case 0x2400:
 	case 0x2c00:
 	case 0x7400:
-	case 0x7c00: {
-		nvmem_device_read(sid, 0x1c, sizeof(trim), &trim);
-		if (!trim) {
-			devm_nvmem_device_put(dev, sid);
-			return 0;
-		}
+	case 0x7c00:
+		break;
+	default:
+		devm_nvmem_device_put(dev, sid);
+		goto fallback;
+	}
+
+	nvmem_device_read(sid, 0x1c, sizeof(trim), &trim);
+	if (trim) {
 		reference = ((trim >> 24) & 0x3f) + 2;
-		for (i = 0; i < tmdev->chip->sensor_num; i++) {
+		/* Stock reloads the signed count after every regmap call. */
+		for (i = 0; i < READ_ONCE(tmdev->chip->sensor_num); i++) {
 			int sample = (trim >> (i * 6)) & 0x3f;
 			int cdata = CALIBRATE_DEFAULT +
 				(sample - reference) * 12401 / -1000;
@@ -231,18 +237,12 @@ static int sun50i_h616_ths_calibrate_wrap(struct ths_device *tmdev,
 				SUN50I_H616_THS_TEMP_CALIB + (i / 2 * 4),
 				0xfff << offset, cdata << offset);
 		}
-		/* Stock ignores write errors and leaves has_calibration unchanged.
-		 * TODO: handle failed writes separately.
-		 */
-		devm_nvmem_device_put(dev, sid);
-		return 0;
 	}
-	default:
-		break;
-	}
-
+	/* Stock ignores write errors and leaves has_calibration unchanged.
+	 * TODO: handle failed writes separately.
+	 */
 	devm_nvmem_device_put(dev, sid);
-	return sun50i_h616_ths_calibrate(tmdev, caldata, callen);
+	return 0;
 }
 
 static int sunxi_ths_calibrate(struct ths_device *tmdev)
