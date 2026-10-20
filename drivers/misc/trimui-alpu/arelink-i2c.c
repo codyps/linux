@@ -29,14 +29,24 @@ void trimui_sunxi_gpio_init(void)
 /* #860 spills and reloads this volatile 16-bit argument before doubling it. */
 void OSTimeDly(volatile u16 ticks) { __udelay((unsigned long)ticks * 2); }
 
+/* Stock retains the delay and high GPIO value across calls in x20/x19.
+ * The register constraints reproduce its code; the original local C
+ * declarations remain unknown. Stock ignores GPIO direction failures here.
+ * TODO: propagate them only in a separate behavior-changing fix.
+ */
 void I2CMasterStop(void)
 {
-	gpio_direction_output(ALPU_SCL, 0);
-	gpio_direction_output(ALPU_SDA, 0);
-	__udelay(2);
-	gpio_direction_output(ALPU_SCL, 1);
-	__udelay(2);
-	gpio_direction_output(ALPU_SDA, 1);
+    register unsigned long ticks asm("x20");
+    register unsigned int high asm("w19");
+    gpio_direction_output(ALPU_SCL, 0);
+    ticks = 2;
+    gpio_direction_output(ALPU_SDA, 0);
+    high = 1;
+    asm volatile("" : "+r" (ticks), "+r" (high));
+    __udelay(ticks);
+    gpio_direction_output(ALPU_SCL, high);
+    __udelay(ticks);
+    gpio_direction_output(ALPU_SDA, high);
 }
 
 void I2CSetInitial(void)
