@@ -1065,39 +1065,43 @@ static u8 arelink_page_write(u8 page, const u8 *data, u8 encrypted)
 	return 0;
 }
 
+/* Stock checks authentication before the data pointer, ignores the
+ * set_password return, and collapses auth-check failures to status 18.
+ * TODO: validate password/block errors and serialize shared state in a
+ * separate behavior-changing patch.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
 u8 arelink_eeprom_write(u32 password, u8 page, const u8 *data, u8 encrypted)
 {
-	u8 result = 0;
-	if (!authenticated)
-		return 15;
-	if (!data)
-		return 12;
-	set_password(page >> 1, password);
-	if (check_block_auth_status(page >> 1, &result) || result != 1)
-		return 18;
-	return arelink_page_write(page, data, encrypted);
+ u8 result, block, status;
+ result=0; status=0; block=page>>1;
+ if(!alpu_authenticated) return 15;
+ if(!data) return 12;
+ set_password(block,password);
+ status=check_block_auth_status(block,&result);
+ if(status==0 && result==1) return arelink_page_write(page,data,encrypted);
+ return 18;
 }
-
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
 u8 arelink_eeprom_read(u32 password, u8 page, u8 *data, u8 encrypted)
 {
-	u8 result = 0;
-	if (!authenticated)
-		return 15;
-	if (!data)
-		return 12;
-	set_password(page >> 1, password);
-	if (check_block_auth_status(page >> 1, &result) || result != 1)
-		return 18;
-	return arelink_page_read(page, data, encrypted);
+ u8 result, block, status;
+ result=0; status=0; block=page>>1;
+ if(!alpu_authenticated) return 15;
+ if(!data) return 12;
+ set_password(block,password);
+ status=check_block_auth_status(block,&result);
+ if(status==0 && result==1) return arelink_page_read(page,data,encrypted);
+ return 18;
 }
-
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
 u8 arelink_eeprom_pwchg(u8 page, u32 old_password, u32 new_password)
 {
-	u8 result = 0;
-	if (!authenticated)
-		return 15;
-	set_password(page >> 1, old_password);
-	if (check_block_auth_status(page >> 1, &result) || result != 1)
-		return 18;
-	return arelink_change_password(page >> 1, new_password);
+ u8 result, block, status;
+ result=0; status=0; block=page>>1;
+ if(!alpu_authenticated) return 15;
+ set_password(block,old_password);
+ status=check_block_auth_status(block,&result);
+ if(status==0 && result==1) return arelink_change_password(block,new_password);
+ return 18;
 }
