@@ -59,35 +59,39 @@ extern u8 alpu_initialized_flag;
 __asm__(".local alpu_initialized_flag\n.type alpu_initialized_flag, %object\n"
         ".set alpu_initialized_flag, alpu_state+529\n.size alpu_initialized_flag, 1\n");
 
-u8 arelink_random(void)
+/* Same initialized word as the stock srand/rooted generator. No storage.
+ * Retain volatile reloads rather than making an unlocked round atomic.
+ */
+extern volatile u32 alpu_random_word;
+__asm__(".local alpu_random_word\n.type alpu_random_word,%object\n.set alpu_random_word,alpu_initialized+12\n.size alpu_random_word,4\n");
+/* Compatible native frames, not proof of original declarations or flags.
+ * The unshifted word is read before the shifted word at every stage, followed
+ * by a fresh return read. Preserve mixed-word races and the absorbing zero.
+ * TODO: serialization and zero-seed repair are separate behavior changes.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) static u32 DNS_0019_Func(volatile u32 *state)
 {
-	u8 result;
-	u32 current, shifted;
-	/* Each stock stage reads the unshifted value first, then reads the
-	 * shifted operand again. Other writers can intervene: preserve those
-	 * mixed-value races and the final fresh word read for the returned byte.
-	 * Without another writer, zero is absorbing and stock spins here.
-	 * TODO: synchronization or seed repair is a separate behavior change.
-	 */
-	do {
-		current = random_state;
-		shifted = random_state << 13;
-		random_state = current ^ shifted;
-		current = random_state;
-		shifted = random_state >> 17;
-		random_state = current ^ shifted;
-		current = random_state;
-		shifted = random_state << 5;
-		random_state = current ^ shifted;
-		result = random_state;
-		result += result / 255;
-	} while (!result);
-	return result;
+ *state=*state^(*state<<13);
+ *state=*state^(*state>>17);
+ *state=*state^(*state<<5);
+ return *state;
 }
-
-void arelink_srand(u32 seed)
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) static u8 DNS_0020_Func(void)
 {
-	random_state = seed;
+ return DNS_0019_Func(&alpu_random_word);
+}
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) u8 arelink_random(void)
+{
+ u8 result;
+ /* Stock rejects both low-byte0 and255. A zero seed can loop forever.
+  * TODO: bounded retry and a seed fallback belong in a separate fix.
+  */
+ do { result=DNS_0020_Func()%255; } while(result==0);
+ return result;
+}
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) void arelink_srand(u32 seed)
+{
+ alpu_random_word=seed;
 }
 
 /* Stock truncates the count and feedback seed to8/16 bits. Its second input
