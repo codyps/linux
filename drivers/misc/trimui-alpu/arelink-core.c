@@ -983,86 +983,134 @@ static u8 DNS_0003_Func(const u8 *input, u8 count)
  return 1;
 }
 
-static u8 arelink_page_read(u8 page, u8 *data, u8 encrypted)
+extern u8 alpu_protected_block,alpu_page_buffer[64];
+__asm__(".local alpu_protected_block\n.type alpu_protected_block,%object\n.set alpu_protected_block,alpu_state+530\n.size alpu_protected_block,1\n" ".local alpu_page_buffer\n.type alpu_page_buffer,%object\n.set alpu_page_buffer,alpu_state+464\n.size alpu_page_buffer,64\n");
+/* Stock clears the shared reply once and retries reads without resending.
+ * Its byte progress counter can wrap for long signed lengths. Preserve both.
+ * TODO: bounds and transport-status fixes belong in a separate patch.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0016_Func(const u8 *input,u8 *output,int length)
 {
-	u8 decoded[16];
-	unsigned int attempt, i;
-	if (!initialized)
-		return 2;
-	if (page >= 30)
-		return 4;
-	if (protected_block && page < (protected_block + 1) * 2)
-		return 7;
-	command(0, 8);
-	___memset(receive_buffer, 0, 64);
-	for (attempt = 0; attempt < 5; attempt++) {
-		arelink_delay(1);
-		arelink_read_data((page + 0x200) * 64, 65, receive_buffer);
-		if (receive_buffer[0])
-			break;
-	}
-	unpack(receive_buffer, page_buffer, 64);
-	/* Stock normalizes the low flag bit and classifies only encrypted reads.
-	 * Raw mode must not scan the shared page before copying it: an extra
-	 * scan changes observations if another caller writes this unlocked state.
-	 * TODO: synchronization belongs in a separate behavior change.
-	 */
-	if (!(encrypted & 1) || !DNS_0003_Func(page_buffer, 64)) {
-		___memcpy(data, page_buffer, 64);
-		return 0;
-	}
-	___memset(receive_buffer, 0, 17);
-	for (i = 0; i < 64; i += 16) {
-		cipher_request(page_buffer + i, 1, 0);
-		for (attempt = 0; attempt < 5; attempt++) {
-			arelink_delay(1);
-			arelink_read_data(0x2000, 17, receive_buffer);
-			if (receive_buffer[0])
-				break;
-		}
-		unpack(receive_buffer, decoded, 16);
-		DNS_0007_Func(decoded, data + i, 16);
-	}
-	return 0;
+ u8 decoded[16] __attribute__((aligned(8)));
+ u8 done,blocks,attempt;
+ blocks=0;attempt=0;
+ ___memset(alpu_receive,0,17);
+ done=0;
+ while(done<length) {
+  blocks++;
+  attempt=0;
+  DNS_0014_Func(input,1,0);
+  for(;;) {
+   arelink_delay(1);
+   arelink_read_data(0x2000,17,alpu_receive);
+   if(alpu_receive[0] || ++attempt>4) break;
+  }
+  DNS_0005_Func(alpu_receive,decoded,16);
+  DNS_0007_Func(decoded,output,16);
+  input+=16;output+=16;done+=16;
+ }
 }
 
-static u8 arelink_page_write(u8 page, const u8 *data, u8 encrypted)
+/* Stock clears receive only once before retrying and ignores read status.
+ * Short reads can retain old payload bytes. Preserve for compatibility.
+ * TODO: validate transport and serialize page state separately.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static u8 arelink_page_read(u8 page,u8 *data,u8 encrypted)
 {
-	u8 frame[17], zero = 0, nonce, mask;
-	u16 address = (page + 0x200) * 64;
-	unsigned int i;
-	if (!initialized)
-		return 2;
-	if (page >= 30)
-		return 4;
-	if (protected_block && page < (protected_block + 1) * 2)
-		return 7;
-	command(4, 1);
-	arelink_write_data(0x7100, &zero, 1);
-	select_address(address, 0);
-	finish();
-	arelink_delay(10);
-	command(8, 1);
-	for (i = 0; i < 64; i += 16) {
-		/* Stock consumes PRNG/key/mask state before reading each input block.
-		 * Keep this order even when another writer changes the shared input.
-		 * TODO: serialization is a separate behavior change.
-		 */
-		nonce = arelink_random();
-		mask = frame_mask(nonce);
-		frame[0] = nonce;
-		if (encrypted & 1)
-			reverse_inline(data + i, frame + 1, 16);
-		else
-			copy_frame_input(data + i, frame + 1, 16);
-		DNS_0006_Func(frame + 1, 16, mask);
-		arelink_write_data(0x7100, frame, 17);
-		arelink_delay(1);
-		select_address_inline(address + i, encrypted & 1);
-	}
-	finish();
-	arelink_delay(15);
-	return 0;
+ u16 address;
+ u8 attempt=0;
+ if(!alpu_initialized_flag) return 2;
+ if(page>29) return 4;
+ if(alpu_protected_block && page<(alpu_protected_block+1)*2) return 7;
+ encrypted &= 1;
+ address=(page+0x200)*64;
+ DNS_0009_Func(0,8);
+ ___memset(alpu_receive,0,64);
+ for(;;) {
+  arelink_delay(1);
+  arelink_read_data(address,65,alpu_receive);
+  if(alpu_receive[0] || ++attempt>4) break;
+ }
+ DNS_0005_Func(alpu_receive,alpu_page_buffer,64);
+ if(encrypted==1) {
+  if(DNS_0003_Func(alpu_page_buffer,64)!=0)
+   DNS_0016_Func(alpu_page_buffer,data,64);
+  else ___memcpy(data,alpu_page_buffer,64);
+ } else ___memcpy(data,alpu_page_buffer,64);
+ return 0;
+}
+
+/* Stock setup writes one zero byte and ignores every transport status. */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0018_Func(u16 address)
+{
+ u8 zero __attribute__((aligned(8)));
+ DNS_0009_Func(4,1);
+ zero=0;
+ arelink_write_data(0x7100,&zero,1);
+ DNS_0010_Func(address,0);
+ DNS_0011_Func(0);
+ arelink_delay(10);
+}
+
+/* Stock uses a byte progress counter, which can wrap and keep long
+ * transfers running indefinitely. Preserve it for compatibility.
+ * TODO: fix the length/progress type in a behavior-changing patch.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0017_Func(const u8 *data,int length,u16 address,u8 encrypted)
+{
+ u8 frame[17] __attribute__((aligned(8)));
+ u8 mask,nonce,j,done,blocks;
+ const u8 *cursor;
+ blocks=0;done=0;
+ while(done<length) {
+  blocks++;
+  nonce=arelink_random();
+  mask=DNS_0004_Func(nonce);
+  frame[0]=nonce;
+  if(encrypted==1) {
+   cursor=data+15;
+   j=0;
+   while(j<=15) {frame[j+1]=*cursor--;j++;}
+   data+=16;
+  } else {
+   j=0;
+   while(j<=15) {frame[j+1]=*data++;j++;}
+  }
+  DNS_0006_Func(frame+1,16,mask);
+  arelink_write_data(0x7100,frame,17);
+  arelink_delay(1);
+  frame[0]=address>>8;
+  frame[1]=address;
+  frame[2]=encrypted;
+  arelink_write_data(0x7008,frame,3);
+  address+=16;
+  done+=16;
+ }
+ DNS_0011_Func(0);
+ arelink_delay(15);
+}
+
+/* Stock validates initialization, page and protection before writing.
+ * Transport statuses from setup and transfer are ignored. Preserve both.
+ * TODO: validate transport errors in a separate behavior-changing patch.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static u8 arelink_page_write(u8 page,const u8 *data,u8 encrypted)
+{
+ u16 address;
+ if(!alpu_initialized_flag) return 2;
+ if(page>29) return 4;
+ if(alpu_protected_block && page<(alpu_protected_block+1)*2) return 7;
+ encrypted &= 1;
+ address=(page+0x200)*64;
+ DNS_0018_Func(address);
+ DNS_0009_Func(8,1);
+ DNS_0017_Func(data,64,address,encrypted);
+ return 0;
 }
 
 /* Stock checks authentication before the data pointer, ignores the
