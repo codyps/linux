@@ -324,7 +324,7 @@ static int sensor_detect(struct v4l2_subdev *sd)
 	SENSOR_ID |= (val << 8);
 	sensor_read(sd, 0x0001, &val);
 	SENSOR_ID |= (val);
-	sensor_print(" hhz V4L2_IDENT_SENSOR = 0x%x\n", SENSOR_ID);
+	sensor_print("V4L2_IDENT_SENSOR = 0x%x\n", SENSOR_ID);
 	sensor_write(sd, 0x328d, 0x50);
 
 	while ((SENSOR_ID != V4L2_IDENT_SENSOR) && (cnt < 3)) {
