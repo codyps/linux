@@ -756,21 +756,32 @@ u8 arelink_req_cypher(const u8 *input, u8 *output)
 	return 0;
 }
 
-u8 arelink_authentication(u8 size, u32 seed, const u8 *challenge)
+extern u8 alpu_authenticated;
+__asm__(".local alpu_authenticated\n.type alpu_authenticated,%object\n.set alpu_authenticated,alpu_state+584\n.size alpu_authenticated,1\n");
+/* Compatible saved arguments, status byte and eight-byte-aligned buffer slots.
+ * Original declarations/extents/flags remain unknown. Preserve dead status
+ * initialization and the ignored key-size error. Zero seed leaves state alone.
+ * TODO: validate the setter result and serialize shared state separately.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+u8 arelink_authentication(u8 size,u32 seed,const u8 *challenge)
 {
-	u8 encrypted[16], response[16];
-	authenticated = 0;
-	if (seed)
-		arelink_srand(seed);
-	arelink_set_aes_key_size(size);
-	if (!arelink_req_sw_enc_dec(challenge, encrypted, 0)) {
-		___memset(response, 0, 16);
-		arelink_delay(2);
-		if (!arelink_req_cypher(encrypted, response) &&
-		    !___memcmp(challenge, response, 16))
-			authenticated = 1;
-	}
-	return authenticated;
+ u8 status=0;
+ u8 encrypted[16] __attribute__((aligned(8)));
+ u8 response[16] __attribute__((aligned(8)));
+ alpu_authenticated=0;
+ if(seed) arelink_srand(seed);
+ status=arelink_set_aes_key_size(size);
+ status=arelink_req_sw_enc_dec(challenge,encrypted,0);
+ if(status==0) {
+  ___memset(response,0,16);
+  arelink_delay(2);
+  status=arelink_req_cypher(encrypted,response);
+  if(status==0) {
+   if((signed char)___memcmp(challenge,response,16)==0) alpu_authenticated=1;
+  }
+ }
+ return alpu_authenticated;
 }
 
 static u8 set_password(u8 block, u32 password)
