@@ -53,11 +53,19 @@ void I2CMasterInit(void)
 
 void I2CMasterStart(void)
 {
+	/* Stock keeps one two-microsecond delay value in x19 across both
+	 * calls.  The register constraint preserves the native instruction
+	 * layout; the original C declaration is unknown.  Stock ignores GPIO
+	 * failures here. TODO: propagate them in a separate behavior fix.
+	 */
+	register unsigned long ticks asm("x19");
 	gpio_direction_output(ALPU_SDA, 1);
 	gpio_direction_output(ALPU_SCL, 1);
-	__udelay(2);
+	ticks = 2;
+	asm volatile("" : "+r" (ticks));
+	__udelay(ticks);
 	gpio_direction_output(ALPU_SDA, 0);
-	__udelay(2);
+	__udelay(ticks);
 	gpio_direction_output(ALPU_SCL, 0);
 }
 
