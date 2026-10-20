@@ -208,6 +208,35 @@ __attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) s
  arelink_write_data(0x6000,frame,6);
 }
 
+/* Compatible private frames. Sixteen-byte capacity preserves the observed
+ * argument and wire slots, but the original array extents are unknown.
+ * Only5/3/1 bytes are written or sent; do not initialize the unused tails.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) static void DNS_0009_Func(u8 mode,u8 operation)
+{
+ u8 frame[16];
+ frame[0]=0x80;
+ frame[1]=0xc3;
+ frame[2]=0x68;
+ frame[3]=mode;
+ frame[4]=operation;
+ arelink_write_data(0x7000,frame,5);
+}
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) static void DNS_0010_Func(u16 address,u8 operation)
+{
+ u8 frame[16];
+ frame[0]=address>>8;
+ frame[1]=address;
+ frame[2]=operation;
+ arelink_write_data(0x7008,frame,3);
+}
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) static void DNS_0011_Func(u8 value)
+{
+ u8 frame[16];
+ frame[0]=value;
+ arelink_write_data(0x7004,frame,1);
+}
+
 /* Stock input builders use inline byte loops, not DNS_0007 calls.
  * Keep external reads byte-wide and ordered; caller private frames remain
  * reconstructed. TODO: synchronization/overlap repairs are separate changes.
@@ -232,22 +261,14 @@ static void send_frame(u16 address, u8 *frame, unsigned int count)
  arelink_write_data(address,frame,count+1);
 }
 
-static void command(u8 mode, u8 operation)
-{
-	u8 data[] = { 0x80, 0xc3, 0x68, mode, operation };
-	arelink_write_data(0x7000, data, sizeof(data));
-}
+#define command DNS_0009_Func
+#define select_address DNS_0010_Func
+#define finish() DNS_0011_Func(0)
 
-static void select_address(u16 address, u8 operation)
+static inline __attribute__((always_inline)) void select_address_inline(u16 address, u8 operation)
 {
 	u8 data[] = { address >> 8, address, operation };
 	arelink_write_data(0x7008, data, sizeof(data));
-}
-
-static void finish(void)
-{
-	u8 zero = 0;
-	arelink_write_data(0x7004, &zero, 1);
 }
 
 static void cipher_request(const u8 *input, u8 decrypt, u8 reverse_input)
@@ -936,7 +957,7 @@ static u8 arelink_page_write(u8 page, const u8 *data, u8 encrypted)
 		DNS_0006_Func(frame + 1, 16, mask);
 		arelink_write_data(0x7100, frame, 17);
 		arelink_delay(1);
-		select_address(address + i, encrypted & 1);
+		select_address_inline(address + i, encrypted & 1);
 	}
 	finish();
 	arelink_delay(15);
