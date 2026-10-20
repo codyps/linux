@@ -182,6 +182,32 @@ static void DNS_0007_Func(const u8 *input,u8 *output,u8 count)
  for(;i<count;i++) *output++=*end--;
 }
 
+/* A typed view of the same stock password words; no new storage.
+ * The four independently decoded loads must remain separate and word-wide.
+ */
+extern volatile u32 alpu_passwords[16];
+__asm__(".local alpu_passwords\n.type alpu_passwords,%object\n.set alpu_passwords,alpu_state+328\n.size alpu_passwords,64\n");
+/* Compatible private-frame spelling, not recovered original declarations.
+ * Six wire bytes live at frame+0; its eight unused tail bytes preserve the
+ * observed slots below mask/nonce. The original array extent is unknown.
+ * Four word reads intentionally permit mixed passwords. TODO: serialization
+ * and index validation belong in separate fixes; the caller checks block<15.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) static void DNS_0008_Func(u8 block)
+{
+ u8 nonce,mask,frame[14];
+ nonce=arelink_random();
+ mask=DNS_0004_Func(nonce);
+ frame[0]=nonce;
+ frame[1]=block;
+ frame[2]=(u8)(alpu_passwords[block]>>24);
+ *((u8 *)&frame[2]+1)=(u8)(alpu_passwords[block]>>16);
+ *((u8 *)&frame[2]+2)=(u8)(alpu_passwords[block]>>8);
+ *((u8 *)&frame[2]+3)=(u8)alpu_passwords[block];
+ DNS_0006_Func(frame+1,5,mask);
+ arelink_write_data(0x6000,frame,6);
+}
+
 /* Stock input builders use inline byte loops, not DNS_0007 calls.
  * Keep external reads byte-wide and ordered; caller private frames remain
  * reconstructed. TODO: synchronization/overlap repairs are separate changes.
@@ -745,22 +771,8 @@ static void password_frame(u8 *frame, u8 block, u32 password)
 
 static void read_block_status(u8 block)
 {
-	u8 frame[6], decoded[2], nonce, mask;
-	volatile u32 *shared_passwords = (volatile u32 *)passwords;
-	/* Stock generates the mask BEFORE reading the shared password, and reads
-	 * the word again for each byte. Preserve possible mixed-word frames.
-	 * TODO: serialize/snapshot passwords only as a separate behavior fix.
-	 */
-	nonce = arelink_random();
-	mask = frame_mask(nonce);
-	frame[0] = nonce;
-	frame[1] = block;
-	frame[2] = shared_passwords[block] >> 24;
-	frame[3] = shared_passwords[block] >> 16;
-	frame[4] = shared_passwords[block] >> 8;
-	frame[5] = shared_passwords[block];
-	DNS_0006_Func(frame + 1, 5, mask);
-	arelink_write_data(0x6000, frame, 6);
+	u8 decoded[2];
+	DNS_0008_Func(block);
 	arelink_read_data(0x6010, 3, receive_buffer);
 	unpack(receive_buffer, decoded, 2);
 	block_status = (decoded[0] << 8) | decoded[1];
