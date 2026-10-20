@@ -696,17 +696,30 @@ u8 get_lib_version(u8 *output, u8 *length)
 	return 0;
 }
 
-u8 arelink_set_aes_key_size(u8 size)
+extern u8 alpu_key_size;
+/* Compatible slots and frame capacities, not original declaration proof.
+ * The setter reloads the shared selector after its store: a writer can change
+ * the transmitted value, even beyond the checked0..2 range. Preserve that race.
+ * TODO: locking and revalidation belong in a separate behavior change.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) static void DNS_0013_Func(u8 selector)
 {
-	u8 frame[2];
-	if (!initialized)
-		return 2;
-	if (size > 2)
-		return 3;
-	key_size = size;
-	frame[1] = size;
-	send_frame(0x5010, frame, 1);
-	return 0;
+ u8 nonce,mask;
+ u8 frame[2] __attribute__((aligned(8)));
+ nonce=arelink_random();
+ mask=DNS_0004_Func(nonce);
+ frame[0]=nonce;
+ frame[1]=selector;
+ DNS_0006_Func(frame+1,1,mask);
+ arelink_write_data(0x5010,frame,2);
+}
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) u8 arelink_set_aes_key_size(u8 size)
+{
+ if(!alpu_initialized_flag) return 2;
+ if(size>2) return 3;
+ alpu_key_size=size;
+ DNS_0013_Func(alpu_key_size);
+ return 0;
 }
 
 u8 arelink_req_enc_dec(const u8 *input, u8 *output, u8 decrypt)
@@ -745,14 +758,17 @@ u8 arelink_req_sw_enc_dec(const u8 *input,u8 *output,u8 decrypt)
  }
 }
 
-u8 arelink_bypass_mode(const u8 *input, u8 *output)
+/* Stock tests initialization only once and ignores transport status. Buffers
+ * and aliases remain unchecked. TODO: bounds/error/serialization fixes must
+ * remain separate from this compatible native reconstruction.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) u8 arelink_bypass_mode(const u8 *input,u8 *output)
 {
-	if (!initialized)
-		return 2;
-	arelink_write_data(0x4000, input, 16);
-	arelink_delay(1);
-	arelink_read_data(0x4000, 16, output);
-	return 0;
+ if(!alpu_initialized_flag) return 2;
+ arelink_write_data(0x4000,input,16);
+ arelink_delay(1);
+ arelink_read_data(0x4000,16,output);
+ return 0;
 }
 
 u8 arelink_req_cypher(const u8 *input, u8 *output)
