@@ -66,20 +66,6 @@ static unsigned int * const trimui_scale_by_led[32] = {
 #define trimui_suspended trimui_led_state.suspended
 #define trimui_wire_frame trimui_led_state.wire_frame
 #define trimui_anim_frames trimui_led_state.anim_frames
-/* Stock treats negative capacity errors as low battery; TODO: handle read errors separately. */
-static void check_battery(void)
-{
-	trimui_low_battery = trimui_axp2202_get_bat_cap() < 16;
-}
-
-static noinline void trimui_led_power_disable(void)
-{
-	/* Stock ignores GPIO direction/output failures, including at shutdown.
-	 * TODO: handle those failures separately from this reconstruction.
-	 */
-	gpio_direction_output(107, 0);
-}
-
 /* Compatible views of rooted stock fields; no independent allocation.
  * Original C declarations are unknown. The config alias inherits the
  * four-byte ELF extent of its scalar root, not the full C view below. */
@@ -92,6 +78,26 @@ extern struct trimui_transfer_state_view trimui_transfer_state;
 extern struct trimui_transfer_config_view trimui_transfer_config;
 asm(".local trimui_transfer_state\n.type trimui_transfer_state,%object\n.set trimui_transfer_state,trimui_led_state+0x43f8\n.size trimui_transfer_state,0xbec\n"
     ".local trimui_transfer_config\n.type trimui_transfer_config,%object\n.set trimui_transfer_config,trimui_limit\n.size trimui_transfer_config,4\n");
+/* Stock retains two distinct stores, including on negative capacity errors.
+ * Keep its out-of-line helper and the same state view used by frame output.
+ * TODO: report power-supply read failures in a separate behavior change.
+ */
+static noinline void check_battery(void)
+{
+	if (trimui_axp2202_get_bat_cap() < 16)
+		trimui_transfer_state.low_battery = 1;
+	else
+		trimui_transfer_state.low_battery = 0;
+}
+
+static noinline void trimui_led_power_disable(void)
+{
+	/* Stock ignores GPIO direction/output failures, including at shutdown.
+	 * TODO: handle those failures separately from this reconstruction.
+	 */
+	gpio_direction_output(107, 0);
+}
+
 static void commit_static_frame(void)
 {
  /* Stock keeps this initial mutex even if the global device changes.
