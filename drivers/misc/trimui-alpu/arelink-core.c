@@ -722,25 +722,59 @@ __attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) u
  return 0;
 }
 
-u8 arelink_req_enc_dec(const u8 *input, u8 *output, u8 decrypt)
+/* Stock duplicates both polling branches, sends once before polling, and
+ * clears receive only once. Short later reads retain old payload bytes.
+ * It ignores transport status and leaves shared state unsynchronized.
+ * TODO: fix those bugs separately from this compatible reconstruction.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0014_Func(const u8 *input,u8 decrypt,u8 reverse_input)
 {
-	u8 decoded[16];
-	unsigned int attempt;
-	if (!initialized)
-		return 2;
-	if (decrypt > 1)
-		return 3;
-	___memset(receive_buffer, 0, 17);
-	cipher_request(input, decrypt, 1);
-	for (attempt = 0; attempt < 5; attempt++) {
-		arelink_delay(1);
-		arelink_read_data(0x2000, 17, receive_buffer);
-		if (receive_buffer[0])
-			break;
-	}
-	unpack(receive_buffer, decoded, 16);
-	DNS_0007_Func(decoded, output, 16);
-	return 0;
+ u8 i,nonce,mask;
+ u8 frame[18] __attribute__((aligned(8)));
+ const u8 *cursor;
+ if(reverse_input==1) {
+  cursor=input+15;
+  for(i=0;i<=15;i++) frame[i+1]=*cursor--;
+ } else {
+  for(i=0;i<=15;i++) frame[i+1]=*input++;
+ }
+ nonce=arelink_random();
+ mask=DNS_0004_Func(nonce);
+ frame[0]=nonce;
+ frame[17]=decrypt;
+ DNS_0006_Func(frame+1,17,mask);
+ arelink_write_data(0x2000,frame,18);
+}
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+u8 arelink_req_enc_dec(const u8 *input,u8 *output,u8 decrypt)
+{
+ u8 decoded[16] __attribute__((aligned(8)));
+ u8 attempt=0;
+ if(!alpu_initialized_flag) return 2;
+ if(decrypt>1) return 3;
+ ___memset(alpu_receive,0,17);
+ if(decrypt==0) {
+  DNS_0014_Func(input,0,1);
+  for(;;) {
+   arelink_delay(1);
+   arelink_read_data(0x2000,17,alpu_receive);
+   if(alpu_receive[0] || ++attempt>4) break;
+  }
+  DNS_0005_Func(alpu_receive,decoded,16);
+  DNS_0007_Func(decoded,output,16);
+  return 0;
+ } else {
+  DNS_0014_Func(input,1,1);
+  for(;;) {
+   arelink_delay(1);
+   arelink_read_data(0x2000,17,alpu_receive);
+   if(alpu_receive[0] || ++attempt>4) break;
+  }
+  DNS_0005_Func(alpu_receive,decoded,16);
+  DNS_0007_Func(decoded,output,16);
+  return 0;
+ }
 }
 
 extern u8 alpu_key_size, alpu_key[32];
