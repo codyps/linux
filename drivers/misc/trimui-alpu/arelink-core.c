@@ -162,22 +162,48 @@ static void DNS_0005_Func(const u8 *input,u8 *output,u8 count)
 #define frame_mask DNS_0004_Func
 #define unpack DNS_0005_Func
 
-static void reverse(const u8 *input, u8 *output, unsigned int count)
+/* Compatible native bodies; original C spelling/types/flags remain unknown.
+ * Counts and XOR masks truncate to bytes. Reverse-copy reads/writes sequentially;
+ * overlapping input/output can overwrite later input. An empty reverse computes
+ * its before-start end pointer but never dereferences it. TODO: overlap and empty
+ * pointer-policy changes belong in separate fixes, not stock reconstruction.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0006_Func(u8 *data,u8 count,u8 mask)
 {
-	unsigned int i;
-	for (i = 0; i < count; i++)
-		output[i] = input[count - 1 - i];
+ u8 i=0;
+ for(;i<count;i++) *data++ ^=mask;
+}
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0007_Func(const u8 *input,u8 *output,u8 count)
+{
+ const u8 *end=input+count-1;
+ u8 i=0;
+ for(;i<count;i++) *output++=*end--;
+}
+
+/* Stock input builders use inline byte loops, not DNS_0007 calls.
+ * Keep external reads byte-wide and ordered; caller private frames remain
+ * reconstructed. TODO: synchronization/overlap repairs are separate changes.
+ */
+static inline __attribute__((always_inline)) void reverse_inline(const u8 *input, u8 *output, u8 count)
+{
+ u8 i;
+ for(i=0;i<count;i++) output[i]=((const volatile u8 *)input)[count-1-i];
+}
+static inline __attribute__((always_inline)) void copy_frame_input(const u8 *input, u8 *output, u8 count)
+{
+ u8 i;
+ for(i=0;i<count;i++) output[i]=((const volatile u8 *)input)[i];
 }
 
 static void send_frame(u16 address, u8 *frame, unsigned int count)
 {
-	u8 mask;
-	unsigned int i;
-	frame[0] = arelink_random();
-	mask = frame_mask(frame[0]);
-	for (i = 1; i <= count; i++)
-		frame[i] ^= mask;
-	arelink_write_data(address, frame, count + 1);
+ u8 mask;
+ frame[0]=arelink_random();
+ mask=frame_mask(frame[0]);
+ DNS_0006_Func(frame+1,count,mask);
+ arelink_write_data(address,frame,count+1);
 }
 
 static void command(u8 mode, u8 operation)
@@ -202,9 +228,9 @@ static void cipher_request(const u8 *input, u8 decrypt, u8 reverse_input)
 {
 	u8 frame[18];
 	if (reverse_input)
-		reverse(input, frame + 1, 16);
+		reverse_inline(input, frame + 1, 16);
 	else
-		memcpy(frame + 1, input, 16);
+		copy_frame_input(input, frame + 1, 16);
 	frame[17] = decrypt;
 	send_frame(0x2000, frame, 17);
 }
@@ -629,7 +655,7 @@ u8 arelink_req_enc_dec(const u8 *input, u8 *output, u8 decrypt)
 			break;
 	}
 	unpack(receive_buffer, decoded, 16);
-	reverse(decoded, output, 16);
+	DNS_0007_Func(decoded, output, 16);
 	return 0;
 }
 
@@ -665,7 +691,7 @@ u8 arelink_req_cypher(const u8 *input, u8 *output)
 	if (!initialized)
 		return 2;
 	___memset(receive_buffer, 0, 16);
-	reverse(input, frame + 1, 16);
+	reverse_inline(input, frame + 1, 16);
 	send_frame(0, frame, 16);
 	arelink_delay(1);
 	___memset(receive_buffer, 0, 17);
@@ -675,7 +701,7 @@ u8 arelink_req_cypher(const u8 *input, u8 *output)
 			break;
 	}
 	unpack(receive_buffer, decoded, 16);
-	reverse(decoded, output, 16);
+	DNS_0007_Func(decoded, output, 16);
 	return 0;
 }
 
@@ -719,9 +745,22 @@ static void password_frame(u8 *frame, u8 block, u32 password)
 
 static void read_block_status(u8 block)
 {
-	u8 frame[6], decoded[2];
-	password_frame(frame, block, passwords[block]);
-	send_frame(0x6000, frame, 5);
+	u8 frame[6], decoded[2], nonce, mask;
+	volatile u32 *shared_passwords = (volatile u32 *)passwords;
+	/* Stock generates the mask BEFORE reading the shared password, and reads
+	 * the word again for each byte. Preserve possible mixed-word frames.
+	 * TODO: serialize/snapshot passwords only as a separate behavior fix.
+	 */
+	nonce = arelink_random();
+	mask = frame_mask(nonce);
+	frame[0] = nonce;
+	frame[1] = block;
+	frame[2] = shared_passwords[block] >> 24;
+	frame[3] = shared_passwords[block] >> 16;
+	frame[4] = shared_passwords[block] >> 8;
+	frame[5] = shared_passwords[block];
+	DNS_0006_Func(frame + 1, 5, mask);
+	arelink_write_data(0x6000, frame, 6);
 	arelink_read_data(0x6010, 3, receive_buffer);
 	unpack(receive_buffer, decoded, 2);
 	block_status = (decoded[0] << 8) | decoded[1];
@@ -770,10 +809,12 @@ static u8 arelink_change_password(u8 block, u32 password)
 	 * Keep one table-read sequence even with the retained native helper.
 	 */
 	mask = frame_mask(frame[0]);
-	for (attempt = 1; attempt < 6; attempt++)
-		frame[attempt] ^= mask;
+	DNS_0006_Func(frame + 1, 5, mask);
 	for (attempt = 0; attempt < 6; attempt++) {
 		arelink_write_data(0x6020, frame, 6);
+		/* A permanently busy response spins forever in stock.
+		 * TODO: bounded polling belongs in a separate behavior fix.
+		 */
 		do {
 			___memset(receive_buffer, 0, 2);
 			arelink_delay(2);
@@ -846,14 +887,14 @@ static u8 arelink_page_read(u8 page, u8 *data, u8 encrypted)
 				break;
 		}
 		unpack(receive_buffer, decoded, 16);
-		reverse(decoded, data + i, 16);
+		DNS_0007_Func(decoded, data + i, 16);
 	}
 	return 0;
 }
 
 static u8 arelink_page_write(u8 page, const u8 *data, u8 encrypted)
 {
-	u8 frame[17], zero = 0;
+	u8 frame[17], zero = 0, nonce, mask;
 	u16 address = (page + 0x200) * 64;
 	unsigned int i;
 	if (!initialized)
@@ -869,11 +910,19 @@ static u8 arelink_page_write(u8 page, const u8 *data, u8 encrypted)
 	arelink_delay(10);
 	command(8, 1);
 	for (i = 0; i < 64; i += 16) {
+		/* Stock consumes PRNG/key/mask state before reading each input block.
+		 * Keep this order even when another writer changes the shared input.
+		 * TODO: serialization is a separate behavior change.
+		 */
+		nonce = arelink_random();
+		mask = frame_mask(nonce);
+		frame[0] = nonce;
 		if (encrypted & 1)
-			reverse(data + i, frame + 1, 16);
+			reverse_inline(data + i, frame + 1, 16);
 		else
-			memcpy(frame + 1, data + i, 16);
-		send_frame(0x7100, frame, 16);
+			copy_frame_input(data + i, frame + 1, 16);
+		DNS_0006_Func(frame + 1, 16, mask);
+		arelink_write_data(0x7100, frame, 17);
 		arelink_delay(1);
 		select_address(address + i, encrypted & 1);
 	}
