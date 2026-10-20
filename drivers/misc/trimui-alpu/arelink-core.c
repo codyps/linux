@@ -870,98 +870,105 @@ u8 arelink_authentication(u8 size,u32 seed,const u8 *challenge)
  return alpu_authenticated;
 }
 
-static u8 set_password(u8 block, u32 password)
+/* Stock masks the index only after rejecting blocks above fourteen.
+ * The protection test precedes the mask; keep this ordering.
+ */
+extern u8 alpu_protected_block;
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static u8 set_password(u8 block,u32 password)
 {
-	if (!initialized)
-		return 2;
-	if (block >= 15)
-		return 5;
-	if (protected_block && block < protected_block + 1)
-		return 8;
-	passwords[block] = password;
-	return 0;
+ if(!alpu_initialized_flag) return 2;
+ if(block>14) return 5;
+ if(alpu_protected_block && block<alpu_protected_block+1) return 8;
+ block &= 15;
+ alpu_passwords[block]=password;
+ return 0;
 }
 
-static void password_frame(u8 *frame, u8 block, u32 password)
+/* Stock polls six status samples per round and ignores transport return values.
+ * Preserve the byte counters and signed halfword arithmetic. Stock
+ * dereferences result without checking for NULL; fix separately.
+ */
+extern u16 alpu_block_status;
+__asm__(".local alpu_block_status\n.type alpu_block_status,%object\n.set alpu_block_status,alpu_initialized+8\n.size alpu_block_status,2\n");
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static u8 check_block_auth_status(u8 block,u8 *result)
 {
-	frame[1] = block;
-	frame[2] = password >> 24;
-	frame[3] = password >> 16;
-	frame[4] = password >> 8;
-	frame[5] = password;
+ u8 decoded[5],attempt=0,clear=0,set=0;
+ if(!alpu_initialized_flag) return 2;
+ if(block>14) return 5;
+ if(alpu_protected_block && block<alpu_protected_block+1) return 8;
+ block &= 15;
+ ___memset(alpu_receive,255,3);
+again_first:
+ DNS_0008_Func(block);
+ arelink_read_data(0x6010,3,alpu_receive);
+ DNS_0005_Func(alpu_receive,decoded,2);
+ alpu_block_status=(u16)(s16)((s16)(decoded[0]<<8)|(s16)decoded[1]);
+ if((alpu_block_status>>block)&1) set++;
+ else clear++;
+ if(attempt++<=4) goto again_first;
+ if(set>clear) *result=0;else *result=1;
+ attempt=0;
+again_second:
+ DNS_0008_Func(block);
+ arelink_read_data(0x6010,3,alpu_receive);
+ DNS_0005_Func(alpu_receive,decoded,2);
+ alpu_block_status=(u16)(s16)((s16)(decoded[0]<<8)|(s16)decoded[1]);
+ if((alpu_block_status>>block)&1) {
+  if(*result==0) goto done;
+ } else {
+  if(*result==1) goto done;
+ }
+ if(attempt++<=4) goto again_second;
+done:
+ return 0;
 }
 
-static void read_block_status(u8 block)
+/* Stock sends up to six requests, but polls a busy response without a limit.
+ * Preserve that nontermination; TODO: bound it in a separate behavior fix.
+ * The unused tails of the aligned frames retain the stock stack layout;
+ * their original C extents are unknown.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static u8 arelink_change_password(u8 block,u32 password)
 {
-	u8 decoded[2];
-	DNS_0008_Func(block);
-	arelink_read_data(0x6010, 3, receive_buffer);
-	unpack(receive_buffer, decoded, 2);
-	block_status = (decoded[0] << 8) | decoded[1];
-}
-
-static u8 check_block_auth_status(u8 block, u8 *result)
-{
-	unsigned int i, clear = 0, set = 0;
-	if (!initialized)
-		return 2;
-	if (block >= 15)
-		return 5;
-	if (protected_block && block < protected_block + 1)
-		return 8;
-	___memset(receive_buffer, 255, 3);
-	for (i = 0; i < 6; i++) {
-		read_block_status(block & 15);
-		if (block_status & (1 << block))
-			set++;
-		else
-			clear++;
-	}
-	*result = clear < set ? 0 : 1;
-	for (i = 0; i < 6; i++) {
-		read_block_status(block & 15);
-		if (!!(block_status & (1 << block)) != *result)
-			break;
-	}
-	return 0;
-}
-
-static u8 arelink_change_password(u8 block, u32 password)
-{
-	u8 frame[6], status, mask;
-	unsigned int attempt;
-	if (!initialized)
-		return 2;
-	if (block >= 15)
-		return 5;
-	if (protected_block && block < protected_block + 1)
-		return 8;
-	password_frame(frame, block, password);
-	/* One random mask is reused across retries in the stock protocol. */
-	frame[0] = arelink_random();
-	/* Stock caches one mask for all five bytes and every retry.
-	 * Keep one table-read sequence even with the retained native helper.
-	 */
-	mask = frame_mask(frame[0]);
-	DNS_0006_Func(frame + 1, 5, mask);
-	for (attempt = 0; attempt < 6; attempt++) {
-		arelink_write_data(0x6020, frame, 6);
-		/* A permanently busy response spins forever in stock.
-		 * TODO: bounded polling belongs in a separate behavior fix.
-		 */
-		do {
-			___memset(receive_buffer, 0, 2);
-			arelink_delay(2);
-			arelink_read_data(0x6030, 2, receive_buffer);
-			unpack(receive_buffer, &status, 1);
-		} while (status & 0x10);
-		if (!(status & 0x80))
-			return 0;
-	}
-	frame[1] = 1;
-	send_frame(0x6040, frame, 1);
-	arelink_delay(20);
-	return 9;
+ u8 frame[16] __attribute__((aligned(8)));
+ u8 decoded[8] __attribute__((aligned(8)));
+ u8 status,mask,nonce,attempt=0;
+ if(!alpu_initialized_flag) return 2;
+ if(block>14) return 5;
+ if(alpu_protected_block && block<alpu_protected_block+1) return 8;
+ nonce=arelink_random();
+ mask=DNS_0004_Func(nonce);
+ frame[0]=nonce;
+ frame[1]=block;
+ frame[2]=(u8)(password>>24);
+ *((u8 *)&frame[2]+1)=(u8)(password>>16);
+ *((u8 *)&frame[2]+2)=(u8)(password>>8);
+ *((u8 *)&frame[2]+3)=(u8)password;
+ DNS_0006_Func(frame+1,5,mask);
+again:
+ arelink_write_data(0x6020,frame,6);
+ do {
+  ___memset(receive_buffer,0,2);
+  arelink_delay(2);
+  arelink_read_data(0x6030,2,receive_buffer);
+  DNS_0005_Func(receive_buffer,decoded,1);
+  status=decoded[0];
+ } while(status&0x10);
+ if((s8)status<0) {
+  if(attempt++<=4) goto again;
+  nonce=arelink_random();
+  mask=DNS_0004_Func(nonce);
+  frame[0]=nonce;
+  frame[1]=1;
+  DNS_0006_Func(frame+1,1,mask);
+  arelink_write_data(0x6040,frame,2);
+  arelink_delay(20);
+  return 9;
+ }
+ return 0;
 }
 
 /* Stock's private blank-page classifier uses byte counters and returns0
