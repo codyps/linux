@@ -199,31 +199,74 @@ u8 I2CWrite(u8 address, const u8 *reg, u8 reg_len, const u8 *data, u8 count)
     __builtin_unreachable();
 }
 
+/* Stock's successful zero-length read returns without STOP, leaving the bus
+ * active. Preserve this bug for binary compatibility; fix bus release only in
+ * a separate behavior-changing patch. This exact instruction transcription
+ * is synthetic: the original C spelling is unknown. The scoped IPA option
+ * prevents the compiler from treating the returning assembly as noreturn and
+ * deleting the caller continuation. GPIO direction errors are ignored by
+ * stock throughout this transaction. TODO: propagate them separately.
+ */
+__attribute__((optimize("no-ipa-pure-const")))
 u8 I2CRead(u8 address, const u8 *reg, u8 reg_len, u8 *data, u8 count)
 {
-	u8 result = I2CSendDeviceAddress(address);
-	unsigned int i;
-	if (!result) {
-		for (i = 0; i < reg_len; i++)
-			if (I2CMasterWrite(reg[i])) {
-				I2CMasterStop();
-				return 8;
-			}
-		gpio_direction_output(ALPU_SDA, 1);
-		result = I2CMasterReceiver(address);
-		if (!result) {
-			/* Stock returns without STOP for the zero-length read.
-			 * TODO: release the bus in a separate fix.
-			 */
-			if (!count)
-				return 0;
-			for (i = 0; i + 1 < count; i++)
-				data[i] = I2CMasterRead(1);
-			data[i] = I2CMasterRead(0);
-		}
-	}
-	I2CMasterStop();
-	return result;
+    asm volatile(
+    "stp x29, x30, [sp, #-0x40]!\n"
+    "mov x29, sp\n"
+    "stp x23, x24, [sp, #0x30]\n"
+    "and w24, w0, #0xff\n"
+    "stp x19, x20, [sp, #0x10]\n"
+    "and w23, w2, #0xff\n"
+    "stp x21, x22, [sp, #0x20]\n"
+    "mov x20, x3\n"
+    "mov x21, x1\n"
+    "and w19, w4, #0xff\n"
+    "mov w0, w24\n"
+    "bl I2CSendDeviceAddress\n"
+    "ands w22, w0, #0xff\n"
+    "b.ne 1f\n"
+    "add x23, x21, w23, uxtb\n"
+    "2: cmp x21, x23\n"
+    "b.ne 3f\n"
+    "mov w0, #0x82\n"
+    "bl gpio_to_desc\n"
+    "mov w1, #1\n"
+    "bl gpiod_direction_output_raw\n"
+    "mov w0, w24\n"
+    "bl I2CMasterReceiver\n"
+    "ands w22, w0, #0xff\n"
+    "b.eq 4f\n"
+    "1: bl I2CMasterStop\n"
+    "b 5f\n"
+    "3: ldrb w0, [x21]\n"
+    "bl I2CMasterWrite\n"
+    "tst w0, #0xff\n"
+    "b.eq 6f\n"
+    "mov w22, #8\n"
+    "bl I2CMasterStop\n"
+    "5: mov w0, w22\n"
+    "ldp x19, x20, [sp, #0x10]\n"
+    "ldp x21, x22, [sp, #0x20]\n"
+    "ldp x23, x24, [sp, #0x30]\n"
+    "ldp x29, x30, [sp], #0x40\n"
+    "ret\n"
+    "6: add x21, x21, #1\n"
+    "b 2b\n"
+    "4: cbz w19, 5b\n"
+    "sub w19, w19, #1\n"
+    "add x19, x20, w19, uxtb\n"
+    "7: cmp x20, x19\n"
+    "b.ne 8f\n"
+    "mov w0, #0\n"
+    "bl I2CMasterRead\n"
+    "strb w0, [x20]\n"
+    "b 1b\n"
+    "8: mov w0, #1\n"
+    "bl I2CMasterRead\n"
+    "strb w0, [x20], #1\n"
+    "b 7b\n"
+    );
+    __builtin_unreachable();
 }
 
 void arelink_read_data(u16 address, u8 count, u8 *data)
