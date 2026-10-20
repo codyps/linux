@@ -578,28 +578,48 @@ void DNS_0103_Func(const u8 *input,u8 *output)
 static void *___memset(void *destination, int value, unsigned int count);
 static void ___memcpy(void *destination, const void *source, u8 count);
 
+/* Typed views of the independently rooted stock fields; no new storage. */
+extern u8 alpu_key[32],alpu_mask[16],alpu_receive[72],alpu_protected;
+extern u16 alpu_status;
+__asm__(".local alpu_key\n.type alpu_key,%object\n.set alpu_key,alpu_state+552\n.size alpu_key,32\n"
+        ".local alpu_mask\n.type alpu_mask,%object\n.set alpu_mask,alpu_state+536\n.size alpu_mask,16\n"
+        ".local alpu_receive\n.type alpu_receive,%object\n.set alpu_receive,alpu_state+392\n.size alpu_receive,72\n"
+        ".local alpu_protected\n.type alpu_protected,%object\n.set alpu_protected,alpu_state+530\n.size alpu_protected,1\n"
+        ".local alpu_status\n.type alpu_status,%object\n.set alpu_status,alpu_initialized+8\n.size alpu_status,2\n");
+/* Compatible frame and observed buffer slot; original C types/extents/flags
+ * are unknown. Preserve all24 reads, stale-buffer completion, zero seeding,
+ * optional forward serial copy and the unconditional success result.
+ * Serial output is unchecked: aliases can overwrite the seed and key-size byte.
+ * TODO: alias validation, transport errors, seed repair and serialization are separate fixes.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
 u8 arelink_init(u8 *serial)
 {
-	u8 decoded[5];
-	unsigned int attempt;
-	DNS_0002_Func(arelink_encoded_key, key, 32, 0xab36);
-	DNS_0002_Func(arelink_encoded_mask, mask_table, 16, 0xab36);
-	___memset(receive_buffer, 255, 6);
-	for (attempt = 0; attempt < 24; attempt++) {
-		arelink_delay(1);
-		arelink_read_data(0x5000, 6, receive_buffer);
-		if ((receive_buffer[0] & 15) > 4)
-			break;
-	}
-	arelink_srand(receive_buffer[0]);
-	unpack(receive_buffer, decoded, 5);
-	if (serial)
-		___memcpy(serial, decoded, 5);
-	___memcpy(key, decoded, 5);
-	initialized = 1;
-	protected_block = 0;
-	block_status = 0xffff;
-	return 0;
+ u8 attempt=0;
+ u8 decoded[5] __attribute__((aligned(8)));
+ DNS_0002_Func(arelink_encoded_key,alpu_key,32,0xab36);
+ DNS_0002_Func(arelink_encoded_mask,alpu_mask,16,0xab36);
+ ___memset(alpu_receive,255,6);
+ for(;;) {
+  arelink_delay(1);
+  arelink_read_data(0x5000,6,alpu_receive);
+  if((alpu_receive[0]&15)>4 || ++attempt>23) break;
+ }
+ arelink_srand(alpu_receive[0]);
+ DNS_0005_Func(alpu_receive,decoded,5);
+ if(serial) ___memcpy(serial,decoded,5);
+ ___memcpy(alpu_key,decoded,5);
+ alpu_initialized_flag=1;
+ /* Stock materializes zero, masks it to four bits, then truncates to a byte.
+  * Retain that actual AND instruction rather than folding it away. This is
+  * a compatible native reconstruction, not a claim about the original C.
+  */
+ { register int zero __asm__("w0")=0;
+   __asm__("and %w0,%w0,#15" : "+r"(zero));
+   alpu_protected=zero;
+ }
+ alpu_status=0xffff;
+ return 0;
 }
 
 /* Stock's private helpers truncate lengths to a byte and copy forwards even
