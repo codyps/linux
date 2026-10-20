@@ -790,11 +790,15 @@ static int __vin_subdev_set_stream(struct v4l2_subdev *sd, unsigned int idx, int
 static int __vin_pipeline_s_stream(struct vin_pipeline *p, int on_idx)
 {
 	static const u8 seq[3][VIN_IND_MAX] = {
-		{ VIN_IND_CAPTURE, VIN_IND_ISP, VIN_IND_SENSOR, VIN_IND_CSI, VIN_IND_MIPI,
+		{ VIN_IND_SENSOR, VIN_IND_CAPTURE, VIN_IND_ISP, VIN_IND_CSI, VIN_IND_MIPI,
 			VIN_IND_SCALER, VIN_IND_TDM_RX },
-		{ VIN_IND_TDM_RX, VIN_IND_SENSOR, VIN_IND_MIPI, VIN_IND_ISP,
-			VIN_IND_SCALER, VIN_IND_CAPTURE, VIN_IND_CSI},
 		{ VIN_IND_TDM_RX, VIN_IND_MIPI, VIN_IND_SENSOR, VIN_IND_ISP,
+			VIN_IND_SCALER, VIN_IND_CAPTURE, VIN_IND_CSI},
+		/* Stock leaves the seventh slot zero-filled: SENSOR is visited last.
+		 * Keep this order, including its implicit entry, in both the forward
+		 * stream walk and the reverse error unwind.
+		 */
+		{ VIN_IND_TDM_RX, VIN_IND_MIPI, VIN_IND_ISP,
 			VIN_IND_SCALER, VIN_IND_CAPTURE, VIN_IND_CSI},
 	};
 	struct v4l2_mbus_config mcfg;
