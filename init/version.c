@@ -14,6 +14,18 @@
 #include <linux/version.h>
 #include <linux/proc_ns.h>
 
+/* Reproduce the OEM-visible #860 banner, including its compiler label.
+ * This is shipped data, not a claim that a reconstruction build used the
+ * unavailable OpenWrt compiler. Keep the actual compiler in the build record.
+ * TODO: build with the OEM executable if it becomes available.
+ */
+#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
+#define TRIMUI_REPORTED_COMPILER \
+	"gcc version 7.4.1 (OpenWrt/Linaro GCC 7.4-2019.02 2019-02) "
+#else
+#define TRIMUI_REPORTED_COMPILER LINUX_COMPILER
+#endif
+
 #ifndef CONFIG_KALLSYMS
 #define version(a) Version_ ## a
 #define version_string(a) version(a)
@@ -45,9 +57,9 @@ EXPORT_SYMBOL_GPL(init_uts_ns);
 /* FIXED STRINGS! Don't touch! */
 const char linux_banner[] =
 	"Linux version " UTS_RELEASE " (" LINUX_COMPILE_BY "@"
-	LINUX_COMPILE_HOST ") (" LINUX_COMPILER ") " UTS_VERSION "\n";
+	LINUX_COMPILE_HOST ") (" TRIMUI_REPORTED_COMPILER ") " UTS_VERSION "\n";
 
 const char linux_proc_banner[] =
 	"%s version %s"
 	" (" LINUX_COMPILE_BY "@" LINUX_COMPILE_HOST ")"
-	" (" LINUX_COMPILER ") %s\n";
+	" (" TRIMUI_REPORTED_COMPILER ") %s\n";
