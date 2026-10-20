@@ -152,6 +152,11 @@ static struct regval_list sensor_1600_1200_regs[] = {
 	{0x0100, 0x01},
 };
 
+/* Stock retains this initialized global even though the shipped sensor code
+ * does not read it. Keep the module's data layout and observable symbol.
+ */
+unsigned int BASEGAIN = 128;
+
 /*
  * Here we'll try to encapsulate the changes for just the output
  * video format.
