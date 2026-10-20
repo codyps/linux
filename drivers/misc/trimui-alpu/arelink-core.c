@@ -18,7 +18,12 @@ static struct {
     u8 reserved_2[2];
     volatile u32 random_state;
     u8 key_size;
-} __attribute__((packed)) alpu_initialized __attribute__((aligned(8))) = {
+/* The native block-status writer uses an assembler alias into this struct.
+ * GCC cannot see that write and otherwise moves the initialized state to
+ * .rodata, where stock's write would fault. Keep the stock-writable section.
+ */
+} __attribute__((packed)) alpu_initialized
+    __attribute__((aligned(8), section(".data"))) = {
     .version = arelink_lib_version, .block_status = 0xffff, .random_state = 0xa37f1da6, .key_size = 2,
 };
 #define random_state alpu_initialized.random_state
