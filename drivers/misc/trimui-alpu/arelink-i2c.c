@@ -144,16 +144,20 @@ u8 I2CMasterReceiver(u8 address)
 	return I2CMasterWrite(address | 1);
 }
 
-/* Stock has pointer-end loops and two STOP call sites. This bounded
- * transcription preserves the 160-byte body while keeping its position in
- * arelink-i2c.o; it is not the recovered original C spelling. The bus
- * primitives ignore GPIO direction failures, so this write path can report
- * success despite them. TODO: propagate those failures in a separate
- * behavior-changing fix.
+/* This explicit body preserves stock's pointer-end loops and two STOP sites.
+ * It is synthetic assembly, not recovered original C. Defining it at file
+ * scope keeps GCC from inferring that the returning assembly never returns;
+ * an inline body with __builtin_unreachable() shortened two stock callers.
+ * Stock also ignores GPIO direction failures in the bus primitives. TODO:
+ * report those failures only in a separate behavior-changing fix.
  */
-u8 I2CWrite(u8 address, const u8 *reg, u8 reg_len, const u8 *data, u8 count)
-{
-    asm volatile(
+u8 I2CWrite(u8 address, const u8 *reg, u8 reg_len, const u8 *data, u8 count);
+asm(
+    ".pushsection .text\n"
+    ".p2align 2\n"
+    ".global I2CWrite\n"
+    ".type I2CWrite,%function\n"
+    "I2CWrite:\n"
     "stp x29, x30, [sp, #-0x40]!\n"
     "mov x29, sp\n"
     "stp x19, x20, [sp, #0x10]\n"
@@ -194,9 +198,9 @@ u8 I2CWrite(u8 address, const u8 *reg, u8 reg_len, const u8 *data, u8 count)
     "b.ne 8b\n"
     "add x19, x19, #1\n"
     "b 4b\n"
-    );
-    __builtin_unreachable();
-}
+    ".size I2CWrite, .-I2CWrite\n"
+    ".popsection\n"
+);
 
 u8 I2CRead(u8 address, const u8 *reg, u8 reg_len, u8 *data, u8 count)
 {
