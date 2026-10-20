@@ -106,31 +106,61 @@ static void DNS_0002_Func(const u8 *input, u8 *output, u8 count, u16 state)
  }
 }
 
-/* DNS_0004: gather selected bits from two nibbles into a framing mask. */
-static u8 frame_mask(u8 nonce)
+/* Stock retains both helpers and computes the mask even for zero nonce/count.
+ * Preserve the ordered key/mask reads, byte truncation and overlapping copies.
+ * Masks with more than four selected bits can spill into the other nibble.
+ * TODO: validate masks and serialize shared state only as separate fixes.
+ * These are compatible native frames; original C declarations/flags are unknown.
+ */
+extern u8 alpu_frame_key[32], alpu_frame_mask[16];
+__asm__(".local alpu_frame_key\n.type alpu_frame_key,%object\n.set alpu_frame_key,alpu_state+552\n.size alpu_frame_key,32\n"
+        ".local alpu_frame_mask\n.type alpu_frame_mask,%object\n.set alpu_frame_mask,alpu_state+536\n.size alpu_frame_mask,16\n");
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static u8 DNS_0004_Func(u8 nonce)
 {
-	u8 sum = key[nonce & 15] + (nonce >> 4);
-	u8 selectors[2] = { mask_table[sum >> 4], mask_table[sum & 15] };
-	u8 inputs[2] = { sum, nonce }, result[2] = { 0, 0 };
-	unsigned int i, bit, out;
-	for (i = 0; i < 2; i++) {
-		out = 0;
-		for (bit = 0; bit < 8; bit++)
-			if (selectors[i] & (1 << bit)) {
-				result[i] |= ((inputs[i] >> bit) & 1) << out;
-				out++;
-			}
-	}
-	return (result[0] << 4) | result[1];
+ u8 low, high, sum, highmask, lowmask, result;
+ u8 lower, upper;
+ u8 i, position, selector, input;
+ low=nonce&15;
+ high=nonce>>4;
+ sum=alpu_frame_key[low]+high;
+ highmask=alpu_frame_mask[(u8)(sum>>4)&15];
+ lowmask=alpu_frame_mask[sum&15];
+ upper=0; position=0; selector=highmask; input=sum;
+ for(i=0;i<8;i++) {
+  if(selector&1) {
+   if(input&1) upper|=1<<position;
+   position++;
+  }
+  selector>>=1; input>>=1;
+ }
+ lower=0; position=0; selector=lowmask; input=nonce;
+ for(i=0;i<8;i++) {
+  if(selector&1) {
+   if(input&1) lower|=1<<position;
+   position++;
+  }
+  selector>>=1; input>>=1;
+ }
+ result=(upper<<4)|lower;
+ return result;
+}
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0005_Func(const u8 *input,u8 *output,u8 count)
+{
+ u8 i,nonce,mask;
+ nonce=*input++;
+ mask=DNS_0004_Func(nonce);
+ if(nonce==0) {
+  for(i=0;i<count;i++) *output++=*input++;
+ } else {
+  for(i=0;i<count;i++) *output++=*input++^mask;
+ }
 }
 
-static void unpack(const u8 *input, u8 *output, unsigned int count)
-{
-	u8 mask = input[0] ? frame_mask(input[0]) : 0;
-	unsigned int i;
-	for (i = 0; i < count; i++)
-		output[i] = input[i + 1] ^ mask;
-}
+/* Private test wrappers use these source aliases; no extra function bodies. */
+#define frame_mask DNS_0004_Func
+#define unpack DNS_0005_Func
 
 static void reverse(const u8 *input, u8 *output, unsigned int count)
 {
@@ -725,7 +755,7 @@ static u8 check_block_auth_status(u8 block, u8 *result)
 
 static u8 arelink_change_password(u8 block, u32 password)
 {
-	u8 frame[6], status;
+	u8 frame[6], status, mask;
 	unsigned int attempt;
 	if (!initialized)
 		return 2;
@@ -736,8 +766,12 @@ static u8 arelink_change_password(u8 block, u32 password)
 	password_frame(frame, block, password);
 	/* One random mask is reused across retries in the stock protocol. */
 	frame[0] = arelink_random();
+	/* Stock caches one mask for all five bytes and every retry.
+	 * Keep one table-read sequence even with the retained native helper.
+	 */
+	mask = frame_mask(frame[0]);
 	for (attempt = 1; attempt < 6; attempt++)
-		frame[attempt] ^= frame_mask(frame[0]);
+		frame[attempt] ^= mask;
 	for (attempt = 0; attempt < 6; attempt++) {
 		arelink_write_data(0x6020, frame, 6);
 		do {
