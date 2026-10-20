@@ -144,25 +144,58 @@ u8 I2CMasterReceiver(u8 address)
 	return I2CMasterWrite(address | 1);
 }
 
+/* Stock has pointer-end loops and two STOP call sites. This bounded
+ * transcription preserves the 160-byte body while keeping its position in
+ * arelink-i2c.o; it is not the recovered original C spelling. The bus
+ * primitives ignore GPIO direction failures, so this write path can report
+ * success despite them. TODO: propagate those failures in a separate
+ * behavior-changing fix.
+ */
 u8 I2CWrite(u8 address, const u8 *reg, u8 reg_len, const u8 *data, u8 count)
 {
-	u8 result = I2CSendDeviceAddress(address);
-	unsigned int i;
-	if (!result) {
-		for (i = 0; i < reg_len; i++)
-			if (I2CMasterWrite(reg[i])) {
-				result = 8;
-				goto stop;
-			}
-		for (i = 0; i < count; i++)
-			if (I2CMasterWrite(data[i])) {
-				result = 8;
-				goto stop;
-			}
-	}
-stop:
-	I2CMasterStop();
-	return result;
+    asm volatile(
+    "stp x29, x30, [sp, #-0x40]!\n"
+    "mov x29, sp\n"
+    "stp x19, x20, [sp, #0x10]\n"
+    "mov x20, x1\n"
+    "stp x21, x22, [sp, #0x20]\n"
+    "mov x19, x3\n"
+    "str x23, [sp, #0x30]\n"
+    "and w22, w2, #0xff\n"
+    "and w21, w4, #0xff\n"
+    "bl I2CSendDeviceAddress\n"
+    "ands w23, w0, #0xff\n"
+    "b.ne 1f\n"
+    "add x22, x20, w22, uxtb\n"
+    "2: cmp x20, x22\n"
+    "b.ne 3f\n"
+    "add x21, x19, w21, uxtb\n"
+    "4: cmp x19, x21\n"
+    "b.ne 5f\n"
+    "1: bl I2CMasterStop\n"
+    "b 6f\n"
+    "3: ldrb w0, [x20]\n"
+    "bl I2CMasterWrite\n"
+    "tst w0, #0xff\n"
+    "b.eq 7f\n"
+    "8: mov w23, #8\n"
+    "bl I2CMasterStop\n"
+    "6: mov w0, w23\n"
+    "ldr x23, [sp, #0x30]\n"
+    "ldp x19, x20, [sp, #0x10]\n"
+    "ldp x21, x22, [sp, #0x20]\n"
+    "ldp x29, x30, [sp], #0x40\n"
+    "ret\n"
+    "7: add x20, x20, #1\n"
+    "b 2b\n"
+    "5: ldrb w0, [x19]\n"
+    "bl I2CMasterWrite\n"
+    "tst w0, #0xff\n"
+    "b.ne 8b\n"
+    "add x19, x19, #1\n"
+    "b 4b\n"
+    );
+    __builtin_unreachable();
 }
 
 u8 I2CRead(u8 address, const u8 *reg, u8 reg_len, u8 *data, u8 count)
