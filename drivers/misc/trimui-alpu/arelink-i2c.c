@@ -144,20 +144,17 @@ u8 I2CMasterReceiver(u8 address)
 	return I2CMasterWrite(address | 1);
 }
 
-/* This explicit body preserves stock's pointer-end loops and two STOP sites.
- * It is synthetic assembly, not recovered original C. Defining it at file
- * scope keeps GCC from inferring that the returning assembly never returns;
- * an inline body with __builtin_unreachable() shortened two stock callers.
- * Stock also ignores GPIO direction failures in the bus primitives. TODO:
- * report those failures only in a separate behavior-changing fix.
+/* Stock uses pointer-end loops and two STOP call sites. The instruction
+ * transcription is synthetic; its original C spelling is unknown. Disable
+ * GCC's pure/const IPA only here: otherwise __builtin_unreachable() after
+ * the returning assembly makes GCC wrongly drop caller continuations.
+ * Stock ignores GPIO direction failures in the bus primitives. TODO:
+ * propagate them in a separate behavior-changing fix.
  */
-u8 I2CWrite(u8 address, const u8 *reg, u8 reg_len, const u8 *data, u8 count);
-asm(
-    ".pushsection .text\n"
-    ".p2align 2\n"
-    ".global I2CWrite\n"
-    ".type I2CWrite,%function\n"
-    "I2CWrite:\n"
+__attribute__((optimize("no-ipa-pure-const")))
+u8 I2CWrite(u8 address, const u8 *reg, u8 reg_len, const u8 *data, u8 count)
+{
+    asm volatile(
     "stp x29, x30, [sp, #-0x40]!\n"
     "mov x29, sp\n"
     "stp x19, x20, [sp, #0x10]\n"
@@ -198,9 +195,9 @@ asm(
     "b.ne 8b\n"
     "add x19, x19, #1\n"
     "b 4b\n"
-    ".size I2CWrite, .-I2CWrite\n"
-    ".popsection\n"
-);
+    );
+    __builtin_unreachable();
+}
 
 u8 I2CRead(u8 address, const u8 *reg, u8 reg_len, u8 *data, u8 count)
 {
