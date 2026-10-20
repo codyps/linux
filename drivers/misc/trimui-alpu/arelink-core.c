@@ -771,25 +771,41 @@ __attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector"))) u
  return 0;
 }
 
-u8 arelink_req_cypher(const u8 *input, u8 *output)
+/* Stock tests initialization once; a busy response is accepted after five
+ * reads. A short later read retains earlier receive bytes because the buffer
+ * is cleared only once. Preserve unchecked aliases and ignored I/O status.
+ * TODO: bounds, transport error and serialization fixes are separate changes.
+ */
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+static void DNS_0015_Func(const u8 *input,u8 *output)
 {
-	u8 frame[17], decoded[16];
-	unsigned int attempt;
-	if (!initialized)
-		return 2;
-	___memset(receive_buffer, 0, 16);
-	reverse_inline(input, frame + 1, 16);
-	send_frame(0, frame, 16);
-	arelink_delay(1);
-	___memset(receive_buffer, 0, 17);
-	for (attempt = 0; attempt < 5; attempt++) {
-		arelink_read_data(0, 17, receive_buffer);
-		if (receive_buffer[0])
-			break;
-	}
-	unpack(receive_buffer, decoded, 16);
-	DNS_0007_Func(decoded, output, 16);
-	return 0;
+ u8 i,nonce,mask;
+ u8 frame[17] __attribute__((aligned(8)));
+ const u8 *cursor;
+ u8 attempt=0;
+ ___memset(alpu_receive,0,16);
+ cursor=input+15;
+ for(i=0;i<=15;i++) frame[i+1]=*cursor--;
+ nonce=arelink_random();
+ mask=DNS_0004_Func(nonce);
+ frame[0]=nonce;
+ DNS_0006_Func(frame+1,16,mask);
+ arelink_write_data(0,frame,17);
+ arelink_delay(1);
+ ___memset(alpu_receive,0,17);
+ for(;;) {
+  arelink_read_data(0,17,alpu_receive);
+  if(alpu_receive[0] || ++attempt>4) break;
+ }
+ DNS_0005_Func(alpu_receive,frame,16);
+ DNS_0007_Func(frame,output,16);
+}
+__attribute__((__used__,__noinline__,__optimize__("O0","no-stack-protector")))
+u8 arelink_req_cypher(const u8 *input,u8 *output)
+{
+ if(!alpu_initialized_flag) return 2;
+ DNS_0015_Func(input,output);
+ return 0;
 }
 
 extern u8 alpu_authenticated;
