@@ -7053,19 +7053,24 @@ extern int mark_free_block(struct erase_block_zone *, struct erase_block_info *)
 int erase_block(struct erase_block_zone *zone, struct erase_block_info *block,
 		unsigned short mode)
 {
-	struct physic_op_param op;
-	int result;
+	/* Match the OEM's operation/result slots within its 0x50-byte frame.
+	 * The padding and op.reserved are left untouched as stock does. */
+	struct {
+		struct physic_op_param op;
+		unsigned char gap[4];
+		int result;
+	} local;
 
 	nand_print("[NI]erase_block block %d!\n", block->number);
-	set_physic_op_par(&op, block->number, 0, zone->geometry->fixed_page,
+	set_physic_op_par(&local.op, block->number, 0, zone->geometry->fixed_page,
 			  0, 0);
-	result = zone->erase(zone, &op);
-	if (result) {
+	local.result = zone->erase(zone, &local.op);
+	if (local.result) {
 		nand_print("[NE]erase_block block fail %d!\n",
 			   block->number);
 		/* OEM ignores the bad-block callback result and returns the
 		 * original erase status after updating the metadata. */
-		zone->mark_bad(zone, &op);
+		zone->mark_bad(zone, &local.op);
 		block->pages = 0;
 		block->state = 255;
 		zone->bad_count++;
@@ -7078,7 +7083,7 @@ int erase_block(struct erase_block_zone *zone, struct erase_block_info *block,
 		block->pages = zone->geometry->pages;
 		block->state = 0;
 	}
-	return result;
+	return local.result;
 }
 struct torture_geometry {
 	unsigned char before_pages[20];
