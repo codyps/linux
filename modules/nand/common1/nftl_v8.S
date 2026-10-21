@@ -12113,6 +12113,7 @@ sandisk_end_one_read_retry:
 	.size	sandisk_end_one_read_retry, .-sandisk_end_one_read_retry
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_set_readretry
 	.type	sandisk_set_readretry, %function
 sandisk_set_readretry:
@@ -12289,6 +12290,7 @@ sandisk_set_readretry:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	sandisk_set_readretry, .-sandisk_set_readretry
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC134: relocated in rooted readonly order below. */
@@ -34323,6 +34325,8 @@ sandisk_read_retry_reg_adr_19:
 	.zero	6
 	.balign	8
 sandisk_19_low:
+	.global	sandisk_19_low_recovered
+sandisk_19_low_recovered:
 	.byte	-16
 	.byte	0
 	.byte	-16
@@ -34373,6 +34377,8 @@ sandisk_19_low:
 	.byte	-64
 	.balign	8
 sandisk_19_high:
+	.global	sandisk_19_high_recovered
+sandisk_19_high_recovered:
 	.byte	0
 	.byte	-16
 	.byte	0
@@ -34446,6 +34452,8 @@ sandisk_read_retry_reg_adr_24:
 	.zero	6
 	.balign	8
 sandisk_24:
+	.global	sandisk_24_recovered
+sandisk_24_recovered:
 	.byte	0
 	.byte	-16
 	.byte	0
@@ -34487,6 +34495,8 @@ sandisk_read_retry_reg_adr_1y:
 	.byte	17
 	.balign	8
 sandisk_1y:
+	.global	sandisk_1y_recovered
+sandisk_1y_recovered:
 	.byte	4
 	.byte	0
 	.byte	124
