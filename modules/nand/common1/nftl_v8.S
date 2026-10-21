@@ -22303,6 +22303,7 @@ get_used_page_num:
 // readonly payload moved below: 	.string	"[NE]cross talk block:%d total_good_num %d good_page_num: %d!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_used_page_num_no_crosstalk
 	.type	get_used_page_num_no_crosstalk, %function
 get_used_page_num_no_crosstalk:
@@ -22554,6 +22555,7 @@ get_used_page_num_no_crosstalk:
 	ldp	x29, x30, [sp], 160
 	ret
 	.size	get_used_page_num_no_crosstalk, .-get_used_page_num_no_crosstalk
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	check_cross_talk

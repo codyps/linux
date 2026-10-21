@@ -2001,6 +2001,127 @@ int check_cross_talk(struct cross_talk_zone *zone,
 	/* OEM reports success even if every physical read failed. */
 	return 0;
 }
+struct used_page_geometry {
+	unsigned char before_sectors[8];
+	unsigned char sectors_per_page;
+	unsigned char before_pages[11];
+	unsigned short pages;
+	unsigned char before_page_bytes[4];
+	unsigned short page_bytes;
+	unsigned short fixed_page;
+};
+struct used_page_stats {
+	unsigned char before_cross_talk[168];
+	unsigned int cross_talk;
+};
+struct used_page_zone {
+	unsigned char before_geometry[8];
+	struct used_page_geometry *geometry;
+	unsigned char before_data[496];
+	void *data;
+	unsigned char before_stats[2920];
+	struct used_page_stats *stats;
+	unsigned char before_read[16];
+	int (*read)(struct used_page_zone *, struct physic_op_param *);
+};
+struct used_page_cache {
+	unsigned int count;
+	unsigned char before_valid[4];
+	unsigned char *valid;
+	unsigned char *data;
+	unsigned int *map;
+};
+struct poweroff_ecc_zone;
+extern int nand_power_off_ecc_error(struct poweroff_ecc_zone *,
+				     const unsigned char *, unsigned char *);
+_Static_assert(__builtin_offsetof(struct used_page_zone, data) == 512,
+	       "used-page data offset");
+_Static_assert(__builtin_offsetof(struct used_page_zone, stats) == 3440,
+	       "used-page stats offset");
+_Static_assert(__builtin_offsetof(struct used_page_zone, read) == 3464,
+	       "used-page read offset");
+
+__attribute__((optimize("-fno-stack-protector")))
+int get_used_page_num_no_crosstalk(struct used_page_zone *zone,
+				   struct physical_block *block,
+				   unsigned int *good_pages,
+				   struct used_page_cache *cache)
+{
+	struct physic_op_param op;
+	unsigned char local_oob[16];
+	unsigned char *data;
+	unsigned char *oob;
+	int first_unused = -1;
+	unsigned int good = 0;
+	unsigned int unused_count = 0;
+	unsigned int page;
+	int status;
+
+	/* OEM zeroes this output and never writes the later good-page count. */
+	*good_pages = 0;
+	for (page = 0; page < zone->geometry->pages; page++) {
+		if (cache && cache->valid[page] == 0) {
+			/* OEM multiplies in 32 bits and trusts the cache extent. */
+			data = cache->data +
+				(unsigned int)(page * (zone->geometry->page_bytes + 64));
+			oob = data + zone->geometry->page_bytes;
+		} else {
+			data = 0;
+			if (zone->geometry->sectors_per_page == 4)
+				data = zone->data;
+			oob = local_oob;
+		}
+		set_physic_op_par(&op, block->number, page,
+				  zone->geometry->fixed_page, data, oob);
+		status = zone->read(zone, &op);
+		if (status != 0 && status != 10) {
+			nand_print("[NE]gupnnc ecc err b:%d p:%d!\n",
+				   block->number, page);
+			if (first_unused == -1)
+				first_unused = page;
+			continue;
+		}
+		if (is_nouse_page(oob) == 1) {
+			if (first_unused == -1)
+				first_unused = page;
+			/* Stock does not reset this count after a good page, so
+			 * three nonconsecutive unused pages also stop the scan. */
+			unused_count++;
+			if (unused_count == 3)
+				break;
+			continue;
+		}
+		if (nand_power_off_ecc_error(
+				(struct poweroff_ecc_zone *)zone, data, oob)) {
+			nand_print("[NE]gupnnc power off ecc err!!\n");
+			continue;
+		}
+		good++;
+		if (first_unused == -1) {
+			/* OEM dereferences cache unchecked on this path. */
+			cache->valid[page] = 1;
+			cache->map[page] = get_logic_page_from_oob(oob);
+			if (cache->count < page + 1)
+				cache->count = page + 1;
+		}
+	}
+	if (first_unused == -1)
+		first_unused = zone->geometry->pages;
+	else if (good != (unsigned int)first_unused) {
+		nand_print("[NE]cross talk block:%d total_good_num %d good_page_num: %d!\n",
+			   block->number, good, first_unused);
+		zone->stats->cross_talk++;
+		for (page = 0; page < cache->count; page++) {
+			if (cache->valid[page])
+				cache->data[
+					(unsigned int)(page *
+					(zone->geometry->page_bytes + 64)) +
+					zone->geometry->page_bytes + 14] =
+					zone->stats->cross_talk;
+		}
+	}
+	return first_unused;
+}
 extern unsigned char sandisk_A19_read_retry_reg_adr_1y;
 extern unsigned char sandisk_A19_1z_16g[128];
 extern unsigned char sandisk_A19_1z_8g[124];
