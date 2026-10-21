@@ -28657,6 +28657,7 @@ clean_read_reclaim_complete_flag:
 	.size	clean_read_reclaim_complete_flag, .-clean_read_reclaim_complete_flag
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_nftl_read_claim_complete
 	.type	set_nftl_read_claim_complete, %function
 set_nftl_read_claim_complete:
@@ -28700,6 +28701,7 @@ set_nftl_read_claim_complete:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	set_nftl_read_claim_complete, .-set_nftl_read_claim_complete
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_nftl_read_claim_flag

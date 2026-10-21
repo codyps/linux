@@ -1104,7 +1104,9 @@ struct read_claim_settings {
 struct read_claim_zone {
 	unsigned char before_need_claim[24];
 	unsigned char need_claim;
-	unsigned char before_settings[3440 - 25];
+	unsigned char before_complete[660 - 25];
+	unsigned int read_complete;
+	unsigned char before_settings[3440 - 664];
 	struct read_claim_settings *settings;
 };
 struct read_claim_node {
@@ -2779,4 +2781,27 @@ void clean_read_reclaim_complete_flag(struct read_claim_node *head)
 		destination->complete = source->complete == 0;
 		node = node->next;
 	}
+}
+int set_nftl_read_claim_complete(struct read_claim_node *head,
+				 struct read_claim_node *selected)
+{
+	struct read_claim_node *last;
+
+	selected->zone->read_complete = 1;
+	last = (struct read_claim_node *)get_last_nftl(
+		(struct nftl_list_node *)head);
+	if (!selected->next) {
+		last->zone->settings->flag = 0;
+		clean_read_reclaim_complete_flag(head);
+	} else {
+		struct read_claim_settings *destination =
+			last->zone->settings;
+
+		/* OEM increments the one-byte marker as a 32-bit value,
+		 * so 0xff becomes 0x100 rather than wrapping to zero. Resolve
+		 * the destination first, as the OEM does before reading marker. */
+		destination->flag = selected->zone->need_claim + 1;
+	}
+	last->zone->settings->page = 0;
+	return 0;
 }
