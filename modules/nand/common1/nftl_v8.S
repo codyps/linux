@@ -25363,6 +25363,7 @@ out_phy_block_from_free_list:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	out_phy_block_from_free_list, .-out_phy_block_from_free_list
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	out_phy_block_from_free_list_by_erase_time
 	.type	out_phy_block_from_free_list_by_erase_time, %function
@@ -25416,6 +25417,8 @@ out_phy_block_from_free_list_by_erase_time:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	out_phy_block_from_free_list_by_erase_time, .-out_phy_block_from_free_list_by_erase_time
+	#endif
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	get_max_erase_time_from_free_list
 	.type	get_max_erase_time_from_free_list, %function
@@ -25468,6 +25471,7 @@ get_max_erase_time_from_free_list:
 	add	sp, sp, 48
 	ret
 	.size	get_max_erase_time_from_free_list, .-get_max_erase_time_from_free_list
+	#endif
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	get_block_max_erase_time_from_free_list

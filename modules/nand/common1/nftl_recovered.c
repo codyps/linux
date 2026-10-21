@@ -260,3 +260,54 @@ NFTL_MAX_ERASE(get_block_max_erase_time_from_free_list,
 	       nftl_free_erase_owner, nftl_free_erase_node)
 NFTL_MAX_ERASE(get_block_max_erase_time_from_invalid_list,
 	       nftl_invalid_erase_owner, nftl_invalid_erase_node)
+
+__attribute__((optimize("-fno-stack-protector")))
+unsigned short get_max_erase_time_from_free_list(
+	struct nftl_free_erase_owner *owner, unsigned short limit)
+{
+	struct nftl_free_erase_node *best = 0;
+	unsigned short maximum = 0;
+	struct nftl_free_erase_node *current = &owner->list;
+
+	current = current->next;
+	while (current) {
+		/* OEM selects the last tied maximum below limit; a cycle loops
+		 * forever, and no match returns the 0xffff sentinel. */
+		if (limit > current->erase_time &&
+		    maximum <= current->erase_time) {
+			maximum = current->erase_time;
+			best = current;
+		}
+		current = current->next;
+	}
+	if (best)
+		return best->erase_time;
+	return 65535;
+}
+
+extern struct nftl_free_erase_node *out_phy_block_from_free_list_by_block(
+	struct nftl_free_erase_owner *, struct nftl_free_erase_node *);
+
+__attribute__((optimize("-fno-stack-protector")))
+struct nftl_free_erase_node *out_phy_block_from_free_list_by_erase_time(
+	struct nftl_free_erase_owner *owner, unsigned short limit)
+{
+	struct nftl_free_erase_node *best = 0;
+	unsigned short maximum = 0;
+	struct nftl_free_erase_node *current = &owner->list;
+
+	current = current->next;
+	while (current) {
+		/* OEM selects the last tied maximum below limit and never
+		 * detects cycles or validates the owner pointer. */
+		if (limit > current->erase_time &&
+		    maximum <= current->erase_time) {
+			maximum = current->erase_time;
+			best = current;
+		}
+		current = current->next;
+	}
+	if (best)
+		best = out_phy_block_from_free_list_by_block(owner, best);
+	return best;
+}
