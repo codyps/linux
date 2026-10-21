@@ -4397,6 +4397,7 @@ hynix20nm_init_readretry_param:
 // readonly payload moved below: 	.string	"NFC_ReadRetryInit, unknown read retry mode 0x%x\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_readretry_init
 	.type	hynix20nm_readretry_init, %function
 hynix20nm_readretry_init:
@@ -4538,6 +4539,7 @@ hynix20nm_readretry_init:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix20nm_readretry_init, .-hynix20nm_readretry_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC65: relocated in rooted readonly order below. */

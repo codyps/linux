@@ -3322,6 +3322,47 @@ int hynix20nm_set_default_param(struct otp_chip *chip)
 	return locals.result;
 }
 
+int hynix20nm_readretry_init(void *owner)
+{
+	struct hynix20nm_lsb_chip *configured = owner;
+	struct hynix20nm_retry_chip *chip = owner;
+	int index;
+
+	hynix20nm_read_retry_mode = configured->params->retry_spec >> 16;
+	hynix20nm_read_retry_cycle = configured->params->retry_spec >> 8;
+	hynix20nm_read_retry_reg_num = configured->params->retry_spec;
+	if (hynix20nm_read_retry_mode == 2) {
+		hynix20nm_read_retry_reg_adr[0] = 0xcc;
+		hynix20nm_read_retry_reg_adr[1] = 0xbf;
+		hynix20nm_read_retry_reg_adr[2] = 0xaa;
+		hynix20nm_read_retry_reg_adr[3] = 0xab;
+		hynix20nm_read_retry_reg_adr[4] = 0xcd;
+		hynix20nm_read_retry_reg_adr[5] = 0xad;
+		hynix20nm_read_retry_reg_adr[6] = 0xae;
+		hynix20nm_read_retry_reg_adr[7] = 0xaf;
+	} else if (hynix20nm_read_retry_mode == 3) {
+		hynix20nm_read_retry_reg_adr[0] = 0xb0;
+		hynix20nm_read_retry_reg_adr[1] = 0xb1;
+		hynix20nm_read_retry_reg_adr[2] = 0xb2;
+		hynix20nm_read_retry_reg_adr[3] = 0xb3;
+		hynix20nm_read_retry_reg_adr[4] = 0xb4;
+		hynix20nm_read_retry_reg_adr[5] = 0xb5;
+		hynix20nm_read_retry_reg_adr[6] = 0xb6;
+		hynix20nm_read_retry_reg_adr[7] = 0xb7;
+	} else {
+		/* Stock already changed all three global retry selectors before
+		 * rejecting this mode, leaving the address table untouched. */
+		nand_print("NFC_ReadRetryInit, unknown read retry mode 0x%x\n",
+			   hynix20nm_read_retry_mode);
+		return -93;
+	}
+	chip->cycle = 0;
+	for (index = 0; index <= 127; index++)
+		chip->saved[index] = 0;
+	/* OEM permits a register count larger than its eight address bytes. */
+	return hynix20nm_init_readretry_param(owner);
+}
+
 extern unsigned char hynix26nm_read_retry_cycle;
 extern unsigned char hynix26nm_read_retry_reg_num;
 extern unsigned char hynix26nm_read_retry_reg_adr[];
