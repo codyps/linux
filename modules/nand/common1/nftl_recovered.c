@@ -1435,6 +1435,36 @@ int gc_all_base_on_free_blks(struct gc_enhance_zone *zone)
 	return gc_all_cnt((struct gc_policy_zone *)zone, (unsigned short)pages, 3);
 }
 
+struct hynix16nm_retry_zone {
+	unsigned char before_values[56];
+	unsigned char values[128];
+	unsigned int retry;
+};
+extern unsigned char hynix16nm_read_retry_cycle;
+extern unsigned char hynix16nm_read_retry_reg_num;
+extern unsigned char hynix16nm_read_retry_reg_adr[];
+extern int hynix16nm_vender_set_param(struct hynix16nm_retry_zone *zone,
+				      unsigned char *values,
+				      unsigned char *addresses,
+				      unsigned int count);
+int hynix16nm_set_readretry(struct hynix16nm_retry_zone *zone)
+{
+	int result = 0;
+	unsigned int index;
+	unsigned char values[4];
+
+	if (zone->retry > hynix16nm_read_retry_cycle)
+		return -74;
+	/* OEM trusts the register count although this stack array has four
+	 * bytes; a larger count overwrites adjacent stack storage. */
+	for (index = 0; index < hynix16nm_read_retry_reg_num; index++)
+		values[index] = zone->values[(zone->retry << 2) + index];
+	result = hynix16nm_vender_set_param(zone, values,
+					 hynix16nm_read_retry_reg_adr,
+					 hynix16nm_read_retry_reg_num);
+	return result;
+}
+
 /* Isolated NFTL C candidates; private structure names are inferred. */
 
 struct nftl_chain {

@@ -9527,6 +9527,7 @@ hynix16nm_vender_set_param:
 	ret
 	.size	hynix16nm_vender_set_param, .-hynix16nm_vender_set_param
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_set_readretry
 	.type	hynix16nm_set_readretry, %function
 hynix16nm_set_readretry:
@@ -9590,6 +9591,7 @@ hynix16nm_set_readretry:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix16nm_set_readretry, .-hynix16nm_set_readretry
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC107: relocated in rooted readonly order below. */
