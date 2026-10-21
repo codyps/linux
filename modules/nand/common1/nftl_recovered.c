@@ -2540,7 +2540,7 @@ int set_nftl_read_claim_flag(struct read_claim_node *head, int flag, int page)
 
 /* Isolated NFTL C candidates; private aggregate labels are inferred. */
 
-void nftl_version(void)
+static void nftl_version(void)
 {
 	nand_print("sunxi nftl version %s.%s.%s  %s-%s\n",
 		   "5", "0", "000", "2020.12.24", "09:50");
@@ -3606,7 +3606,7 @@ int write_data_to_nand(void *zone)
 	/* OEM ignores every write result, even after a failed allocation. */
 	return 0;
 }
-void _DumpHexData(const unsigned char *data, int length)
+static void _DumpHexData(const unsigned char *data, int length)
 {
 	const unsigned char *current = data;
 	int index = 0;
@@ -4688,7 +4688,7 @@ struct cross_rebuild_zone;
 struct cross_rebuild_block;
 struct invalid_node;
 extern volatile unsigned int *g_nreg_base;
-extern int crc_wrong(struct crc_page_zone *, const unsigned char *,
+static int crc_wrong(struct crc_page_zone *, const unsigned char *,
 		     unsigned char *);
 extern int recover_logic_page_mapping(struct logic_page_map_zone *,
 				       struct invalid_page_node *,
@@ -5598,7 +5598,7 @@ int generic_special_init(void)
 extern unsigned int nand_on_panic;
 extern unsigned int panic_enable;
 
-void panic_mark_panic(void)
+static void panic_mark_panic(void)
 {
 	nand_on_panic = 1;
 }
@@ -9081,7 +9081,7 @@ struct crc_page_zone {
 	unsigned char before_map_length[544];
 	unsigned int map_length;
 };
-int crc_wrong(struct crc_page_zone *zone, const unsigned char *data,
+static int crc_wrong(struct crc_page_zone *zone, const unsigned char *data,
 	      unsigned char *oob)
 {
 	unsigned short actual = 0;
