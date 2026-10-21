@@ -43,6 +43,7 @@
 // readonly payload moved below: 	.string	"[NE]nftl_build_all error!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_build_all
 	.type	nftl_build_all, %function
 nftl_build_all:
@@ -79,7 +80,9 @@ nftl_build_all:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nftl_build_all, .-nftl_build_all
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_build_one
 	.type	nftl_build_one, %function
 nftl_build_one:
@@ -126,6 +129,7 @@ nftl_build_one:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nftl_build_one, .-nftl_build_one
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC4: relocated in rooted readonly order below. */
@@ -13609,6 +13613,7 @@ nand_crc16:
 // readonly payload moved below: 	.string	"[NE]error nand_write_logic_page_no_gc page_no:%u\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nftl_nand_write_logic_page
 	.type	_nftl_nand_write_logic_page, %function
 _nftl_nand_write_logic_page:
@@ -13641,6 +13646,7 @@ _nftl_nand_write_logic_page:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	_nftl_nand_write_logic_page, .-_nftl_nand_write_logic_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC147: relocated in rooted readonly order below. */
@@ -15245,6 +15251,7 @@ check_invalid_page_right:
 	ret
 	.size	check_invalid_page_right, .-check_invalid_page_right
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_ops_init
 	.type	nftl_ops_init, %function
 nftl_ops_init:
@@ -15290,6 +15297,7 @@ nftl_ops_init:
 	add	sp, sp, 16
 	ret
 	.size	nftl_ops_init, .-nftl_ops_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	current_block_at_last_page

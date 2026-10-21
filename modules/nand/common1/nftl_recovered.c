@@ -2063,3 +2063,90 @@ struct count_list *del_block_count_list(struct count_zone *zone)
 		list->next = list->next->next;
 	return list;
 }
+
+extern int garbage_collect(void *zone);
+int _nftl_nand_write_logic_page(void *zone, unsigned int page, void *data)
+{
+	/* OEM collapses every nonzero error into one, discarding its code. */
+	if (nand_write_logic_page_no_gc(zone, page, data) != 0) {
+		nand_print("[NE]error nand_write_logic_page_no_gc page_no:%u\n",
+			   page);
+		return 1;
+	}
+	garbage_collect(zone);
+	all_time_gc((struct gc_policy_zone *)zone);
+	do_prio_gc(zone);
+	return 0;
+}
+
+struct nftl_build_node {
+	unsigned short number;
+	unsigned char preceding[62];
+	struct nftl_build_node *next;
+};
+struct nftl_build_owner {
+	unsigned char preceding[72];
+	struct nftl_build_node *first;
+};
+extern struct nftl_build_node *nftl_add(struct nftl_build_node *node);
+int nftl_build_all(struct nftl_build_owner *owner)
+{
+	struct nftl_build_node *node = owner->first;
+
+	nftl_blk_head.next = 0;
+	while (node) {
+		if (!nftl_add(node)) {
+			/* OEM discards the underlying add failure. */
+			nand_print("[NE]nftl_build_all error!\n");
+			return 1;
+		}
+		node = node->next;
+	}
+	return 0;
+}
+int nftl_build_one(struct nftl_build_owner *owner, int number)
+{
+	struct nftl_build_node *node = owner->first;
+
+	if (!number)
+		nftl_blk_head.next = 0;
+	while (node) {
+		if (node->number == number && !nftl_add(node)) {
+			/* OEM discards the underlying add failure. */
+			nand_print("[NE]nftl_build_all error!\n");
+			return 1;
+		}
+		node = node->next;
+	}
+	return 0;
+}
+
+struct nftl_ops {
+	unsigned char before[3456];
+	void (*erase)(void);
+	void (*read)(void);
+	void (*write)(void);
+	void (*copy)(void);
+	void (*good)(void);
+	void (*bad)(void);
+	void (*write_logic)(void);
+	void (*read_logic)(void);
+	void (*discard)(void);
+};
+extern void _nftl_nand_read_page(void);
+extern void _nftl_nand_write_page(void);
+extern void _nftl_nand_copy_page(void);
+extern void _nftl_nand_read_logic_page(void);
+void nftl_ops_init(struct nftl_ops *ops)
+{
+	/* OEM never clears other slots or checks the pointer. */
+	ops->erase = (void (*)(void))_nftl_nand_erase_superblk;
+	ops->read = _nftl_nand_read_page;
+	ops->write = _nftl_nand_write_page;
+	ops->good = (void (*)(void))_nftl_nand_is_blk_good;
+	ops->bad = (void (*)(void))_nftl_nand_mark_bad_blk;
+	ops->copy = _nftl_nand_copy_page;
+	ops->read_logic = _nftl_nand_read_logic_page;
+	ops->write_logic = (void (*)(void))_nftl_nand_write_logic_page;
+	ops->discard = (void (*)(void))_nftl_discard_logic_page;
+}
