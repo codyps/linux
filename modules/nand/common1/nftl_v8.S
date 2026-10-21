@@ -5469,6 +5469,7 @@ micron_special_exit:
 /* toshiba_sclk1_bak: common storage replaced by its recovered BSS slot. */
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	toshiba_read_retry_clock_save
 	.type	toshiba_read_retry_clock_save, %function
 toshiba_read_retry_clock_save:
@@ -5497,6 +5498,7 @@ toshiba_read_retry_clock_save:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	toshiba_read_retry_clock_save, .-toshiba_read_retry_clock_save
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	toshiba_read_retry_clock_recover
@@ -8848,6 +8850,7 @@ sandisk_A19_readretry_exit:
 	.size	sandisk_A19_readretry_exit, .-sandisk_A19_readretry_exit
 	#endif
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_read_retry_clock_save
 	.type	sandisk_A19_read_retry_clock_save, %function
 sandisk_A19_read_retry_clock_save:
@@ -8876,6 +8879,7 @@ sandisk_A19_read_retry_clock_save:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	sandisk_A19_read_retry_clock_save, .-sandisk_A19_read_retry_clock_save
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_read_retry_clock_recover
@@ -11780,6 +11784,7 @@ hynix16nm_special_exit:
 /* sandisk_toggle_mode_flag: common storage replaced by its recovered BSS slot. */
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_read_retry_clock_save
 	.type	sandisk_read_retry_clock_save, %function
 sandisk_read_retry_clock_save:
@@ -11808,6 +11813,7 @@ sandisk_read_retry_clock_save:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	sandisk_read_retry_clock_save, .-sandisk_read_retry_clock_save
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	sandisk_vender_set_param
 	.type	sandisk_vender_set_param, %function

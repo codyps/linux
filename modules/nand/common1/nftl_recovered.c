@@ -2000,3 +2000,19 @@ int toshiba_read_retry_clock_recover(struct clock_chip *chip)
 		     toshiba_sclk0_bak, toshiba_sclk1_bak);
 	return 0;
 }
+
+extern int nand_get_clk(void *controller, unsigned int channel,
+			unsigned int *sclk0, unsigned int *sclk1);
+#define CLOCK_SAVE(vendor) \
+	int vendor##_read_retry_clock_save(struct clock_chip *chip) \
+	{ \
+		/* OEM ignores both clock errors and always reports success. */ \
+		nand_get_clk(&aw_ndfc, chip->channel->index, \
+			     &vendor##_sclk0_bak, &vendor##_sclk1_bak); \
+		nand_set_clk(&aw_ndfc, chip->channel->index, 10, 20); \
+		return 0; \
+	}
+
+CLOCK_SAVE(sandisk_A19)
+CLOCK_SAVE(sandisk)
+CLOCK_SAVE(toshiba)
