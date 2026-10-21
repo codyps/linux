@@ -15997,6 +15997,7 @@ dump_buf:
 // readonly payload moved below: 	.string	"[NE]exception case wb %04x %04x, len: %d\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.type	crc_wrong, %function
 crc_wrong:
 	stp	x29, x30, [sp, -64]!
@@ -16062,6 +16063,7 @@ crc_wrong:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	crc_wrong, .-crc_wrong
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC202: relocated in rooted readonly order below. */
@@ -24299,6 +24301,7 @@ nand_dbg_single_phy_erase:
 	.size	nand_dbg_single_phy_erase, .-nand_dbg_single_phy_erase
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	clean_block_list
 	.type	clean_block_list, %function
 clean_block_list:
@@ -24367,6 +24370,7 @@ clean_block_list:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	clean_block_list, .-clean_block_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC386: relocated in rooted readonly order below. */
@@ -28559,6 +28563,7 @@ __shutdown_op:
 // readonly payload moved below: 	.string	"[ND]%4d:<%4d %3d><%d>\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	print_logic_page_map
 	.type	print_logic_page_map, %function
 print_logic_page_map:
@@ -28626,6 +28631,7 @@ print_logic_page_map:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	print_logic_page_map, .-print_logic_page_map
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_last_nftl

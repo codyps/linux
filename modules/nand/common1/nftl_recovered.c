@@ -3426,6 +3426,48 @@ struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone)
 	return block;
 }
 
+struct clean_list_block {
+	unsigned char number[2];
+	unsigned short info;
+	unsigned short invalid;
+	unsigned char before_count[2];
+	int count;
+	unsigned char before_links[4];
+	void *links[6];
+};
+#define CLEAR_CLEAN_BLOCK(block) do { \
+	(block)->invalid = 0; \
+	(block)->info = 0; \
+	(block)->count = -1; \
+	(block)->links[0] = 0; \
+	(block)->links[1] = 0; \
+	(block)->links[2] = 0; \
+	(block)->links[3] = 0; \
+	(block)->links[4] = 0; \
+	(block)->links[5] = 0; \
+} while (0)
+void clean_block_list(void *zone)
+{
+	struct clean_list_block *block;
+
+	/* OEM trusts the removal helpers and clears six pointer slots without
+	 * checking whether another owner still references the block. */
+	for (;;) {
+		block = (struct clean_list_block *)out_phy_block_from_free_list(
+			(struct free_block_zone *)zone);
+		if (!block)
+			break;
+		CLEAR_CLEAN_BLOCK(block);
+	}
+	for (;;) {
+		block = (struct clean_list_block *)
+			out_phy_block_from_invalid_page_list((struct move_zone *)zone);
+		if (!block)
+			break;
+		CLEAR_CLEAN_BLOCK(block);
+	}
+}
+
 struct used_count_block {
 	unsigned short number;
 };
@@ -3894,11 +3936,49 @@ struct reclaim_page_zone {
 	unsigned int pages;
 };
 struct logic_page_map_zone {
-	unsigned char before_total[36];
+	unsigned char before_geometry[8];
+	struct logic_page_geometry *geometry;
+	unsigned char before_summary[16];
+	unsigned int summary;
 	unsigned int total_pages;
 	unsigned char before_maps[32];
 	unsigned int *maps[];
 };
+struct logic_page_geometry {
+	unsigned char before_divisor[8];
+	unsigned char divisor;
+};
+struct crc_page_geometry {
+	unsigned char before_page_size[8];
+	unsigned char page_size_factor;
+};
+struct crc_page_zone {
+	unsigned char before_geometry[8];
+	struct crc_page_geometry *geometry;
+	unsigned char before_map_length[544];
+	unsigned int map_length;
+};
+int crc_wrong(struct crc_page_zone *zone, const unsigned char *data,
+	      unsigned char *oob)
+{
+	unsigned short actual = 0;
+	unsigned short stored = 0;
+	unsigned int length = 0;
+
+	length = zone->geometry->page_size_factor << 9;
+	if (is_nouse_page(oob))
+		return 0;
+	if (is_phy_mapping_page(oob))
+		length = zone->map_length;
+	actual = nand_crc16(-1, data, length);
+	stored = (short)((short)oob[13] | (short)(oob[12] << 8));
+	if (actual != stored) {
+		nand_print("[NE]exception case wb %04x %04x, len: %d\n",
+			   actual, stored, length);
+		return 1;
+	}
+	return 0;
+}
 unsigned int *get_logic_page_map(struct logic_page_map_zone *zone,
 				 unsigned int page)
 {
@@ -3924,6 +4004,32 @@ unsigned int *get_logic_page_map(struct logic_page_map_zone *zone,
 	map = zone->maps[chunk];
 	result = map + page;
 	return result;
+}
+
+struct logic_page_print_entry {
+	unsigned short code;
+	unsigned short marker;
+};
+int print_logic_page_map(struct logic_page_map_zone *zone, unsigned int ignored)
+{
+	unsigned int total = zone->summary / zone->geometry->divisor;
+	unsigned int index = 0;
+	struct logic_page_print_entry *entry;
+
+	/* OEM divides by the unchecked geometry byte; AArch64 UDIV produces
+	 * zero when it is zero. It also walks unchecked map pointers. */
+	while (index < total) {
+		entry = (struct logic_page_print_entry *)
+			get_logic_page_map(zone, index);
+		if (!entry)
+			nand_print("[NI]page_map NULL!!\n");
+		else if (entry->marker != 0xffff)
+			nand_print_dbg("[ND]%4d:<%4d %3d><%d>\n", index,
+				       entry->marker, entry->code & 0xfff,
+				       (((unsigned char *)entry)[1] >> 4) & 1);
+		index++;
+	}
+	return 0;
 }
 struct cold_logic_zone {
 	unsigned char before_flag[664];
