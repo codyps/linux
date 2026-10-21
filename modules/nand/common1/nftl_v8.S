@@ -23566,6 +23566,7 @@ nftl_get_bad_block_cnt:
 // readonly payload moved below: 	.string	"[ND]zone->cfg->nftl_read_claim_interval: %d \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	print_nftl_zone
 	.type	print_nftl_zone, %function
 print_nftl_zone:
@@ -23947,6 +23948,7 @@ print_nftl_zone:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	print_nftl_zone, .-print_nftl_zone
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC382: relocated in rooted readonly order below. */

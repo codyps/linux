@@ -6234,6 +6234,86 @@ int nand_dbg_zone_erase(void *zone, unsigned short block,
 	return result;
 }
 
+/* Diagnostic field names come from OEM formats; offsets are recovered from
+ * the stock loads. Retain its unchecked nested pointer dereferences. */
+#define DIAG_U8(base, off) (*(const unsigned char *)((const char *)(base) + (off)))
+#define DIAG_U16(base, off) (*(const unsigned short *)((const char *)(base) + (off)))
+#define DIAG_U32(base, off) (*(const unsigned int *)((const char *)(base) + (off)))
+#define DIAG_PTR(base, off) (*(void * const *)((const char *)(base) + (off)))
+struct zone_diag_blob { unsigned char bytes[48]; };
+__attribute__((optimize("-fno-stack-protector")))
+void print_nftl_zone(void *zone)
+{
+	const unsigned char *p = zone;
+	struct zone_diag_blob snapshot;
+
+	if (!DIAG_U32(p, 656))
+		return;
+	nand_print_dbg("[ND]nand3.x \n");
+	nand_print_dbg("[ND]zone->nand_chip->blk_per_chip: %d \n", DIAG_U16(DIAG_PTR(p, 8), 24));
+	nand_print_dbg("[ND]zone->nand_chip->bytes_per_page: %d \n", DIAG_U16(DIAG_PTR(p, 8), 26));
+	nand_print_dbg("[ND]zone->nand_chip->pages_per_blk: %d \n", DIAG_U16(DIAG_PTR(p, 8), 20));
+	nand_print_dbg("[ND]zone->nand_chip->max_erase_times: %d \n", DIAG_U16(DIAG_PTR(p, 8), 16));
+	nand_print_dbg("[ND]zone->nand_chip->support_read_reclaim: %d \n", DIAG_U16(DIAG_PTR(p, 8), 30));
+	nand_print_dbg("[ND]zone->test: %d \n", DIAG_U32(p, 656));
+	nand_print_dbg("[ND]zone->zone_no: %d \n", DIAG_U8(p, 24));
+	nand_print_dbg("[ND]zone->zone_attr: %d \n", DIAG_U8(p, 25));
+	nand_print_dbg("[ND]zone->blocks: %d \n", DIAG_U16(p, 26));
+	nand_print_dbg("[ND]zone->bad_block: %d \n", DIAG_U16(p, 28));
+	nand_print_dbg("[ND]zone->logic_cap_in_sects: %d \n", DIAG_U32(p, 32));
+	nand_print_dbg("[ND]zone->backup_cap_in_sects: %d \n", DIAG_U32(p, 40));
+	nand_print_dbg("[ND]zone->free_block_num: %d \n", DIAG_U16(p, 30));
+	nand_print_dbg("[ND]zone->gc_strategy.start_gc_free_blocks: %d \n", DIAG_U16(p, 680));
+	nand_print_dbg("[ND]zone->gc_strategy.stop_gc_free_blocks: %d \n", DIAG_U16(p, 682));
+	nand_print_dbg("[ND]zone->gc_strategy.gc_page: %d \n", DIAG_U16(p, 688));
+	nand_print_dbg("[ND]zone->gc_strategy.process: %d \n", DIAG_U16(p, 684));
+	nand_print_dbg("[ND]zone->prio_gc.prio_type : %d \n", DIAG_U16(p, 698));
+	nand_print_dbg("[ND]zone->zone_start_phy_block->phy_block.Block_NO: %d \n", DIAG_U16(DIAG_PTR(p, 48), 0));
+	nand_print_dbg("[ND]zone->zone_end_phy_block->phy_block.Block_NO: %d \n", DIAG_U16(DIAG_PTR(p, 56), 0));
+	__builtin_memcpy(&snapshot, p + 464, 48);
+	nand_print_dbg("[ND]zone->zone_phy_page_map_for_gc: %x \n", snapshot);
+	__builtin_memcpy(&snapshot, p + 536, 48);
+	nand_print_dbg("[ND]zone->current_block.user_info: %x \n", snapshot);
+	nand_print_dbg("[ND]zone->current_block.block_info: %x \n", DIAG_PTR(p, 528));
+	nand_print_dbg("[ND]zone->current_block.block_info->phy_block.Block_NO: %d \n", DIAG_U16(DIAG_PTR(p, 528), 0));
+	nand_print_dbg("[ND]zone->current_block.page_used: %d \n", DIAG_U16(p, 584));
+	nand_print_dbg("[ND]zone->current_block.block_info->block_used_count: %d \n", DIAG_U32(DIAG_PTR(p, 528), 8));
+	nand_print_dbg("[ND]zone->recv_free_block: %d %d!!\n", DIAG_U16(DIAG_PTR(p, 64), 0), DIAG_U16(DIAG_PTR(p, 64), 6));
+	if (DIAG_U8(p, 25) & 1) {
+		__builtin_memcpy(&snapshot, p + 600, 48);
+		nand_print_dbg("[ND]zone->assist_block.user_info: %x \n", snapshot);
+		nand_print_dbg("[ND]zone->assist_block.block_info: %x \n", DIAG_PTR(p, 592));
+		nand_print_dbg("[ND]zone->assist_block.block_info->phy_block.Block_NO: %d \n", DIAG_U16(DIAG_PTR(p, 592), 0));
+		nand_print_dbg("[ND]zone->assist_block.page_used: %d \n", DIAG_U16(p, 648));
+		nand_print_dbg("[ND]zone->assist_block.block_info->block_used_count: %d \n", DIAG_U32(DIAG_PTR(p, 592), 8));
+	}
+	nand_print_dbg("[ND]zone->read_reclaim_complete: %x \n", DIAG_U32(p, 660));
+	nand_print_dbg("[ND]zone->temp_page_buf: %x \n", DIAG_PTR(p, 512));
+	nand_print_dbg("[ND]zone->max_erase_num: %d \n", DIAG_U32(p, 676));
+	nand_print_dbg("[ND]zone->cache.cache_totals: %x \n", DIAG_U16(p, 1072));
+	nand_print_dbg("[ND]zone->wl_gc_count: %d \n", DIAG_U32(p, 668));
+	nand_print_dbg("[ND]zone->wl_gc_page_num: %d \n", DIAG_U32(p, 672));
+	nand_print_dbg("[ND]zone->cfg->nftl_dont_use_cache: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 0));
+	nand_print_dbg("[ND]zone->cfg->nftl_use_cache_sort: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 2));
+	nand_print_dbg("[ND]zone->cfg->nftl_support_gc_read_reclaim: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 4));
+	nand_print_dbg("[ND]zone->cfg->nftl_support_wear_leveling: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 6));
+	nand_print_dbg("[ND]zone->cfg->nftl_need_erase: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 10));
+	nand_print_dbg("[ND]zone->cfg->nftl_min_free_block_num: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 12));
+	nand_print_dbg("[ND]zone->cfg->nftl_gc_threshold_free_block_num: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 14));
+	nand_print_dbg("[ND]zone->cfg->nftl_min_free_block: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 16));
+	nand_print_dbg("[ND]zone->cfg->nftl_gc_threshold_ratio_numerator: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 18));
+	nand_print_dbg("[ND]zone->cfg->nftl_gc_threshold_ratio_denominator: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 20));
+	nand_print_dbg("[ND]zone->cfg->nftl_max_cache_num: %d \n", DIAG_U16(DIAG_PTR(p, 3448), 22));
+	nand_print_dbg("[ND]zone->cfg->nftl_max_cache_write_num: %d \n", DIAG_U16(DIAG_PTR(p, 3448), 24));
+	nand_print_dbg("[ND]zone->cfg->nftl_cross_talk: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 26));
+	nand_print_dbg("[ND]zone->cfg->nftl_read_claim_interval: %d \n", DIAG_U32(DIAG_PTR(p, 3448), 32));
+	print_smart((struct smart_info_zone *)zone);
+}
+#undef DIAG_U8
+#undef DIAG_U16
+#undef DIAG_U32
+#undef DIAG_PTR
+
 struct wear_options {
 	unsigned char before_enabled[6];
 	unsigned short enabled;
