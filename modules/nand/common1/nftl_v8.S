@@ -8030,6 +8030,7 @@ hynix26nm_special_exit:
 /* sandisk_A19_sclk1_bak: common storage replaced by its recovered BSS slot. */
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_dsp_on
 	.type	sandisk_A19_dsp_on, %function
 sandisk_A19_dsp_on:
@@ -8060,7 +8061,9 @@ sandisk_A19_dsp_on:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	sandisk_A19_dsp_on, .-sandisk_A19_dsp_on
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_cmd25
 	.type	sandisk_A19_cmd25, %function
 sandisk_A19_cmd25:
@@ -8091,6 +8094,7 @@ sandisk_A19_cmd25:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	sandisk_A19_cmd25, .-sandisk_A19_cmd25
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	sandisk_A19_set_lmflgfix_next
 	.type	sandisk_A19_set_lmflgfix_next, %function
@@ -30407,6 +30411,7 @@ do_static_wear_leveling:
 	.size	do_static_wear_leveling, .-do_static_wear_leveling
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	prio_gc_one
 	.type	prio_gc_one, %function
 prio_gc_one:
@@ -30453,6 +30458,7 @@ prio_gc_one:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	prio_gc_one, .-prio_gc_one
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC459: relocated in rooted readonly order below. */

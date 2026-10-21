@@ -2298,3 +2298,45 @@ int get_used_block_count(struct used_count_zone *zone,
 	count = get_block_used_count_from_oob(oob);
 	return count;
 }
+
+struct command_chip {
+	unsigned char before_controller[0x110];
+	void *controller;
+};
+extern struct command_chip *nci_get_from_nsi(struct special_exit_info *nsi,
+					      unsigned int index);
+extern int set_one_cmd(struct command_chip *chip, unsigned int command,
+			unsigned int argument);
+#define SANDISK_COMMAND(name, opcode) \
+	int name(const unsigned int *index) \
+	{ \
+		struct command_chip *chip = nci_get_from_nsi(g_nsi, *index); \
+		/* OEM ignores every command error and always reports success. */ \
+		nand_enable_chip((struct samsung_set_chip *)chip); \
+		ndfc_disable_randomize(chip->controller); \
+		set_one_cmd(chip, opcode, 0); \
+		nand_disable_chip((struct samsung_set_chip *)chip); \
+		return 0; \
+	}
+SANDISK_COMMAND(sandisk_A19_cmd25, 0x25)
+SANDISK_COMMAND(sandisk_A19_dsp_on, 0x26)
+
+extern int add_prio_gc(void *zone, void *physical, unsigned short priority);
+int prio_gc_one(void *zone, unsigned short block, unsigned int priority)
+{
+	void *physical = get_phy_block_addr((struct nftl_phy_outer *)zone,
+					block);
+
+	/* OEM redundantly writes valid priorities and clamps others to 3. */
+	if (priority == 1)
+		priority = 1;
+	else if (priority == 2)
+		priority = 2;
+	else if (priority == 3)
+		priority = 3;
+	else
+		priority = 3;
+	/* OEM ignores failed insertion and reports success. */
+	add_prio_gc(zone, physical, (unsigned short)priority);
+	return 0;
+}
