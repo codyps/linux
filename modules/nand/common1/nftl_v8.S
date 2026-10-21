@@ -2257,6 +2257,7 @@ is_panic_dummy_page:
 // readonly payload moved below: 	.string	"[NE] invalid panic block index %d\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	panic_recover_info
 	.type	panic_recover_info, %function
 panic_recover_info:
@@ -2294,6 +2295,7 @@ panic_recover_info:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	panic_recover_info, .-panic_recover_info
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC28: relocated in rooted readonly order below. */
@@ -25968,6 +25970,7 @@ out_phy_block_from_free_list_by_block:
 // readonly payload moved below: 	.string	"[ND]add invalid_list error !\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	put_phy_block_to_invalid_page_list
 	.type	put_phy_block_to_invalid_page_list, %function
 put_phy_block_to_invalid_page_list:
@@ -25994,6 +25997,7 @@ put_phy_block_to_invalid_page_list:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	put_phy_block_to_invalid_page_list, .-put_phy_block_to_invalid_page_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	out_phy_block_from_invalid_page_list
@@ -33122,6 +33126,9 @@ gc_src_type:
 	.zero	4	/* recovered gap */
 	.type	panic_info, %object
 	.size	panic_info, 40
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	panic_info
+#endif
 panic_info:
 	.zero	40
 	.type	panic_part, %object

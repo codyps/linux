@@ -2150,3 +2150,40 @@ void nftl_ops_init(struct nftl_ops *ops)
 	ops->write_logic = (void (*)(void))_nftl_nand_write_logic_page;
 	ops->discard = (void (*)(void))_nftl_discard_logic_page;
 }
+
+extern int add_block_invalid_list(void *zone, struct invalid_node *block);
+int put_phy_block_to_invalid_page_list(void *zone,
+				       struct invalid_node *block)
+{
+	int result;
+
+	/* OEM clears both links before checking whether insertion succeeds. */
+	block->next = 0;
+	block->previous = 0;
+	result = add_block_invalid_list(zone, block);
+	if (result != 0)
+		nand_print_dbg("[ND]add invalid_list error !\n");
+	return result;
+}
+
+struct panic_header {
+	unsigned char unknown[4];
+	unsigned char index;
+};
+struct panic_block {
+	unsigned short block;
+};
+extern void *panic_info[5];
+int panic_recover_info(struct panic_header *header, struct panic_block *block)
+{
+	/* OEM follows both pointers unchecked and rejects indices 3 and 4\n	 * despite reserving five pointer slots. */
+	unsigned int index = ((unsigned char *)header + 4)[0];
+
+	if (index <= 2) {
+		nand_print("[ND] find panic block : %d\n", block->block);
+		panic_info[index] = block;
+		return 0;
+	}
+	nand_print("[NE] invalid panic block index %d\n", index);
+	return -1;
+}
