@@ -8164,6 +8164,7 @@ sandisk_A19_cmd25:
 	.size	sandisk_A19_cmd25, .-sandisk_A19_cmd25
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_set_lmflgfix_next
 	.type	sandisk_A19_set_lmflgfix_next, %function
 sandisk_A19_set_lmflgfix_next:
@@ -8266,6 +8267,7 @@ sandisk_A19_set_lmflgfix_next:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	sandisk_A19_set_lmflgfix_next, .-sandisk_A19_set_lmflgfix_next
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC94: relocated in rooted readonly order below. */

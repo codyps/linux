@@ -4892,6 +4892,37 @@ int sandisk_A19_exit_readretry(struct samsung_set_chip *chip)
 SANDISK_COMMAND(sandisk_A19_cmd25, 0x25)
 SANDISK_COMMAND(sandisk_A19_dsp_on, 0x26)
 
+int sandisk_A19_set_lmflgfix_next(const unsigned int *index,
+				  unsigned char next_value)
+{
+	struct command_chip *chip = nci_get_from_nsi(g_nsi, *index);
+	unsigned char command = 0x55;
+	unsigned char address = 0;
+	unsigned char value = 1;
+
+	nand_enable_chip((struct samsung_set_chip *)chip);
+	ndfc_disable_randomize(chip->controller);
+	set_one_cmd(chip, 0x5c, 0);
+	set_one_cmd(chip, 0xffffffc5, 0);
+	/* OEM ignores every command result, including the two setup writes. */
+	set_cmd_with_nand_bus(chip, &command, 1, &address, &value, 1, 1);
+	if (sandisk_A19_read_retry_mode == 52)
+		address = 34;
+	else if (sandisk_A19_read_retry_mode == 53)
+		address = 37;
+	else
+		address = 35;
+	value = next_value;
+	command = 0x55;
+	set_cmd_with_nand_bus(chip, &command, 1, &address, &value, 1, 1);
+	address = 0;
+	value = 0;
+	command = 0x55;
+	set_cmd_with_nand_bus(chip, &command, 1, &address, &value, 1, 1);
+	nand_disable_chip((struct samsung_set_chip *)chip);
+	return 0;
+}
+
 extern int set_one_addr(struct command_chip *chip, unsigned int address);
 #define HYNIX_LSB_EXIT(name) \
 int name(struct samsung_set_chip *chip) \
