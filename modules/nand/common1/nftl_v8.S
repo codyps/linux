@@ -10271,6 +10271,7 @@ hynix16nm_vender_get_param:
 // readonly payload moved below: 	.string	"get bit %d failed!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_major_check_byte
 	.type	hynix16nm_major_check_byte, %function
 hynix16nm_major_check_byte:
@@ -10460,6 +10461,7 @@ hynix16nm_major_check_byte:
 	ldp	x29, x30, [sp], 96
 	ret
 	.size	hynix16nm_major_check_byte, .-hynix16nm_major_check_byte
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC116: relocated in rooted readonly order below. */

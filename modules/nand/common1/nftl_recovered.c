@@ -7757,3 +7757,69 @@ int nand_op(int kind, void *input, unsigned int sector,
 	result |= operation(zone, page, take, data);
 	return result;
 }
+
+int hynix16nm_major_check_byte(unsigned char *value, unsigned int mode,
+			       unsigned int level, const unsigned char *primary,
+			       const unsigned char *secondary, unsigned int length)
+{
+	unsigned int valid = 0;
+	unsigned int bit;
+	unsigned char result = 0;
+
+	if ((length >> 1) > level) {
+		nand_print("_major_check_byte, wrong input para, level %d, len %d\n",
+			   level, length);
+		*value = 0xff;
+		return -107;
+	}
+	for (bit = 0; bit < 8; bit++) {
+		unsigned int ones = 0;
+		unsigned int zeros = 0;
+		unsigned int accepted = 0;
+		unsigned int index;
+
+		for (index = 0; index < length; index++) {
+			if ((primary[index] >> bit) & 1)
+				ones++;
+			else
+				zeros++;
+		}
+		if (ones > level) {
+			result |= (unsigned char)(1U << bit);
+			accepted = 1;
+		}
+		if (zeros > level)
+			accepted = 1;
+		if (!accepted && mode == 1) {
+			/* The second copy is bitwise inverted by the OEM vote.
+			 * Do not validate its length independently. */
+			ones = 0;
+			zeros = 0;
+			for (index = 0; index < length; index++) {
+				if ((secondary[index] >> bit) & 1)
+					zeros++;
+				else
+					ones++;
+			}
+			if (zeros > level)
+				accepted = 1;
+			if (ones > level) {
+				result |= (unsigned char)(1U << bit);
+				accepted = 1;
+			}
+		}
+		if (accepted)
+			valid++;
+		else {
+			nand_print("%d:  '1'-'0' : %d - %d\n",
+				   bit, ones, zeros);
+			nand_print("get bit %d failed!\n", bit);
+		}
+	}
+	if (valid == 8) {
+		*value = result;
+		return 0;
+	}
+	*value = 0xff;
+	return -80;
+}
