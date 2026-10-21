@@ -2187,3 +2187,44 @@ int panic_recover_info(struct panic_header *header, struct panic_block *block)
 	nand_print("[NE] invalid panic block index %d\n", index);
 	return -1;
 }
+
+unsigned char toshiba_read_retry_start_cmd[2] = { 0x5c, 0xc5 };
+int toshiba_vender_pre_condition(void *chip)
+{
+	int result;
+
+	result = set_cmd_with_nand_bus(chip, toshiba_read_retry_start_cmd,
+				       0, 0, 0, 0, 2);
+	if (result != 0) {
+		nand_print("toshiba vender_pre_condition error!\n");
+		return result;
+	}
+	return 0;
+}
+
+unsigned char sandisk_A19_read_retry_cmd_1y = 0xef;
+int sandisk_A19_vender_set_param(void *chip, void *value, void *address,
+				 int unused)
+{
+	int result = 0;
+
+	/* OEM ignores the fourth argument and does no command error recovery. */
+	result = set_cmd_with_nand_bus(chip, &sandisk_A19_read_retry_cmd_1y,
+				       1, address, value, 4, 1);
+	return result;
+}
+
+extern int erase_block(void *zone, void *block, unsigned short mode);
+int nand_dbg_zone_erase(void *zone, unsigned short block,
+			unsigned short mode)
+{
+	void *physical = get_phy_block_addr((struct nftl_phy_outer *)zone, block);
+	int result;
+
+	physical = out_phy_block_from_free_list_by_block(
+		(struct nftl_free_erase_owner *)zone,
+		(struct nftl_free_erase_node *)physical);
+	/* OEM passes a null removal result directly to erase_block. */
+	result = erase_block(zone, physical, mode);
+	return result;
+}

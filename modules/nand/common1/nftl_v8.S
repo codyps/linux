@@ -5790,6 +5790,7 @@ toshiba_vender_set_param:
 // readonly payload moved below: 	.string	"toshiba vender_pre_condition error!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	toshiba_vender_pre_condition
 	.type	toshiba_vender_pre_condition, %function
 toshiba_vender_pre_condition:
@@ -5821,6 +5822,7 @@ toshiba_vender_pre_condition:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	toshiba_vender_pre_condition, .-toshiba_vender_pre_condition
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	toshiba_set_readretry
 	.type	toshiba_set_readretry, %function
@@ -8912,6 +8914,7 @@ sandisk_A19_read_retry_clock_recover:
 	.size	sandisk_A19_read_retry_clock_recover, .-sandisk_A19_read_retry_clock_recover
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_vender_set_param
 	.type	sandisk_A19_vender_set_param, %function
 sandisk_A19_vender_set_param:
@@ -8937,6 +8940,7 @@ sandisk_A19_vender_set_param:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	sandisk_A19_vender_set_param, .-sandisk_A19_vender_set_param
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	sandisk_A19_set_readretry
 	.type	sandisk_A19_set_readretry, %function
@@ -24149,6 +24153,7 @@ nand_dbg_phy_write:
 	ret
 	.size	nand_dbg_phy_write, .-nand_dbg_phy_write
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_dbg_zone_erase
 	.type	nand_dbg_zone_erase, %function
 nand_dbg_zone_erase:
@@ -24174,6 +24179,7 @@ nand_dbg_zone_erase:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nand_dbg_zone_erase, .-nand_dbg_zone_erase
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_dbg_phy_erase
@@ -33300,7 +33306,9 @@ sandisk_A19_read_retry_enable_cmd_1y:
 sandisk_A19_read_retry_exit_cmd_1y:
 	.byte	-1
 	.balign	8
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 sandisk_A19_read_retry_cmd_1y:
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.byte	-17
 	.balign	8
 sandisk_A19_read_retry_reg_adr_1y:
@@ -33688,7 +33696,9 @@ sandisk_A19_1z_8g:
 	.byte	12
 	.byte	8
 	.balign	8
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 toshiba_read_retry_start_cmd:
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.byte	92
 	.byte	-59
 	.balign	8
