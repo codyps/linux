@@ -209,3 +209,54 @@ int name(void *zone, struct physic_op_param *request) \
 NFTL_BLOCK_WRAPPER(_nftl_nand_erase_superblk, erase)
 NFTL_BLOCK_WRAPPER(_nftl_nand_is_blk_good, is_good)
 NFTL_BLOCK_WRAPPER(_nftl_nand_mark_bad_blk, mark_bad)
+
+struct nftl_free_erase_node {
+	unsigned char before_erase[6];
+	unsigned short erase_time;
+	unsigned char before_next[24];
+	struct nftl_free_erase_node *next;
+};
+struct nftl_free_erase_owner {
+	unsigned char before_list[272];
+	struct nftl_free_erase_node list;
+};
+struct nftl_invalid_erase_node {
+	unsigned char before_erase[6];
+	unsigned short erase_time;
+	unsigned char before_next[8];
+	struct nftl_invalid_erase_node *next;
+};
+struct nftl_invalid_erase_owner {
+	unsigned char before_list[336];
+	struct nftl_invalid_erase_node list;
+};
+
+/* As with the block wrappers, -fstack-protector changes local slot layout
+ * without adding a canary. These list walkers have no character locals. */
+#define NFTL_MAX_ERASE(name, owner_type, node_type) \
+__attribute__((optimize("-fno-stack-protector"))) \
+struct node_type *name(struct owner_type *owner, unsigned short limit) \
+{ \
+	struct node_type *best = 0; \
+	unsigned short maximum = 0; \
+	struct node_type *current = &owner->list; \
+	current = current->next; \
+	while (current) { \
+		/* OEM picks the last tied maximum below limit and does not \
+		 * detect cycles or validate the owner pointer. */ \
+		if (limit > current->erase_time && \
+		    maximum <= current->erase_time) { \
+			maximum = current->erase_time; \
+			best = current; \
+		} \
+		current = current->next; \
+	} \
+	if (best) \
+		return best; \
+	return 0; \
+}
+
+NFTL_MAX_ERASE(get_block_max_erase_time_from_free_list,
+	       nftl_free_erase_owner, nftl_free_erase_node)
+NFTL_MAX_ERASE(get_block_max_erase_time_from_invalid_list,
+	       nftl_invalid_erase_owner, nftl_invalid_erase_node)
