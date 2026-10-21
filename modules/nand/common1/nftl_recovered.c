@@ -1555,6 +1555,43 @@ int sandisk_vender_set_param(void *chip, unsigned char *data,
 						1, address, data, 4, 1);
 	return result;
 }
+extern unsigned char sandisk_acti_start_addr[9];
+static const unsigned char sandisk_activation_commands[9] = {
+	0x53, 0x53, 0x53, 0x53, 0x53, 0x53, 0x53, 0x53, 0x53
+};
+/* OEM activation has no stack-canary prologue despite its local command data. */
+__attribute__((optimize("-fno-stack-protector")))
+int sandisk_activation_seq(struct samsung_set_chip *chip)
+{
+	unsigned char commands[12];
+	unsigned char data[16];
+	int result;
+
+	__builtin_memcpy(commands, sandisk_activation_commands, 9);
+	data[0] = 0;
+	data[1] = 0;
+	data[2] = 0;
+	data[3] = 0;
+	data[4] = 0;
+	data[5] = 0;
+	data[6] = 0;
+	data[7] = 0;
+	data[8] = 0;
+
+	nand_enable_chip(chip);
+	ndfc_disable_randomize(chip->controller);
+	result = set_cmd_with_nand_bus(chip, sandisk_acti_start_cmd,
+					0, 0, 0, 0, 2);
+	/* OEM sends the second command after a failed first command and
+	 * combines status codes by bitwise OR. */
+	result |= set_cmd_with_nand_bus(chip, commands, 0,
+					 sandisk_acti_start_addr,
+					 data, 1, 9);
+	nand_disable_chip(chip);
+	if (result)
+		nand_print("sandisk activation seq fail 0x%x\n", result);
+	return result;
+}
 extern int page_write(unsigned short chip, unsigned short block,
 		      unsigned short page, unsigned int mode,
 		      void *data, void *oob);

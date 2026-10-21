@@ -12362,6 +12362,7 @@ sandisk_read_page_end:
 // readonly payload moved below: 	.string	"sandisk activation seq fail 0x%x\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_activation_seq
 	.type	sandisk_activation_seq, %function
 sandisk_activation_seq:
@@ -12430,6 +12431,7 @@ sandisk_activation_seq:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	sandisk_activation_seq, .-sandisk_activation_seq
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC1: relocated in rooted readonly order below. */
