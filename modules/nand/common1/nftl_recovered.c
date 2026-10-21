@@ -1227,12 +1227,13 @@ int __nand_sector_read(void *zone, unsigned int sector, unsigned int count,
 {
 	int result = 0;
 	unsigned int current = sector;
-	unsigned long pointer = (unsigned long)data;
+	/* A byte cursor preserves OEM's 512-byte step and direct x2 call load. */
+	unsigned char *pointer = data;
 	unsigned int index = 0;
 
 	while (index < count) {
 		/* OEM ORs every result and never stops on an error. */
-		result |= nand_sector_cache_read(zone, current, (void *)pointer);
+		result |= nand_sector_cache_read(zone, current, pointer);
 		current++;
 		pointer += 512;
 		index++;
@@ -1244,11 +1245,12 @@ int __nand_sector_write(void *zone, unsigned int sector, unsigned int count,
 {
 	int result = 0;
 	unsigned int current = sector;
-	unsigned long pointer = (unsigned long)data;
+	/* Match the read wrapper's OEM byte cursor and call convention. */
+	unsigned char *pointer = data;
 	unsigned int index = 0;
 
 	while (index < count) {
-		result |= nand_sector_cache_write(zone, current, (void *)pointer);
+		result |= nand_sector_cache_write(zone, current, pointer);
 		current++;
 		pointer += 512;
 		index++;
