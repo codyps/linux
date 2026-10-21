@@ -11973,6 +11973,7 @@ sandisk_read_retry_clock_recover:
 	.size	sandisk_read_retry_clock_recover, .-sandisk_read_retry_clock_recover
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_end_one_read_retry
 	.type	sandisk_end_one_read_retry, %function
 sandisk_end_one_read_retry:
@@ -12036,6 +12037,7 @@ sandisk_end_one_read_retry:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	sandisk_end_one_read_retry, .-sandisk_end_one_read_retry
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	sandisk_set_readretry
 	.type	sandisk_set_readretry, %function
@@ -28307,6 +28309,7 @@ flush_write_cache_to_nand:
 // readonly payload moved below: 	.string	"[ND]flush cache %d %d!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	__nand_flush_write_cache
 	.type	__nand_flush_write_cache, %function
 __nand_flush_write_cache:
@@ -28372,6 +28375,7 @@ __nand_flush_write_cache:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	__nand_flush_write_cache, .-__nand_flush_write_cache
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC430: relocated in rooted readonly order below. */
@@ -33374,6 +33378,9 @@ sandisk_sclk1_bak:
 	.zero	4
 	.type	sandisk_toggle_mode_flag, %object
 	.size	sandisk_toggle_mode_flag, 4
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	sandisk_toggle_mode_flag
+#endif
 sandisk_toggle_mode_flag:
 	.zero	4
 

@@ -840,7 +840,7 @@ int is_ftl_special_data(unsigned char *oob)
 
 /* Bounded behavior-level NFTL C candidates, not original source claims. */
 
-extern int __nand_flush_write_cache(void *cache, int force);
+extern int __nand_flush_write_cache(void *cache, unsigned int force);
 extern int write_logic_data_to_current_block(void *zone, void *current,
 				     unsigned int marker, unsigned int page,
 				     void *data);
@@ -2458,6 +2458,43 @@ int __nand_flush_sector_write_cache(void *zone, unsigned int limit)
 	return result;
 }
 
+struct write_flush_list {
+	unsigned char before_head[1784];
+	void *head;
+};
+struct write_flush_zone {
+	unsigned char before_id[24];
+	unsigned char id;
+	unsigned char before_debug[656 - 25];
+	unsigned int debug_level;
+	unsigned char before_cache[1072 - 660];
+	struct write_flush_list cache;
+};
+extern int flush_write_cache_to_nand(void *zone, int count);
+int __nand_flush_write_cache(void *zone, unsigned int limit)
+{
+	unsigned int flushed = 0;
+	struct write_flush_list *cache =
+		&((struct write_flush_zone *)zone)->cache;
+	int result = 0;
+
+	while (cache->head) {
+		flushed++;
+		result |= flush_write_cache_to_nand(zone, 1);
+		/* OEM wraps a zero limit and may keep calling a helper which did
+		 * not remove the head; preserve both behaviors. */
+		limit--;
+		if (limit == 0)
+			break;
+	}
+	if (result)
+		nand_print("[NE]nand_flush_write_cache write error\n");
+	if (flushed && ((struct write_flush_zone *)zone)->debug_level)
+		nand_print_dbg("[ND]flush cache %d %d!\n",
+			       ((struct write_flush_zone *)zone)->id, flushed);
+	return result;
+}
+
 struct gc_list_node {
 	unsigned char before_next[0x10];
 	struct gc_list_node *next;
@@ -3771,6 +3808,31 @@ SPECIAL_INIT_THREE(sandisk_A19_special_init, sandisk_A19_readretry_init,
 	sandisk_A19_read_retry_cycle, sandisk_A19_read_retry_reg_cnt,
 	" sandisk_A19_special_init sandisk_A19_read_retry_mode:%d sandisk_A19_read_retry_cycle :%d sandisk_A19_read_retry_reg_cnt %d \n",
 	" sandisk_A19_special_init error sandisk_A19_read_retry_mode:%d sandisk_A19_read_retry_cycle :%d sandisk_A19_read_retry_reg_cnt %d \n")
+
+extern unsigned int sandisk_toggle_mode_flag;
+extern unsigned char sandisk_read_retry_disable_cmd_19[];
+extern int ndfc_is_toggle_interface(void *);
+extern int ndfc_set_legacy_interface(void *);
+extern int ndfc_set_toggle_interface(void *);
+int sandisk_end_one_read_retry(struct samsung_set_chip *chip)
+{
+	if (sandisk_read_retry_mode != 48 && sandisk_read_retry_mode != 49)
+		return 0;
+	nand_enable_chip(chip);
+	ndfc_disable_randomize(chip->controller);
+	if (ndfc_is_toggle_interface(chip->controller)) {
+		ndfc_set_legacy_interface(chip->controller);
+		sandisk_toggle_mode_flag = 1;
+	}
+	/* OEM ignores the command result and tests a sticky global flag: a
+	 * prior toggle operation can force restoration on a later chip. */
+	set_cmd_with_nand_bus(chip, sandisk_read_retry_disable_cmd_19,
+			      0, 0, 0, 0, 1);
+	if (sandisk_toggle_mode_flag == 1)
+		ndfc_set_toggle_interface(chip->controller);
+	nand_disable_chip(chip);
+	return 0;
+}
 
 struct reclaim_flag_zone {
 	unsigned char before_complete[664];
