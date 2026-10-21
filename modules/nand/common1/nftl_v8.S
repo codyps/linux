@@ -17892,6 +17892,7 @@ first_scan_all_blocks:
 // readonly payload moved below: 	.string	"[NE]this zone not enough free block %d , %d!!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	init_zone_after_first_scan
 	.type	init_zone_after_first_scan, %function
 init_zone_after_first_scan:
@@ -18023,6 +18024,7 @@ init_zone_after_first_scan:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	init_zone_after_first_scan, .-init_zone_after_first_scan
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC233: relocated in rooted readonly order below. */

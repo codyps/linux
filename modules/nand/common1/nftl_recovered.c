@@ -3540,8 +3540,75 @@ struct build_zone {
 	unsigned char before_count[26];
 	unsigned short block_count;
 };
+struct scan_page_geometry {
+	unsigned char before_factor[8];
+	unsigned char page_factor;
+	unsigned char before_pages[11];
+	unsigned short pages_per_block;
+};
+struct scan_reserve_geometry {
+	unsigned char before_min_free[12];
+	unsigned short min_free_blocks;
+	unsigned short min_gc_blocks;
+	unsigned char before_reserve_ratio[2];
+	unsigned short reserve_numerator;
+	unsigned short reserve_denominator;
+};
+struct scan_zone {
+	unsigned char before_geometry[8];
+	struct scan_page_geometry *geometry;
+	unsigned char before_logical_pages[16];
+	unsigned int logical_pages;
+	unsigned char before_free_capacity[4];
+	unsigned int free_capacity;
+	unsigned char before_gc_reserve[636];
+	unsigned short gc_reserve;
+	unsigned short write_reserve;
+	unsigned short initialized;
+	unsigned short status;
+	unsigned char before_reserve_geometry[2760];
+	struct scan_reserve_geometry *reserve_geometry;
+};
+int init_zone_after_first_scan(struct build_zone *owner,
+			       unsigned int available_blocks)
+{
+	struct scan_zone *zone = (struct scan_zone *)owner;
+	unsigned int needed_blocks;
+	unsigned int free_blocks;
+
+	/* Stock performs both unsigned divisions without checking for zero. */
+	needed_blocks = zone->logical_pages / zone->geometry->page_factor;
+	needed_blocks /= zone->geometry->pages_per_block;
+	nand_print_dbg("[ND]before second %d %d.\n",
+		       available_blocks, needed_blocks);
+	if (available_blocks <= needed_blocks) {
+		nand_print("[NE]only have blocks:%u,logic cap need blocks:%u this zone not enough data block!!\n",
+			   available_blocks, needed_blocks);
+		return 1;
+	}
+	free_blocks = available_blocks - needed_blocks;
+	zone->free_capacity = free_blocks * zone->geometry->page_factor *
+		zone->geometry->pages_per_block;
+	/* The OEM subtracts in 32 bits, so a zero minimum wraps to UINT_MAX. */
+	if (free_blocks < (unsigned int)zone->reserve_geometry->min_free_blocks - 1) {
+		nand_print("[NE]this zone not enough free block %d , %d!!\n",
+			   available_blocks, needed_blocks);
+		return 1;
+	}
+	zone->gc_reserve = free_blocks / 5;
+	if (zone->gc_reserve < zone->reserve_geometry->min_gc_blocks)
+		zone->gc_reserve = zone->reserve_geometry->min_gc_blocks;
+	/* Preserve 32-bit product wrap, unchecked divisor and halfword truncation. */
+	zone->write_reserve = (free_blocks *
+		zone->reserve_geometry->reserve_numerator) /
+		zone->reserve_geometry->reserve_denominator;
+	if (zone->write_reserve < zone->gc_reserve + 2)
+		zone->write_reserve = zone->gc_reserve + 2;
+	zone->initialized = 1;
+	zone->status = 0;
+	return 0;
+}
 extern int first_scan_all_blocks(struct build_zone *);
-extern int init_zone_after_first_scan(struct build_zone *, unsigned short);
 extern int second_scan_all_blocks(struct build_zone *);
 extern int power_on_gc(struct build_zone *);
 extern int panic_backup_block(struct build_zone *);
