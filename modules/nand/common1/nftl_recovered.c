@@ -105,3 +105,17 @@ int samsung_set_readretry(struct samsung_set_chip *chip)
 	nand_disable_chip(chip);
 	return result;
 }
+
+extern void *nand_memcpy(void *, const void *, unsigned int);
+
+void get_nftl_version(char *major, char *minor, char *build,
+		      char *date, char *time)
+{
+	/* OEM assumes every caller buffer is large enough and ignores all
+	 * copy results. These lengths include the terminating NUL bytes. */
+	nand_memcpy(major, "5", 2);
+	nand_memcpy(minor, "0", 2);
+	nand_memcpy(build, "000", 4);
+	nand_memcpy(date, "2020.12.24", 11);
+	nand_memcpy(time, "09:50", 6);
+}

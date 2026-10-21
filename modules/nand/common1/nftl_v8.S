@@ -709,6 +709,7 @@ nftl_version:
 	ret
 	.size	nftl_version, .-nftl_version
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_nftl_version
 	.type	get_nftl_version, %function
 get_nftl_version:
@@ -753,6 +754,7 @@ get_nftl_version:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	get_nftl_version, .-get_nftl_version
+#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC16: relocated in rooted readonly order below. */
