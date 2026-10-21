@@ -19122,6 +19122,7 @@ is_all_byte_ff:
 // readonly payload moved below: 	.string	"[NE]no free block to use!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_current_used_block
 	.type	get_current_used_block, %function
 get_current_used_block:
@@ -19508,6 +19509,7 @@ get_current_used_block:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	get_current_used_block, .-get_current_used_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC262: relocated in rooted readonly order below. */

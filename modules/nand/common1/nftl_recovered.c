@@ -10741,6 +10741,173 @@ int recover_phy_page_mapping(struct page_map_recovery_zone *zone,
 	return page;
 }
 
+struct current_used_zone {
+	unsigned char before_flag[25];
+	unsigned char flags;
+	unsigned char before_free_head[304 - 26];
+	void *free_head;
+	unsigned char before_data[512 - 312];
+	void *data;
+	unsigned char before_current[528 - 520];
+	struct new_write_block *current;
+	void *current_map_buffer;
+	unsigned int map_copy_bytes;
+	unsigned char before_current_map[552 - 548];
+	unsigned int *current_map;
+	unsigned char before_current_used[584 - 560];
+	unsigned short current_used;
+	unsigned char before_assist[592 - 586];
+	struct new_write_block *assist;
+	void *assist_map_buffer;
+	unsigned char before_assist_map[616 - 608];
+	unsigned int *assist_map;
+	unsigned char before_assist_used[648 - 624];
+	unsigned short assist_used;
+	unsigned char before_copy[3480 - 650];
+	int (*copy_page)(struct current_used_zone *, struct new_write_block *,
+			 struct new_write_block *, void *, unsigned short);
+};
+_Static_assert(__builtin_offsetof(struct current_used_zone, current) == 528,
+	       "current block offset");
+_Static_assert(__builtin_offsetof(struct current_used_zone, assist) == 592,
+	       "assist block offset");
+_Static_assert(__builtin_offsetof(struct current_used_zone, copy_page) == 3480,
+	       "current block copy callback offset");
+
+int get_current_used_block(struct current_used_zone *zone,
+			   struct new_write_block *candidate,
+			   unsigned int previous_tag)
+{
+	unsigned int page, tag;
+	int had_primary_ecc = 0;
+
+	if (zone->current)
+		return 0;
+	if (!candidate) {
+		nand_print_dbg("[ND]get a new free block\n");
+		if (!zone->free_head) {
+			nand_print("[NE]no free block to use!\n");
+			print_free_list((struct free_print_zone *)zone);
+			print_block_invalid_list((struct invalid_print_zone *)zone);
+			return 1;
+		}
+		zone->current = (struct new_write_block *)
+			out_phy_block_from_free_list((struct free_block_zone *)zone);
+		if (!zone->current)
+			return 1;
+		zone->current_used = 0;
+		zone->current->tag = previous_tag + 1;
+		if (zone->flags & 1) {
+			zone->assist = (struct new_write_block *)
+				out_phy_block_from_free_list(
+					(struct free_block_zone *)zone);
+			if (!zone->assist)
+				return 1;
+			zone->assist_used = 0;
+			zone->assist->tag = zone->current->tag + 1;
+		} else {
+			zone->assist = 0;
+		}
+		return 0;
+	}
+	for (;;) {
+		zone->current_used = (unsigned short)
+			recover_phy_page_mapping(
+				(struct page_map_recovery_zone *)zone,
+				candidate, zone->current_map);
+		if (zone->current_used != 0xffff)
+			break;
+		had_primary_ecc = 1;
+		nand_print("[NE]current_block ecc error %d!\n",
+			   candidate->number);
+		candidate = current_block_ecc_error(
+			(struct ecc_rebuild_zone *)zone, candidate);
+		if (!candidate) {
+			nand_print("[NE]error! no free block!\n");
+			return 1;
+		}
+	}
+	zone->current = candidate;
+	nand_print_dbg("[ND]recover %d %d\n", candidate->number,
+		       zone->current_used);
+	recover_logic_page_mapping((struct logic_page_map_zone *)zone,
+			   (struct invalid_page_node *)candidate,
+			   zone->current_map, zone->current_used);
+	if (zone->current_used < candidate->page)
+		nand_print("[NE]page used:%d invalid page count:%d error\n",
+			   zone->current_used, candidate->page);
+	if (!(zone->flags & 1))
+		return 0;
+	for (;;) {
+		if (!zone->assist) {
+			zone->assist = (struct new_write_block *)
+				out_phy_block_from_free_list(
+					(struct free_block_zone *)zone);
+			if (!zone->assist)
+				return 1;
+			zone->assist_used = 0;
+			tag = zone->current->tag + 1;
+			zone->assist->tag = tag;
+			if (new_block_init_for_write(
+				    (struct new_write_zone *)zone,
+				    zone->assist, tag)) {
+				nand_print("[NE]new_block_init_for_write error here!\n");
+				zone->assist = 0;
+				continue;
+			}
+			for (page = 0; page < zone->current_used; page++) {
+				/* OEM logs a copy failure but still advances to the next page. */
+				if (zone->copy_page(zone, zone->current,
+						    zone->assist, zone->data,
+						    page))
+					nand_print("[NE]something is error here 10!\n");
+			}
+		}
+		zone->assist_used = (unsigned short)
+			recover_phy_page_mapping(
+				(struct page_map_recovery_zone *)zone,
+				zone->assist, zone->assist_map);
+		if (zone->assist_used == 0xffff) {
+			nand_print("[NE]something is error here 11!\n");
+			erase_block((struct erase_block_zone *)zone,
+				    (struct erase_block_info *)zone->assist,
+				    (unsigned short)(zone->assist->erase_count + 1));
+			zone->assist = 0;
+			continue;
+		}
+		zone->assist->tag = zone->current->tag + 1;
+		recover_logic_page_mapping((struct logic_page_map_zone *)zone,
+				   (struct invalid_page_node *)zone->assist,
+				   zone->assist_map, zone->assist_used);
+		if (zone->assist_used > zone->current_used) {
+			nand_print("[NE]assist block page used:%d current block page used:%d something is error here 12.\n",
+				   zone->assist_used, zone->current_used);
+			if (!had_primary_ecc) {
+				nand_print("[NE]assist block page used:%d current block page used:%d something is error here 17.\n",
+					   zone->assist_used, zone->current_used);
+				return 0;
+			}
+			erase_block((struct erase_block_zone *)zone,
+				    (struct erase_block_info *)zone->current,
+				    (unsigned short)(zone->current->erase_count + 1));
+			zone->current = zone->assist;
+			zone->current_used = zone->assist_used;
+			nand_memcpy(zone->current_map_buffer,
+				    zone->assist_map_buffer,
+				    zone->map_copy_bytes);
+			zone->assist = 0;
+			continue;
+		}
+		if (zone->assist_used == zone->current_used)
+			return 0;
+		nand_print("[NE]something is error here 16!\n");
+		erase_block((struct erase_block_zone *)zone,
+			    (struct erase_block_info *)zone->assist,
+			    (unsigned short)(zone->assist->erase_count + 1));
+		zone->assist = 0;
+	}
+}
+
 __attribute__((optimize("-fno-stack-protector")))
 int recover_block_phy_page_mapping(struct page_map_recovery_zone *zone,
 				   struct new_write_block *block,
