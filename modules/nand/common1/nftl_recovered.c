@@ -747,6 +747,7 @@ int is_block_in_free_list(struct free_zone *zone, struct free_node *target)
 struct invalid_node {
 	unsigned char before_next[16];
 	struct invalid_node *next;
+	struct invalid_node *previous;
 };
 struct invalid_zone {
 	unsigned char before_head[336];
@@ -1703,4 +1704,95 @@ struct sector_node *del_from_sector_cache_write_list(struct sector_owner *owner,
     /* Deliberately allow the 16-bit list count to wrap below zero. */
     owner->count--;
     return node;
+}
+
+struct gc_list_node {
+	unsigned char before_next[0x10];
+	struct gc_list_node *next;
+	struct gc_list_node *previous;
+};
+struct gc_list {
+	unsigned short count;
+	unsigned char before_head[0x148 - 2];
+	struct gc_list_node head;
+};
+int add_to_gc_list_tail(struct gc_list *list, struct gc_list_node *target)
+{
+	struct gc_list_node *node;
+
+	/* OEM neither checks duplicates nor detects cycles. */
+	for (node = &list->head; node->next; node = node->next)
+		;
+	node->next = target;
+	target->next = 0;
+	target->previous = node;
+	/* OEM wraps this 16-bit count on overflow. */
+	list->count++;
+	return 0;
+}
+
+
+struct invalid_node *del_block_invalid_list(struct invalid_zone *zone)
+{
+	struct invalid_node *node = &zone->head;
+
+	node = node->next;
+	if (node) {
+		zone->head.next = node->next;
+		if (node->next)
+			node->next->previous = &zone->head;
+	}
+	return node;
+}
+
+/* -fstack-protector reorders pointer locals without a canary here. */
+__attribute__((optimize("-fno-stack-protector")))
+struct nftl_list_node *del_last_nftl_blk(struct nftl_list_node *head)
+{
+	struct nftl_list_node *last = 0;
+	struct nftl_list_node *current = head;
+
+	/* OEM follows unchecked links and can loop forever on a cycle. */
+	while (current->next) {
+		last = current->next;
+		if (last->next == 0) {
+			current->next = 0;
+			return last;
+		}
+		current = current->next;
+	}
+	return 0;
+}
+
+struct move_geometry {
+	unsigned char before_pages[0x14];
+	unsigned short pages;
+};
+struct move_node {
+	unsigned char before_block[4];
+	unsigned short block;
+};
+struct move_zone {
+	unsigned char before_geometry[8];
+	struct move_geometry *geometry;
+	unsigned char before_first[0x160 - 0x10];
+	struct move_node *first;
+};
+extern struct move_node *out_phy_block_from_invalid_page_list(
+	struct move_zone *zone);
+extern int put_phy_block_to_free_list(struct move_zone *zone,
+				     struct move_node *node);
+int adjust_invaild_list(struct move_zone *zone)
+{
+	struct move_node *node;
+
+	while (zone->first) {
+		node = zone->first;
+		if (node->block != zone->geometry->pages)
+			break;
+		node = out_phy_block_from_invalid_page_list(zone);
+		/* OEM ignores a failed free-list insertion. */
+		put_phy_block_to_free_list(zone, node);
+	}
+	return 0;
 }

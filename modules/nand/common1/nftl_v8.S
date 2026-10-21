@@ -635,6 +635,7 @@ add_nftl_blk_list:
 	.size	add_nftl_blk_list, .-add_nftl_blk_list
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_last_nftl_blk
 	.type	del_last_nftl_blk, %function
 del_last_nftl_blk:
@@ -670,6 +671,7 @@ del_last_nftl_blk:
 	add	sp, sp, 32
 	ret
 	.size	del_last_nftl_blk, .-del_last_nftl_blk
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	nftl_support_boot_check_crc_from_dts
 	.type	nftl_support_boot_check_crc_from_dts, %function
@@ -25048,6 +25050,7 @@ add_block_invalid_list:
 	ret
 	.size	add_block_invalid_list, .-add_block_invalid_list
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_block_invalid_list
 	.type	del_block_invalid_list, %function
 del_block_invalid_list:
@@ -25080,6 +25083,7 @@ del_block_invalid_list:
 	add	sp, sp, 32
 	ret
 	.size	del_block_invalid_list, .-del_block_invalid_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	del_block_invalid_list_by_block
 	.type	del_block_invalid_list_by_block, %function
@@ -26119,6 +26123,7 @@ phy_block_from_invalid_page_incr:
 	ret
 	.size	phy_block_from_invalid_page_incr, .-phy_block_from_invalid_page_incr
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	adjust_invaild_list
 	.type	adjust_invaild_list, %function
 adjust_invaild_list:
@@ -26156,6 +26161,7 @@ adjust_invaild_list:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	adjust_invaild_list, .-adjust_invaild_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC413: relocated in rooted readonly order below. */
@@ -29507,6 +29513,7 @@ search_gc_node:
 	.size	search_gc_node, .-search_gc_node
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	add_to_gc_list_tail
 	.type	add_to_gc_list_tail, %function
 add_to_gc_list_tail:
@@ -29544,6 +29551,7 @@ add_to_gc_list_tail:
 	add	sp, sp, 32
 	ret
 	.size	add_to_gc_list_tail, .-add_to_gc_list_tail
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_from_gc_list
