@@ -8233,14 +8233,18 @@ int sandisk_A19_set_lmflgfix_next(const unsigned int *index,
 				  unsigned char next_value)
 {
 	struct command_chip *chip = nci_get_from_nsi(g_nsi, *index);
-	unsigned char command = 0x55;
-	unsigned char address = 0;
-	unsigned char value = 1;
+	unsigned char command;
+	unsigned char value;
+	unsigned char address;
 
 	nand_enable_chip((struct samsung_set_chip *)chip);
 	ndfc_disable_randomize(chip->controller);
 	set_one_cmd(chip, 0x5c, 0);
 	set_one_cmd(chip, 0xffffffc5, 0);
+	/* Stock does not initialize these stack bytes until after setup. */
+	address = 0;
+	value = 1;
+	command = 0x55;
 	/* OEM ignores every command result, including the two setup writes. */
 	set_cmd_with_nand_bus(chip, &command, 1, &address, &value, 1, 1);
 	if (sandisk_A19_read_retry_mode == 52)
