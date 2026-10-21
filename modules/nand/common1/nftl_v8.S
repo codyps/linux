@@ -27917,6 +27917,7 @@ nand_cache_read:
 // readonly payload moved below: 	.string	"[NI]ECC_LIMIT happened 11! page:%d!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_cache_write
 	.type	nand_cache_write, %function
 nand_cache_write:
@@ -28289,6 +28290,7 @@ nand_cache_write:
 	ldp	x29, x30, [sp], 96
 	ret
 	.size	nand_cache_write, .-nand_cache_write
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC426: relocated in rooted readonly order below. */

@@ -10798,3 +10798,155 @@ replay:
 	free_nrc(assist_nrc);
 	return replacement;
 }
+
+struct nand_cache_write_configuration {
+	unsigned short direct;
+	unsigned short sorted;
+	unsigned char before_limit[20];
+	unsigned short write_limit;
+	unsigned short cross_talk;
+};
+struct nand_cache_write_zone {
+	unsigned char before_geometry[8];
+	struct nand_cache_read_geometry *geometry;
+	unsigned char before_cache[1056];
+	struct cache_init_data cache;
+	unsigned char before_config[568];
+	struct nand_cache_write_configuration *configuration;
+	unsigned char before_callbacks[48];
+	int (*write)(struct nand_cache_write_zone *, int, void *);
+	int (*read)(struct nand_cache_write_zone *, int, void *);
+};
+_Static_assert(__builtin_offsetof(struct nand_cache_write_zone, cache) == 1072,
+	       "write cache data offset");
+_Static_assert(__builtin_offsetof(struct nand_cache_write_zone, configuration) == 3448,
+	       "write cache configuration offset");
+_Static_assert(__builtin_offsetof(struct nand_cache_write_zone, read) == 3512,
+	       "write cache read callback offset");
+int nand_cache_write(void *raw_zone, int page,
+		     unsigned short bitmap, void *source)
+{
+	struct nand_cache_write_zone *zone = raw_zone;
+	struct cache_init_data *cache = &zone->cache;
+	struct cache_init_entry *node;
+	unsigned char *buffer;
+	unsigned short start = (unsigned short)(((bitmap >> 8) & 0xff) << 9);
+	unsigned short length = (unsigned short)((bitmap & 0xff) << 9);
+	unsigned short existing;
+	int status;
+
+	if (!source)
+		return 0;
+	if (zone->configuration->direct) {
+		buffer = cache->entries[0].allocation;
+		/* OEM ignores the read status and writes the merged buffer. */
+		zone->read(zone, page, buffer);
+		nand_memcpy(buffer + start, source, length);
+		return zone->write(zone, page, buffer);
+	}
+	if (!zone->configuration->sorted &&
+	    bitmap == zone->geometry->sectors_per_page &&
+	    !zone->configuration->cross_talk) {
+		node = (struct cache_init_entry *)search_from_cache_write_list(
+			(struct cache_write_zone *)cache, page);
+		if (node)
+			del_from_cache_write_list((struct cache_list_owner *)cache,
+					  (struct cache_list_node *)node);
+		node = (struct cache_init_entry *)search_from_cache_read_list(
+			(struct cache_read_zone *)cache, page);
+		if (node)
+			del_from_cache_read_list(
+				(struct cache_read_delete_owner *)cache,
+				(struct cache_read_delete_node *)node);
+		status = zone->write(zone, page, source);
+		if (status) {
+			nand_print("[NE]error1 bitmap %x!\n", bitmap);
+			return 1;
+		}
+		return 0;
+	}
+	node = (struct cache_init_entry *)search_from_cache_write_list(
+		(struct cache_write_zone *)cache, page);
+	if (node) {
+		del_from_cache_write_list((struct cache_list_owner *)cache,
+				  (struct cache_list_node *)node);
+		buffer = node->allocation;
+		existing = (unsigned short)(node->field1 << 9);
+		if (node->field1 != zone->geometry->sectors_per_page) {
+			if (start == existing) {
+				node->field1 = (unsigned short)
+					(node->field1 + (length >> 9));
+			} else {
+				status = zone->read(zone, page,
+						    cache->page_buffer);
+				/* OEM ignores read errors, and page_bytes minus
+				 * existing can underflow when cache metadata is bad. */
+				nand_memcpy(buffer + existing,
+					    (unsigned char *)cache->page_buffer + existing,
+					    (unsigned int)zone->geometry->page_bytes - existing);
+				node->field1 = zone->geometry->sectors_per_page;
+				if (status == 10)
+					nand_print("[NE]ECC_LIMIT happened 12! page:%d!\n",
+						   page);
+			}
+		}
+		nand_memcpy(buffer + start, source, length);
+		add_to_cache_write_list_tail((struct cache_list_owner *)cache,
+					     (struct cache_list_node *)node);
+		node = (struct cache_init_entry *)search_from_cache_read_list(
+			(struct cache_read_zone *)cache, page);
+		if (node)
+			del_from_cache_read_list(
+				(struct cache_read_delete_owner *)cache,
+				(struct cache_read_delete_node *)node);
+		return 0;
+	}
+	node = (struct cache_init_entry *)search_from_cache_read_list(
+		(struct cache_read_zone *)cache, page);
+	if (node) {
+		buffer = node->allocation;
+		nand_memcpy(buffer + start, source, length);
+		node->field0 = 0;
+		node->field1 = zone->geometry->sectors_per_page;
+		del_from_cache_read_list(
+			(struct cache_read_delete_owner *)cache,
+			(struct cache_read_delete_node *)node);
+		add_to_cache_write_list_tail((struct cache_list_owner *)cache,
+					     (struct cache_list_node *)node);
+		if (cache->field1 >= zone->configuration->write_limit &&
+		    flush_write_cache_to_nand(zone, 0)) {
+			nand_print("[NE]error1 flush write cache to nand\n");
+			return 1;
+		}
+		return 0;
+	}
+	if (cache->field1 >= zone->configuration->write_limit &&
+	    flush_write_cache_to_nand(zone, 0)) {
+		nand_print("[NE]error2 flush write cache to nand\n");
+		return 1;
+	}
+	node = (struct cache_init_entry *)get_empty_cahce_node(
+		(struct cache_read_empty_zone *)cache);
+	if (!node) {
+		nand_print("[NE]error1 node %d,%d,%d!\n",
+			   cache->field1, cache->field0, cache->field2);
+		return 1;
+	}
+	node->page = page;
+	buffer = node->allocation;
+	if (start == 0) {
+		node->field0 = 0;
+		node->field1 = length >> 9;
+	} else {
+		status = zone->read(zone, page, buffer);
+		if (status == 10)
+			nand_print("[NI]ECC_LIMIT happened 11! page:%d!\n",
+				   page);
+		node->field0 = 0;
+		node->field1 = zone->geometry->sectors_per_page;
+	}
+	nand_memcpy(buffer + start, source, length);
+	add_to_cache_write_list_tail((struct cache_list_owner *)cache,
+					     (struct cache_list_node *)node);
+	return 0;
+}
