@@ -1592,6 +1592,56 @@ int sandisk_activation_seq(struct samsung_set_chip *chip)
 		nand_print("sandisk activation seq fail 0x%x\n", result);
 	return result;
 }
+struct cross_talk_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages;
+	unsigned char before_fixed_page[6];
+	unsigned short fixed_page;
+};
+struct cross_talk_stats {
+	unsigned char before_max[168];
+	unsigned int max;
+};
+struct cross_talk_zone {
+	unsigned char before_geometry[8];
+	struct cross_talk_geometry *geometry;
+	unsigned char before_data[496];
+	void *data;
+	unsigned char before_stats[2920];
+	struct cross_talk_stats *stats;
+	unsigned char before_read[16];
+	int (*read)(struct cross_talk_zone *, struct physic_op_param *);
+};
+/* OEM's page scan has an OOB stack array but no canary prologue. */
+__attribute__((optimize("-fno-stack-protector")))
+int check_cross_talk(struct cross_talk_zone *zone,
+		     struct physical_block *block)
+{
+	void *data = zone->data;
+	unsigned int index = 0;
+	struct physic_op_param op;
+	unsigned char oob[16];
+	unsigned char *oobptr;
+	int result;
+
+	for (; index < zone->geometry->pages; index++) {
+		data = 0;
+		oobptr = oob;
+		set_physic_op_par(&op, block->number, index,
+				  zone->geometry->fixed_page, data, oobptr);
+		result = zone->read(zone, &op);
+		if (result != 0)
+			continue;
+		if (oobptr[14] > 99)
+			continue;
+		if (zone->stats->max > oobptr[14])
+			continue;
+		zone->stats->max = oobptr[14];
+		break;
+	}
+	/* OEM reports success even if every physical read failed. */
+	return 0;
+}
 extern int page_write(unsigned short chip, unsigned short block,
 		      unsigned short page, unsigned int mode,
 		      void *data, void *oob);

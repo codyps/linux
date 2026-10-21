@@ -22431,6 +22431,7 @@ get_used_page_num_no_crosstalk:
 	ret
 	.size	get_used_page_num_no_crosstalk, .-get_used_page_num_no_crosstalk
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	check_cross_talk
 	.type	check_cross_talk, %function
 check_cross_talk:
@@ -22505,6 +22506,7 @@ check_cross_talk:
 	ldp	x29, x30, [sp], 112
 	ret
 	.size	check_cross_talk, .-check_cross_talk
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	init_smart_info
 	.type	init_smart_info, %function
