@@ -988,7 +988,9 @@ struct read_claim_settings {
 	int page;
 };
 struct read_claim_zone {
-	unsigned char before_settings[3440];
+	unsigned char before_need_claim[24];
+	unsigned char need_claim;
+	unsigned char before_settings[3440 - 25];
 	struct read_claim_settings *settings;
 };
 struct read_claim_node {
@@ -2035,6 +2037,23 @@ int get_nftl_read_claim_page_no(struct read_claim_node *head)
 		(struct read_claim_node *)get_last_nftl((struct nftl_list_node *)head);
 	/* OEM does not check any pointer in this chain. */
 	return last->zone->settings->page;
+}
+
+struct read_claim_node *get_nftl_need_read_claim(struct read_claim_node *head)
+{
+	struct read_claim_node *last =
+		(struct read_claim_node *)get_last_nftl((struct nftl_list_node *)head);
+	int flag = last->zone->settings->flag;
+	struct read_claim_node *node = head;
+
+	/* OEM compares the one-byte zone marker to the last node's 32-bit
+	 * setting and trusts every pointer in the initial lookup. */
+	while (node) {
+		if (node->zone->need_claim == flag)
+			break;
+		node = node->next;
+	}
+	return node;
 }
 
 struct special_exit_chip {

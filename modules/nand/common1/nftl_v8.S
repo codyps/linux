@@ -28542,6 +28542,7 @@ get_last_nftl:
 	.size	get_last_nftl, .-get_last_nftl
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_nftl_need_read_claim
 	.type	get_nftl_need_read_claim, %function
 get_nftl_need_read_claim:
@@ -28585,6 +28586,7 @@ get_nftl_need_read_claim:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	get_nftl_need_read_claim, .-get_nftl_need_read_claim
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_nftl_read_claim_page_no
