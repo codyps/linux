@@ -2146,7 +2146,8 @@ extern void nand_clean_zone_table2(void *);
 extern void build_zone_list(void *);
 extern void nftl_cache_init(void *);
 extern void print_block_invalid_list(void *);
-extern void print_free_list(void *);
+struct free_print_zone;
+extern void print_free_list(struct free_print_zone *);
 
 int nand_find_zone_table(void *zone)
 {
@@ -2987,6 +2988,38 @@ int adjust_free_list(struct adjust_free_zone *zone)
 		   block->number, block->erase_time);
 	return 0;
 }
+struct free_print_node {
+	unsigned short number;
+	unsigned short info;
+	unsigned char before_erase[2];
+	unsigned short erase_time;
+	unsigned int count;
+	unsigned char before_next[20];
+	struct free_print_node *next;
+};
+struct free_print_zone {
+	unsigned char before_head[272];
+	struct free_print_node head;
+	unsigned char before_debug[344];
+	unsigned int debug_level;
+};
+void print_free_list(struct free_print_zone *zone)
+{
+	struct free_print_node *node = &zone->head;
+
+	if (zone->debug_level) {
+		nand_print_dbg("[ND]free list: \n");
+		node = node->next;
+		/* OEM prints every node without checking cycles or link validity. */
+		while (node) {
+			nand_print_dbg("[ND]block NO:%4d; erase:%3d; ",
+				       node->number, node->erase_time);
+			nand_print_dbg("[ND]count:%4d; ", node->count);
+			nand_print_dbg("[ND]info:0x%x\n", node->info);
+			node = node->next;
+	}
+	}
+}
 struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone)
 {
 	struct free_block *block = (struct free_block *)
@@ -3064,6 +3097,32 @@ int sandisk_A19_exit_readretry(struct samsung_set_chip *chip)
 	}
 SANDISK_COMMAND(sandisk_A19_cmd25, 0x25)
 SANDISK_COMMAND(sandisk_A19_dsp_on, 0x26)
+
+extern int set_one_addr(struct command_chip *chip, unsigned int address);
+#define HYNIX_LSB_EXIT(name) \
+int name(struct samsung_set_chip *chip) \
+{ \
+	int delay = 1048575; \
+	nand_enable_chip(chip); \
+	ndfc_disable_randomize(chip->controller); \
+	/* OEM ignores every command result and sends five zero addresses. */ \
+	set_one_cmd((struct command_chip *)chip, 0, 0); \
+	set_one_addr((struct command_chip *)chip, 0); \
+	set_one_addr((struct command_chip *)chip, 0); \
+	set_one_addr((struct command_chip *)chip, 0); \
+	set_one_addr((struct command_chip *)chip, 0); \
+	set_one_addr((struct command_chip *)chip, 0); \
+	set_one_cmd((struct command_chip *)chip, 48, 1); \
+	/* OEM burns 1,048,576 iterations rather than waiting on readiness. */ \
+	while (delay-- > 0) \
+		; \
+	nand_print_dbg(#name "\n"); \
+	nand_disable_chip(chip); \
+	return 0; \
+}
+
+HYNIX_LSB_EXIT(hynix20nm_lsb_exit)
+HYNIX_LSB_EXIT(hynix26nm_lsb_exit)
 
 struct prio_gc_owner;
 extern int add_prio_gc(struct prio_gc_owner *zone, void *physical,

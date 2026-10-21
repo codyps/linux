@@ -3691,6 +3691,7 @@ hynix20nm_lsb_disable:
 // readonly payload moved below: 	.string	"hynix20nm_lsb_exit\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_lsb_exit
 	.type	hynix20nm_lsb_exit, %function
 hynix20nm_lsb_exit:
@@ -3743,6 +3744,7 @@ hynix20nm_lsb_exit:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix20nm_lsb_exit, .-hynix20nm_lsb_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC51: relocated in rooted readonly order below. */
@@ -7056,6 +7058,7 @@ hynix26nm_lsb_disable:
 // readonly payload moved below: 	.string	"hynix26nm_lsb_exit\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_lsb_exit
 	.type	hynix26nm_lsb_exit, %function
 hynix26nm_lsb_exit:
@@ -7108,6 +7111,7 @@ hynix26nm_lsb_exit:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix26nm_lsb_exit, .-hynix26nm_lsb_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_getdefaultparam
@@ -25051,6 +25055,7 @@ is_block_in_free_list:
 // readonly payload moved below: 	.string	"[ND]info:0x%x\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	print_free_list
 	.type	print_free_list, %function
 print_free_list:
@@ -25106,6 +25111,7 @@ print_free_list:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	print_free_list, .-print_free_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	add_block_invalid_list
 	.type	add_block_invalid_list, %function
