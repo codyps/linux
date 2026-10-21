@@ -1365,6 +1365,46 @@ int get_vaild_blocks(struct valid_block_zone *zone, unsigned int start,
 	return remaining;
 }
 
+struct gc_enhance_geometry {
+	unsigned char before_half_count[20];
+	unsigned short half_count;
+};
+struct gc_enhance_zone {
+	unsigned char before_geometry[8];
+	struct gc_enhance_geometry *geometry;
+	unsigned char before_used[14];
+	unsigned short used;
+	unsigned char before_free[648];
+	unsigned short free_blocks;
+	unsigned short invalid_blocks;
+};
+struct gc_phyinfo_view {
+	unsigned char before_pages[4];
+	unsigned int pages;
+	unsigned short blocks;
+	unsigned char chips;
+};
+extern unsigned char phyinfo[20];
+extern int gc_all(void *zone, unsigned short count);
+int gc_all_enhance(struct gc_enhance_zone *zone)
+{
+	struct gc_phyinfo_view *info = (struct gc_phyinfo_view *)phyinfo;
+	unsigned int used = zone->used;
+	unsigned long quantity;
+
+	if (zone->free_blocks > used)
+		return 0;
+	/* OEM multiplies in 32 bits and can wrap before this comparison. */
+	if ((unsigned int)zone->invalid_blocks * 3 < used)
+		return 0;
+	quantity = (unsigned int)(info->pages * info->blocks);
+	quantity *= info->chips;
+	quantity >>= 11;
+	if (quantity > 128)
+		return 0;
+	return gc_all(zone, zone->geometry->half_count >> 1);
+}
+
 /* Isolated NFTL C candidates; private structure names are inferred. */
 
 struct nftl_chain {

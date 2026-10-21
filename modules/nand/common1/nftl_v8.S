@@ -30760,6 +30760,7 @@ gc_all:
 	.size	gc_all, .-gc_all
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	gc_all_enhance
 	.type	gc_all_enhance, %function
 gc_all_enhance:
@@ -30828,6 +30829,7 @@ gc_all_enhance:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	gc_all_enhance, .-gc_all_enhance
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	gc_all_base_on_free_blks
 	.type	gc_all_base_on_free_blks, %function
