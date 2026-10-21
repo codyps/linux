@@ -4647,6 +4647,47 @@ int samsung_read_page_end(struct samsung_read_request *request)
 	}
 	return result;
 }
+extern int micron_set_readretry(struct samsung_set_chip *);
+int micron_read_page_end(struct samsung_read_request *request)
+{
+	struct samsung_set_chip *chip;
+	int result;
+	int retry;
+
+	retry = 0;
+	result = 0;
+	chip = (struct samsung_set_chip *)nci_get_from_nsi(g_nsi,
+						      request->channel);
+	result = generic_read_page_end_not_retry(request);
+	if (result == -2) {
+		nand_print_dbg("micron retry!\n");
+		retry = 0;
+		while (micron_read_retry_cycle > retry) {
+			chip->retry = retry;
+			result = micron_set_readretry(chip);
+			if (result == 0) {
+				result = generic_read_page_start(request);
+				result |= generic_read_page_end_not_retry(request);
+				if (result == 10 || result == 0) {
+					result = 10;
+					nand_print_dbg(
+						"micron ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+						((struct samsung_read_controller *)chip->controller)->channel,
+						((struct samsung_read_chip_id *)chip)->chip,
+						request->block, request->page,
+						chip->retry);
+					break;
+				}
+			}
+			retry++;
+		}
+		/* OEM uses 255 as the reset step, writes after a read error,
+		 * ignores the reset failure and returns 10 after a clean retry. */
+		chip->retry = 255;
+		micron_set_readretry(chip);
+	}
+	return result;
+}
 extern int set_one_cmd(struct command_chip *chip, unsigned int command,
 			unsigned int argument);
 extern unsigned char sandisk_A19_read_retry_reg_adr_1y;
@@ -4904,7 +4945,6 @@ int toshiba_readretry_init(struct samsung_init_chip *chip)
 extern int micron_readretry_init(void *);
 extern int hynix20nm_readretry_init(void *);
 extern int hynix26nm_readretry_init(void *);
-extern void micron_read_page_end(void);
 extern void toshiba_read_page_end(void);
 extern void hynix16nm_read_page_end(void);
 extern void hynix20nm_read_page_end(void);

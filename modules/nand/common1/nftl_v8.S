@@ -4935,6 +4935,7 @@ micron_set_readretry:
 	.align	2
 	.global	micron_read_page_end
 	.type	micron_read_page_end, %function
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 micron_read_page_end:
 	stp	x29, x30, [sp, -48]!
 	add	x29, sp, 0
@@ -5029,6 +5030,7 @@ micron_read_page_end:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	micron_read_page_end, .-micron_read_page_end
+#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC72: relocated in rooted readonly order below. */
