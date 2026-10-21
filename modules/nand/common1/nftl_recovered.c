@@ -1941,7 +1941,7 @@ extern void nftl_free(void *object);
 extern void hynix16nm_set_default_param(void *chip);
 struct otp_chip;
 extern int hynix20nm_set_default_param(struct otp_chip *chip);
-extern void hynix26nm_setdefaultparam(void *chip);
+extern int hynix26nm_setdefaultparam(void *chip);
 extern int hynix26nm_getdefaultparam(void *chip, unsigned char *values);
 
 struct hynix_default_channel {
@@ -2631,6 +2631,35 @@ int hynix20nm_set_default_param(struct otp_chip *chip)
 					hynix20nm_read_retry_reg_num);
 	nand_print_dbg("set retry default value: ");
 	for (locals.index = 0; locals.index < hynix20nm_read_retry_reg_num;
+	     locals.index++)
+		nand_print_dbg(" %x", locals.values[locals.index]);
+	nand_print_dbg("\n");
+	return locals.result;
+}
+
+extern unsigned char hynix26nm_read_retry_reg_num;
+extern unsigned char hynix26nm_read_retry_reg_adr[];
+/* Stock uses a signed index and omits a canary around its unchecked buffer. */
+__attribute__((optimize("-fno-stack-protector")))
+int hynix26nm_setdefaultparam(void *chip)
+{
+	struct {
+		unsigned char values[8];
+		int result;
+		int index;
+	} locals;
+
+	locals.result = 0;
+	/* OEM's mutable count can overwrite the result and then the index. */
+	for (locals.index = 0; locals.index < hynix26nm_read_retry_reg_num;
+	     locals.index++)
+		locals.values[locals.index] =
+			((struct otp_chip *)chip)->saved[locals.index];
+	locals.result = hynix26nm_vender_set_param(chip, locals.values,
+					   hynix26nm_read_retry_reg_adr,
+					   hynix26nm_read_retry_reg_num);
+	nand_print_dbg("set retry default value: ");
+	for (locals.index = 0; locals.index < hynix26nm_read_retry_reg_num;
 	     locals.index++)
 		nand_print_dbg(" %x", locals.values[locals.index]);
 	nand_print_dbg("\n");

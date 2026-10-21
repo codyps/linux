@@ -7189,6 +7189,7 @@ hynix26nm_getdefaultparam:
 	.size	hynix26nm_getdefaultparam, .-hynix26nm_getdefaultparam
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_setdefaultparam
 	.type	hynix26nm_setdefaultparam, %function
 hynix26nm_setdefaultparam:
@@ -7264,6 +7265,7 @@ hynix26nm_setdefaultparam:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix26nm_setdefaultparam, .-hynix26nm_setdefaultparam
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC89: relocated in rooted readonly order below. */
