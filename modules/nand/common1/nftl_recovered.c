@@ -2394,7 +2394,7 @@ unsigned int get_used_page_num(struct used_page_zone *zone,
 	unsigned char local_oob[16];
 	unsigned char *data, *oob;
 	unsigned int page, first_unused, trailing_unused = 0;
-	unsigned int index, span;
+	unsigned int span;
 	int status;
 
 	*read_errors = 0;
@@ -5746,7 +5746,186 @@ struct nftl_add_block {
 	void *partition;
 };
 extern void *build_nand_partition(struct nftl_build_node *node);
-extern int nftl_initialize(void *block, unsigned short number);
+struct init_nand_parameters {
+	unsigned char before_retry[2494];
+	unsigned short retry_setting;
+	unsigned char before_limits[2];
+	unsigned short limit_a;
+	unsigned short limit_b;
+	unsigned char before_words[2];
+	unsigned int max_erase_times;
+	unsigned int erased_block_limit;
+	unsigned int format_revision;
+};
+struct init_nand_device {
+	unsigned char before_mode[2];
+	unsigned short mode;
+	unsigned char before_params[36];
+	struct init_nand_parameters *params;
+};
+struct init_partition {
+	unsigned char before_pages[34];
+	unsigned short pages;
+	unsigned char before_small[4];
+	unsigned short small;
+	unsigned char before_capacity[2];
+	unsigned int capacity;
+	unsigned char before_callbacks[16];
+	void *read;
+	void *write;
+	struct init_nand_device *device;
+};
+struct init_nftl_config {
+	unsigned short mode;
+	unsigned short first;
+	unsigned short second;
+	unsigned short third;
+	unsigned short fourth;
+	unsigned short fifth;
+	unsigned short limit_a;
+	unsigned short eighth;
+	unsigned short limit_b;
+	unsigned short ninth;
+	unsigned short tenth;
+	unsigned short erase_limit;
+	unsigned short interval;
+	unsigned short device_mode;
+	unsigned short boot_crc;
+	unsigned short reserved;
+	unsigned int revision;
+};
+struct init_nftl_geometry {
+	unsigned char before_erase[16];
+	unsigned short max_erase_times;
+	unsigned char before_secondary[12];
+	unsigned short secondary_erase_times;
+};
+struct init_nftl_zone {
+	unsigned char before_geometry[8];
+	struct init_nftl_geometry *geometry;
+};
+struct init_nftl_owner {
+	unsigned int capacity;
+	unsigned char before_partition[4];
+	struct init_partition *partition;
+	void *next;
+	struct init_nftl_zone *zone;
+	struct init_nftl_config *config;
+	unsigned char before_callbacks[32];
+	void (*read)(void);
+	void (*write)(void);
+	void (*flush)(void);
+	void (*discard)(void);
+	void (*shutdown)(void);
+	void (*sector_read)(void);
+	void (*sector_write)(void);
+	void (*sector_flush)(void);
+};
+_Static_assert(__builtin_offsetof(struct init_nftl_owner, sector_flush) == 128,
+	       "NFTL owner callback layout");
+_Static_assert(__builtin_offsetof(struct init_nand_parameters, format_revision) == 2512,
+	       "NFTL NAND parameter layout");
+_Static_assert(__builtin_offsetof(struct init_partition, device) == 80,
+	       "NFTL partition device layout");
+extern char com[];
+extern char *nand_fdt_get_prop_string_by_path(void *, const char *,
+						const char *);
+extern void nftl_get_nand_phyinfo(void *);
+extern int nftl_start(struct init_nftl_owner *, struct init_nftl_config *,
+		      struct init_nftl_zone **, void *, void *, unsigned int,
+		      unsigned short, unsigned short, struct init_partition *,
+		      unsigned int, unsigned char);
+
+__attribute__((optimize("-fno-stack-protector")))
+int nftl_initialize(void *raw_owner, unsigned short number)
+{
+	struct init_nftl_owner *owner = raw_owner;
+	struct init_partition *part = owner->partition;
+	struct init_nand_parameters *params;
+	struct init_nftl_config *cfg;
+	const char path[2] = {'/', 0};
+	const char vendor[9] = {'a', 'l', 'l', 'w', 'i', 'n', 'n', 'e', 'r'};
+	char *compatible;
+	unsigned int setting, revision;
+	int result;
+
+	compatible = nand_fdt_get_prop_string_by_path(0, path, com);
+	if (!compatible || nand_memcmp(compatible, vendor, 9))
+		return -1;
+	nftl_version();
+	nftl_get_nand_phyinfo(phyinfo);
+	if (part->pages <= 15)
+		return -1;
+	cfg = nftl_malloc(36);
+	owner->config = cfg;
+	if (!cfg) {
+		nand_print("[NE]%s:malloc fail for nftl_cfg\n", __func__);
+		return 1;
+	}
+	params = part->device->params;
+	cfg->mode = 0;
+	cfg->first = cfg->second = cfg->third = 1;
+	cfg->fourth = cfg->fifth = 0;
+	cfg->limit_a = params->limit_a;
+	cfg->eighth = 8;
+	cfg->limit_b = params->limit_b;
+	cfg->ninth = 2;
+	cfg->tenth = 3;
+	cfg->revision = 0x0013c680;
+	setting = params->retry_setting;
+	if (setting == 0) {
+		cfg->erase_limit = 30;
+		cfg->interval = 3;
+	} else if (setting == 255) {
+		cfg->mode = 1;
+		cfg->erase_limit = 50;
+		cfg->interval = 40;
+	} else if (setting > 10) {
+		/* Stock changes the caller's NAND settings in place. */
+		params->retry_setting = 10;
+		cfg->erase_limit = 30;
+		cfg->interval = 3;
+	} else {
+		cfg->erase_limit = (unsigned short)(setting * 50);
+		cfg->interval = (unsigned short)(setting * 40);
+	}
+	cfg->device_mode = part->device->mode;
+	if (cfg->device_mode)
+		cfg->interval = 3;
+	else
+		cfg->interval = 1;
+	if (cfg->erase_limit > 30)
+		cfg->erase_limit = 30;
+	/* OEM overwrites all interval decisions above unconditionally. */
+	cfg->interval = 1;
+	revision = params->format_revision;
+	if (revision > 0x1517f && revision <= 0x76b2b8)
+		cfg->revision = revision;
+	cfg->boot_crc = 1;
+	if (!nftl_support_boot_check_crc_from_dts())
+		cfg->boot_crc = 0;
+	result = nftl_start(owner, cfg, &owner->zone, part->read, part->write,
+			    part->capacity, part->small, part->pages,
+			    part, number, 0);
+	if (result)
+		return result;
+	owner->zone->geometry->max_erase_times = params->max_erase_times;
+	owner->zone->geometry->secondary_erase_times =
+		params->erased_block_limit;
+	nand_print_dbg("[ND]max_erase_times = %i\n",
+		       owner->zone->geometry->max_erase_times);
+	owner->capacity = nftl_get_zone_cap((struct nftl_zone_cap_view *)owner->zone);
+	owner->read = (void (*)(void))_nand_read;
+	owner->write = (void (*)(void))_nand_write;
+	owner->discard = (void (*)(void))_nand_discard;
+	owner->flush = (void (*)(void))_nand_flush_write_cache;
+	owner->shutdown = (void (*)(void))_shutdown_op;
+	owner->sector_read = (void (*)(void))_nand_sector_read;
+	owner->sector_write = (void (*)(void))_nand_sector_write;
+	owner->sector_flush = (void (*)(void))_nand_flush_sector_write_cache;
+	owner->next = 0;
+	return 0;
+}
 extern int panic_recover_data(void *block);
 struct nftl_build_node *nftl_add(struct nftl_build_node *node)
 {

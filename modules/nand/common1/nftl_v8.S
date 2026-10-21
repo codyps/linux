@@ -802,6 +802,7 @@ get_nftl_version:
 // readonly payload moved below: 	.string	"[ND]max_erase_times = %i\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_initialize
 	.type	nftl_initialize, %function
 nftl_initialize:
@@ -1183,6 +1184,7 @@ nftl_initialize:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	nftl_initialize, .-nftl_initialize
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC0: relocated in rooted readonly order below. */
