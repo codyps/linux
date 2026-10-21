@@ -20821,6 +20821,7 @@ cross_talk_rebuild_current_block:
 // readonly payload moved below: 	.string	"[NE]no_cross_talk_rebuild_current_block erase block fail %d!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	no_cross_talk_rebuild_current_block
 	.type	no_cross_talk_rebuild_current_block, %function
 no_cross_talk_rebuild_current_block:
@@ -21207,6 +21208,7 @@ no_cross_talk_rebuild_current_block:
 	ldp	x29, x30, [sp], 192
 	ret
 	.size	no_cross_talk_rebuild_current_block, .-no_cross_talk_rebuild_current_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC299: relocated in rooted readonly order below. */

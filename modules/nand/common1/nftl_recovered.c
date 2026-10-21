@@ -10506,9 +10506,11 @@ struct cross_rebuild_zone {
 	unsigned char before_geometry[8];
 	struct cross_rebuild_geometry *geometry;
 	unsigned char before_write[3440];
-	void *erase_callback;
+	int (*erase)(struct cross_rebuild_zone *, struct physic_op_param *);
 	void *read_callback;
 	int (*write)(struct cross_rebuild_zone *, struct physic_op_param *);
+	unsigned char before_mark_bad[16];
+	int (*mark_bad)(struct cross_rebuild_zone *, struct physic_op_param *);
 };
 struct cross_rebuild_block {
 	unsigned short number;
@@ -10642,5 +10644,157 @@ retry:
 		    (struct erase_block_info *)source,
 		    (unsigned short)second_erase + 1);
 	free_nrc(nrc);
+	return replacement;
+}
+
+struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
+	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,
+	struct cross_rebuild_block *assist)
+{
+	struct nrc_buffers *primary_nrc = 0, *assist_nrc = 0, *selected;
+	struct cross_rebuild_block *source, *old, *replacement;
+	struct physic_op_param op;
+	unsigned int primary_used, assist_used = 0;
+	unsigned int first_good = 0, second_good = 0;
+	unsigned int page, compact, special;
+	unsigned char *data, *oob;
+	int status;
+
+	if (init_nrc((struct nrc_zone *)zone, &primary_nrc)) {
+		free_nrc(primary_nrc);
+		/* OEM uses the cross-talk error string on this path. */
+		nand_print("[NE]cross_talk_rebuild_current_block fail 1\n");
+		return 0;
+	}
+	primary_used = get_used_page_num_no_crosstalk(
+		(struct used_page_zone *)zone, (struct physical_block *)primary,
+		&first_good, (struct used_page_cache *)primary_nrc);
+	if (!assist) {
+		nand_print("[NI]nctrcb1 %d,%d,%d!\n",
+			   primary->number, primary_used, primary->tag);
+		source = primary;
+		selected = primary_nrc;
+		if (!*(unsigned int *)selected) {
+			free_nrc(primary_nrc);
+			nand_print("[NE]no_cross_talk_rebuild_current_block fail 2\n");
+			erase_block((struct erase_block_zone *)zone,
+				    (struct erase_block_info *)primary,
+				    primary->erase_count + 1);
+			return 0;
+		}
+		goto acquire_single;
+	}
+	if (init_nrc((struct nrc_zone *)zone, &assist_nrc)) {
+		free_nrc(primary_nrc);
+		free_nrc(assist_nrc);
+		nand_print("[NE]cross_talk_rebuild_current_block fail 3\n");
+		return 0;
+	}
+	assist_used = get_used_page_num_no_crosstalk(
+		(struct used_page_zone *)zone, (struct physical_block *)assist,
+		&second_good, (struct used_page_cache *)assist_nrc);
+	nand_print("[NI]nctrcb2 %d,%d,%d,%d,%d,%d!\n",
+		   primary->number, primary_used, primary->tag,
+		   assist->number, assist_used, assist->tag);
+	if (!*(unsigned int *)assist_nrc) {
+		free_nrc(primary_nrc);
+		free_nrc(assist_nrc);
+		nand_print("[NE]no_cross_talk_rebuild_current_block fail 4\n");
+		erase_block((struct erase_block_zone *)zone,
+			    (struct erase_block_info *)primary,
+			    primary->erase_count + 1);
+		erase_block((struct erase_block_zone *)zone,
+			    (struct erase_block_info *)assist,
+			    assist->erase_count + 1);
+		return 0;
+	}
+	if (assist_used > primary_used) {
+		source = assist;
+		old = primary;
+		selected = assist_nrc;
+		nand_print("[NE]corss talk rebuild 1 %d %d %d!\n",
+			   primary_used, assist_used, *(unsigned int *)selected);
+	} else {
+		source = primary;
+		old = assist;
+		selected = primary_nrc;
+		nand_print("[NE]corss talk rebuild 2 %d %d %d!\n",
+			   primary_used, assist_used, *(unsigned int *)selected);
+	}
+	set_physic_op_par(&op, old->number, 0,
+			  zone->geometry->fixed_page, 0, 0);
+	status = zone->erase(zone, &op);
+	if (status) {
+		nand_print("[NE]no_cross_talk_rebuild_current_block erase block fail %d!\n",
+			   old->number);
+		zone->mark_bad(zone, &op);
+		/* OEM marks the selected source, not the block whose erase
+		 * just failed. This is a persistent metadata bug. */
+		source->page = 0;
+		source->state = 255;
+		(*(unsigned short *)((char *)zone + 28))++;
+	} else {
+		/* A successful erase reuses the old block as the replacement;
+		 * stock only takes a free block after an erase failure. */
+		replacement = old;
+		replacement->tag = source->tag;
+		goto replay;
+	}
+acquire_dual:
+	replacement = (struct cross_rebuild_block *)
+		out_phy_block_from_free_list((struct free_block_zone *)zone);
+	if (!replacement) {
+		nand_print("[NE]get free block fail!\n");
+		/* OEM leaks both NRC allocations on this exit. */
+		return 0;
+	}
+	if (new_block_init_for_write((struct new_write_zone *)zone,
+				     (struct new_write_block *)replacement,
+				     replacement->tag)) {
+		nand_print("[NE]something is error here 14!\n");
+		goto acquire_dual;
+	}
+	replacement->tag = source->tag;
+	goto replay;
+acquire_single:
+	replacement = (struct cross_rebuild_block *)
+		out_phy_block_from_free_list((struct free_block_zone *)zone);
+	if (!replacement) {
+		nand_print("[NE]get free block fail!\n");
+		return 0;
+	}
+	replacement->tag = source->tag;
+	if (new_block_init_for_write((struct new_write_zone *)zone,
+				     (struct new_write_block *)replacement,
+				     replacement->tag)) {
+		nand_print("[NE]something is error here 14!\n");
+		goto acquire_single;
+	}
+replay:
+	compact = 0;
+	for (page = 0; page < *(unsigned int *)selected; page++) {
+		if (!((unsigned char *)selected->first)[page]) {
+			nand_print("[NE]page lost %d %d\n", page,
+				   *(unsigned int *)selected);
+			continue;
+		}
+		data = (unsigned char *)selected->second +
+			(unsigned int)(page * (zone->geometry->bytes + 64U));
+		oob = data + zone->geometry->bytes;
+		set_physic_op_par(&op, replacement->number,
+				  (unsigned short)compact,
+				  zone->geometry->fixed_page, data, oob);
+		special = get_special_data_from_oob(oob);
+		set_oob_special_page(zone, oob, special,
+				     replacement->tag, replacement->erase_count);
+		/* OEM ignores replay-write failures. */
+		zone->write(zone, &op);
+		compact++;
+	}
+	erase_block((struct erase_block_zone *)zone,
+		    (struct erase_block_info *)source,
+		    source->erase_count + 1);
+	free_nrc(primary_nrc);
+	free_nrc(assist_nrc);
 	return replacement;
 }
