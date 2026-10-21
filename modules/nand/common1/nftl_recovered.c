@@ -3863,7 +3863,6 @@ int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *owner)
 	unsigned char addresses[2] = {0, 0};
 	unsigned char values[2] = {0, 0};
 	unsigned char command;
-	unsigned char read_command;
 	unsigned char complement[64];
 	unsigned char *buffer;
 	unsigned int copy;
@@ -3904,8 +3903,9 @@ int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *owner)
 	set_one_addr((struct command_chip *)chip, 0);
 	set_one_addr((struct command_chip *)chip, 2);
 	set_one_addr((struct command_chip *)chip, 0);
-	read_command = 48;
-	get_data_with_nand_bus_one_cmd(chip, &read_command, 0, buffer, 2);
+	/* Stock reuses the setup-command byte for the read command. */
+	command = 48;
+	get_data_with_nand_bus_one_cmd(chip, &command, 0, buffer, 2);
 	if (buffer[0] != 8 || buffer[1] != 8) {
 		nand_print("hynix OTP RegCount value error: 0x%x, 0x%x \n",
 			   buffer[0], buffer[1]);
