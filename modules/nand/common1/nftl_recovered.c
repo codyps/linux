@@ -4857,6 +4857,59 @@ int toshiba_read_page_end(struct samsung_read_request *request)
 	}
 	return result;
 }
+
+extern int hynix26nm_set_readretry(void *);
+/* Both Hynix generations use this OEM retry state machine. In particular,
+ * a setter failure causes an immediate reset call and then a second reset
+ * call after the loop. The reset results never replace the failing status. */
+#define HYNIX_READ_PAGE_END(name, cycle_var, setter, opening, success) \
+int name(struct samsung_read_request *request) \
+{ \
+	struct samsung_set_chip *chip; \
+	int result = 0; \
+	int retry = 0; \
+	chip = (struct samsung_set_chip *)nci_get_from_nsi(g_nsi, \
+						      request->channel); \
+	result = generic_read_page_end_not_retry(request); \
+	if (result == -2) { \
+		nand_print_dbg(opening); \
+		retry = 0; \
+		while (cycle_var > retry) { \
+			result = 0; \
+			chip->retry++; \
+			if (chip->retry > cycle_var) \
+				chip->retry = 0; \
+			result = setter((void *)chip); \
+			if (result) { \
+				chip->retry = 0; \
+				setter((void *)chip); \
+				break; \
+			} \
+			result = generic_read_page_start(request); \
+			result |= generic_read_page_end_not_retry(request); \
+			if (result == 10 || result == 0) { \
+				result = 10; \
+				nand_print_dbg(success, \
+					((struct samsung_read_controller *)chip->controller)->channel, \
+					((struct samsung_read_chip_id *)chip)->chip, \
+					request->block, request->page, chip->retry); \
+				break; \
+			} \
+			retry++; \
+		} \
+		chip->retry = 0; \
+		setter((void *)chip); \
+	} \
+	return result; \
+}
+HYNIX_READ_PAGE_END(hynix16nm_read_page_end, hynix16nm_read_retry_cycle,
+		    hynix16nm_set_readretry, "m1 retry!\n",
+		    "m1 ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n")
+HYNIX_READ_PAGE_END(hynix26nm_read_page_end, hynix26nm_read_retry_cycle,
+		    hynix26nm_set_readretry, "m0 retry!\n",
+		    "hynix26nm ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n")
+#undef HYNIX_READ_PAGE_END
+
 extern int set_one_cmd(struct command_chip *chip, unsigned int command,
 			unsigned int argument);
 extern unsigned char sandisk_A19_read_retry_reg_adr_1y;
@@ -5145,9 +5198,7 @@ int toshiba_readretry_init(struct samsung_init_chip *chip)
 extern int micron_readretry_init(void *);
 extern int hynix20nm_readretry_init(void *);
 extern int hynix26nm_readretry_init(void *);
-extern void hynix16nm_read_page_end(void);
 extern void hynix20nm_read_page_end(void);
-extern void hynix26nm_read_page_end(void);
 extern void sandisk_read_page_end(void);
 extern void sandisk_A19_read_page_end(void);
 extern unsigned char hynix16nm_read_retry_mode, hynix16nm_read_retry_cycle,

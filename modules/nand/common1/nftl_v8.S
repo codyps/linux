@@ -6750,6 +6750,7 @@ hynix26nm_set_readretry:
 // readonly payload moved below: 	.string	"hynix26nm ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_read_page_end
 	.type	hynix26nm_read_page_end, %function
 hynix26nm_read_page_end:
@@ -6862,6 +6863,7 @@ hynix26nm_read_page_end:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix26nm_read_page_end, .-hynix26nm_read_page_end
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	hynix26nm_vender_get_param
@@ -9762,6 +9764,7 @@ hynix16nm_get_special_info:
 // readonly payload moved below: 	.string	"m1 ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_read_page_end
 	.type	hynix16nm_read_page_end, %function
 hynix16nm_read_page_end:
@@ -9874,6 +9877,7 @@ hynix16nm_read_page_end:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix16nm_read_page_end, .-hynix16nm_read_page_end
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC112: relocated in rooted readonly order below. */
