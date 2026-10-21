@@ -5044,6 +5044,7 @@ micron_read_page_end:
 // readonly payload moved below: 	.string	"micron read retry conut: %d !\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	micron_readretry_init
 	.type	micron_readretry_init, %function
 micron_readretry_init:
@@ -5166,6 +5167,7 @@ micron_readretry_init:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	micron_readretry_init, .-micron_readretry_init
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	micron_readretry_exit
@@ -34171,6 +34173,10 @@ toshiba_read_retry_last_cmd:
 toshiba_read_retry_exit_cmd:
 	.byte	-1
 	.balign	8
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	micron_p1_1_recovered
+micron_p1_1_recovered:
+#endif
 micron_p1_1:
 	.byte	0
 	.byte	0
@@ -34183,6 +34189,10 @@ micron_p1_1:
 	.byte	6
 	.byte	7
 	.balign	8
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	micron_p1_2_recovered
+micron_p1_2_recovered:
+#endif
 micron_p1_2:
 	.byte	0
 	.byte	0
@@ -34197,6 +34207,10 @@ micron_p1_2:
 	.byte	8
 	.byte	12
 	.balign	8
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	micron_p1_3_recovered
+micron_p1_3_recovered:
+#endif
 micron_p1_3:
 	.byte	1
 	.byte	2
@@ -34206,6 +34220,10 @@ micron_p1_3:
 	.byte	2
 	.byte	3
 	.balign	8
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	micron_p1_4_recovered
+micron_p1_4_recovered:
+#endif
 micron_p1_4:
 	.byte	0
 	.byte	0

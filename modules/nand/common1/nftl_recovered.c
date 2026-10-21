@@ -3848,6 +3848,53 @@ int adjust_invaild_list(struct move_zone *zone)
 
 extern unsigned char micron_read_retry_mode;
 extern unsigned char micron_read_retry_cycle;
+extern unsigned char *micron_p1_recovered;
+extern unsigned char micron_p1_1_recovered[];
+extern unsigned char micron_p1_2_recovered[];
+extern unsigned char micron_p1_3_recovered[];
+extern unsigned char micron_p1_4_recovered[];
+struct micron_init_params {
+	unsigned char before_retry_spec[52];
+	unsigned int retry_spec;
+};
+struct micron_init_chip {
+	unsigned char before_retry_count[184];
+	unsigned int retry_count;
+	unsigned char before_params[280 - 188];
+	struct micron_init_params *params;
+};
+int micron_readretry_init(void *owner)
+{
+	struct micron_init_chip *chip = owner;
+	chip->retry_count = 0;
+	micron_read_retry_mode = 0;
+	micron_p1_recovered = micron_p1_2_recovered;
+	micron_read_retry_mode = chip->params->retry_spec >> 16;
+	micron_read_retry_cycle = chip->params->retry_spec >> 8;
+	/* OEM ignores feature-command errors and leaves these global writes in
+	 * place even when the mode is unsupported. */
+	micron_intel_set_feature(chip, 0x89, 0);
+	if (micron_read_retry_mode == 65) {
+		micron_read_retry_cycle = 12;
+		micron_p1_recovered = micron_p1_2_recovered;
+	} else if (micron_read_retry_mode == 64) {
+		micron_p1_recovered = micron_p1_1_recovered;
+		micron_read_retry_cycle = 10;
+	} else if (micron_read_retry_mode == 80) {
+		micron_p1_recovered = micron_p1_3_recovered;
+		micron_read_retry_cycle = 7;
+		micron_intel_set_feature(chip, 0x93, 0);
+	} else if (micron_read_retry_mode == 66) {
+		micron_p1_recovered = micron_p1_4_recovered;
+		micron_read_retry_cycle = 18;
+	} else {
+		nand_print("micron read retry cannot support!\n");
+		return -71;
+	}
+	nand_print_dbg("micron read retry conut: %d !\n",
+		       micron_read_retry_cycle);
+	return 0;
+}
 int micron_readretry_exit(void *chip)
 {
 	/* OEM resets global retry state but ignores the chip argument. */
