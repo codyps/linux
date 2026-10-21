@@ -19724,6 +19724,7 @@ recover_phy_page_mapping:
 // readonly payload moved below: 	.string	"[NE]recover sb@%d sp@%d phy page mapping error.\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	recover_block_phy_page_mapping
 	.type	recover_block_phy_page_mapping, %function
 recover_block_phy_page_mapping:
@@ -19911,6 +19912,7 @@ recover_block_phy_page_mapping:
 	ldp	x29, x30, [sp], 128
 	ret
 	.size	recover_block_phy_page_mapping, .-recover_block_phy_page_mapping
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC273: relocated in rooted readonly order below. */

@@ -8140,3 +8140,84 @@ struct new_write_block *current_block_ecc_error(struct ecc_rebuild_zone *zone,
 		       page, written);
 	return replacement;
 }
+
+struct page_map_recovery_mode {
+	unsigned char before_enabled[28];
+	unsigned short enabled;
+};
+struct page_map_recovery_zone {
+	unsigned char before_geometry[8];
+	struct ecc_rebuild_geometry *geometry;
+	unsigned char before_capacity[20];
+	unsigned int capacity;
+	unsigned char before_data[472];
+	void *data;
+	unsigned char before_map_bytes[40];
+	unsigned int map_bytes;
+	unsigned char before_mode[2884];
+	struct page_map_recovery_mode *mode;
+	unsigned char before_read[8];
+	int (*read)(struct page_map_recovery_zone *, struct physic_op_param *);
+};
+_Static_assert(__builtin_offsetof(struct page_map_recovery_zone, data) == 512,
+	       "page-map data offset");
+_Static_assert(__builtin_offsetof(struct page_map_recovery_zone, map_bytes) == 560,
+	       "page-map byte count offset");
+_Static_assert(__builtin_offsetof(struct page_map_recovery_zone, mode) == 3448,
+	       "page-map mode offset");
+_Static_assert(__builtin_offsetof(struct page_map_recovery_zone, read) == 3464,
+	       "page-map read offset");
+__attribute__((optimize("-fno-stack-protector")))
+int recover_block_phy_page_mapping(struct page_map_recovery_zone *zone,
+				   struct new_write_block *block,
+				   unsigned int *map)
+{
+	struct physic_op_param op;
+	unsigned char oob[16];
+	int page;
+	int status = 0;
+	int attempt;
+
+	/* OEM trusts the byte count independently of page count and map size. */
+	nand_memset(map, -1, zone->map_bytes);
+	for (page = 0; page < (int)zone->geometry->pages - 1; page++) {
+		if (zone->mode->enabled)
+			set_physic_op_par(&op, block->number, page,
+					  zone->geometry->fixed_page,
+					  zone->data, oob);
+		else
+			/* OEM passes NULL data here, then still gives the ordinary
+			 * data buffer to its later ECC check. */
+			set_physic_op_par(&op, block->number, page, 0, 0, oob);
+		for (attempt = 0; attempt <= 1; attempt++) {
+			status = zone->read(zone, &op);
+			if (status >= 0)
+				break;
+			nand_print("[NE]ret:%d read fail %d %d,read one more time!!\n",
+				   status, block->number, page);
+			if (attempt == 1)
+				nand_print("[NE]ret:%d read fail %d %d,%d times,don't read more!!\n",
+					   status, block->number, page, attempt);
+		}
+		if (is_ftl_logic_page_data(oob) == 1) {
+			if (status != 0 && status != 10)
+				continue;
+			if (nand_power_off_ecc_error(
+						(struct poweroff_ecc_zone *)zone,
+						zone->data, oob)) {
+				nand_print("[NE]power off ecc error 3!!\n");
+				continue;
+			}
+			map[page] = get_logic_page_from_oob(oob);
+			if (map[page] >= zone->capacity) {
+				nand_print("[NE]invalid logic_page block:%d page:%d,logic_page 0x%x.\n",
+					   block->number, page, map[page]);
+				map[page] = -1;
+			}
+		} else if (is_nouse_page(oob) != 1) {
+			nand_print("[NE]recover sb@%d sp@%d phy page mapping error.\n",
+			   block->number, page);
+		}
+	}
+	return 0;
+}
