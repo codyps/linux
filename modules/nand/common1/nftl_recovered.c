@@ -12056,24 +12056,24 @@ retry:
 	}
 	compact = 0;
 	for (page = 0; page < *(unsigned int *)nrc; page++) {
-		if (!((unsigned char *)nrc->first)[page]) {
+		if (((unsigned char *)nrc->first)[page]) {
+			/* Stock multiplies in 32 bits before extending the result. */
+			data = (unsigned char *)nrc->second +
+				(unsigned int)(page * (zone->geometry->bytes + 64U));
+			oob = data + zone->geometry->bytes;
+			set_physic_op_par(&op, replacement->number,
+					  (unsigned short)compact,
+					  zone->geometry->fixed_page, data, oob);
+			special = get_special_data_from_oob(oob);
+			set_oob_special_page(zone, oob, special,
+					     replacement->tag, replacement->erase_count);
+			/* OEM ignores every replay-write result. */
+			zone->write(zone, &op);
+			compact++;
+		} else {
 			nand_print("[NE]page lost %d %d\n", page,
 				   *(unsigned int *)nrc);
-			continue;
 		}
-		/* Stock multiplies in 32 bits before extending the result. */
-		data = (unsigned char *)nrc->second +
-			(unsigned int)(page * (zone->geometry->bytes + 64U));
-		oob = data + zone->geometry->bytes;
-		set_physic_op_par(&op, replacement->number,
-				  (unsigned short)compact,
-				  zone->geometry->fixed_page, data, oob);
-		special = get_special_data_from_oob(oob);
-		set_oob_special_page(zone, oob, special,
-				     replacement->tag, replacement->erase_count);
-		/* OEM ignores every replay-write result. */
-		zone->write(zone, &op);
-		compact++;
 	}
 	/* Without an assist, second_erase remains zero, so OEM erases source
 	 * using mode 1 regardless of its old erase count. */
