@@ -1760,7 +1760,25 @@ int is_current_blcok(struct diag_current_zone *zone, void *block)
 
 extern int nand_clean_zone_table(void *zone);
 extern int nand_find_zone_table(void *zone);
-extern int write_data_to_nand(void *zone);
+extern void *nand_memset(void *destination, int value, unsigned int size);
+int write_data_to_nand(void *zone)
+{
+	int sector;
+	void *buffer = nftl_malloc(512);
+
+	/* OEM logs allocation failure, then still dereferences the null
+	 * buffer in nand_memset and continues. Keep this broken path. */
+	if (!buffer)
+		nand_print("[NE][NE]%s:malloc 512 fail!\n", __func__);
+	nand_memset(buffer, -86, 512);
+	/* OEM diagnostic overwrites all 38,912 sectors with 0xaa. Its fixed
+	 * bound does not consult the zone capacity; never invoke casually. */
+	for (sector = 0; sector <= 38911; sector++)
+		__nand_write(zone, sector, 1, buffer);
+	nftl_free(buffer);
+	/* OEM ignores every write result, even after a failed allocation. */
+	return 0;
+}
 int nand_check_table(void *zone)
 {
 	void *block = zone;

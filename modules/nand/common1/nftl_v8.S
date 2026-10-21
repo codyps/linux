@@ -24588,6 +24588,7 @@ nand_find_zone_table:
 // readonly payload moved below: 	.string	"[NE][NE]%s:malloc 512 fail!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	write_data_to_nand
 	.type	write_data_to_nand, %function
 write_data_to_nand:
@@ -24633,6 +24634,7 @@ write_data_to_nand:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	write_data_to_nand, .-write_data_to_nand
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC393: relocated in rooted readonly order below. */
