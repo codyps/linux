@@ -1616,6 +1616,8 @@ int hynix16nm_get_otp_param(struct hynix16nm_otp_zone *zone,
 }
 extern unsigned char sandisk_acti_start_cmd[2];
 extern unsigned char sandisk_read_retry_mode;
+extern unsigned char sandisk_read_retry_cycle;
+extern unsigned char sandisk_read_retry_reg_cnt;
 extern unsigned char sandisk_read_retry_cmd_19[3];
 extern unsigned char sandisk_read_retry_cmd_1y[1];
 int sandisk_vender_set_param(void *chip, unsigned char *data,
@@ -1757,6 +1759,26 @@ int sandisk_A19_readretry_init(struct sandisk_a19_init_chip *chip)
 	}
 	nand_print_dbg("sandisk A19 read retry conut: %d !\n",
 		       sandisk_A19_read_retry_cycle);
+	return 0;
+}
+/* The standard SanDisk initializer uses the same chip/configuration offsets
+ * as A19. Retain separate global settings and its activation branch. */
+int sandisk_readretry_init(struct sandisk_a19_init_chip *chip)
+{
+	chip->retry = 0;
+	/* OEM reloads the configuration pointer for each field, without a
+	 * null check, and does not use the activation return value. */
+	sandisk_read_retry_mode = chip->params->retry_spec >> 16;
+	sandisk_read_retry_cycle = chip->params->retry_spec >> 8;
+	sandisk_read_retry_reg_cnt = chip->params->retry_spec;
+	if (sandisk_read_retry_mode == 48 || sandisk_read_retry_mode == 49)
+		(void)sandisk_activation_seq((struct samsung_set_chip *)chip);
+	if (sandisk_read_retry_mode != 48 &&
+	    sandisk_read_retry_mode != 49 &&
+	    sandisk_read_retry_mode != 50)
+		return -99;
+	nand_print_dbg("sandisk read retry conut: %d !\n",
+		       sandisk_read_retry_cycle);
 	return 0;
 }
 extern int sandisk_A19_vender_set_param(void *chip, void *value,
@@ -4394,7 +4416,6 @@ extern int micron_readretry_init(void *);
 extern int hynix16nm_readretry_init(void *);
 extern int hynix20nm_readretry_init(void *);
 extern int hynix26nm_readretry_init(void *);
-extern int sandisk_readretry_init(void *);
 extern void samsung_read_page_end(void);
 extern void micron_read_page_end(void);
 extern void toshiba_read_page_end(void);

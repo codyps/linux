@@ -12471,6 +12471,7 @@ sandisk_activation_seq:
 // readonly payload moved below: 	.string	"sandisk read retry conut: %d !\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_readretry_init
 	.type	sandisk_readretry_init, %function
 sandisk_readretry_init:
@@ -12546,6 +12547,7 @@ sandisk_readretry_init:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	sandisk_readretry_init, .-sandisk_readretry_init
+	#endif
 	.align	2
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_readretry_exit
