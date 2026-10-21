@@ -1891,6 +1891,7 @@ panic_read:
 // readonly payload moved below: 	.string	"[ND] write dummy data block: %d page %d !\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	panic_write
 	.type	panic_write, %function
 panic_write:
@@ -2214,6 +2215,7 @@ panic_write:
 	ldp	x29, x30, [sp], 144
 	ret
 	.size	panic_write, .-panic_write
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_panic_data_page

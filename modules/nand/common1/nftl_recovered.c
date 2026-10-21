@@ -5059,6 +5059,113 @@ int panic_read(struct panic_read_ops *ops, unsigned int sector,
 	return 0;
 }
 
+struct panic_write_info {
+	struct first_list_block *blocks[3];
+	unsigned int remaining;
+	unsigned int block_index;
+	unsigned int page;
+};
+extern void *panic_info[5];
+struct panic_write_owner {
+	unsigned char before_zone[24];
+	struct first_list_zone *zone;
+};
+/* The OEM OOB buffer is stack-resident without a stack canary. */
+__attribute__((optimize("-fno-stack-protector")))
+int panic_write(struct panic_write_owner *owner, unsigned int sector,
+		unsigned int count, void *buffer)
+{
+	struct panic_write_info *info = (void *)panic_info;
+	struct first_list_zone *zone;
+	struct first_list_geometry *geometry;
+	struct first_list_block *block;
+	struct physic_op_param op;
+	unsigned char oob[16];
+	unsigned int pages, blocks, sectors;
+	unsigned int dummy;
+	unsigned char *cursor;
+
+	if (!is_panic_enable())
+		return -1;
+	panic_mark_panic();
+	zone = owner->zone;
+	geometry = zone->geometry;
+	/* OEM divides without checking factor or pages for zero. */
+	pages = (geometry->factor + count - 1) / geometry->factor;
+	blocks = (geometry->pages + pages - 1) / geometry->pages;
+	nand_print("[ND] write panic data : logic addr: %d, sectors %d, pages %d, blocks %d\n",
+		   sector, count, pages, blocks);
+	/* OEM subtracts three from an unsigned remaining count. A value below
+	 * three wraps, allowing an out-of-bounds block pointer later. */
+	if (info->remaining - 3 < pages) {
+		nand_print("[NE] too much data for panic-write, %d sectors left over\n",
+		   (info->remaining - 3) * geometry->factor);
+		return -1;
+	}
+	nand_memset(oob, 0xa5, 16);
+	cursor = buffer;
+	block = info->blocks[info->block_index];
+	while (pages) {
+		if (info->page >= geometry->pages) {
+			info->block_index++;
+			block = info->blocks[info->block_index];
+			info->page = 0;
+		}
+		if (!info->page) {
+			set_physic_op_par(&op, block->number, 0,
+					  geometry->fixed_page, 0, 0);
+			/* OEM ignores the erase result. */
+			zone->erase(zone, &op);
+			block->used_pages = (unsigned short)(block->used_pages + 1);
+			block->erase_count = 0;
+		}
+		nand_print("[ND] write panic data block: %d page %d !\n",
+			   block->number, info->page);
+		oob[0] = 0xff;
+		oob[1] = 0xaa;
+		oob[2] = 99;
+		oob[3] = *(unsigned char *)((char *)zone + 24);
+		oob[4] = (unsigned char)info->block_index;
+		set_spare_data(oob, block->used_pages, 5, 2);
+		set_spare_data(oob, sector, 7, 4);
+		sectors = geometry->factor < count ? geometry->factor : count;
+		set_spare_data(oob, sectors, 11, 4);
+		set_physic_op_par(&op, block->number,
+				  (unsigned short)info->page,
+				  geometry->fixed_page, cursor, oob);
+		/* OEM ignores the write result. */
+		zone->write(zone, &op);
+		/* OEM advances by the configured byte count even for a short page. */
+		cursor += geometry->before_fixed_page[0] |
+			  ((unsigned int)geometry->before_fixed_page[1] << 8);
+		sector += sectors;
+		count -= sectors;
+		info->remaining--;
+		info->page++;
+		pages--;
+	}
+	oob[2] = 98;
+	for (dummy = 0; dummy < 3; dummy++) {
+		if (!info->page || info->page >= geometry->pages)
+			break;
+		nand_print("[ND] write dummy data block: %d page %d !\n",
+			   block->number, info->page);
+		set_physic_op_par(&op, block->number,
+				  (unsigned short)info->page,
+				  geometry->fixed_page, cursor, oob);
+		/* OEM ignores dummy write failures too. */
+		zone->write(zone, &op);
+		info->page++;
+		info->remaining--;
+		if (info->page >= geometry->pages) {
+			info->block_index++;
+			block = info->blocks[info->block_index];
+			info->page = 0;
+		}
+	}
+	return 0;
+}
+
 struct gc_policy_geometry {
 	unsigned char before_pages[0x14];
 	unsigned short pages;
