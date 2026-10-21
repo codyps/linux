@@ -4998,7 +4998,7 @@ struct nftl_add_block {
 };
 extern void *build_nand_partition(struct nftl_build_node *node);
 extern int nftl_initialize(void *block, unsigned short number);
-extern void panic_recover_data(void *block);
+extern int panic_recover_data(void *block);
 struct nftl_build_node *nftl_add(struct nftl_build_node *node)
 {
 	struct nftl_add_block *block = nftl_malloc(136);
@@ -5220,6 +5220,125 @@ int panic_recover_info(struct panic_header *header, struct panic_block *block)
 	}
 	nand_print("[NE] invalid panic block index %d\n", index);
 	return -1;
+}
+
+union panic_recover_state {
+	void *slots[5];
+	struct {
+		void *blocks[3];
+		unsigned int reserved_pages;
+		int block_index;
+		unsigned int page_index;
+		unsigned int unused;
+	};
+};
+struct erase_block_zone;
+struct erase_block_info;
+extern int erase_block(struct erase_block_zone *, struct erase_block_info *,
+		       unsigned short);
+struct panic_recover_block {
+	unsigned short number;
+	unsigned char before_erase_count[4];
+	unsigned short erase_count;
+};
+struct panic_recover_owner {
+	unsigned char before_zone[24];
+	struct panic_recover_zone *zone;
+};
+struct panic_recover_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages;
+	unsigned char before_page_bytes[4];
+	unsigned short page_bytes;
+	unsigned short fixed_page;
+};
+struct panic_recover_zone {
+	unsigned char before_geometry[8];
+	struct panic_recover_geometry *geometry;
+	unsigned char before_read[3448];
+	int (*read)(struct panic_recover_zone *, struct physic_op_param *);
+};
+_Static_assert(__builtin_offsetof(union panic_recover_state, block_index) == 28,
+	       "panic recovery block index offset");
+_Static_assert(__builtin_offsetof(union panic_recover_state, page_index) == 32,
+	       "panic recovery page index offset");
+_Static_assert(__builtin_offsetof(struct panic_recover_zone, read) == 3464,
+	       "panic recovery read offset");
+
+__attribute__((optimize("-fno-stack-protector")))
+int panic_recover_data(void *owner)
+{
+	struct panic_recover_zone *zone =
+		((struct panic_recover_owner *)owner)->zone;
+	struct panic_recover_geometry *geometry = zone->geometry;
+	union panic_recover_state *state =
+		(union panic_recover_state *)panic_info;
+	struct panic_recover_block *block;
+	struct physic_op_param op;
+	unsigned char oob[16];
+	unsigned char *data;
+	unsigned int logic_page;
+	unsigned int sectors;
+
+	if (!state->blocks[0]) {
+		nand_print("[ND] not find panic data, no need to recovery!\n");
+		return 0;
+	}
+	nand_print("[ND] recovery panic data start!\n");
+	data = nand_malloc(geometry->page_bytes);
+	if (!data) {
+		nand_print("[NE] %s(%d): malloc failed\n", __func__, 308);
+		return -1;
+	}
+	nand_memset(data, 0, geometry->page_bytes);
+	state->block_index = 0;
+	while ((unsigned int)state->block_index <= 2) {
+		block = state->slots[state->block_index];
+		state->page_index = 0;
+		while (state->page_index < geometry->pages) {
+			set_physic_op_par(&op, block->number,
+					  state->page_index,
+					  geometry->fixed_page, data, oob);
+			/* OEM ignores the page-read result entirely. */
+			zone->read(zone, &op);
+			if (is_panic_dummy_page(oob)) {
+				nand_print("[ND] ignore blk %d page %d as dummy page\n",
+					   block->number, state->page_index);
+			} else if (!is_panic_data_page(oob)) {
+				if (!state->block_index && !state->page_index) {
+					nand_print("[ND] exit recovery panic block\n",
+						   block->number, state->page_index);
+					goto done;
+				}
+				nand_print("[ND] invalid blk %d page %d, finish recovery\n",
+					   block->number, state->page_index);
+				goto erase;
+			} else {
+				logic_page = get_spare_data(oob, 7, 4);
+				sectors = get_spare_data(oob, 11, 4);
+				nand_print("[ND] move blk %d page %d to logic addr %d\n",
+					   block->number, state->page_index, logic_page);
+				/* OEM discards the replay write result. */
+				nftl_write(logic_page, sectors, data);
+			}
+			state->page_index++;
+		}
+		state->block_index++;
+	}
+erase:
+	while (state->block_index >= 0) {
+		/* A complete three-block scan arrives here with index three.
+		 * OEM then treats bookkeeping slot three as a block pointer and
+		 * can fault. Preserve the bad access for binary equivalence. */
+		block = state->slots[state->block_index];
+		erase_block((struct erase_block_zone *)zone,
+			    (struct erase_block_info *)block,
+			    (unsigned short)(block->erase_count + 1));
+		state->block_index--;
+	}
+done:
+	nand_free(data);
+	return 0;
 }
 
 unsigned char toshiba_read_retry_start_cmd[2] = { 0x5c, 0xc5 };

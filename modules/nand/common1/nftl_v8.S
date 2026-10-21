@@ -2338,6 +2338,7 @@ panic_recover_info:
 // readonly payload moved below: 	.string	"[ND] move blk %d page %d to logic addr %d\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	panic_recover_data
 	.type	panic_recover_data, %function
 panic_recover_data:
@@ -2556,6 +2557,7 @@ panic_recover_data:
 	ldp	x29, x30, [sp], 128
 	ret
 	.size	panic_recover_data, .-panic_recover_data
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.global	samsung_read_retry_mode
 	.bss
 	.type	samsung_read_retry_mode, %object
