@@ -32473,6 +32473,7 @@ get_logic_page_map:
 // readonly payload moved below: 	.string	"[NE]zone_param_init malloc_logic_page_map error %d\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	malloc_logic_page_map
 	.type	malloc_logic_page_map, %function
 malloc_logic_page_map:
@@ -32609,6 +32610,7 @@ malloc_logic_page_map:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	malloc_logic_page_map, .-malloc_logic_page_map
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	free_logic_page_map

@@ -6073,6 +6073,52 @@ struct logic_page_map_zone {
 	unsigned char before_maps[32];
 	unsigned int *maps[];
 };
+int malloc_logic_page_map(struct logic_page_map_zone *zone,
+			  unsigned int remaining_pages)
+{
+	unsigned int index;
+	unsigned int bytes;
+	unsigned int chunk_pages = 262144;
+
+	for (index = 0; index <= 24; index++)
+		zone->maps[index] = 0;
+	for (index = 0; index <= 24; index++) {
+		if (remaining_pages >= chunk_pages) {
+			bytes = chunk_pages << 2;
+			zone->maps[index] = nftl_malloc(bytes);
+			if (!zone->maps[index]) {
+				/* OEM passes the index as the sole argument to a
+				 * format expecting a string and an integer. */
+				nand_print("[NE]%s:malloc fail for logic_page_map %d\n",
+					   index);
+				return -2;
+			}
+			remaining_pages -= chunk_pages;
+			nand_memset(zone->maps[index], -1, bytes);
+		} else {
+			/* Stock allocates even for zero pages, so a zero-size
+			 * allocation may decide success or failure. */
+			bytes = remaining_pages << 2;
+			zone->maps[index] = nftl_malloc(bytes);
+			if (!zone->maps[index]) {
+				nand_print("[NE]%s: malloc fail for logic_page_map %d\n",
+					   index);
+				return -2;
+			}
+			nand_memset(zone->maps[index], -1, bytes);
+			remaining_pages = 0;
+			break;
+		}
+	}
+	/* The OEM leaves prior allocations in place on either failure path,
+	 * and retains at most 25 chunks before reporting the remainder. */
+	if (remaining_pages) {
+		nand_print("[NE]zone_param_init malloc_logic_page_map error %d\n",
+			   remaining_pages);
+		return -2;
+	}
+	return 0;
+}
 struct logic_page_geometry {
 	unsigned char before_divisor[8];
 	unsigned char divisor;
