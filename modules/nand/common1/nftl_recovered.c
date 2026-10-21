@@ -1914,7 +1914,8 @@ int fill_no_use_data_to_current_block(struct no_use_data_zone *zone)
 extern void *nand_malloc(unsigned int size);
 extern void nftl_free(void *object);
 extern void hynix16nm_set_default_param(void *chip);
-extern void hynix20nm_set_default_param(void *chip);
+struct otp_chip;
+extern int hynix20nm_set_default_param(struct otp_chip *chip);
 extern void hynix26nm_setdefaultparam(void *chip);
 extern int hynix26nm_getdefaultparam(void *chip, unsigned char *values);
 
@@ -1983,7 +1984,7 @@ int hynix16nm_readretry_exit(struct nftl_retry_chip *chip)
 int hynix20nm_readretry_exit(struct nftl_retry_chip *chip)
 {
 	nand_print_dbg("hynix20nm_readretry_exit. \n");
-	hynix20nm_set_default_param(chip);
+	hynix20nm_set_default_param((struct otp_chip *)chip);
 	chip->retry_count = 0;
 	return 0;
 }
@@ -2580,6 +2581,35 @@ int hynix20nm_getotpparam(struct otp_chip *chip, unsigned char *value)
 			value[(row << 3) + column] =
 				chip->saved[(row << 3) + column];
 	return 0;
+}
+
+extern unsigned char hynix20nm_read_retry_reg_num;
+extern unsigned char hynix20nm_read_retry_reg_adr[];
+/* Stock omits a canary although its unchecked count can overrun the buffer. */
+__attribute__((optimize("-fno-stack-protector")))
+int hynix20nm_set_default_param(struct otp_chip *chip)
+{
+	struct {
+		unsigned char values[8];
+		int result;
+		unsigned int index;
+	} locals;
+
+	locals.result = 0;
+	/* The OEM trusts the mutable register count. Past eight bytes it
+	 * overwrites the result, then the loop index, in its own stack frame. */
+	for (locals.index = 0; locals.index < hynix20nm_read_retry_reg_num;
+	     locals.index++)
+		locals.values[locals.index] = chip->saved[locals.index];
+	locals.result = hynix20nm_vender_set_param(chip, locals.values,
+					hynix20nm_read_retry_reg_adr,
+					hynix20nm_read_retry_reg_num);
+	nand_print_dbg("set retry default value: ");
+	for (locals.index = 0; locals.index < hynix20nm_read_retry_reg_num;
+	     locals.index++)
+		nand_print_dbg(" %x", locals.values[locals.index]);
+	nand_print_dbg("\n");
+	return locals.result;
 }
 
 extern struct nftl_list_node nftl_blk_head;
