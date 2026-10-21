@@ -4994,3 +4994,59 @@ int read_reclaim(struct read_claim_node *head,
 	}
 	return result;
 }
+
+struct page_map_write_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages;
+};
+struct page_map_write_block {
+	unsigned char before_used_pages[4];
+	unsigned short used_pages;
+};
+struct page_map_write_current {
+	struct page_map_write_block *block;
+	void *data;
+	unsigned char before_destination[24];
+	void *destination;
+	unsigned char before_page[8];
+	unsigned short page;
+};
+struct page_map_write_zone {
+	unsigned char before_geometry[8];
+	struct page_map_write_geometry *geometry;
+	unsigned char before_source[552];
+	void *source;
+	unsigned char before_current[16];
+	struct page_map_write_current current;
+};
+extern int write_phy_data_to_current_block(struct page_map_write_zone *,
+					   struct page_map_write_current *,
+					   void *, unsigned int, unsigned int);
+extern int check_invalid_page_right(struct page_map_write_zone *, void *,
+				    struct page_map_write_block *, unsigned short);
+int write_phy_page_map_to_current_block(struct page_map_write_zone *zone,
+					struct page_map_write_current *current)
+{
+	int result;
+
+	if (current == &zone->current)
+		nand_memcpy(zone->current.destination, zone->source, 320);
+	result = write_phy_data_to_current_block(zone, current, current->data,
+					  0, 0xaaaaffff);
+	if (result) {
+		nand_print("[NE]write_phy_data_to_current_block error1\n");
+		return result;
+	}
+	current->page++;
+	current->block->used_pages++;
+	/* OEM ignores the invalid-page validation result and subsequent list
+	 * operation results after a successful page-map write. */
+	check_invalid_page_right(zone, &current->data, current->block,
+				 current->page);
+	if (current->page == zone->geometry->pages) {
+		put_phy_block_to_invalid_page_list(
+			zone, (struct invalid_node *)current->block);
+		adjust_invaild_list((struct move_zone *)zone);
+	}
+	return 0;
+}
