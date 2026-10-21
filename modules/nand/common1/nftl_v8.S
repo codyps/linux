@@ -11203,6 +11203,7 @@ hynix16nm_set_default_param:
 // readonly payload moved below: 	.string	"[PHY_DBG] repair ch %d chip %d otp value end\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_init_readretry_param
 	.type	hynix16nm_init_readretry_param, %function
 hynix16nm_init_readretry_param:
@@ -11326,6 +11327,7 @@ hynix16nm_init_readretry_param:
 	ldp	x29, x30, [sp], 176
 	ret
 	.size	hynix16nm_init_readretry_param, .-hynix16nm_init_readretry_param
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_readretry_init

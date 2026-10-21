@@ -2858,7 +2858,7 @@ struct hynix16nm_init_chip {
 	unsigned char before_params[92];
 	struct hynix16nm_init_params *params;
 };
-extern int hynix16nm_init_readretry_param(struct hynix16nm_init_chip *);
+extern int hynix16nm_init_readretry_param(void *);
 int hynix16nm_readretry_init(struct hynix16nm_init_chip *chip)
 {
 	unsigned int index;
@@ -3102,6 +3102,71 @@ void hynix20nm_saveotpvalue(struct otp_chip *chip,
 
 	for (index = 0; index < 64; index++)
 		chip->saved[index] = value[index];
+}
+
+struct hynix16nm_readretry_params {
+	unsigned char before_page_count[20];
+	unsigned int page_count;
+};
+struct hynix16nm_readretry_zone {
+	unsigned char before_chip[24];
+	unsigned int chip;
+	unsigned char before_controller[272 - 28];
+	struct hynix16nm_otp_controller *controller;
+	struct hynix16nm_readretry_params *params;
+};
+extern int hynix16nm_get_special_info(unsigned char *buffer,
+				      void *destination, unsigned int bytes,
+				      unsigned int index);
+__attribute__((optimize("-fno-stack-protector")))
+int hynix16nm_init_readretry_param(void *owner)
+{
+	struct hynix16nm_readretry_zone *zone = owner;
+	unsigned int unused_status[10] = {0};
+	unsigned char otp_values[32];
+	unsigned char *page_buffer;
+	unsigned char *copy_buffer;
+	unsigned int index;
+	int result;
+
+	/* OEM multiplies the untrusted page count in 32 bits, with no overflow
+	 * check, and returns silently if the first allocation fails. */
+	page_buffer = nand_get_temp_buf(zone->params->page_count << 9);
+	if (!page_buffer)
+		return -77;
+	copy_buffer = nand_get_temp_buf(32768);
+	if (!copy_buffer) {
+		nand_free_temp_buf(page_buffer);
+		nand_print("[PHY_GetDefaultParam]:readbuf malloc fail\n");
+		return -76;
+	}
+	result = hynix16nm_get_special_info(copy_buffer, page_buffer, 32,
+					   zone->chip);
+	if (!result) {
+		/* Stock prints the zero-initialized scratch word as the chip
+		 * number here, rather than the zone's chip field. */
+		nand_print_dbg("ch %d, chip %d Read Retry value Table from uboot\n",
+			       zone->controller->channel, unused_status[0]);
+		for (index = 0; index <= 31; index++) {
+			nand_print_dbg("0x%x ", page_buffer[index]);
+			if ((index & 7) == 7)
+				nand_print_dbg("\n");
+		}
+		hynix16nm_save_otp_value((struct otp_chip *)zone, page_buffer);
+		hynix16nm_set_default_param(zone);
+	} else {
+		nand_print_dbg("[PHY_DBG] ch %d, can't get right otp value from nand otp blocks, then use otp command\n",
+			       zone->controller->channel);
+		/* OEM ignores both fallback and default-program results. */
+		hynix16nm_get_otp_param((struct hynix16nm_otp_zone *)zone,
+					otp_values);
+		hynix16nm_set_default_param(zone);
+		nand_print_dbg("[PHY_DBG] repair ch %d chip %d otp value end\n",
+			       zone->controller->channel, unused_status[0]);
+	}
+	nand_free_temp_buf(copy_buffer);
+	nand_free_temp_buf(page_buffer);
+	return 0;
 }
 
 extern int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *chip);
