@@ -30493,6 +30493,7 @@ check_static_wear_leveling:
 // readonly payload moved below: 	.string	"[NE]swl: last->check fail:%d\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	done_static_wear_leveling
 	.type	done_static_wear_leveling, %function
 done_static_wear_leveling:
@@ -30609,6 +30610,7 @@ done_static_wear_leveling:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	done_static_wear_leveling, .-done_static_wear_leveling
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	do_static_wear_leveling

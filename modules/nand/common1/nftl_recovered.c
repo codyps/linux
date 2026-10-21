@@ -4404,6 +4404,65 @@ struct wear_zone {
 };
 extern int check_static_wear_leveling(struct wear_zone *zone);
 extern int done_static_wear_leveling(struct wear_zone *zone);
+struct wear_done_block {
+	unsigned short number;
+	unsigned char before_erase_count[4];
+	unsigned short erase_count;
+};
+struct wear_done_stats {
+	unsigned char before_count[128];
+	unsigned int count;
+};
+struct wear_done_zone {
+	unsigned char before_active[1062];
+	unsigned short active;
+	struct wear_done_block *selected;
+	unsigned char before_stats[3440 - 1072];
+	struct wear_done_stats *stats;
+};
+int done_static_wear_leveling(struct wear_zone *owner)
+{
+	struct wear_done_zone *zone = (struct wear_done_zone *)owner;
+	int result;
+
+	if (!zone->selected)
+		return 2;
+	if (is_current_blcok((struct diag_current_zone *)owner,
+				zone->selected) == 1) {
+		zone->selected = 0;
+		return 2;
+	}
+	if (!is_block_in_invalid_list((struct invalid_zone *)owner,
+				(struct invalid_node *)zone->selected)) {
+		nand_print_dbg("[ND]swl: the block(%d) for static WL is not in invalid_list\n",
+			       zone->selected->number);
+		zone->selected = 0;
+		return 2;
+	}
+	nand_print_dbg("[ND]swl: done_static_wear_leveling(min_ec) block:%d, erase_count:%d\n",
+		       zone->selected->number, zone->selected->erase_count);
+	zone->active = 1;
+	zone->stats->count++;
+	/* Stock discards this result even if the page fill failed. */
+	fill_no_use_data_to_current_block((struct no_use_data_zone *)owner);
+	result = garbage_collect_first((struct gc_one_zone *)owner,
+				zone->selected, -1);
+	if (result) {
+		/* OEM reports the block number as the failure value and leaves
+		 * active set; preserve both bugs for stock behavior. */
+		nand_print("[NE]swl: garbage_collect_first fail:%d\n",
+			   zone->selected->number);
+		zone->selected = 0;
+		return 1;
+	}
+	zone->active = 0;
+	if (!is_block_in_free_list((struct free_zone *)owner,
+				(struct free_node *)zone->selected))
+		nand_print("[NE]swl: last->check fail:%d\n",
+			   zone->selected->number);
+	zone->selected = 0;
+	return 0;
+}
 int do_static_wear_leveling(struct wear_zone *zone)
 {
 	/* OEM dereferences options unchecked and reports one when inactive. */
