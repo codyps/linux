@@ -7339,6 +7339,7 @@ hynix26nm_get_default_param:
 	.size	hynix26nm_get_default_param, .-hynix26nm_get_default_param
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_readretry_init
 	.type	hynix26nm_readretry_init, %function
 hynix26nm_readretry_init:
@@ -7535,6 +7536,7 @@ hynix26nm_readretry_init:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix26nm_readretry_init, .-hynix26nm_readretry_init
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC90: relocated in rooted readonly order below. */
@@ -36157,6 +36159,8 @@ nand_crc16_table:
 	.string	" samsung_special_exit \n"
 	.balign	8
 para0:
+	.global	hynix26nm_para0_recovered
+hynix26nm_para0_recovered:
 	.hword	0
 	.hword	0
 	.hword	0
@@ -36187,6 +36191,8 @@ para0:
 	.hword	-37
 	.balign	8
 para1:
+	.global	hynix26nm_para1_recovered
+hynix26nm_para1_recovered:
 	.hword	0
 	.hword	0
 	.hword	0

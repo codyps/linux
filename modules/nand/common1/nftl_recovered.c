@@ -6101,7 +6101,8 @@ int toshiba_readretry_init(struct samsung_init_chip *chip)
 
 extern int micron_readretry_init(void *);
 extern int hynix20nm_readretry_init(void *);
-extern int hynix26nm_readretry_init(void *);
+struct hynix26nm_init_chip;
+extern int hynix26nm_readretry_init(struct hynix26nm_init_chip *);
 extern int hynix20nm_read_page_end(struct samsung_read_request *);
 extern int sandisk_read_page_end(struct samsung_read_request *);
 extern void sandisk_A19_read_page_end(void);
@@ -7880,4 +7881,58 @@ int sandisk_set_readretry(struct samsung_set_chip *chip, unsigned short page)
 	nand_disable_chip(chip);
 	sandisk_read_retry_clock_recover((struct clock_chip *)chip);
 	return result;
+}
+
+/* These readonly aliases identify the OEM's two 7x4 signed delta tables. */
+extern const short hynix26nm_para0_recovered[];
+extern const short hynix26nm_para1_recovered[];
+struct hynix26nm_init_chip {
+	unsigned char before_saved[56];
+	unsigned char saved[128];
+	unsigned int retry;
+	unsigned char before_params[280 - 188];
+	struct hynix26nm_lsb_params *params;
+};
+int hynix26nm_readretry_init(struct hynix26nm_init_chip *chip)
+{
+	const short *table;
+	unsigned int row, column;
+
+	/* Stock reloads the nested specification for each field and trusts
+	 * the pointer. The three writes precede validation of the mode. */
+	hynix26nm_read_retry_mode = chip->params->retry_spec >> 16;
+	hynix26nm_read_retry_cycle = chip->params->retry_spec >> 8;
+	hynix26nm_read_retry_reg_num = chip->params->retry_spec;
+	if (hynix26nm_read_retry_mode == 0) {
+		hynix26nm_read_retry_reg_adr[0] = 0xac;
+		hynix26nm_read_retry_reg_adr[1] = 0xad;
+		hynix26nm_read_retry_reg_adr[2] = 0xae;
+		hynix26nm_read_retry_reg_adr[3] = 0xaf;
+		table = hynix26nm_para0_recovered;
+	} else if (hynix26nm_read_retry_mode == 1) {
+		hynix26nm_read_retry_reg_adr[0] = 0xa7;
+		hynix26nm_read_retry_reg_adr[1] = 0xad;
+		hynix26nm_read_retry_reg_adr[2] = 0xae;
+		hynix26nm_read_retry_reg_adr[3] = 0xaf;
+		table = hynix26nm_para1_recovered;
+	} else {
+		nand_print("NFC_ReadRetryInit, unknown read retry mode 0x%x\n",
+			   hynix26nm_read_retry_mode);
+		return -54;
+	}
+	/* OEM loops through cycle+1 rows and register-count columns, but the
+	 * source rows have only four entries and the destination has 28.
+	 * Preserve its unchecked crossing of row and table boundaries. */
+	for (row = 0; row < (unsigned int)hynix26nm_read_retry_cycle + 1;
+	     row++)
+		for (column = 0; column < hynix26nm_read_retry_reg_num;
+		     column++)
+			hynix26nm_read_retry_val[row * 4 + column] =
+				table[row * 4 + column];
+	chip->retry = 0;
+	for (row = 0; row < 128; row++)
+		chip->saved[row] = 0;
+	/* OEM ignores the default-parameter result. */
+	hynix26nm_get_default_param((struct hynix_default_chip *)chip);
+	return 0;
 }
