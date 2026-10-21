@@ -33649,6 +33649,7 @@ sandisk_toggle_mode_flag:
  * Keep shipped table order/padding: unchecked vendor indexes can read neighbors.
  * TODO: bounds/error handling belongs in a separate behavior-changing fix.
  */
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.data
 	.balign	8
 #ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
@@ -34666,6 +34667,7 @@ hynix20nm_read_retry_reg_adr_2:
 	.byte	-75
 	.byte	-74
 	.byte	-73
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 
 /* TG3040 #860 readonly starts recovered from507 independent labels.
  * Payload directives are retained; original C declarations and complete
