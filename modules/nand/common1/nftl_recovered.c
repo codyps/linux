@@ -6430,6 +6430,115 @@ int add_prio_gc(struct prio_gc_owner *owner, void *block,
 	return 0;
 }
 
+struct prio_gc_queue {
+	unsigned short count;
+	unsigned short active_priority;
+	unsigned char before_head[324];
+	struct prio_gc_node head;
+};
+struct do_prio_gc_zone {
+	unsigned char before_queue[696];
+	struct prio_gc_queue queue;
+};
+struct do_prio_gc_block {
+	unsigned short number;
+	unsigned char before_erase[4];
+	unsigned short erase_count;
+};
+_Static_assert(__builtin_offsetof(struct do_prio_gc_zone,
+				  queue.active_priority) == 698,
+	       "priority GC active field offset");
+_Static_assert(__builtin_offsetof(struct do_prio_gc_zone,
+				  queue.head.next) == 1040,
+	       "priority GC head offset");
+
+int do_prio_gc(void *owner)
+{
+	struct do_prio_gc_zone *zone = owner;
+	struct prio_gc_queue *queue = &zone->queue;
+	struct prio_gc_node *node;
+	struct do_prio_gc_block *block;
+	struct do_prio_gc_block *removed;
+	int result;
+
+	if (!queue->head.next)
+		return 0;
+	node = (struct prio_gc_node *)del_from_gc_list(
+		(struct gc_zone *)queue,
+		(struct gc_node *)queue->head.next);
+	block = node->block;
+	if (is_current_blcok((struct diag_current_zone *)zone, block) == 1) {
+		add_to_gc_list_tail((struct gc_list *)queue,
+				    (struct gc_list_node *)node);
+		return 0;
+	}
+	if (!block) {
+		nand_print_dbg("[ND]no block to prio gc\n");
+		goto clear;
+	}
+	if (!is_block_in_invalid_list((struct invalid_zone *)zone,
+				      (struct invalid_node *)block)) {
+		nand_print_dbg("[ND]no need gc:%d, type:%d\n",
+			       block->number, node->priority);
+		goto clear;
+	}
+	queue->active_priority = node->priority;
+	if (node->priority == 5) {
+		/* OEM ignores priority-five collection failures. */
+		garbage_collect_first((struct gc_one_zone *)zone, block, 4);
+		goto clear;
+	}
+	result = garbage_collect_first((struct gc_one_zone *)zone, block, -1);
+	if (result) {
+		nand_print("[NE]do_prio_gc garbage_collect_first fail:%d, type:%d\n",
+			   block->number, node->priority);
+		goto clear_error;
+	}
+	if (!is_block_in_free_list((struct free_zone *)zone,
+				   (struct free_node *)block)) {
+		nand_print_dbg("[ND]prio gc fail1:%d, type:%d\n",
+			       block->number, node->priority);
+		goto clear;
+	}
+	removed = (struct do_prio_gc_block *)
+		out_phy_block_from_free_list_by_block(
+			(struct nftl_free_erase_owner *)zone,
+			(struct nftl_free_erase_node *)block);
+	if (!removed) {
+		nand_print_dbg("[ND]prio gc fail2:%d, type:%d\n",
+			       block->number, node->priority);
+		goto clear;
+	}
+	/* Stock has four branches (priority 1, 2, 4, and other) that all
+	 * issue the same erase call. Keep the branches to record this bug. */
+	if (queue->active_priority == 1)
+		erase_block((struct erase_block_zone *)zone,
+			    (struct erase_block_info *)removed,
+			    (unsigned short)(removed->erase_count + 1));
+	else if (queue->active_priority == 2)
+		erase_block((struct erase_block_zone *)zone,
+			    (struct erase_block_info *)removed,
+			    (unsigned short)(removed->erase_count + 1));
+	else if (queue->active_priority == 4)
+		erase_block((struct erase_block_zone *)zone,
+			    (struct erase_block_info *)removed,
+			    (unsigned short)(removed->erase_count + 1));
+	else
+		erase_block((struct erase_block_zone *)zone,
+			    (struct erase_block_info *)removed,
+			    (unsigned short)(removed->erase_count + 1));
+clear:
+	node->priority = 0;
+	queue->active_priority = 0;
+	node->block = 0;
+	return 0;
+clear_error:
+	node->priority = 0;
+	queue->active_priority = 0;
+	node->block = 0;
+	return 1;
+}
+
 struct static_wear_stats {
 	unsigned char before_attempts[180];
 	unsigned int attempts;

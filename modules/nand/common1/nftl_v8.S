@@ -30048,6 +30048,7 @@ add_prio_gc:
 // readonly payload moved below: 	.string	"[ND]prio gc fail2:%d, type:%d\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	do_prio_gc
 	.type	do_prio_gc, %function
 do_prio_gc:
@@ -30294,6 +30295,7 @@ do_prio_gc:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	do_prio_gc, .-do_prio_gc
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	prio_gc_all
