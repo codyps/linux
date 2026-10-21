@@ -1324,6 +1324,9 @@ int nand_clean_zone_table(void *zone)
 struct nftl_list_node {
 	unsigned char before_next[16];
 	struct nftl_list_node *next;
+	void *current_block;
+	unsigned char before_flush[56];
+	int (*flush)(struct nftl_list_node *node, unsigned int force);
 };
 
 /* -fstack-protector reorders two pointer locals here without adding a
@@ -1489,4 +1492,102 @@ void hynix20nm_saveotpvalue(struct otp_chip *chip,
 
 	for (index = 0; index < 64; index++)
 		chip->saved[index] = value[index];
+}
+
+extern struct nftl_list_node nftl_blk_head;
+/* Stock uses a different local-slot order under the kernel's
+ * -fstack-protector flag, without emitting a canary. */
+__attribute__((optimize("-fno-stack-protector")))
+unsigned int get_nftl_num(void)
+{
+	unsigned int count = 0;
+	struct nftl_list_node *node = &nftl_blk_head;
+	while (node->next) {
+		++count;
+		node = node->next;
+	}
+	return count;
+}
+
+/* Isolated C candidates for the OEM NFTL capacity and diagnostic list walks. */
+
+struct nftl_cap_node {
+	int capacity;
+	unsigned char before_next[12];
+	struct nftl_cap_node *next;
+};
+
+/* Restore the stock integer-local slot order; the list walk still has
+ * no cycle check and its signed sum may overflow. */
+__attribute__((optimize("-fno-stack-protector")))
+int get_nftl_cap(void)
+{
+	int capacity;
+	struct nftl_cap_node *node;
+	capacity = 0;
+	node = (struct nftl_cap_node *)&nftl_blk_head;
+	/* OEM has no cycle check and sums in signed 32-bit arithmetic. */
+	while (node->next) {
+		capacity += node->next->capacity;
+		node = node->next;
+	}
+	return capacity;
+}
+
+void print_all_nftl_blk(void)
+{
+	struct nftl_cap_node *node = (struct nftl_cap_node *)&nftl_blk_head;
+	/* OEM follows the list without checking cycles or pointer validity. */
+	while (node->next) {
+		nand_print_dbg("[ND]cap: 0x%08x.\n", node->next->capacity);
+		node = node->next;
+	}
+}
+
+struct nftl_first_head_view {
+	unsigned char preceding[16];
+	unsigned int *capacity;
+};
+
+unsigned int get_first_nftl_cap(void)
+{
+	struct nftl_first_head_view *head = (struct nftl_first_head_view *)&nftl_blk_head;
+	/* OEM assumes the first-block pointer is non-null. */
+	return *head->capacity;
+}
+
+extern struct nftl_list_node *del_last_nftl_blk(struct nftl_list_node *head);
+
+int nand_ftl_exit(void)
+{
+	struct nftl_list_node *node = del_last_nftl_blk(&nftl_blk_head);
+	while (node) {
+		/* OEM ignores release failures and continues removing nodes. */
+		nftl_exit((struct nftl_exit_view *)node);
+		nftl_free(node);
+		node = del_last_nftl_blk(&nftl_blk_head);
+	}
+	return 0;
+}
+
+int nftl_flush_write_cache(void)
+{
+	struct nftl_list_node *node = nftl_blk_head.next;
+	while (node) {
+		/* OEM ignores the callback result and does not check NULL flush. */
+		node->flush(node, 65535);
+		node = node->next;
+	}
+	return 0;
+}
+
+int nftl_write_end(void)
+{
+	struct nftl_list_node *node = nftl_blk_head.next;
+	while (node) {
+		/* OEM reports success even if page filling fails. */
+		fill_no_use_page_to_current_block(node->current_block, 8);
+		node = node->next;
+	}
+	return 0;
 }

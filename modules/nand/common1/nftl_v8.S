@@ -191,6 +191,7 @@ nftl_add:
 	ret
 	.size	nftl_add, .-nftl_add
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_ftl_exit
 	.type	nand_ftl_exit, %function
 nand_ftl_exit:
@@ -218,12 +219,14 @@ nand_ftl_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	nand_ftl_exit, .-nand_ftl_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC7: relocated in rooted readonly order below. */
 // readonly payload moved below: 	.string	"[ND]cap: 0x%08x.\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	print_all_nftl_blk
 	.type	print_all_nftl_blk, %function
 print_all_nftl_blk:
@@ -252,7 +255,9 @@ print_all_nftl_blk:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	print_all_nftl_blk, .-print_all_nftl_blk
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_nftl_num
 	.type	get_nftl_num, %function
 get_nftl_num:
@@ -278,7 +283,9 @@ get_nftl_num:
 	add	sp, sp, 16
 	ret
 	.size	get_nftl_num, .-get_nftl_num
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_nftl_cap
 	.type	get_nftl_cap, %function
 get_nftl_cap:
@@ -307,7 +314,9 @@ get_nftl_cap:
 	add	sp, sp, 16
 	ret
 	.size	get_nftl_cap, .-get_nftl_cap
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_first_nftl_cap
 	.type	get_first_nftl_cap, %function
 get_first_nftl_cap:
@@ -321,6 +330,7 @@ get_first_nftl_cap:
 	add	sp, sp, 16
 	ret
 	.size	get_first_nftl_cap, .-get_first_nftl_cap
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC8: relocated in rooted readonly order below. */
@@ -487,6 +497,7 @@ nftl_discard:
 	ret
 	.size	nftl_discard, .-nftl_discard
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_flush_write_cache
 	.type	nftl_flush_write_cache, %function
 nftl_flush_write_cache:
@@ -514,7 +525,9 @@ nftl_flush_write_cache:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	nftl_flush_write_cache, .-nftl_flush_write_cache
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_write_end
 	.type	nftl_write_end, %function
 nftl_write_end:
@@ -541,6 +554,7 @@ nftl_write_end:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	nftl_write_end, .-nftl_write_end
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.global	phyinfo
 	.bss
 	.align	3
