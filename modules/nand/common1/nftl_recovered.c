@@ -885,6 +885,36 @@ struct invalid_node *get_block_min_count_from_invalid_list(
 	return best;
 }
 
+struct block_count_node {
+	unsigned short block;
+	unsigned char before_count[6];
+	unsigned int count;
+	unsigned char before_next[36];
+	struct block_count_node *next;
+};
+struct block_count_zone {
+	unsigned char before_head[400];
+	struct block_count_node head;
+	unsigned char before_debug[656 - 456];
+	unsigned int debug_level;
+};
+void print_block_count_list(struct block_count_zone *zone)
+{
+	struct block_count_node *node = &zone->head;
+
+	if (zone->debug_level == 0)
+		return;
+	nand_print_dbg("[ND]block_used_count list: \n");
+	node = node->next;
+	/* OEM reads count and next after the preceding print calls, so
+	 * callbacks can change what the next iteration observes. */
+	while (node) {
+		nand_print_dbg("[ND]block NO: %d ", node->block);
+		nand_print_dbg("[ND]block_used_count: %d \n", node->count);
+		node = node->next;
+	}
+}
+
 struct cache_read_node {
 	unsigned char before_key[8];
 	int key;

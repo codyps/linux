@@ -25469,6 +25469,7 @@ del_block_count_by_block:
 // readonly payload moved below: 	.string	"[ND]block_used_count: %d \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	print_block_count_list
 	.type	print_block_count_list, %function
 print_block_count_list:
@@ -25515,6 +25516,7 @@ print_block_count_list:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	print_block_count_list, .-print_block_count_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC409: relocated in rooted readonly order below. */
