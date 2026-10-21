@@ -1021,6 +1021,32 @@ struct sector_cache_node *search_from_sector_cache_write_list(
 	}
 	return 0;
 }
+struct sector_read_hit {
+	unsigned char before_data[8];
+	void *data;
+};
+int nand_sector_cache_read(void *zone, unsigned int sector, void *data)
+{
+	unsigned int bytes = 512;
+	struct sector_cache_zone *cache =
+		(struct sector_cache_zone *)((unsigned char *)zone + 2880);
+	struct sector_read_hit *hit = (struct sector_read_hit *)
+		search_from_sector_cache_write_list(cache, sector);
+	int result;
+
+	if (hit) {
+		/* OEM ignores the copy result and reports a cache hit as success. */
+		nand_memcpy(data, hit->data, bytes);
+		return 0;
+	}
+	result = __nand_read(zone, sector, 1, data);
+	/* OEM converts every nonzero error to one and prints a fixed string. */
+	if (result) {
+		nand_print("[NE]nand_sector_cache_read 1!\n");
+		return 1;
+	}
+	return result;
+}
 
 struct gc_search_node {
 	unsigned char before_key[8];
