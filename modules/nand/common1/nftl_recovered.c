@@ -4331,7 +4331,10 @@ int init_zone_after_first_scan(struct build_zone *owner,
 	unsigned int needed_blocks;
 	unsigned int free_blocks;
 
-	/* Stock performs both unsigned divisions without checking for zero. */
+	/* Stock performs both unsigned divisions without checking for zero.
+	 * AArch64 UDIV yields zero for a zero divisor in the shipped binary;
+	 * the corresponding C expression is undefined if geometry is corrupt.
+	 * Keep the unchecked OEM path for stock-compatible code generation. */
 	needed_blocks = zone->logical_pages / zone->geometry->page_factor;
 	needed_blocks /= zone->geometry->pages_per_block;
 	nand_print_dbg("[ND]before second %d %d.\n",
@@ -4353,7 +4356,9 @@ int init_zone_after_first_scan(struct build_zone *owner,
 	zone->gc_reserve = free_blocks / 5;
 	if (zone->gc_reserve < zone->reserve_geometry->min_gc_blocks)
 		zone->gc_reserve = zone->reserve_geometry->min_gc_blocks;
-	/* Preserve 32-bit product wrap, unchecked divisor and halfword truncation. */
+	/* Preserve 32-bit product wrap, unchecked divisor and halfword truncation.
+	 * Stock UDIV returns zero when reserve_denominator is zero; C does not
+	 * define that case, despite the current compiled body using UDIV. */
 	zone->write_reserve = (free_blocks *
 		zone->reserve_geometry->reserve_numerator) /
 		zone->reserve_geometry->reserve_denominator;
