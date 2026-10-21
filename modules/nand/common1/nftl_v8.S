@@ -4728,6 +4728,7 @@ hynix20nm_special_exit:
 // readonly payload moved below: 	.string	"set feature(addr %d) p0: %d readretry Configuration failed!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	micron_intel_set_feature
 	.type	micron_intel_set_feature, %function
 micron_intel_set_feature:
@@ -4772,6 +4773,7 @@ micron_intel_set_feature:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	micron_intel_set_feature, .-micron_intel_set_feature
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	micron_set_readretry
 	.type	micron_set_readretry, %function

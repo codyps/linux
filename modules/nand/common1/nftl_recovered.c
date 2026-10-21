@@ -75,6 +75,31 @@ extern void nand_disable_chip(struct samsung_set_chip *);
 extern int set_cmd_with_nand_bus(void *, unsigned char *, int,
 				 unsigned char *, unsigned char *, int,
 				 unsigned int);
+extern int nand_set_feature(void *chip, unsigned char *address,
+			    unsigned char *values);
+extern int nand_get_feature(void *chip, unsigned char *address,
+			    unsigned char *values);
+/* OEM uses a 48-byte frame without a canary: readback at offset 32,
+ * outgoing bytes at 40 and the original address copy at 47. */
+__attribute__((optimize("-fno-stack-protector")))
+int micron_intel_set_feature(void *chip, unsigned char address,
+			     unsigned char value)
+{
+	unsigned char original_address = address;
+	unsigned char set_values[4] __attribute__((aligned(8))) = {value, 0, 0, 0};
+	unsigned char read_values[8] __attribute__((aligned(8)));
+
+	/* OEM ignores both command results. If the read fails without writing
+	 * byte zero, the comparison uses an uninitialized stack byte. */
+	nand_set_feature(chip, &address, set_values);
+	nand_get_feature(chip, &address, read_values);
+	if (read_values[0] != set_values[0]) {
+		nand_print("set feature(addr %d) p0: %d readretry Configuration failed!\n",
+			   original_address, value);
+		return -72;
+	}
+	return 0;
+}
 
 int samsung_vender_set_param(struct samsung_set_chip *chip,
 			    unsigned char *values,
