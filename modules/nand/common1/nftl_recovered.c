@@ -2553,6 +2553,35 @@ void hynix20nm_saveotpvalue(struct otp_chip *chip,
 		chip->saved[index] = value[index];
 }
 
+extern int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *chip);
+int hynix20nm_getotpparam(struct otp_chip *chip, unsigned char *value)
+{
+	unsigned int attempt = 0;
+	unsigned int row;
+	unsigned int column;
+	int result;
+
+	/* The OEM makes five attempts and reports the last vendor error.
+	 * Its debug message prints the zero-based attempt number. */
+	do {
+		nand_print_dbg("_vender_get_param_otp_hynix time %d!\n",
+			       attempt);
+		result = hynix20nm_vender_get_param_otp_hynix(chip);
+		if (result == 0)
+			break;
+		attempt++;
+	} while (attempt <= 4);
+	if (result != 0) {
+		nand_print("_vender_get_param_otp_hynix error!\n");
+		return result;
+	}
+	for (row = 0; row <= 7; row++)
+		for (column = 0; column <= 7; column++)
+			value[(row << 3) + column] =
+				chip->saved[(row << 3) + column];
+	return 0;
+}
+
 extern struct nftl_list_node nftl_blk_head;
 /* Stock uses a different local-slot order under the kernel's
  * -fstack-protector flag, without emitting a canary. */

@@ -4064,6 +4064,7 @@ hynix20nm_saveotpvalue:
 // readonly payload moved below: 	.string	"_vender_get_param_otp_hynix error!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_getotpparam
 	.type	hynix20nm_getotpparam, %function
 hynix20nm_getotpparam:
@@ -4145,6 +4146,7 @@ hynix20nm_getotpparam:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix20nm_getotpparam, .-hynix20nm_getotpparam
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC56: relocated in rooted readonly order below. */
