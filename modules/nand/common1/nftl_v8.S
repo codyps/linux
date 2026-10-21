@@ -1732,6 +1732,7 @@ panic_init_part:
 // readonly payload moved below: 	.string	"[NE] no reserved panic block!!! quit!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	panic_backup_block
 	.type	panic_backup_block, %function
 panic_backup_block:
@@ -1814,6 +1815,7 @@ panic_backup_block:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	panic_backup_block, .-panic_backup_block
+	#endif
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	panic_read
