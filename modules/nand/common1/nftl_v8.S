@@ -32814,6 +32814,7 @@ set_physic_op_par:
 // readonly payload moved below: 	.string	"[NI]try again\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_start
 	.type	nftl_start, %function
 nftl_start:
@@ -33233,6 +33234,7 @@ nftl_start:
 	ldp	x29, x30, [sp], 160
 	ret
 	.size	nftl_start, .-nftl_start
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_zone_release
