@@ -5855,6 +5855,49 @@ struct get_new_zone;
 struct get_new_current_entry;
 extern int get_new_current_block(struct get_new_zone *,
 				 struct get_new_current_entry *);
+int do_before_write(void *owner)
+{
+	struct do_after_zone *zone = owner;
+	struct new_write_block *block;
+
+	while (current_block_at_first_page(owner,
+			(struct nftl_current_block *)zone->current) == 1) {
+		block = *(struct new_write_block **)zone->current;
+		if (!new_block_init_for_write((struct new_write_zone *)zone,
+				block, block->tag))
+			break;
+		/* The OEM decrements the tag after a failed erase, including its
+		 * unsigned wraparound, and decrements it twice in dual-slot mode.
+		 * A corrected implementation would guard against underflow. */
+		block->tag--;
+		if (zone->flags & 1)
+			block->tag--;
+		if (get_new_current_block((struct get_new_zone *)zone,
+				(struct get_new_current_entry *)zone->current)) {
+			nand_print("[NE]get_new_current_block error3!\n");
+			return 1;
+		}
+	}
+	if (zone->flags & 1) {
+		/* Stock tests exactly one above, but any nonzero here. */
+		while (current_block_at_first_page(owner,
+				(struct nftl_current_block *)zone->page_map)) {
+			block = *(struct new_write_block **)zone->page_map;
+			if (!new_block_init_for_write((struct new_write_zone *)zone,
+				block, block->tag))
+				break;
+			block->tag--;
+			if (zone->flags & 1)
+				block->tag--;
+			if (get_new_current_block((struct get_new_zone *)zone,
+				(struct get_new_current_entry *)zone->page_map)) {
+				nand_print("[NE]get_new_current_block error4!\n");
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
 int do_after_write(struct do_after_zone *zone)
 {
 	if (current_block_at_last_page((struct current_zone *)zone,

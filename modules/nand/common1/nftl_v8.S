@@ -14270,6 +14270,7 @@ nand_write_logic_page_no_gc:
 // readonly payload moved below: 	.string	"[NE]get_new_current_block error4!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	do_before_write
 	.type	do_before_write, %function
 do_before_write:
@@ -14390,6 +14391,7 @@ do_before_write:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	do_before_write, .-do_before_write
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC158: relocated in rooted readonly order below. */
