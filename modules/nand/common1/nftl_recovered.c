@@ -6778,9 +6778,12 @@ struct page_map_write_zone {
 	unsigned char before_current[16];
 	struct page_map_write_current current;
 };
-extern int write_phy_data_to_current_block(struct page_map_write_zone *,
-					   struct page_map_write_current *,
-					   void *, unsigned int, unsigned int);
+struct phy_write_zone;
+struct phy_write_state;
+extern int write_phy_data_to_current_block(struct phy_write_zone *,
+					   struct phy_write_state *,
+					   const unsigned char *,
+					   unsigned int, unsigned int);
 struct invalid_page_map_data {
 	unsigned char before_pages[16];
 	unsigned int *pages;
@@ -6834,8 +6837,10 @@ int write_phy_page_map_to_current_block(struct page_map_write_zone *zone,
 
 	if (current == &zone->current)
 		nand_memcpy(zone->current.destination, zone->source, 320);
-	result = write_phy_data_to_current_block(zone, current, current->data,
-					  0, 0xaaaaffff);
+	result = write_phy_data_to_current_block(
+					(struct phy_write_zone *)zone,
+					(struct phy_write_state *)current,
+					current->data, 0, 0xaaaaffff);
 	if (result) {
 		nand_print("[NE]write_phy_data_to_current_block error1\n");
 		return result;
@@ -8297,4 +8302,103 @@ int hynix16nm_read_otp_info_hynix(struct hynix16nm_otp_info_chip *chip,
 	}
 	nand_disable_chip((struct samsung_set_chip *)chip);
 	return 0;
+}
+
+struct phy_write_block {
+	unsigned short number;
+	unsigned short active;
+	unsigned short used_pages;
+	unsigned short erase_count;
+	unsigned int tag;
+};
+struct phy_write_state {
+	struct phy_write_block *block;
+	unsigned char before_page[48];
+	unsigned short page;
+};
+_Static_assert(__builtin_offsetof(struct phy_write_block, active) == 2,
+	       "physical write active offset");
+_Static_assert(__builtin_offsetof(struct phy_write_block, tag) == 8,
+	       "physical write tag offset");
+struct phy_write_geometry {
+	unsigned char before_sectors[8];
+	unsigned char sectors_per_page;
+	unsigned char before_pages[11];
+	unsigned short pages;
+	unsigned char before_fixed_page[6];
+	unsigned short fixed_page;
+};
+struct phy_write_zone {
+	unsigned char before_geometry[8];
+	struct phy_write_geometry *geometry;
+	unsigned char before_map_bytes[544];
+	unsigned int map_bytes;
+	unsigned char before_write[2908];
+	int (*write)(struct phy_write_zone *, struct physic_op_param *);
+};
+_Static_assert(__builtin_offsetof(struct phy_write_state, page) == 56,
+	       "physical write page offset");
+_Static_assert(__builtin_offsetof(struct phy_write_zone, map_bytes) == 560,
+	       "physical write map count offset");
+_Static_assert(__builtin_offsetof(struct phy_write_zone, write) == 3472,
+	       "physical write callback offset");
+extern int do_write_error(struct phy_write_zone *, struct phy_write_state *);
+__attribute__((optimize("-fno-stack-protector")))
+int write_phy_data_to_current_block(struct phy_write_zone *zone,
+				    struct phy_write_state *state,
+				    const unsigned char *data,
+				    unsigned int logic_page,
+				    unsigned int kind)
+{
+	struct physic_op_param op;
+	unsigned char oob[16];
+	unsigned short length;
+	unsigned short crc;
+	unsigned int retry = 0;
+	int status;
+
+	nand_memset(oob, -91, 16);
+	/* Stock keeps only the low seven bits of sectors/page here. */
+	length = (zone->geometry->sectors_per_page & 127) << 9;
+	if (kind == 0xaaaaffff)
+		length = zone->map_bytes;
+	crc = nand_crc16(-1, data, length);
+	oob[12] = crc >> 8;
+	oob[13] = crc;
+	for (;;) {
+		set_physic_op_par(&op, state->block->number, state->page,
+				  zone->geometry->fixed_page, (void *)data, oob);
+		if (kind == 0xaaaaffff) {
+			set_oob_special_page(zone, oob, kind,
+					     state->block->tag,
+					     state->block->erase_count);
+		} else if (kind == 192) {
+			if (state->page == (unsigned int)zone->geometry->pages - 1)
+				nand_print_dbg("[ND]last block can not used to logic page %d!!\n",
+					       state->block->number);
+			set_oob_logic_page(zone, oob, logic_page,
+					   state->block->tag,
+					   state->block->erase_count);
+		} else if (kind == 0xaa113333) {
+			if (state->page == (unsigned int)zone->geometry->pages - 1)
+				nand_print_dbg("[ND]last block can not used to power down page %d!!\n",
+					       state->block->number);
+			set_oob_special_page(zone, oob, kind,
+					     state->block->tag,
+					     state->block->erase_count);
+		}
+		state->block->active = 1;
+		status = zone->write(zone, &op);
+		if (!status || retry > 1)
+			return 0;
+		nand_print_dbg("[ND]write_phy_data_to_current_block write error %d!\n",
+			       op.block);
+		if (do_write_error(zone, state)) {
+			nand_print("[NE]do_write_error error\n");
+			return 1;
+		}
+		/* OEM retries twice, then reports success even if the third
+		 * write failed; preserve the misleading return. */
+		retry++;
+	}
 }
