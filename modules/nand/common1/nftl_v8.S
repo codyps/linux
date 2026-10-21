@@ -5498,6 +5498,7 @@ toshiba_read_retry_clock_save:
 	ret
 	.size	toshiba_read_retry_clock_save, .-toshiba_read_retry_clock_save
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	toshiba_read_retry_clock_recover
 	.type	toshiba_read_retry_clock_recover, %function
 toshiba_read_retry_clock_recover:
@@ -5520,6 +5521,7 @@ toshiba_read_retry_clock_recover:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	toshiba_read_retry_clock_recover, .-toshiba_read_retry_clock_recover
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC77: relocated in rooted readonly order below. */
@@ -8875,6 +8877,7 @@ sandisk_A19_read_retry_clock_save:
 	ret
 	.size	sandisk_A19_read_retry_clock_save, .-sandisk_A19_read_retry_clock_save
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_read_retry_clock_recover
 	.type	sandisk_A19_read_retry_clock_recover, %function
 sandisk_A19_read_retry_clock_recover:
@@ -8897,6 +8900,7 @@ sandisk_A19_read_retry_clock_recover:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	sandisk_A19_read_retry_clock_recover, .-sandisk_A19_read_retry_clock_recover
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	sandisk_A19_vender_set_param
 	.type	sandisk_A19_vender_set_param, %function
@@ -11874,6 +11878,7 @@ sandisk_vender_set_param:
 	ret
 	.size	sandisk_vender_set_param, .-sandisk_vender_set_param
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_read_retry_clock_recover
 	.type	sandisk_read_retry_clock_recover, %function
 sandisk_read_retry_clock_recover:
@@ -11896,6 +11901,7 @@ sandisk_read_retry_clock_recover:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	sandisk_read_retry_clock_recover, .-sandisk_read_retry_clock_recover
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	sandisk_end_one_read_retry
 	.type	sandisk_end_one_read_retry, %function
@@ -33118,10 +33124,16 @@ panic_enable:
 	.zero	4
 	.type	sandisk_A19_sclk0_bak, %object
 	.size	sandisk_A19_sclk0_bak, 4
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	sandisk_A19_sclk0_bak
+#endif
 sandisk_A19_sclk0_bak:
 	.zero	4
 	.type	sandisk_A19_sclk1_bak, %object
 	.size	sandisk_A19_sclk1_bak, 4
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	sandisk_A19_sclk1_bak
+#endif
 sandisk_A19_sclk1_bak:
 	.zero	4
 	.type	toshiba_toggle_mode_flag, %object
@@ -33134,10 +33146,16 @@ toshiba_retry_flag:
 	.zero	4
 	.type	toshiba_sclk0_bak, %object
 	.size	toshiba_sclk0_bak, 4
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	toshiba_sclk0_bak
+#endif
 toshiba_sclk0_bak:
 	.zero	4
 	.type	toshiba_sclk1_bak, %object
 	.size	toshiba_sclk1_bak, 4
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	toshiba_sclk1_bak
+#endif
 toshiba_sclk1_bak:
 	.zero	4
 	.type	micron_p1, %object
@@ -33146,10 +33164,16 @@ micron_p1:
 	.zero	8
 	.type	sandisk_sclk0_bak, %object
 	.size	sandisk_sclk0_bak, 4
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	sandisk_sclk0_bak
+#endif
 sandisk_sclk0_bak:
 	.zero	4
 	.type	sandisk_sclk1_bak, %object
 	.size	sandisk_sclk1_bak, 4
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	sandisk_sclk1_bak
+#endif
 sandisk_sclk1_bak:
 	.zero	4
 	.type	sandisk_toggle_mode_flag, %object

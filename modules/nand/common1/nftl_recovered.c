@@ -1959,3 +1959,44 @@ SPECIAL_EXIT(toshiba)
 SPECIAL_EXIT(hynix26nm)
 SPECIAL_EXIT(hynix16nm)
 SPECIAL_EXIT(sandisk)
+
+/* Isolated vendor clock-restoration C candidates. */
+
+struct clock_channel {
+	unsigned char before_index[12];
+	unsigned int index;
+};
+struct clock_chip {
+	unsigned char before_channel[272];
+	struct clock_channel *channel;
+};
+extern char aw_ndfc;
+extern unsigned int sandisk_A19_sclk0_bak, sandisk_A19_sclk1_bak;
+extern unsigned int sandisk_sclk0_bak, sandisk_sclk1_bak;
+extern unsigned int toshiba_sclk0_bak, toshiba_sclk1_bak;
+extern int nand_set_clk(void *controller, unsigned int channel,
+			unsigned int sclk0, unsigned int sclk1);
+
+int sandisk_A19_read_retry_clock_recover(struct clock_chip *chip)
+{
+	/* OEM ignores clock-programming errors and reports success. */
+	nand_set_clk(&aw_ndfc, chip->channel->index,
+		     sandisk_A19_sclk0_bak, sandisk_A19_sclk1_bak);
+	return 0;
+}
+
+int sandisk_read_retry_clock_recover(struct clock_chip *chip)
+{
+	/* OEM ignores clock-programming errors and reports success. */
+	nand_set_clk(&aw_ndfc, chip->channel->index,
+		     sandisk_sclk0_bak, sandisk_sclk1_bak);
+	return 0;
+}
+
+int toshiba_read_retry_clock_recover(struct clock_chip *chip)
+{
+	/* OEM ignores clock-programming errors and reports success. */
+	nand_set_clk(&aw_ndfc, chip->channel->index,
+		     toshiba_sclk0_bak, toshiba_sclk1_bak);
+	return 0;
+}
