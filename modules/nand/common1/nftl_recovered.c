@@ -5481,6 +5481,96 @@ struct wear_zone {
 };
 extern int check_static_wear_leveling(struct wear_zone *zone);
 extern int done_static_wear_leveling(struct wear_zone *zone);
+struct wear_check_geometry {
+	unsigned char before_erase_limit[16];
+	unsigned short erase_limit;
+};
+struct wear_check_stats {
+	unsigned char before_count[8];
+	unsigned int count;
+};
+struct wear_check_zone {
+	unsigned char before_geometry[8];
+	struct wear_check_geometry *geometry;
+	unsigned char before_blocks[10];
+	unsigned short blocks;
+	unsigned char before_free_head[276];
+	void *free_head;
+	unsigned char before_invalid_head[40];
+	void *invalid_head;
+	unsigned char before_stats[168];
+	struct wear_check_stats *stats;
+	unsigned char before_threshold[522];
+	unsigned short threshold;
+	unsigned char before_selected[4];
+	struct nftl_invalid_erase_node *selected;
+};
+_Static_assert(__builtin_offsetof(struct wear_check_zone, blocks) == 26,
+	       "wear zone block count offset");
+_Static_assert(__builtin_offsetof(struct wear_check_zone, free_head) == 304,
+	       "wear free list head offset");
+_Static_assert(__builtin_offsetof(struct wear_check_zone, invalid_head) == 352,
+	       "wear invalid list head offset");
+_Static_assert(__builtin_offsetof(struct wear_check_zone, stats) == 528,
+	       "wear stats offset");
+_Static_assert(__builtin_offsetof(struct wear_check_zone, threshold) == 1058,
+	       "wear threshold offset");
+_Static_assert(__builtin_offsetof(struct wear_check_zone, selected) == 1064,
+	       "wear selected block offset");
+
+int check_static_wear_leveling(struct wear_zone *owner)
+{
+	struct wear_check_zone *zone = (struct wear_check_zone *)owner;
+	struct nftl_free_erase_node *maximum;
+	struct nftl_invalid_erase_node *minimum;
+	unsigned short max_erase;
+	unsigned short min_erase;
+	unsigned short limit;
+	unsigned int blocks;
+
+	/* The stock pointer gates precede every geometry/list dereference. */
+	if (zone->selected || !zone->invalid_head || !zone->free_head)
+		return 1;
+	if ((int)zone->stats->count < zone->blocks)
+		return 1;
+	limit = zone->geometry->erase_limit;
+	blocks = limit;
+	maximum = get_block_max_erase_time_from_free_list(
+		(struct nftl_free_erase_owner *)zone, limit);
+	if (!maximum)
+		return 1;
+	max_erase = maximum->erase_time;
+	if (max_erase < blocks / 5)
+		return 1;
+	minimum = get_block_min_erase_time_from_invalid_list(
+		(struct nftl_invalid_erase_owner *)zone, limit,
+		zone->stats->count - zone->blocks);
+	if (!minimum)
+		return 1;
+	min_erase = minimum->erase_time;
+	if (max_erase <= min_erase)
+		return 1;
+	/* OEM selects four nonmonotonic ratios as the maximum erase count
+	 * grows. Keep the odd thresholds rather than smoothing the policy. */
+	if (blocks * 2 < (unsigned int)max_erase * 3)
+		zone->threshold = blocks / 12;
+	else if (blocks < (unsigned int)max_erase * 2)
+		zone->threshold = blocks / 10;
+	else if (blocks < (unsigned int)max_erase * 3)
+		zone->threshold = blocks / 7;
+	else
+		zone->threshold = blocks / 5;
+	if ((unsigned int)(max_erase - min_erase) < zone->threshold)
+		return 1;
+	nand_print_dbg("[ND]swl: static WL need to do(%d : %d)\n",
+		       max_erase, min_erase);
+	nand_print_dbg("[ND]swl: min_ec_blk_no = %d,\n", minimum->before_erase[0]
+		       | minimum->before_erase[1] << 8);
+	nand_print_dbg("[ND]swl: zone->blocks = %d)\n", zone->blocks);
+	zone->selected = minimum;
+	return 0;
+}
+
 struct wear_done_block {
 	unsigned short number;
 	unsigned char before_erase_count[4];

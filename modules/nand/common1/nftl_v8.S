@@ -30334,6 +30334,7 @@ prio_gc_all:
 // readonly payload moved below: 	.string	"[ND]swl: zone->blocks = %d)\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	check_static_wear_leveling
 	.type	check_static_wear_leveling, %function
 check_static_wear_leveling:
@@ -30552,6 +30553,7 @@ check_static_wear_leveling:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	check_static_wear_leveling, .-check_static_wear_leveling
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC455: relocated in rooted readonly order below. */
