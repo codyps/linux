@@ -1672,6 +1672,38 @@ extern unsigned char sandisk_A19_1z_16g[128];
 extern unsigned char sandisk_A19_1z_8g[124];
 extern unsigned char sandisk_A19_1y[124];
 extern unsigned char sandisk_A19_read_retry_mode;
+extern unsigned char sandisk_A19_read_retry_cycle;
+extern unsigned char sandisk_A19_read_retry_reg_cnt;
+struct sandisk_a19_init_params {
+	unsigned char before_retry_spec[52];
+	unsigned int retry_spec;
+};
+struct sandisk_a19_init_chip {
+	unsigned char before_retry[184];
+	unsigned int retry;
+	unsigned char before_params[92];
+	struct sandisk_a19_init_params *params;
+};
+int sandisk_A19_readretry_init(struct sandisk_a19_init_chip *chip)
+{
+	chip->retry = 0;
+	/* OEM separately reloads the packed word for all three fields and
+	 * dereferences the inner pointer without checking it. */
+	sandisk_A19_read_retry_mode = chip->params->retry_spec >> 16;
+	sandisk_A19_read_retry_cycle = chip->params->retry_spec >> 8;
+	sandisk_A19_read_retry_reg_cnt = chip->params->retry_spec;
+	if (sandisk_A19_read_retry_mode != 50 &&
+	    sandisk_A19_read_retry_mode != 51 &&
+	    sandisk_A19_read_retry_mode != 52 &&
+	    sandisk_A19_read_retry_mode != 53) {
+		nand_print("sandisk_A19 retry mode err : %d !\n",
+			   sandisk_A19_read_retry_mode);
+		return -99;
+	}
+	nand_print_dbg("sandisk A19 read retry conut: %d !\n",
+		       sandisk_A19_read_retry_cycle);
+	return 0;
+}
 extern int sandisk_A19_vender_set_param(void *chip, void *value,
 					void *address, int unused);
 int sandisk_A19_set_readretry(struct samsung_set_chip *chip,
@@ -4308,7 +4340,6 @@ extern int hynix16nm_readretry_init(void *);
 extern int hynix20nm_readretry_init(void *);
 extern int hynix26nm_readretry_init(void *);
 extern int sandisk_readretry_init(void *);
-extern int sandisk_A19_readretry_init(void *);
 extern void samsung_read_page_end(void);
 extern void micron_read_page_end(void);
 extern void toshiba_read_page_end(void);

@@ -8830,6 +8830,7 @@ sandisk_A19_read_page_end:
 // readonly payload moved below: 	.string	"sandisk A19 read retry conut: %d !\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_readretry_init
 	.type	sandisk_A19_readretry_init, %function
 sandisk_A19_readretry_init:
@@ -8903,6 +8904,7 @@ sandisk_A19_readretry_init:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	sandisk_A19_readretry_init, .-sandisk_A19_readretry_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_readretry_exit
