@@ -6507,6 +6507,7 @@ toshiba_special_exit:
 // readonly payload moved below: 	.hword	-37
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_vender_set_param
 	.type	hynix26nm_vender_set_param, %function
 hynix26nm_vender_set_param:
@@ -6580,6 +6581,7 @@ hynix26nm_vender_set_param:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	hynix26nm_vender_set_param, .-hynix26nm_vender_set_param
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC85: relocated in rooted readonly order below. */

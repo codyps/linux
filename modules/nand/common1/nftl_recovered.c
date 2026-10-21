@@ -219,6 +219,31 @@ int hynix20nm_vender_set_param(void *chip, unsigned char *values,
 	return result;
 }
 
+int hynix26nm_vender_set_param(void *chip, unsigned char *values,
+			      unsigned char *addresses, unsigned int count)
+{
+	int result = 0;
+	unsigned char command = 54;
+	unsigned char confirm = 22;
+	unsigned int index;
+
+	nand_enable_chip(chip);
+	ndfc_disable_randomize(((struct samsung_set_chip *)chip)->controller);
+	/* OEM ignores every bus-command result, including a failing confirm,
+	 * and reports success after disabling the chip. */
+	for (index = 0; index < count; index++) {
+		set_cmd_with_nand_bus(chip, &command, 0, addresses + index,
+				      values + index, 1, 1);
+		set_one_cmd((struct command_chip *)chip, confirm, 0);
+	}
+	nand_disable_chip(chip);
+	/* OEM reads four diagnostic value bytes even when count is smaller
+	 * or the caller provided fewer than four bytes. */
+	nand_print_dbg("rr value %x %x %x %x!\n", values[0],
+		       values[1], values[2], values[3]);
+	return result;
+}
+
 struct nftl_chip_block_ops {
 	unsigned char before_callbacks[88];
 	int (*erase)(struct nftl_chip_block_ops *, struct physic_op_param *);
