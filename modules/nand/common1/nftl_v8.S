@@ -3781,6 +3781,7 @@ hynix20nm_lsb_exit:
 // readonly payload moved below: 	.string	"otp copy failed!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_vender_get_param_otp_hynix
 	.type	hynix20nm_vender_get_param_otp_hynix, %function
 hynix20nm_vender_get_param_otp_hynix:
@@ -4035,6 +4036,7 @@ hynix20nm_vender_get_param_otp_hynix:
 	ldp	x29, x30, [sp], 144
 	ret
 	.size	hynix20nm_vender_get_param_otp_hynix, .-hynix20nm_vender_get_param_otp_hynix
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_saveotpvalue

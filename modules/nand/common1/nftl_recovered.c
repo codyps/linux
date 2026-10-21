@@ -3582,6 +3582,91 @@ int hynix20nm_getotpparam(struct otp_chip *chip, unsigned char *value)
 	return 0;
 }
 
+struct command_chip;
+extern int set_one_addr(struct command_chip *, unsigned int);
+__attribute__((optimize("-fno-stack-protector")))
+int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *owner)
+{
+	struct samsung_set_chip *chip = (struct samsung_set_chip *)owner;
+	unsigned char addresses[2] = {0, 0};
+	unsigned char values[2] = {0, 0};
+	unsigned char command = 54;
+	unsigned char read_command = 48;
+	unsigned char complement[64];
+	unsigned char *buffer;
+	unsigned int copy;
+	unsigned int index;
+	int invalid_copy = 0;
+	int result = 0;
+
+	if (hynix20nm_read_retry_mode == 2) {
+		addresses[0] = 0xff;
+		addresses[1] = 0xcc;
+		values[0] = 0x40;
+		values[1] = 0x4d;
+	} else if (hynix20nm_read_retry_mode == 3) {
+		addresses[0] = 0xae;
+		addresses[1] = 0xb0;
+		values[0] = 0;
+		values[1] = 0x4d;
+	} else {
+		return -97;
+	}
+	/* OEM never checks allocation or any NAND command/read result. */
+	buffer = nand_get_temp_buf(1024);
+	nand_enable_chip(chip);
+	ndfc_disable_randomize(chip->controller);
+	set_one_cmd((struct command_chip *)chip, -1, 1);
+	set_cmd_with_nand_bus(chip, &command, 0,
+				  &addresses[0], &values[0], 1, 1);
+	set_cmd_with_nand_bus(chip, 0, 0,
+				  &addresses[1], &values[1], 1, 1);
+	set_one_cmd((struct command_chip *)chip, 22, 0);
+	set_one_cmd((struct command_chip *)chip, 23, 0);
+	set_one_cmd((struct command_chip *)chip, 4, 0);
+	set_one_cmd((struct command_chip *)chip, 25, 0);
+	set_one_cmd((struct command_chip *)chip, 0, 0);
+	set_one_addr((struct command_chip *)chip, 0);
+	set_one_addr((struct command_chip *)chip, 0);
+	set_one_addr((struct command_chip *)chip, 0);
+	set_one_addr((struct command_chip *)chip, 2);
+	set_one_addr((struct command_chip *)chip, 0);
+	get_data_with_nand_bus_one_cmd(chip, &read_command, 0, buffer, 2);
+	if (buffer[0] != 8 || buffer[1] != 8) {
+		nand_print("hynix OTP RegCount value error: 0x%x, 0x%x \n",
+			   buffer[0], buffer[1]);
+		result = -96;
+	}
+	get_data_with_nand_bus_one_cmd(chip, 0, 0, buffer, 1024);
+	/* OEM overwrites saved bytes before validating each copy. A bad copy
+	 * therefore leaves a partial update until a later good copy replaces it. */
+	for (copy = 0; copy <= 7; copy++) {
+		invalid_copy = 0;
+		for (index = 0; index <= 63; index++) {
+			owner->saved[index] = buffer[copy * 128 + index];
+			complement[index] = buffer[copy * 128 + 64 + index];
+			if (owner->saved[index] + complement[index] != 255) {
+				invalid_copy = 1;
+				break;
+			}
+		}
+		if (!invalid_copy) {
+			nand_print_dbg("otp copy %d is ok!\n", copy);
+			break;
+		}
+	}
+	if (invalid_copy) {
+		nand_print_dbg("otp copy failed!\n");
+		/* OEM overwrites a previous -96 register-count error here. */
+		result = -95;
+	}
+	set_one_cmd((struct command_chip *)chip, -1, 1);
+	set_one_cmd((struct command_chip *)chip, 56, 1);
+	nand_disable_chip(chip);
+	nand_free_temp_buf(buffer);
+	return result;
+}
+
 extern unsigned char hynix20nm_read_retry_reg_num;
 extern unsigned char hynix20nm_read_retry_reg_adr[];
 extern unsigned char hynix20nm_read_retry_cycle;
