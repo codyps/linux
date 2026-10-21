@@ -16213,6 +16213,7 @@ crc_wrong:
 // readonly payload moved below: 	.string	"[NE]%s:malloc fail for zone_phy_page_map_for_gc.buf\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	zone_param_init
 	.type	zone_param_init, %function
 zone_param_init:
@@ -16599,6 +16600,7 @@ zone_param_init:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	zone_param_init, .-zone_param_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	zone_param_exit

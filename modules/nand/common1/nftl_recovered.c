@@ -6314,6 +6314,140 @@ void print_nftl_zone(void *zone)
 #undef DIAG_U32
 #undef DIAG_PTR
 
+/* The OEM's private zone layout is not public. These typed accessors keep
+ * each recovered offset visible until the full declaration is established. */
+#define INIT_U8(p, off) (*(unsigned char *)((char *)(p) + (off)))
+#define INIT_U16(p, off) (*(unsigned short *)((char *)(p) + (off)))
+#define INIT_U32(p, off) (*(unsigned int *)((char *)(p) + (off)))
+#define INIT_PTR(p, off) (*(void **)((char *)(p) + (off)))
+struct logic_page_map_zone;
+extern int malloc_logic_page_map(struct logic_page_map_zone *, unsigned int);
+int zone_param_init(void *zone, unsigned short first_block,
+		    unsigned int sectors, unsigned int backup_sectors)
+{
+	char *p = zone;
+	char *chip = INIT_PTR(p, 8);
+	unsigned int map_bytes;
+	unsigned int allocation_bytes;
+	unsigned int index;
+	void *buffer;
+
+	/* OEM returns from each failure without freeing earlier allocations. */
+	buffer = nftl_malloc(INIT_U16(chip, 26));
+	INIT_PTR(p, 512) = buffer;
+	if (!buffer) {
+		nand_print("[NE]%s:malloc fail for temp_page_buf\n", __func__);
+		return -2;
+	}
+	buffer = nftl_malloc(INIT_U16(chip, 26));
+	INIT_PTR(p, 520) = buffer;
+	if (!buffer) {
+		nand_print("[NE]%s:malloc fail for logic_page_buf\n", __func__);
+		return -2;
+	}
+	INIT_U32(p, 32) = sectors;
+	INIT_U32(p, 40) = backup_sectors;
+	INIT_U16(p, 44) = first_block;
+	INIT_PTR(p, 48) = get_phy_block_addr((struct nftl_phy_outer *)zone,
+					     first_block);
+	INIT_U16(p, 26) = 0;
+	INIT_U16(p, 28) = 0;
+	INIT_U16(p, 30) = 0;
+	INIT_PTR(p, 56) = 0;
+	/* Stock performs an unchecked division by the chip's sector factor. */
+	if (malloc_logic_page_map((struct logic_page_map_zone *)zone,
+				  sectors / INIT_U8(chip, 8))) {
+		nand_print("[NE]zone_param_init error2\n");
+		return -2;
+	}
+	map_bytes = (unsigned int)INIT_U16(chip, 20) << 2;
+	allocation_bytes = map_bytes + 320;
+	INIT_U32(p, 560) = map_bytes;
+	INIT_U32(p, 576) = 320;
+	INIT_U32(p, 544) = allocation_bytes;
+	buffer = nftl_malloc(allocation_bytes);
+	INIT_PTR(p, 536) = buffer;
+	if (!buffer) {
+		nand_print("[NE]%s:malloc fail for current_block.user_info.buf\n",
+			   __func__);
+		return -2;
+	}
+	INIT_PTR(p, 552) = buffer;
+	INIT_PTR(p, 568) = (char *)buffer + map_bytes;
+	INIT_PTR(p, 3440) = INIT_PTR(p, 568);
+	nand_memset(buffer, -1, allocation_bytes);
+	INIT_U32(p, 624) = map_bytes;
+	INIT_U32(p, 608) = allocation_bytes;
+	buffer = nftl_malloc(allocation_bytes);
+	INIT_PTR(p, 600) = buffer;
+	if (!buffer) {
+		nand_print("[NE]%s:malloc fail for assist_block.user_info.buf\n",
+			   __func__);
+		return -2;
+	}
+	INIT_PTR(p, 616) = buffer;
+	INIT_PTR(p, 632) = (char *)buffer + map_bytes;
+	nand_memset(buffer, -1, allocation_bytes);
+	INIT_U32(p, 488) = map_bytes;
+	INIT_U32(p, 504) = 320;
+	INIT_U32(p, 472) = allocation_bytes;
+	buffer = nftl_malloc(allocation_bytes);
+	INIT_PTR(p, 464) = buffer;
+	if (!buffer) {
+		nand_print("[NE]%s:malloc fail for zone_phy_page_map_for_gc.buf\n",
+			   __func__);
+		return -2;
+	}
+	INIT_PTR(p, 480) = buffer;
+	INIT_PTR(p, 496) = (char *)buffer + map_bytes;
+	INIT_U32(p, 656) = 0;
+	INIT_U32(p, 676) = 0;
+	INIT_U32(p, 660) = 0;
+	INIT_U32(p, 664) = 0;
+	INIT_U32(p, 668) = 0;
+	INIT_U32(p, 672) = 0;
+	INIT_U16(p, 1056) = INIT_U16(chip, 16) >> 1;
+	INIT_U16(p, 1058) = INIT_U16(chip, 16) / 6;
+	INIT_U16(p, 1060) = 0;
+	INIT_U16(p, 1062) = 0;
+	INIT_PTR(p, 1064) = 0;
+	INIT_PTR(p, 528) = 0;
+	INIT_U16(p, 584) = 0xffff;
+	INIT_PTR(p, 592) = 0;
+	INIT_U16(p, 648) = 0xffff;
+	for (index = 0; index < 3; index++) {
+		unsigned int base = 288 + index * 64;
+
+		INIT_PTR(p, base) = 0;
+		INIT_PTR(p, base + 8) = 0;
+		INIT_PTR(p, base + 16) = 0;
+		INIT_PTR(p, base + 24) = 0;
+		INIT_PTR(p, base + 32) = 0;
+		INIT_PTR(p, base + 40) = 0;
+	}
+	INIT_U16(p, 696) = 0;
+	for (index = 0; index < 10; index++) {
+		unsigned int base = 704 + index * 32;
+
+		INIT_U16(p, base) = index;
+		INIT_U16(p, base + 2) = 0;
+		INIT_PTR(p, base + 8) = 0;
+		INIT_PTR(p, base + 16) = 0;
+		INIT_PTR(p, base + 24) = 0;
+	}
+	INIT_U16(p, 1024) = 255;
+	INIT_U16(p, 698) = 0;
+	INIT_U16(p, 1026) = 0;
+	INIT_PTR(p, 1032) = 0;
+	INIT_PTR(p, 1040) = 0;
+	INIT_PTR(p, 1048) = 0;
+	return 0;
+}
+#undef INIT_U8
+#undef INIT_U16
+#undef INIT_U32
+#undef INIT_PTR
+
 struct wear_options {
 	unsigned char before_enabled[6];
 	unsigned short enabled;
