@@ -7343,3 +7343,100 @@ int garbage_collect(void *input)
 	}
 	return 0;
 }
+
+struct sandisk_first_request {
+	unsigned int channel;
+	unsigned int block;
+	unsigned int page;
+};
+struct sandisk_first_command {
+	unsigned int first_index;
+	unsigned int before_first_wait;
+	unsigned int first_wait;
+	unsigned int first_code;
+	unsigned int first_valid;
+	unsigned int first_count;
+	unsigned char before_second[80 - 24];
+	unsigned int second_wait;
+	unsigned int second_code;
+	unsigned int second_valid;
+	unsigned int second_count;
+	unsigned char address[16];
+	unsigned int address_cycles;
+	unsigned char before_third[152 - 116];
+	unsigned int third_wait;
+	unsigned int third_code;
+	unsigned int third_valid;
+	unsigned int third_count;
+};
+struct sandisk_first_controller {
+	unsigned char before_channel[12];
+	unsigned int channel;
+	unsigned int chips;
+	unsigned char before_commands[40 - 20];
+	struct sandisk_first_command commands;
+};
+struct sandisk_first_chip {
+	unsigned char before_index[28];
+	unsigned int index;
+	unsigned int blocks;
+	unsigned char before_page_shift[44 - 36];
+	unsigned int page_shift;
+	unsigned char before_controller[272 - 48];
+	struct sandisk_first_controller *controller;
+};
+_Static_assert(__builtin_offsetof(struct sandisk_first_command, address_cycles)
+	       == 112, "first-burn address cycles");
+_Static_assert(__builtin_offsetof(struct sandisk_first_command, third_count)
+	       == 164, "first-burn last command");
+_Static_assert(__builtin_offsetof(struct sandisk_first_chip, controller)
+	       == 272, "first-burn controller offset");
+extern int nand_read_chip_status_ready(void *);
+extern void ndfc_clean_cmd_seq(struct sandisk_first_command *);
+extern unsigned int get_row_addr(unsigned int, unsigned int, unsigned int);
+extern void fill_cmd_addr(unsigned int, unsigned int, unsigned int,
+			  unsigned int, void *);
+extern int ndfc_execute_cmd(void *, struct sandisk_first_command *);
+int sandisk_A19_check_bad_block_first_burn(
+	struct sandisk_first_request *request)
+{
+	struct sandisk_first_chip *chip = (struct sandisk_first_chip *)
+		nci_get_from_nsi(g_nsi, request->channel);
+	struct sandisk_first_controller *controller = chip->controller;
+	struct sandisk_first_command *commands = &controller->commands;
+	unsigned int row;
+	int result;
+
+	/* OEM trusts g_nsi, chip and controller pointers without NULL checks. */
+	if (chip->index >= controller->chips || request->block >= chip->blocks) {
+		nand_print("fatal err -0, wrong input parameter, ch: %d  chip: %d/%d  block: %d/%d \n",
+			   controller->channel, chip->index, controller->chips,
+			   request->block, chip->blocks);
+		return -10;
+	}
+	ndfc_disable_randomize(controller);
+	nand_read_chip_status_ready(chip);
+	nand_enable_chip((struct samsung_set_chip *)chip);
+	ndfc_clean_cmd_seq(commands);
+	commands->first_index = 0;
+	commands->first_code = 0xa2;
+	commands->first_wait = 1;
+	commands->first_valid = 1;
+	commands->first_count = 0;
+	commands->second_code = 0x80;
+	commands->second_wait = 1;
+	commands->second_valid = 1;
+	commands->second_count = 0;
+	row = get_row_addr(chip->page_shift, request->block, request->page);
+	commands->address_cycles = 5;
+	fill_cmd_addr(0, 2, row, 3, commands->address);
+	commands->third_code = 0x10;
+	commands->third_wait = 1;
+	commands->third_valid = 1;
+	commands->third_count = 1;
+	/* OEM overwrites the command result with the second ready status. */
+	result = ndfc_execute_cmd(controller, commands);
+	result = nand_read_chip_status_ready(chip);
+	nand_disable_chip((struct samsung_set_chip *)chip);
+	return result;
+}

@@ -9298,6 +9298,7 @@ sandisk_A19_special_exit:
 // readonly payload moved below: 	.string	"fatal err -0, wrong input parameter, ch: %d  chip: %d/%d  block: %d/%d \n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_check_bad_block_first_burn
 	.type	sandisk_A19_check_bad_block_first_burn, %function
 sandisk_A19_check_bad_block_first_burn:
@@ -9432,6 +9433,7 @@ sandisk_A19_check_bad_block_first_burn:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	sandisk_A19_check_bad_block_first_burn, .-sandisk_A19_check_bad_block_first_burn
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC105: relocated in rooted readonly order below. */
