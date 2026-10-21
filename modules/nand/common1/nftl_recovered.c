@@ -2441,3 +2441,27 @@ int samsung_readretry_init(struct samsung_init_chip *chip)
 		return -100;
 	return 0;
 }
+
+struct reclaim_flag_zone {
+	unsigned char before_complete[664];
+	unsigned int complete;
+};
+void clean_read_reclaim_complete_flag(struct read_claim_node *head)
+{
+	struct read_claim_node *node = head;
+
+	while (node) {
+		/* OEM reads the zone pointer twice, destination before source.
+		 * These volatile reads preserve the order even if another actor
+		 * changes the node between them. Neither pointer is checked. */
+		struct read_claim_zone *const volatile *slot =
+			(struct read_claim_zone *const volatile *)&node->zone;
+		struct reclaim_flag_zone *destination =
+			(struct reclaim_flag_zone *)*slot;
+		struct reclaim_flag_zone *source =
+			(struct reclaim_flag_zone *)*slot;
+
+		destination->complete = source->complete == 0;
+		node = node->next;
+	}
+}
