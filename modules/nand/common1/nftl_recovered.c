@@ -10488,8 +10488,8 @@ __attribute__((optimize("-fno-stack-protector")))
 int nand_dbg_zone_phy_read(struct nand_dbg_zone_read *zone,
 			   unsigned short block, unsigned short page)
 {
-	unsigned char oob[16];
 	struct physic_op_param op;
+	unsigned char oob[16];
 	unsigned char *data = nftl_malloc(4096);
 	unsigned char *physical;
 	int result;
