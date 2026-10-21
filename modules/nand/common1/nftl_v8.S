@@ -15100,6 +15100,7 @@ write_logic_data_to_current_block:
 // readonly payload moved below: 	.string	"[NE]no free block!!!!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_new_current_block
 	.type	get_new_current_block, %function
 get_new_current_block:
@@ -15188,6 +15189,7 @@ get_new_current_block:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	get_new_current_block, .-get_new_current_block
+	#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC174: relocated in rooted readonly order below. */

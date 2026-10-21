@@ -5157,7 +5157,10 @@ struct do_after_zone {
 	unsigned char page_map[76];
 	unsigned int completed;
 };
-extern int get_new_current_block(struct do_after_zone *, void *);
+struct get_new_zone;
+struct get_new_current_entry;
+extern int get_new_current_block(struct get_new_zone *,
+				 struct get_new_current_entry *);
 int do_after_write(struct do_after_zone *zone)
 {
 	if (current_block_at_last_page((struct current_zone *)zone,
@@ -5175,17 +5178,77 @@ int do_after_write(struct do_after_zone *zone)
 					(struct page_map_write_current *)zone->page_map))
 				nand_print("[NE]write_phy_page_map_to_current_block error!\n");
 		}
-		if (get_new_current_block(zone, zone->current)) {
+		if (get_new_current_block((struct get_new_zone *)zone,
+				(struct get_new_current_entry *)zone->current)) {
 			nand_print("[NE]get_new_current_block error1!\n");
 			return 1;
 		}
 		if (zone->flags & 1) {
-			if (get_new_current_block(zone, zone->page_map)) {
+			if (get_new_current_block((struct get_new_zone *)zone,
+				    (struct get_new_current_entry *)zone->page_map)) {
 				nand_print("[NE]get_new_current_block error2!\n");
 				return 1;
 			}
 		}
 		zone->completed++;
 	}
+	return 0;
+}
+
+struct get_new_geometry {
+	unsigned char before_limit[16];
+	unsigned short erase_limit;
+};
+struct get_new_block_info {
+	unsigned short number;
+	unsigned char before_erase[4];
+	unsigned short erase_count;
+	unsigned int sequence;
+};
+struct get_new_current_entry {
+	struct get_new_block_info *block;
+	unsigned char before_buffer[16];
+	void *buffer;
+	unsigned int buffer_size;
+	unsigned char before_page[20];
+	unsigned short page;
+};
+struct get_new_zone {
+	unsigned char before_geometry[8];
+	struct get_new_geometry *geometry;
+	unsigned char before_flags[9];
+	unsigned char flags;
+	unsigned char before_wear[1036];
+	unsigned short wear;
+};
+int get_new_current_block(struct get_new_zone *zone,
+			  struct get_new_current_entry *current)
+{
+	unsigned int previous = current->block->sequence;
+
+	/* OEM dereferences the old block before checking it and clears the
+	 * buffer even if no replacement free block can be found. */
+	nand_memset(current->buffer, -1, current->buffer_size);
+	if (zone->wear) {
+		current->block = (struct get_new_block_info *)
+			out_phy_block_from_free_list_by_erase_time(
+				(struct nftl_free_erase_owner *)zone,
+				zone->geometry->erase_limit);
+		if (current->block)
+			nand_print_dbg("[ND]swl: new_cur_blk->alloc ok(max_ec): block_no = %d; ec = %d; \n",
+				       current->block->number,
+				       current->block->erase_count);
+	} else {
+		current->block = (struct get_new_block_info *)
+			out_phy_block_from_free_list((struct free_block_zone *)zone);
+	}
+	if (!current->block) {
+		nand_print("[NE]no free block!!!!\n");
+		return 1;
+	}
+	current->page = 0;
+	current->block->sequence = previous + 1;
+	if (zone->flags & 1)
+		current->block->sequence++;
 	return 0;
 }
