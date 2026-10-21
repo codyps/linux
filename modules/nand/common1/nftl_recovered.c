@@ -2619,6 +2619,34 @@ struct free_block_zone {
 	unsigned char before_count[0x1e];
 	unsigned short count;
 };
+struct adjust_free_zone {
+	unsigned char before_current[64];
+	void *current;
+};
+struct adjust_free_block {
+	unsigned short number;
+	unsigned char before_erase[4];
+	unsigned short erase_time;
+};
+extern struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone);
+int adjust_free_list(struct adjust_free_zone *zone)
+{
+	struct adjust_free_block *block = (struct adjust_free_block *)
+		out_phy_block_from_free_list((struct free_block_zone *)zone);
+
+	/* OEM logs a missing block but dereferences it immediately afterward. */
+	if (!block)
+		nand_print("[NE]adjust free list fail!!\n");
+	erase_block(zone, block, (unsigned short)(block->erase_time + 1));
+	block = (struct adjust_free_block *)out_phy_block_from_free_list_by_block(
+		(struct nftl_free_erase_owner *)zone,
+		(struct nftl_free_erase_node *)block);
+	zone->current = block;
+	/* The second removal may also return null, which OEM dereferences. */
+	nand_print("[NI]adjust free list : %d %d!!\n",
+		   block->number, block->erase_time);
+	return 0;
+}
 struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone)
 {
 	struct free_block *block = (struct free_block *)

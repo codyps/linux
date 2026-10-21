@@ -23124,6 +23124,7 @@ block_last_page_ecc_error:
 // readonly payload moved below: 	.string	"[NI]adjust free list : %d %d!!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	adjust_free_list
 	.type	adjust_free_list, %function
 adjust_free_list:
@@ -23168,6 +23169,7 @@ adjust_free_list:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	adjust_free_list, .-adjust_free_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_get_bad_block_cnt
