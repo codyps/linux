@@ -1890,6 +1890,51 @@ int nand_dbg_phy_write(unsigned short chip, unsigned short block,
 	nftl_free(buffer);
 	return result;
 }
+struct dbg_zone_write_geometry {
+	unsigned char before_page[28];
+	unsigned short page;
+};
+struct dbg_zone_write_owner {
+	unsigned char before_geometry[8];
+	struct dbg_zone_write_geometry *geometry;
+	unsigned char before_write[3456];
+	int (*write)(struct dbg_zone_write_owner *, struct physic_op_param *);
+};
+/* OEM's diagnostic writer has no canary despite its stack OOB buffer. */
+__attribute__((optimize("-fno-stack-protector")))
+int nand_dbg_zone_phy_write(struct dbg_zone_write_owner *zone,
+			    unsigned short block, unsigned short page)
+{
+	unsigned char oob[16];
+	struct physic_op_param op;
+	void *buffer = nftl_malloc(8192);
+	struct physical_block *physical;
+	int result;
+
+	/* OEM logs allocation failure, then passes NULL to nand_memset and
+	 * the write callback. Preserve the fault-prone diagnostic path. */
+	if (!buffer)
+		nand_print("[NE]%s:malloc 8192 fail!\n", __func__);
+	physical = (struct physical_block *)
+		get_phy_block_addr((struct nftl_phy_outer *)zone, block);
+	nand_memset(buffer, -91, 4096);
+	oob[0] = 0xff;
+	oob[1] = 0xff;
+	oob[2] = 0xff;
+	oob[3] = 0xff;
+	oob[4] = 0xff;
+	oob[5] = 0xa5;
+	oob[6] = 0xa5;
+	oob[7] = 0xff;
+	oob[8] = 0xff;
+	oob[9] = 0xff;
+	oob[10] = 0xff;
+	set_physic_op_par(&op, physical->number, page, zone->geometry->page,
+			  buffer, oob);
+	result = zone->write(zone, &op);
+	nftl_free(buffer);
+	return result;
+}
 
 /* Isolated NFTL C candidates; private structure names are inferred. */
 
