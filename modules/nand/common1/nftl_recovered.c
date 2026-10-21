@@ -8043,3 +8043,100 @@ int nand_clean_zone_table2(struct nftl_clean_zone *zone)
 	zone->slots[10].third = 0;
 	return 0;
 }
+
+struct ecc_rebuild_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages;
+	unsigned char before_fixed_page[6];
+	unsigned short fixed_page;
+};
+struct ecc_rebuild_zone {
+	unsigned char before_geometry[8];
+	struct ecc_rebuild_geometry *geometry;
+	unsigned char before_flag[9];
+	unsigned char flag;
+	unsigned char before_data[486];
+	void *data;
+	unsigned char before_read[2944];
+	int (*read)(struct ecc_rebuild_zone *, struct physic_op_param *);
+	int (*write)(struct ecc_rebuild_zone *, struct physic_op_param *);
+};
+_Static_assert(__builtin_offsetof(struct ecc_rebuild_zone, data) == 512,
+	       "ECC rebuild data offset");
+_Static_assert(__builtin_offsetof(struct ecc_rebuild_zone, read) == 3464,
+	       "ECC rebuild read offset");
+_Static_assert(__builtin_offsetof(struct ecc_rebuild_zone, write) == 3472,
+	       "ECC rebuild write offset");
+__attribute__((optimize("-fno-stack-protector")))
+struct new_write_block *current_block_ecc_error(struct ecc_rebuild_zone *zone,
+					struct new_write_block *old)
+{
+	struct new_write_block *replacement;
+	struct physic_op_param read_op, write_op;
+	unsigned char oob[16];
+	unsigned int page, written = 0;
+	int status;
+
+	for (;;) {
+		replacement = (struct new_write_block *)
+			out_phy_block_from_free_list((struct free_block_zone *)zone);
+		if (!replacement) {
+			nand_print("[NE]current_block_ecc_error no free block!!!\n");
+			return 0;
+		}
+		replacement->tag = old->tag;
+		if (!new_block_init_for_write((struct new_write_zone *)zone,
+					      replacement, replacement->tag))
+			break;
+		/* OEM retries without returning the failed replacement to the
+		 * free list; keep this leak and its unbounded retry loop. */
+		nand_print("[NE]something is error here 16!\n");
+	}
+	nand_print("[NE]do current_block_ecc_error %d!!\n", old->number);
+	for (page = 0; page < zone->geometry->pages; page++) {
+		set_physic_op_par(&read_op, old->number, page,
+				  zone->geometry->fixed_page, zone->data, oob);
+		status = zone->read(zone, &read_op);
+		if (is_ftl_logic_page_data(oob) == 1) {
+			if (status == 0 || status == 10) {
+				if (nand_power_off_ecc_error(
+						(struct poweroff_ecc_zone *)zone,
+						zone->data, oob)) {
+					nand_print("[NE]power off ecc error 2.\n");
+					continue;
+				}
+				nand_print("[NE]current_block_ecc ok page %d %d!!\n",
+					   page, status);
+				set_physic_op_par(&write_op, replacement->number,
+						  written,
+						  zone->geometry->fixed_page,
+						  zone->data, oob);
+				/* OEM discards the write result and advances regardless. */
+				zone->write(zone, &write_op);
+				written++;
+			} else {
+				nand_print("[NE]current_block_ecc_error page %d!!\n",
+					   page);
+			}
+		} else if (is_ftl_special_data(oob) == 1) {
+			nand_print("[NE]current_block_ecc_error invalid page data %d!!\n",
+				   page);
+		} else if (is_nouse_page(oob) != 1) {
+			nand_print("[NE]current_block_ecc_error unkown page data %d!!\n",
+				   page);
+		}
+	}
+	/* Both stock branches erase with the same arguments. The flag test
+	 * currently has no effect; preserve it for behavioral provenance. */
+	if (zone->flag & 1)
+		erase_block((struct erase_block_zone *)zone,
+			    (struct erase_block_info *)old,
+			    (unsigned short)(old->erase_count + 1));
+	else
+		erase_block((struct erase_block_zone *)zone,
+			    (struct erase_block_info *)old,
+			    (unsigned short)(old->erase_count + 1));
+	nand_print_dbg("[ND]do current_block_ecc_error end %d %d!!\n",
+		       page, written);
+	return replacement;
+}

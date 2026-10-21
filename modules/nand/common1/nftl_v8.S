@@ -22799,6 +22799,7 @@ get_used_block_count:
 // readonly payload moved below: 	.string	"[ND]do current_block_ecc_error end %d %d!!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	current_block_ecc_error
 	.type	current_block_ecc_error, %function
 current_block_ecc_error:
@@ -22988,6 +22989,7 @@ current_block_ecc_error:
 	ldp	x29, x30, [sp], 128
 	ret
 	.size	current_block_ecc_error, .-current_block_ecc_error
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC321: relocated in rooted readonly order below. */
