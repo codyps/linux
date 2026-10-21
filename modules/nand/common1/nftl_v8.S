@@ -26283,6 +26283,7 @@ out_phy_block_from_invalid_page_list_by_block:
 // readonly payload moved below: 	.string	"[ND]invalid_page_count more than pages per blk 1!!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	phy_block_from_invalid_page_incr
 	.type	phy_block_from_invalid_page_incr, %function
 phy_block_from_invalid_page_incr:
@@ -26404,6 +26405,7 @@ phy_block_from_invalid_page_incr:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	phy_block_from_invalid_page_incr, .-phy_block_from_invalid_page_incr
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	adjust_invaild_list

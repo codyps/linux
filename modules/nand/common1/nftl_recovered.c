@@ -2376,11 +2376,54 @@ void set_oob_logic_page(void *unused, unsigned char *oob,
 }
 
 struct invalid_page_node {
-	unsigned char before_count[4];
+	unsigned short number;
+	unsigned char before_count[2];
 	unsigned short invalid_pages;
 	unsigned char before_next[10];
 	struct invalid_page_node *next;
+	struct invalid_page_node *previous;
 };
+struct invalid_page_zone {
+	unsigned char before_geometry[8];
+	struct page_geometry *geometry;
+	unsigned char before_head[336 - 16];
+	struct invalid_page_node head;
+};
+
+int phy_block_from_invalid_page_incr(struct invalid_page_zone *zone,
+				     struct invalid_page_node *node)
+{
+	struct invalid_page_node *previous;
+
+	if (!node->next && !node->previous) {
+		node->invalid_pages++;
+		if (node->invalid_pages > zone->geometry->pages_per_block)
+			nand_print_dbg("[ND]invalid_page_count more than pages per blk 0 %d %d!!\n",
+				       node->number, node->invalid_pages);
+		return 0;
+	}
+	node->invalid_pages++;
+	if (node->invalid_pages > zone->geometry->pages_per_block)
+		nand_print_dbg("[ND]invalid_page_count more than pages per blk 1!!\n");
+	previous = node->previous;
+	if (previous == &zone->head)
+		return 0;
+	/* OEM assumes a coherent doubly linked list. A malformed link may be
+	 * dereferenced, and the 16-bit page count wraps before the bound check. */
+	while (previous->invalid_pages < node->invalid_pages) {
+		node->previous = previous->previous;
+		previous->previous->next = node;
+		previous->next = node->next;
+		if (node->next)
+			node->next->previous = previous;
+		node->next = previous;
+		previous->previous = node;
+		previous = node->previous;
+		if (!previous->previous)
+			break;
+	}
+	return 0;
+}
 
 unsigned int get_total_invalid_page(void *zone)
 {
