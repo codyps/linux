@@ -2340,3 +2340,42 @@ int prio_gc_one(void *zone, unsigned short block, unsigned int priority)
 	add_prio_gc(zone, physical, (unsigned short)priority);
 	return 0;
 }
+
+extern int add_free_list(struct free_block_zone *zone,
+                         struct free_block *node);
+int put_phy_block_to_free_list(struct move_zone *zone,
+                               struct move_node *node)
+{
+    int result;
+
+    /* OEM clears links before insertion and increments only on success. */
+    ((struct free_block *)node)->next = 0;
+    ((struct free_block *)node)->previous = 0;
+    result = add_free_list((struct free_block_zone *)zone,
+                           (struct free_block *)node);
+    if (result == 0)
+        ((struct free_block_zone *)zone)->count++;
+    else
+        nand_print_dbg("[ND]free_list error !\n");
+    return result;
+}
+
+extern struct free_block *del_free_list_by_block(
+    struct free_block_zone *zone, struct free_block *target);
+struct nftl_free_erase_node *out_phy_block_from_free_list_by_block(
+    struct nftl_free_erase_owner *zone, struct nftl_free_erase_node *target)
+{
+    struct nftl_free_erase_node *node =
+        (struct nftl_free_erase_node *)del_free_list_by_block(
+            (struct free_block_zone *)zone, (struct free_block *)target);
+
+    if (node) {
+        ((struct free_block *)node)->next = 0;
+        ((struct free_block *)node)->previous = 0;
+        /* OEM leaves an already-zero count unchanged. */
+        if (((struct free_block_zone *)zone)->count != 0)
+            ((struct free_block_zone *)zone)->count--;
+        return node;
+    }
+    return node;
+}

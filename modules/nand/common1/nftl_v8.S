@@ -25503,6 +25503,7 @@ print_block_count_list:
 // readonly payload moved below: 	.string	"[ND]free_list error !\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	put_phy_block_to_free_list
 	.type	put_phy_block_to_free_list, %function
 put_phy_block_to_free_list:
@@ -25537,6 +25538,7 @@ put_phy_block_to_free_list:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	put_phy_block_to_free_list, .-put_phy_block_to_free_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	out_phy_block_from_free_list
@@ -25941,6 +25943,7 @@ get_block_min_count_from_invalid_list:
 	ret
 	.size	get_block_min_count_from_invalid_list, .-get_block_min_count_from_invalid_list
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	out_phy_block_from_free_list_by_block
 	.type	out_phy_block_from_free_list_by_block, %function
 out_phy_block_from_free_list_by_block:
@@ -25978,6 +25981,7 @@ out_phy_block_from_free_list_by_block:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	out_phy_block_from_free_list_by_block, .-out_phy_block_from_free_list_by_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC410: relocated in rooted readonly order below. */
