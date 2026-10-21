@@ -1345,6 +1345,52 @@ struct physical_zone {
 	unsigned char before_geometry[8];
 	struct physical_geometry *geometry;
 };
+struct new_write_geometry {
+	unsigned char before_erase_limit[16];
+	unsigned short erase_limit;
+	unsigned char before_page[10];
+	unsigned short page;
+};
+struct new_write_block {
+	unsigned short number;
+	unsigned char before_page[2];
+	unsigned short page;
+	unsigned short erase_count;
+	unsigned int tag;
+};
+struct new_write_zone {
+	unsigned char before_geometry[8];
+	struct new_write_geometry *geometry;
+	unsigned char before_max_erase[660];
+	unsigned int max_erase;
+	unsigned char before_erase[2776];
+	int (*erase)(struct new_write_zone *, struct physic_op_param *);
+	unsigned char before_mark_bad[32];
+	int (*mark_bad)(struct new_write_zone *, struct physic_op_param *);
+};
+int new_block_init_for_write(struct new_write_zone *zone,
+			     struct new_write_block *block, unsigned int tag)
+{
+	int result;
+	struct physic_op_param op;
+
+	set_physic_op_par(&op, block->number, 0, zone->geometry->page, 0, 0);
+	result = zone->erase(zone, &op);
+	/* OEM resets page and increments erase count before checking erase
+	 * failure; retain the resulting metadata update on a failed erase. */
+	block->page = 0;
+	block->erase_count++;
+	if (block->erase_count > zone->max_erase &&
+	    block->erase_count < zone->geometry->erase_limit)
+		zone->max_erase = block->erase_count;
+	block->tag = tag;
+	if (result) {
+		zone->mark_bad(zone, &op);
+		nand_print("[NE]new_block_init_for_write erase error!\n");
+		return 1;
+	}
+	return 0;
+}
 int is_last_phy_block(struct physical_block *block,
 		      struct physical_zone *zone)
 {

@@ -15184,6 +15184,7 @@ get_new_current_block:
 // readonly payload moved below: 	.string	"[NE]new_block_init_for_write erase error!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	new_block_init_for_write
 	.type	new_block_init_for_write, %function
 new_block_init_for_write:
@@ -15261,6 +15262,7 @@ new_block_init_for_write:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	new_block_init_for_write, .-new_block_init_for_write
+	#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC175: relocated in rooted readonly order below. */
