@@ -8313,6 +8313,7 @@ sandisk_A19_set_lmflgfix_next:
 // readonly payload moved below: 	.string	"sandisk_A19 ReadRetry ok with ecc limit! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_read_page_end
 	.type	sandisk_A19_read_page_end, %function
 sandisk_A19_read_page_end:
@@ -8867,6 +8868,7 @@ sandisk_A19_read_page_end:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	sandisk_A19_read_page_end, .-sandisk_A19_read_page_end
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC98: relocated in rooted readonly order below. */

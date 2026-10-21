@@ -7720,6 +7720,93 @@ int sandisk_A19_set_lmflgfix_next(const unsigned int *index,
 	return 0;
 }
 
+#define A19_REPORT(message) \
+	nand_print_dbg(message, \
+		((struct samsung_read_controller *)chip->controller)->channel, \
+		((struct samsung_read_chip_id *)chip)->chip, \
+		request->block, request->page, chip->retry)
+int sandisk_A19_read_page_end(struct samsung_read_request *request)
+{
+	struct samsung_set_chip *chip =
+		(struct samsung_set_chip *)nci_get_from_nsi(g_nsi, request->channel);
+	unsigned int retry, phase, skip_middle = 0;
+	int result = generic_read_page_end_not_retry(request);
+
+	if (result != -2)
+		return result;
+	nand_print_dbg("sandisk_A19 retry!\n");
+	for (phase = 0; phase < 4; phase++) {
+		/* Stock samples mode 51 once, after phase zero, to jump over
+		 * both DSP and plain CMD25 phases. */
+		if (phase == 1)
+			skip_middle = sandisk_A19_read_retry_mode == 51;
+		if ((phase == 1 || phase == 2) && skip_middle)
+			continue;
+		for (retry = 0; retry < sandisk_A19_read_retry_cycle; retry++) {
+			chip->retry = retry;
+			result = sandisk_A19_set_readretry(chip,
+					      (unsigned short)request->page);
+			if (result) {
+				nand_print_dbg("sandisk_A19 set readretry error\n");
+				continue;
+			}
+			if (phase == 1)
+				sandisk_A19_dsp_on(&request->channel);
+			if (phase == 2)
+				sandisk_A19_cmd25(&request->channel);
+			if (phase == 3) {
+				if (sandisk_A19_read_retry_mode == 52)
+					sandisk_A19_set_lmflgfix_next(
+						&request->channel, -58);
+				else if (sandisk_A19_read_retry_mode == 53)
+					sandisk_A19_set_lmflgfix_next(
+						&request->channel, 26);
+				else
+					sandisk_A19_set_lmflgfix_next(
+						&request->channel, -64);
+				sandisk_A19_cmd25(&request->channel);
+				if (sandisk_A19_read_retry_mode == 50 ||
+				    sandisk_A19_read_retry_mode == 52 ||
+				    sandisk_A19_read_retry_mode == 53)
+					sandisk_A19_dsp_on(&request->channel);
+			}
+			result = generic_read_page_start(request);
+			result |= generic_read_page_end_not_retry(request);
+			if (phase == 3) {
+				if (sandisk_A19_read_retry_mode == 52)
+					sandisk_A19_set_lmflgfix_next(
+						&request->channel, -62);
+				else if (sandisk_A19_read_retry_mode == 53)
+					sandisk_A19_set_lmflgfix_next(
+						&request->channel, 10);
+				else
+					sandisk_A19_set_lmflgfix_next(
+						&request->channel, 64);
+			}
+			/* OEM checks spare data even after a read error. */
+			if (is_nouse_page(request->data) == 1) {
+				result = -2;
+				A19_REPORT("retry spare all 0xff! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n");
+				continue;
+			}
+			if (result == 0 || result == 10) {
+				if (result == 0)
+					A19_REPORT("sandisk_A19 ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n");
+				else
+					A19_REPORT("sandisk_A19 ReadRetry ok with ecc limit! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n");
+				result = 10;
+				goto done;
+			}
+		}
+	}
+done:
+	chip->retry = 0;
+	/* Stock ignores the reset result even when all retries failed. */
+	sandisk_A19_exit_readretry(chip);
+	return result;
+}
+#undef A19_REPORT
+
 extern int set_one_addr(struct command_chip *chip, unsigned int address);
 #define HYNIX_LSB_EXIT(name) \
 int name(struct samsung_set_chip *chip) \
@@ -8054,7 +8141,7 @@ struct hynix26nm_init_chip;
 extern int hynix26nm_readretry_init(struct hynix26nm_init_chip *);
 extern int hynix20nm_read_page_end(struct samsung_read_request *);
 extern int sandisk_read_page_end(struct samsung_read_request *);
-extern void sandisk_A19_read_page_end(void);
+extern int sandisk_A19_read_page_end(struct samsung_read_request *);
 extern unsigned char hynix16nm_read_retry_mode, hynix16nm_read_retry_cycle,
 	hynix16nm_read_retry_reg_num;
 extern unsigned char hynix20nm_read_retry_mode, hynix20nm_read_retry_cycle,
