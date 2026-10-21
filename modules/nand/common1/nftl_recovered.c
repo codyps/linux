@@ -1246,6 +1246,30 @@ void set_no_use_page(void *unused, unsigned char *oob)
 	set_spare_data(oob, 0xbb, 2, 1);
 }
 
+void set_oob_special_page(void *unused, unsigned char *oob,
+			  unsigned int block, unsigned int page,
+			  unsigned short erase_count)
+{
+	/* OEM ignores the first argument and every helper result. */
+	oob[0] = 0xff;
+	set_spare_data(oob, block, 1, 4);
+	set_spare_data(oob, erase_count, 5, 2);
+	set_spare_data(oob, page, 7, 4);
+}
+
+void set_oob_logic_page(void *unused, unsigned char *oob,
+			unsigned int block, unsigned int page,
+			unsigned short erase_count)
+{
+	/* OEM ignores the first argument and every helper result. */
+	oob[0] = 0xff;
+	set_spare_data(oob, block, 1, 4);
+	set_spare_data(oob, erase_count, 5, 2);
+	set_spare_data(oob, page, 7, 4);
+	/* OEM forces the two high bits of byte one after encoding the block. */
+	oob[1] |= 0xc0;
+}
+
 struct invalid_page_node {
 	unsigned char before_count[4];
 	unsigned short invalid_pages;

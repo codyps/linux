@@ -31637,6 +31637,7 @@ get_spare_data:
 	.size	get_spare_data, .-get_spare_data
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_oob_logic_page
 	.type	set_oob_logic_page, %function
 set_oob_logic_page:
@@ -31678,7 +31679,9 @@ set_oob_logic_page:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	set_oob_logic_page, .-set_oob_logic_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_oob_special_page
 	.type	set_oob_special_page, %function
 set_oob_special_page:
@@ -31712,6 +31715,7 @@ set_oob_special_page:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	set_oob_special_page, .-set_oob_special_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_no_use_page
