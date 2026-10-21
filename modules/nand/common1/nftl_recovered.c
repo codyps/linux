@@ -313,11 +313,18 @@ struct nftl_free_erase_owner {
 struct nftl_invalid_erase_node {
 	unsigned char before_erase[6];
 	unsigned short erase_time;
-	unsigned char before_next[8];
+	unsigned int count;
+	unsigned char before_next[4];
 	struct nftl_invalid_erase_node *next;
 };
+struct nftl_invalid_erase_chip {
+	unsigned char before_limit[16];
+	unsigned short erase_limit;
+};
 struct nftl_invalid_erase_owner {
-	unsigned char before_list[336];
+	unsigned char before_chip[8];
+	struct nftl_invalid_erase_chip *chip;
+	unsigned char before_list[320];
 	struct nftl_invalid_erase_node list;
 };
 
@@ -350,6 +357,31 @@ NFTL_MAX_ERASE(get_block_max_erase_time_from_free_list,
 	       nftl_free_erase_owner, nftl_free_erase_node)
 NFTL_MAX_ERASE(get_block_max_erase_time_from_invalid_list,
 	       nftl_invalid_erase_owner, nftl_invalid_erase_node)
+
+__attribute__((optimize("-fno-stack-protector")))
+struct nftl_invalid_erase_node *get_block_min_erase_time_from_invalid_list(
+	struct nftl_invalid_erase_owner *owner, unsigned short limit,
+	unsigned int count_limit)
+{
+	struct nftl_invalid_erase_node *best = 0;
+	unsigned short minimum = owner->chip->erase_limit;
+	struct nftl_invalid_erase_node *current = &owner->list;
+
+	current = current->next;
+	while (current) {
+		/* OEM picks the last tie and trusts every link. It requires all
+		 * three strict/weak bounds exactly as shipped. */
+		if (limit > current->erase_time && current->count < count_limit &&
+		    minimum >= current->erase_time) {
+			minimum = current->erase_time;
+			best = current;
+		}
+		current = current->next;
+	}
+	if (best)
+		return best;
+	return 0;
+}
 
 __attribute__((optimize("-fno-stack-protector")))
 unsigned short get_max_erase_time_from_free_list(
@@ -2568,6 +2600,43 @@ struct gc_policy_zone {
 extern unsigned int gc_src_type;
 extern int gc_one(void *zone, unsigned short pages);
 
+struct gc_win_chip {
+	unsigned char before_pages[20];
+	unsigned short pages_per_block;
+};
+struct gc_win_node {
+	unsigned char before_count[4];
+	unsigned short count;
+};
+struct gc_win_zone {
+	unsigned char before_chip[8];
+	struct gc_win_chip *chip;
+	unsigned char before_current[336];
+	struct gc_win_node *current;
+};
+int gc_win_block(struct gc_win_zone *zone, unsigned short blocks)
+{
+	unsigned int progress = 0;
+	int limit = (int)((unsigned int)blocks * zone->chip->pages_per_block);
+	int result;
+
+	/* OEM uses a signed comparison on wrapped 32-bit progress and silently
+	 * succeeds if the current node is absent. */
+	while ((int)progress < limit) {
+		if (!zone->current)
+			return 0;
+		progress += zone->current->count;
+		progress--;
+		result = gc_one(zone, 1);
+		if (result) {
+			if (result == 1)
+				nand_print_dbg("[ND][NE] gc_win_block gc_one error \n");
+			return result;
+		}
+	}
+	return 0;
+}
+
 int gc_all_cnt(struct gc_policy_zone *zone, unsigned short pages,
 	       unsigned int count)
 {
@@ -3461,6 +3530,46 @@ int add_prio_gc(struct prio_gc_owner *owner, void *block,
 	node->prev = 0;
 	add_to_gc_list_tail((struct gc_list *)&owner->pool,
 			    (struct gc_list_node *)node);
+	return 0;
+}
+
+struct static_wear_stats {
+	unsigned char before_attempts[180];
+	unsigned int attempts;
+};
+struct static_wear_zone {
+	unsigned char before_chip[8];
+	struct gc_win_chip *chip;
+	unsigned char before_available[14];
+	unsigned short available;
+	unsigned char before_policy[668 - 32];
+	unsigned int policy;
+	unsigned int progress;
+	unsigned char before_threshold[4];
+	unsigned short threshold;
+	unsigned char before_stats[3440 - 682];
+	struct static_wear_stats *stats;
+};
+int static_wear_leveling(struct static_wear_zone *zone)
+{
+	struct invalid_node *block;
+	int result;
+
+	if (zone->available <= zone->threshold)
+		return 0;
+	if (zone->policy > 19) {
+		zone->stats->attempts++;
+		block = get_block_min_count_from_invalid_list(
+			(struct invalid_zone *)zone);
+		result = add_prio_gc((struct prio_gc_owner *)zone, block, 5);
+		if (result == 0)
+			zone->progress += 4;
+		if (zone->progress >= zone->chip->pages_per_block) {
+			zone->policy = 0;
+			zone->progress = 0;
+		}
+	}
+	/* OEM ignores null selection and GC insertion errors in its return. */
 	return 0;
 }
 

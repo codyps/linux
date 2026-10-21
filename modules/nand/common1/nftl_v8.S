@@ -25867,6 +25867,7 @@ get_block_max_erase_time_from_invalid_list:
 	.size	get_block_max_erase_time_from_invalid_list, .-get_block_max_erase_time_from_invalid_list
 	#endif
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_block_min_erase_time_from_invalid_list
 	.type	get_block_min_erase_time_from_invalid_list, %function
 get_block_min_erase_time_from_invalid_list:
@@ -25927,6 +25928,7 @@ get_block_min_erase_time_from_invalid_list:
 	add	sp, sp, 48
 	ret
 	.size	get_block_min_erase_time_from_invalid_list, .-get_block_min_erase_time_from_invalid_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_block_max_count_from_invalid_list
@@ -30903,6 +30905,7 @@ gc_all_base_on_free_blks:
 // readonly payload moved below: 	.string	"[ND][NE] gc_win_block gc_one error \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	gc_win_block
 	.type	gc_win_block, %function
 gc_win_block:
@@ -30962,6 +30965,7 @@ gc_win_block:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	gc_win_block, .-gc_win_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_total_invalid_page
@@ -31038,6 +31042,7 @@ is_current_blcok:
 	.size	is_current_blcok, .-is_current_blcok
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	static_wear_leveling
 	.type	static_wear_leveling, %function
 static_wear_leveling:
@@ -31096,6 +31101,7 @@ static_wear_leveling:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	static_wear_leveling, .-static_wear_leveling
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC462: relocated in rooted readonly order below. */
