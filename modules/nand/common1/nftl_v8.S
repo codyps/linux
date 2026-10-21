@@ -24529,6 +24529,7 @@ write_data_to_nand:
 // readonly payload moved below: 	.string	"[ND]==========================\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_check_table
 	.type	nand_check_table, %function
 nand_check_table:
@@ -24564,6 +24565,7 @@ nand_check_table:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nand_check_table, .-nand_check_table
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC394: relocated in rooted readonly order below. */
@@ -24768,6 +24770,7 @@ add_free_list:
 	ret
 	.size	add_free_list, .-add_free_list
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_free_list
 	.type	del_free_list, %function
 del_free_list:
@@ -24804,6 +24807,7 @@ del_free_list:
 	add	sp, sp, 32
 	ret
 	.size	del_free_list, .-del_free_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	del_free_list_by_block
 	.type	del_free_list_by_block, %function
@@ -29513,6 +29517,7 @@ add_to_gc_list_tail:
 	ret
 	.size	add_to_gc_list_tail, .-add_to_gc_list_tail
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_from_gc_list
 	.type	del_from_gc_list, %function
 del_from_gc_list:
@@ -29549,6 +29554,7 @@ del_from_gc_list:
 	add	sp, sp, 32
 	ret
 	.size	del_from_gc_list, .-del_from_gc_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	add_prio_gc
 	.type	add_prio_gc, %function
@@ -30760,6 +30766,7 @@ get_total_invalid_page:
 	.size	get_total_invalid_page, .-get_total_invalid_page
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_current_blcok
 	.type	is_current_blcok, %function
 is_current_blcok:
@@ -30799,6 +30806,7 @@ is_current_blcok:
 	add	sp, sp, 32
 	ret
 	.size	is_current_blcok, .-is_current_blcok
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	static_wear_leveling
 	.type	static_wear_leveling, %function

@@ -1372,3 +1372,97 @@ int hynix26nm_lsb_disable(void *chip)
 				    hynix26nm_lsb_mode_reg_num);
 	return 0;
 }
+
+/* Isolated NFTL list and diagnostic C candidates; type labels are inferred. */
+
+struct diag_free_node {
+	unsigned char before_links[0x20];
+	struct diag_free_node *next;
+	struct diag_free_node *previous;
+};
+struct diag_free_zone {
+	unsigned char before_head[0x110];
+	struct diag_free_node head;
+};
+struct diag_free_node *del_free_list(struct diag_free_zone *zone)
+{
+	struct diag_free_node *node = &zone->head;
+
+	node = node->next;
+	if (node) {
+		/* The redundant stock store is intentional, even though it appears
+		 * useless; removing it changes the shipped instruction body. */
+		zone->head.next = node->next;
+		zone->head.next = node->next;
+		if (node->next)
+			node->next->previous = &zone->head;
+	}
+	return node;
+}
+
+struct gc_node {
+	unsigned char before_links[0x10];
+	struct gc_node *next;
+	struct gc_node *previous;
+};
+struct gc_zone {
+	unsigned short count;
+};
+/* Stock uses UXTH for the count decrement; this C body uses AND #0xffff.
+ * Both retain the same low halfword, including wraparound at zero. */
+struct gc_node *del_from_gc_list(struct gc_zone *zone, struct gc_node *node)
+{
+	struct gc_node *previous = node->previous;
+
+	previous->next = node->next;
+	if (node->next)
+		node->next->previous = previous;
+	node->next = 0;
+	node->previous = 0;
+	/* OEM permits 16-bit underflow when the count is already zero. */
+	zone->count--;
+	return node;
+}
+
+struct diag_current_zone {
+	unsigned char before_flags[0x19];
+	unsigned char flags;
+	unsigned char before_current[0x210 - 0x1a];
+	void *current;
+	unsigned char before_other[0x250 - 0x218];
+	void *other;
+};
+/* Three equality comparisons load the same operands into exchanged
+ * registers; equality and every branch target remain unchanged. */
+int is_current_blcok(struct diag_current_zone *zone, void *block)
+{
+	int result = 0;
+
+	if (zone->flags & 1) {
+		if (block == zone->other || block == zone->current)
+			result = 1;
+	} else if (block == zone->current) {
+		result = 1;
+	}
+	return result;
+}
+
+extern int nand_clean_zone_table(void *zone);
+extern int nand_find_zone_table(void *zone);
+extern int write_data_to_nand(void *zone);
+int nand_check_table(void *zone)
+{
+	void *block = zone;
+
+	__nand_flush_write_cache(block, 1000);
+	nand_print_dbg("[ND]==========================\n");
+	print_nftl_zone(block);
+	nand_print_dbg("[ND]==========================\n");
+	nand_clean_zone_table(block);
+	nand_print_dbg("[ND]==========================\n");
+	nand_find_zone_table(block);
+	write_data_to_nand(block);
+	nand_print_dbg("[ND]==========================\n");
+	/* OEM ignores every call's error and returns success. */
+	return 0;
+}
