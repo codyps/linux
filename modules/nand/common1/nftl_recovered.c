@@ -4768,7 +4768,44 @@ int samsung_read_page_end(struct samsung_read_request *request)
 	}
 	return result;
 }
-extern int micron_set_readretry(struct samsung_set_chip *);
+/* C-visible name for the OEM-local eight-byte pointer at BSS offset 416. */
+extern unsigned char *micron_p1_recovered;
+int micron_set_readretry(struct samsung_set_chip *chip)
+{
+	unsigned char step;
+	int result = 0;
+
+	nand_enable_chip(chip);
+	ndfc_disable_randomize(chip->controller);
+	if (micron_read_retry_mode == 64 || micron_read_retry_mode == 65 ||
+	    micron_read_retry_mode == 80 || micron_read_retry_mode == 66) {
+		step = (unsigned char)chip->retry;
+		if (step == 255)
+			step = 0;
+		/* OEM indexes the mutable table pointer without a bounds check. */
+		if (micron_read_retry_mode == 80) {
+			if (micron_p1_recovered[step] == 0) {
+				result = micron_intel_set_feature(chip, 0x93, 1);
+				if (result)
+					goto done;
+			}
+			if (chip->retry == 255) {
+				result = micron_intel_set_feature(chip, 0x89, 0);
+				result |= micron_intel_set_feature(chip, 0x93, 0);
+				goto done;
+			}
+		}
+		result = micron_intel_set_feature(chip, 0x89,
+						micron_p1_recovered[step]);
+	}
+done:
+	/* OEM clears retry=255 even for unsupported modes and after a
+	 * feature failure, but never translates the feature error. */
+	if (chip->retry == 255)
+		chip->retry = 0;
+	nand_disable_chip(chip);
+	return result;
+}
 int micron_read_page_end(struct samsung_read_request *request)
 {
 	struct samsung_set_chip *chip;

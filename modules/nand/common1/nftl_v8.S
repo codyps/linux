@@ -4811,6 +4811,7 @@ micron_intel_set_feature:
 	.size	micron_intel_set_feature, .-micron_intel_set_feature
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	micron_set_readretry
 	.type	micron_set_readretry, %function
 micron_set_readretry:
@@ -4924,6 +4925,7 @@ micron_set_readretry:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	micron_set_readretry, .-micron_set_readretry
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC70: relocated in rooted readonly order below. */
@@ -33470,6 +33472,10 @@ toshiba_sclk1_bak:
 	.zero	4
 	.type	micron_p1, %object
 	.size	micron_p1, 8
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	micron_p1_recovered
+micron_p1_recovered:
+#endif
 micron_p1:
 	.zero	8
 	.type	sandisk_sclk0_bak, %object
