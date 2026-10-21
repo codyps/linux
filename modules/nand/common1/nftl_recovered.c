@@ -1282,6 +1282,33 @@ int current_block_at_last_page(struct current_zone *zone,
 	return 0;
 }
 
+extern int do_after_write(void *zone);
+extern int do_before_write(void *zone);
+int nand_write_data_page(void *zone, unsigned int marker,
+			 unsigned int page, void *data)
+{
+	if (current_block_at_last_page((struct current_zone *)zone,
+				       (struct current_page *)((char *)zone + 528)) == 1) {
+		if (do_after_write(zone)) {
+			nand_print("[NE]do after write error1!\n");
+			return 1;
+		}
+	}
+	if (do_before_write(zone)) {
+		nand_print("[NE]do_before_write error!\n");
+		return 1;
+	}
+	if (write_data_to_page(zone, marker, page, data)) {
+		nand_print("[NE]write data to page error!\n");
+		return 1;
+	}
+	if (do_after_write(zone)) {
+		nand_print("[NE]do after write error2!\n");
+		return 1;
+	}
+	return 0;
+}
+
 struct physical_block {
 	unsigned short number;
 };
@@ -2337,7 +2364,8 @@ int add_to_cache_write_list_tail(struct cache_list_owner *owner, struct cache_li
 struct sector_node {
     unsigned short unknown;
     unsigned short flag;
-    unsigned char until_next[12];
+    unsigned int sector;
+    void *data;
     struct sector_node *next;
     struct sector_node *previous;
 };
@@ -2402,6 +2430,32 @@ struct sector_node *del_from_sector_cache_write_list(struct sector_owner *owner,
     /* Deliberately allow the 16-bit list count to wrap below zero. */
     owner->count--;
     return node;
+}
+
+int __nand_flush_sector_write_cache(void *zone, unsigned int limit)
+{
+	struct sector_owner *cache =
+		(struct sector_owner *)((char *)zone + 2880);
+	int result = 0;
+	int had_entries;
+	struct sector_node *node;
+
+	/* OEM sets this flag but never reads it. Retain its stock stack write. */
+	if (cache->count)
+		had_entries = 1;
+	else
+		had_entries = 0;
+	while (cache->head.next) {
+		node = del_from_sector_cache_write_list(cache, cache->head.next);
+		result = __nand_write(zone, node->sector, 1, node->data);
+		/* Zero limit wraps and drains the list instead of doing no work. */
+		limit--;
+		if (limit == 0)
+			break;
+	}
+	if (result)
+		nand_print("[NE]nand_flush_write_cache write error\n");
+	return result;
 }
 
 struct gc_list_node {
@@ -3676,7 +3730,71 @@ struct reclaim_page_zone {
 	unsigned char before_pages[11];
 	unsigned int pages;
 };
-extern int get_cold_logic_page(void *zone, int page, unsigned int pages);
+struct logic_page_map_zone {
+	unsigned char before_total[36];
+	unsigned int total_pages;
+	unsigned char before_maps[32];
+	unsigned int *maps[];
+};
+unsigned int *get_logic_page_map(struct logic_page_map_zone *zone,
+				 unsigned int page)
+{
+	unsigned int chunk_pages;
+	unsigned int chunk;
+	unsigned int *map;
+	unsigned int *result;
+
+	if (page >= zone->total_pages) {
+		nand_print("[NE]%s:logic_page:0x%x >= total_pages:0x%x\n",
+			   __func__, page, zone->total_pages);
+		result = 0;
+		return result;
+	}
+	chunk_pages = 262144;
+	chunk = 0;
+	/* OEM repeatedly subtracts rather than dividing. It trusts the map
+	 * table entry, even when it is null or the zone count is corrupt. */
+	while (page >= chunk_pages) {
+		chunk++;
+		page -= chunk_pages;
+	}
+	map = zone->maps[chunk];
+	result = map + page;
+	return result;
+}
+struct cold_logic_zone {
+	unsigned char before_flag[664];
+	unsigned int flag;
+};
+struct cold_map_entry {
+	unsigned char first;
+	unsigned char lower:4;
+	unsigned char cold:1;
+	unsigned char upper:3;
+	unsigned short marker;
+};
+int get_cold_logic_page(void *zone, int page, unsigned int pages)
+{
+	unsigned int current = (unsigned int)page;
+	struct cold_map_entry *entry;
+
+	while (current < pages) {
+		entry = (struct cold_map_entry *)get_logic_page_map(
+			(struct logic_page_map_zone *)zone, current);
+		if (!entry) {
+			nand_print("[NI]page_map NULL!!\n");
+		} else if (entry->marker != 0xffff &&
+			   entry->cold !=
+			   ((struct cold_logic_zone *)zone)->flag) {
+			/* OEM compares the whole flag but inserts only its low bit;
+			 * values above one can cause repeated false mismatches. */
+			entry->cold = ((struct cold_logic_zone *)zone)->flag;
+			return current;
+		}
+		current++;
+	}
+	return -1;
+}
 extern int nand_cache_read(void *zone, int page, unsigned short mode,
 			   void *buffer);
 int read_reclaim(struct read_claim_node *head,

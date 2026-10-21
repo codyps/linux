@@ -13279,6 +13279,7 @@ nand_sector_cache_write:
 // readonly payload moved below: 	.string	"[NE]nand_flush_write_cache write error\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	__nand_flush_sector_write_cache
 	.type	__nand_flush_sector_write_cache, %function
 __nand_flush_sector_write_cache:
@@ -13342,6 +13343,7 @@ __nand_flush_sector_write_cache:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	__nand_flush_sector_write_cache, .-__nand_flush_sector_write_cache
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
@@ -14088,6 +14090,7 @@ do_write_error:
 // readonly payload moved below: 	.string	"[NE]do after write error2!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_write_data_page
 	.type	nand_write_data_page, %function
 nand_write_data_page:
@@ -14152,6 +14155,7 @@ nand_write_data_page:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nand_write_data_page, .-nand_write_data_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_write_logic_page_no_gc
@@ -28808,6 +28812,7 @@ set_nftl_read_claim_flag:
 	.size	set_nftl_read_claim_flag, .-set_nftl_read_claim_flag
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_cold_logic_page
 	.type	get_cold_logic_page, %function
 get_cold_logic_page:
@@ -28871,6 +28876,7 @@ get_cold_logic_page:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	get_cold_logic_page, .-get_cold_logic_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	read_reclaim
@@ -32244,6 +32250,7 @@ is_power_down_info_page:
 // readonly payload moved below: 	.string	"[NE]%s:logic_page:0x%x >= total_pages:0x%x\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_logic_page_map
 	.type	get_logic_page_map, %function
 get_logic_page_map:
@@ -32303,6 +32310,7 @@ get_logic_page_map:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	get_logic_page_map, .-get_logic_page_map
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC471: relocated in rooted readonly order below. */
