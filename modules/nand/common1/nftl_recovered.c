@@ -2333,9 +2333,38 @@ int hynix20nm_lsb_enable(void *chip)
 extern unsigned char hynix26nm_lsb_mode_reg_num;
 extern unsigned char hynix26nm_lsb_mode_reg_adr[];
 extern unsigned char hynix26nm_lsb_mode_default_val[];
+extern unsigned char hynix26nm_lsb_mode_val[];
 extern int hynix26nm_vender_set_param(void *chip, unsigned char *values,
 				     unsigned char *addresses,
 				     unsigned int count);
+/* The stock body has no canary despite its unchecked local array index. */
+__attribute__((optimize("-fno-stack-protector")))
+int hynix26nm_lsb_enable(void *chip)
+{
+	struct {
+		unsigned char values[12];
+		unsigned int index;
+	} locals;
+
+	/* OEM ignores both vendor transfer results and trusts the mutable
+	 * count, which can index beyond the five-byte global tables. The
+	 * stack index follows the twelve-byte local buffer in the stock body. */
+	hynix26nm_vender_get_param(chip, hynix26nm_lsb_mode_default_val,
+				   hynix26nm_lsb_mode_reg_adr,
+				   hynix26nm_lsb_mode_reg_num);
+	for (locals.index = 0; locals.index < hynix26nm_lsb_mode_reg_num;
+	     locals.index++) {
+		locals.values[locals.index] =
+			hynix26nm_lsb_mode_default_val[locals.index];
+		locals.values[locals.index] =
+			locals.values[locals.index] +
+			hynix26nm_lsb_mode_val[locals.index];
+	}
+	hynix26nm_vender_set_param(chip, locals.values,
+				   hynix26nm_lsb_mode_reg_adr,
+				   hynix26nm_lsb_mode_reg_num);
+	return 0;
+}
 
 int hynix20nm_lsb_disable(void *chip)
 {

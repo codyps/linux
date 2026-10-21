@@ -6971,6 +6971,7 @@ hynix26nm_lsb_init:
 	ret
 	.size	hynix26nm_lsb_init, .-hynix26nm_lsb_init
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_lsb_enable
 	.type	hynix26nm_lsb_enable, %function
 hynix26nm_lsb_enable:
@@ -7044,6 +7045,7 @@ hynix26nm_lsb_enable:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix26nm_lsb_enable, .-hynix26nm_lsb_enable
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_lsb_disable
