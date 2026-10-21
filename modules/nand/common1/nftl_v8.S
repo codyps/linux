@@ -9159,6 +9159,7 @@ sandisk_A19_special_init:
 // readonly payload moved below: 	.string	" sandisk_A19_special_exit \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_special_exit
 	.type	sandisk_A19_special_exit, %function
 sandisk_A19_special_exit:
@@ -9208,6 +9209,7 @@ sandisk_A19_special_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	sandisk_A19_special_exit, .-sandisk_A19_special_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC104: relocated in rooted readonly order below. */

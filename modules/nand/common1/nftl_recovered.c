@@ -2341,6 +2341,39 @@ SPECIAL_EXIT(hynix26nm)
 SPECIAL_EXIT(hynix16nm)
 SPECIAL_EXIT(sandisk)
 
+struct sandisk_a19_exit_chip {
+	struct sandisk_a19_exit_chip *next;
+	unsigned char before_setting[196];
+	unsigned int setting;
+	unsigned char before_toggle[54];
+	unsigned char toggle;
+};
+extern int sandisk_toggle_vendor_specific_setting(void *chip);
+int sandisk_A19_special_exit(void)
+{
+	struct sandisk_a19_exit_chip *chip =
+		(struct sandisk_a19_exit_chip *)g_nsi->chips;
+	int result;
+
+	/* OEM trusts the global and every next pointer; a cycle never ends. */
+	while (chip) {
+		/* OEM ignores retry-exit failures. */
+		sandisk_A19_readretry_exit(chip);
+		if (chip->toggle) {
+			chip->setting = 0;
+			result = sandisk_toggle_vendor_specific_setting(chip);
+			if (result) {
+				nand_print("%s sandisk toggle vendor specific setting failed!\n",
+					   __func__);
+				return result;
+			}
+		}
+		chip = chip->next;
+	}
+	nand_print_dbg(" sandisk_A19_special_exit \n");
+	return 0;
+}
+
 /* Isolated vendor clock-restoration C candidates. */
 
 struct clock_channel {
