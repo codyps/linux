@@ -9121,6 +9121,109 @@ struct new_write_block *current_block_ecc_error(struct ecc_rebuild_zone *zone,
 	return replacement;
 }
 
+struct last_page_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages;
+	unsigned char before_bytes[4];
+	unsigned short page_bytes;
+	unsigned short fixed_page;
+};
+struct last_page_block {
+	unsigned short number;
+};
+struct last_page_zone {
+	unsigned char before_geometry[8];
+	struct last_page_geometry *geometry;
+	unsigned char before_data[496];
+	void *data;
+	unsigned char before_callbacks[2936];
+	int (*write_last)(struct last_page_zone *, struct physic_op_param *);
+	int (*read)(struct last_page_zone *, struct physic_op_param *);
+	int (*write_data)(struct last_page_zone *, struct physic_op_param *);
+	unsigned char before_erase[16];
+	int (*erase)(struct last_page_zone *, struct physic_op_param *);
+};
+_Static_assert(__builtin_offsetof(struct last_page_zone, data) == 512,
+	       "last-page data offset");
+_Static_assert(__builtin_offsetof(struct last_page_zone, write_last) == 3456,
+	       "last-page write callback offset");
+_Static_assert(__builtin_offsetof(struct last_page_zone, erase) == 3496,
+	       "last-page erase callback offset");
+/* Stock does not check any allocation, even after logging a NULL result. */
+__attribute__((optimize("-fno-stack-protector")))
+void *block_last_page_ecc_error(struct last_page_zone *zone,
+				void *raw_block)
+{
+	struct last_page_block *block = raw_block;
+	struct physic_op_param op;
+	unsigned char oob[16];
+	void **saved;
+	unsigned int page;
+	unsigned int good = 0;
+	int status;
+
+	nand_print("[NE]do block_last_page_ecc_error!!\n");
+	saved = nftl_malloc(8192);
+	if (!saved)
+		nand_print("[NE]%s:malloc fail 1!\n", __func__);
+	for (page = 0; page < zone->geometry->pages; page++) {
+		saved[page] = nftl_malloc(zone->geometry->page_bytes);
+		if (!saved[page])
+			nand_print("[NE]%s:malloc fail 2!\n", __func__);
+	}
+	for (page = 0; page < zone->geometry->pages; page++) {
+		set_physic_op_par(&op, block->number, page,
+				  zone->geometry->fixed_page, zone->data, oob);
+		status = zone->read(zone, &op);
+		if (is_nouse_page(oob) == 1)
+			break;
+		if (is_ftl_logic_page_data(oob) == 1) {
+			if (status == 0 || status == 10) {
+				nand_memcpy(saved[page], zone->data,
+					    zone->geometry->page_bytes);
+				good++;
+			}
+		} else if (is_ftl_special_data(oob) == 1) {
+			if (status == 0 || status == 10) {
+				nand_memcpy(saved[page], zone->data,
+					    zone->geometry->page_bytes);
+				good++;
+			}
+			nand_print("[NE]current_block_ecc_error invalid page data!!\n");
+		} else {
+			nand_print("[NE]current_block_ecc_error unkown page data!!\n");
+		}
+	}
+	set_physic_op_par(&op, block->number, page,
+				  zone->geometry->fixed_page, zone->data, oob);
+	status = zone->write_last(zone, &op);
+	if (status) {
+		zone->erase(zone, &op);
+		block = (struct last_page_block *)out_phy_block_from_free_list(
+			(struct free_block_zone *)zone);
+		if (!block) {
+			nand_print("[NE]current_block_ecc_error no free block!!!\n");
+			goto cleanup;
+		}
+		set_physic_op_par(&op, block->number, page,
+					  zone->geometry->fixed_page, zone->data, oob);
+		zone->write_last(zone, &op);
+	}
+	for (page = 0; page < good; page++) {
+		/* OEM stores buffers at physical-page indexes, but replays the
+		 * first good-count slots. A skipped bad read can replay stale data. */
+		set_physic_op_par(&op, block->number, page,
+					  zone->geometry->fixed_page, saved[page], oob);
+		zone->write_data(zone, &op);
+	}
+cleanup:
+	for (page = 0; page < zone->geometry->pages; page++)
+		nftl_free(saved[page]);
+	nftl_free(saved);
+	nand_print("[NE]do block_last_page_ecc_error end!!\n");
+	return block;
+}
+
 struct page_map_recovery_mode {
 	unsigned char before_enabled[28];
 	unsigned short enabled;
