@@ -3612,6 +3612,7 @@ hynix20nm_lsb_enable:
 	ret
 	.size	hynix20nm_lsb_enable, .-hynix20nm_lsb_enable
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_lsb_disable
 	.type	hynix20nm_lsb_disable, %function
 hynix20nm_lsb_disable:
@@ -3635,6 +3636,7 @@ hynix20nm_lsb_disable:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	hynix20nm_lsb_disable, .-hynix20nm_lsb_disable
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC50: relocated in rooted readonly order below. */
@@ -6955,6 +6957,7 @@ hynix26nm_lsb_enable:
 	ret
 	.size	hynix26nm_lsb_enable, .-hynix26nm_lsb_enable
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_lsb_disable
 	.type	hynix26nm_lsb_disable, %function
 hynix26nm_lsb_disable:
@@ -6978,6 +6981,7 @@ hynix26nm_lsb_disable:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	hynix26nm_lsb_disable, .-hynix26nm_lsb_disable
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC88: relocated in rooted readonly order below. */
@@ -24391,6 +24395,7 @@ nand_clean_zone_table2:
 	ret
 	.size	nand_clean_zone_table2, .-nand_clean_zone_table2
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_clean_zone_table
 	.type	nand_clean_zone_table, %function
 nand_clean_zone_table:
@@ -24412,6 +24417,7 @@ nand_clean_zone_table:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nand_clean_zone_table, .-nand_clean_zone_table
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC388: relocated in rooted readonly order below. */
@@ -28385,6 +28391,7 @@ print_logic_page_map:
 	ret
 	.size	print_logic_page_map, .-print_logic_page_map
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_last_nftl
 	.type	get_last_nftl, %function
 get_last_nftl:
@@ -28409,6 +28416,7 @@ get_last_nftl:
 	add	sp, sp, 32
 	ret
 	.size	get_last_nftl, .-get_last_nftl
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	get_nftl_need_read_claim
 	.type	get_nftl_need_read_claim, %function
@@ -32708,6 +32716,7 @@ nftl_start:
 	ret
 	.size	nftl_start, .-nftl_start
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_zone_release
 	.type	nftl_zone_release, %function
 nftl_zone_release:
@@ -32731,6 +32740,7 @@ nftl_zone_release:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	nftl_zone_release, .-nftl_zone_release
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 	.type	__func__.5194, %object

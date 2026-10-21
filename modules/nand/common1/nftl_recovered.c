@@ -373,7 +373,8 @@ void nftl_free(void *object)
 /* Bounded C candidates for retained NFTL assembly, not original declarations. */
 
 extern void free_nand_partition(void *partition);
-extern void nftl_zone_release(void *zone);
+struct nftl_zone_release_view;
+extern void nftl_zone_release(struct nftl_zone_release_view *zone);
 extern void nftl_free(void *allocation);
 extern int __nand_read(void *zone, unsigned int sector, unsigned int count,
 		       void *data);
@@ -1280,4 +1281,94 @@ unsigned short nand_crc16(unsigned short crc, const unsigned char *data,
 	while (length--)
 		crc = nand_crc16_byte(crc, *data++);
 	return crc;
+}
+
+/* Isolated C equivalents for four NFTL bodies, not original type claims. */
+
+extern void nftl_cache_exit(void *zone);
+extern void nftl_free(void *allocation);
+extern void clean_block_list(void *zone);
+extern void nand_clean_zone_table2(void *zone);
+
+struct nftl_zone_storage_view {
+	unsigned char before_allocation[32];
+	void *allocation;
+};
+
+struct nftl_zone_release_view {
+	unsigned char before_storage[8];
+	struct nftl_zone_storage_view *storage;
+};
+
+void nftl_zone_release(struct nftl_zone_release_view *zone)
+{
+	/* OEM ignores every release return and dereferences storage unchecked. */
+	nftl_cache_exit(zone);
+	zone_param_exit((struct exit_zone *)zone);
+	nftl_free(zone->storage->allocation);
+	nftl_free(zone->storage);
+	nftl_free(zone);
+}
+
+int nand_clean_zone_table(void *zone)
+{
+	void *current = zone;
+	/* OEM attempts all stages even if the flush reports failure. */
+	__nand_flush_write_cache(current, 1000);
+	clean_block_list(current);
+	nand_clean_zone_table2(current);
+	nftl_cache_exit(current);
+	return 0;
+}
+
+struct nftl_list_node {
+	unsigned char before_next[16];
+	struct nftl_list_node *next;
+};
+
+/* -fstack-protector reorders two pointer locals here without adding a
+ * canary; this function-level setting restores the stock stack slots. */
+__attribute__((optimize("-fno-stack-protector")))
+struct nftl_list_node *get_last_nftl(struct nftl_list_node *first)
+{
+	struct nftl_list_node *current = first;
+	struct nftl_list_node *last = first;
+	while (current) {
+		last = current;
+		current = current->next;
+	}
+	return last;
+}
+
+/* Isolated Hynix LSB disable C candidates. */
+
+extern unsigned char hynix20nm_lsb_mode_reg_num;
+extern unsigned char hynix20nm_lsb_mode_reg_adr[];
+extern unsigned char hynix20nm_lsb_mode_default_val[];
+extern int hynix20nm_vender_set_param(void *chip, unsigned char *values,
+				     unsigned char *addresses,
+				     unsigned int count);
+extern unsigned char hynix26nm_lsb_mode_reg_num;
+extern unsigned char hynix26nm_lsb_mode_reg_adr[];
+extern unsigned char hynix26nm_lsb_mode_default_val[];
+extern int hynix26nm_vender_set_param(void *chip, unsigned char *values,
+				     unsigned char *addresses,
+				     unsigned int count);
+
+int hynix20nm_lsb_disable(void *chip)
+{
+	/* OEM reports success even if programming the defaults fails. */
+	hynix20nm_vender_set_param(chip, hynix20nm_lsb_mode_default_val,
+				    hynix20nm_lsb_mode_reg_adr,
+				    hynix20nm_lsb_mode_reg_num);
+	return 0;
+}
+
+int hynix26nm_lsb_disable(void *chip)
+{
+	/* OEM reports success even if programming the defaults fails. */
+	hynix26nm_vender_set_param(chip, hynix26nm_lsb_mode_default_val,
+				    hynix26nm_lsb_mode_reg_adr,
+				    hynix26nm_lsb_mode_reg_num);
+	return 0;
 }
