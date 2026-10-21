@@ -119,3 +119,54 @@ void get_nftl_version(char *major, char *minor, char *build,
 	nand_memcpy(date, "2020.12.24", 11);
 	nand_memcpy(time, "09:50", 6);
 }
+
+extern int get_data_with_nand_bus_one_cmd(struct samsung_set_chip *,
+					  unsigned char *, unsigned char *,
+					  unsigned char *, int);
+
+/* The inferred chip layout shares its controller pointer at offset 272
+ * with the Samsung retry routines above. The 16nm/26nm stock bodies are
+ * identical, including the command-byte initialization before chip setup.
+ * Kernel-wide -fstack-protector swaps the result/index local slots even
+ * though these functions receive no canary. Preserve the stock slot layout
+ * with a per-function compiler option in this optional recovery path. */
+#define HYNIX_GET_EARLY(name) \
+__attribute__((optimize("-fno-stack-protector"))) \
+int name(struct samsung_set_chip *chip, unsigned char *data, \
+	 unsigned char *addresses, unsigned int count) \
+{ \
+	int result = 0; \
+	unsigned char command = 55; \
+	unsigned int index; \
+	nand_enable_chip(chip); \
+	ndfc_disable_randomize(chip->controller); \
+	for (index = 0; index < count; index++) \
+		get_data_with_nand_bus_one_cmd(chip, &command, addresses + index, \
+					       data + index, 1); \
+	nand_disable_chip(chip); \
+	/* OEM ignores bus-read errors and always reports success. */ \
+	return result; \
+}
+
+HYNIX_GET_EARLY(hynix16nm_vender_get_param)
+HYNIX_GET_EARLY(hynix26nm_vender_get_param)
+
+__attribute__((optimize("-fno-stack-protector")))
+int hynix20nm_vender_get_param(struct samsung_set_chip *chip,
+			      unsigned char *data, unsigned char *addresses,
+			      unsigned int count)
+{
+	int result = 0;
+	unsigned char command;
+	unsigned int index;
+
+	nand_enable_chip(chip);
+	ndfc_disable_randomize(chip->controller);
+	command = 55;
+	for (index = 0; index < count; index++)
+		get_data_with_nand_bus_one_cmd(chip, &command, addresses + index,
+					       data + index, 1);
+	nand_disable_chip(chip);
+	/* OEM does not validate count or pointers, and discards read errors. */
+	return result;
+}

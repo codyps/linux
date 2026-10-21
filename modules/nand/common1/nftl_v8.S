@@ -3334,6 +3334,7 @@ hynix20nm_read_page_end:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix20nm_read_page_end, .-hynix20nm_read_page_end
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	hynix20nm_vender_get_param
 	.type	hynix20nm_vender_get_param, %function
@@ -3381,6 +3382,7 @@ hynix20nm_vender_get_param:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	hynix20nm_vender_get_param, .-hynix20nm_vender_get_param
+	#endif
 	.align	2
 	.global	hynix20nm_lsb_init
 	.type	hynix20nm_lsb_init, %function
@@ -6712,6 +6714,7 @@ hynix26nm_read_page_end:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix26nm_read_page_end, .-hynix26nm_read_page_end
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	hynix26nm_vender_get_param
 	.type	hynix26nm_vender_get_param, %function
@@ -6759,6 +6762,7 @@ hynix26nm_vender_get_param:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	hynix26nm_vender_get_param, .-hynix26nm_vender_get_param
+	#endif
 	.align	2
 	.global	hynix26nm_lsb_init
 	.type	hynix26nm_lsb_init, %function
@@ -9982,6 +9986,7 @@ hynix16nm_write_page_FF:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	hynix16nm_write_page_FF, .-hynix16nm_write_page_FF
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	hynix16nm_vender_get_param
 	.type	hynix16nm_vender_get_param, %function
@@ -10029,6 +10034,7 @@ hynix16nm_vender_get_param:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	hynix16nm_vender_get_param, .-hynix16nm_vender_get_param
+	#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC113: relocated in rooted readonly order below. */
