@@ -11,10 +11,12 @@ choice
 endchoice
 
 config TRIMUI_NFTL_RECOVERED_C
-	bool "Build verified NFTL helper bodies from C"
+	bool "Build recovered NFTL code and data from C"
 	depends on SUNXI_NAND && ARM64
 	default n
 	help
-	  Replace six separately verified NFTL assembly bodies with C.
-	  The stock configuration leaves this
-	  disabled so the retained assembly continues to reproduce its layout.
+	  Build all 358 observed NFTL function bodies and their initialized,
+	  BSS, and read-only data from C. The observed stock bytes and linked
+	  addresses are checked separately; original private C element types
+	  and hidden extents remain uncertain. The stock configuration leaves
+	  this disabled so the retained vendor assembly remains available.

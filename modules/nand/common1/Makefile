@@ -5,7 +5,9 @@ nftl = nftl_v8.S
 obj-$(CONFIG_TRIMUI_NFTL_RECOVERED_C) += nftl_tables_recovered.o
 obj-$(CONFIG_TRIMUI_NFTL_RECOVERED_C) += nftl_bss_recovered.o
 obj-$(CONFIG_TRIMUI_NFTL_RECOVERED_C) += nftl_rodata_recovered.o
+ifneq ($(CONFIG_TRIMUI_NFTL_RECOVERED_C),y)
 obj-$(CONFIG_SUNXI_NAND) += nftl_v8.o
+endif
 obj-$(CONFIG_TRIMUI_NFTL_RECOVERED_C) += nftl_recovered.o
 CFLAGS_nftl_recovered.o += -O0 -fno-builtin -fno-pic -mcmodel=small
 CFLAGS_nftl_tables_recovered.o += -O0
