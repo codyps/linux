@@ -341,6 +341,7 @@ get_first_nftl_cap:
 // readonly payload moved below: 	.string	"[NE]parameter error %d,%d !\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_read
 	.type	nftl_read, %function
 nftl_read:
@@ -394,7 +395,9 @@ nftl_read:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nftl_read, .-nftl_read
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_write
 	.type	nftl_write, %function
 nftl_write:
@@ -448,6 +451,7 @@ nftl_write:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nftl_write, .-nftl_write
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_discard
@@ -26847,6 +26851,7 @@ add_to_cache_write_list_tail:
 	.size	add_to_cache_write_list_tail, .-add_to_cache_write_list_tail
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_from_cache_read_list
 	.type	del_from_cache_read_list, %function
 del_from_cache_read_list:
@@ -26899,6 +26904,7 @@ del_from_cache_read_list:
 	add	sp, sp, 32
 	ret
 	.size	del_from_cache_read_list, .-del_from_cache_read_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_from_cache_write_list

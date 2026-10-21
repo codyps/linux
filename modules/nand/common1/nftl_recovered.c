@@ -948,6 +948,39 @@ struct cache_read_zone {
 	unsigned char before_head[1688];
 	struct cache_read_node head;
 };
+struct cache_read_delete_node {
+	unsigned char before_state[2];
+	unsigned short state;
+	unsigned char before_next[20];
+	struct cache_read_delete_node *next;
+	struct cache_read_delete_node *previous;
+};
+struct cache_read_delete_owner {
+	unsigned char before_first[2];
+	unsigned short first_count;
+	unsigned char before_second[2];
+	unsigned short second_count;
+};
+struct cache_read_delete_node *del_from_cache_read_list(
+	struct cache_read_delete_owner *owner,
+	struct cache_read_delete_node *target)
+{
+	struct cache_read_delete_node *previous = target->previous;
+
+	/* OEM assumes both target and predecessor are valid and decrements an
+	 * unsigned 16-bit count even at zero, wrapping to 65535. */
+	previous->next = target->next;
+	if (target->next)
+		target->next->previous = previous;
+	if (target->state == 0)
+		owner->first_count--;
+	else
+		owner->second_count--;
+	target->state = 255;
+	target->next = 0;
+	target->previous = 0;
+	return target;
+}
 /* Four key searches below compile with the two equality operands loaded into
  * opposite registers from stock. The memory reads, comparison, branches and
  * return paths are otherwise identical; equality is symmetric. */
@@ -2009,7 +2042,12 @@ struct nftl_discard_node {
 	unsigned int capacity;
 	unsigned char before_next[12];
 	struct nftl_discard_node *next;
-	unsigned char before_discard[72];
+	unsigned char before_read[48];
+	int (*read)(struct nftl_discard_node *node, unsigned int sector,
+		    unsigned int count, void *data);
+	int (*write)(struct nftl_discard_node *node, unsigned int sector,
+		     unsigned int count, void *data);
+	unsigned char before_discard[8];
 	int (*discard)(struct nftl_discard_node *node, unsigned int sector,
 		       unsigned int count);
 };
@@ -2032,6 +2070,29 @@ int nftl_discard(unsigned int sector, unsigned int count)
 	}
 	return node->discard(node, sector, count);
 }
+
+/* OEM treats a zero-length request as success, walks unchecked links, and
+ * forwards the whole count to one callback without spanning partitions. */
+#define NFTL_RW(name, member) \
+int name(unsigned int sector, unsigned int count, void *data) \
+{ \
+	struct nftl_discard_node *node = \
+		(struct nftl_discard_node *)nftl_blk_head.next; \
+	if (count == 0) \
+		return 0; \
+	while (node->capacity <= sector) { \
+		sector -= node->capacity; \
+		node = node->next; \
+		if (!node) { \
+			nand_print("[NE]parameter error %d,%d !\n", sector, count); \
+			return 1; \
+		} \
+	} \
+	return node->member(node, sector, count, data); \
+}
+
+NFTL_RW(nftl_read, read)
+NFTL_RW(nftl_write, write)
 
 /* Inferred NFTL orchestration body; callback signatures remain provisional. */
 
