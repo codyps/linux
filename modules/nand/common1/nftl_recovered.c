@@ -7528,3 +7528,39 @@ fail:
 	*output = 0;
 	return -1;
 }
+
+struct nand_dbg_zone_read {
+	unsigned char before_read[3464];
+	int (*read)(struct nand_dbg_zone_read *, struct physic_op_param *);
+};
+__attribute__((optimize("-fno-stack-protector")))
+int nand_dbg_zone_phy_read(struct nand_dbg_zone_read *zone,
+			   unsigned short block, unsigned short page)
+{
+	unsigned char oob[16];
+	struct physic_op_param op;
+	unsigned char *data = nftl_malloc(4096);
+	unsigned char *physical;
+	int result;
+
+	/* OEM logs allocation failure but continues with a NULL data pointer;
+	 * the later byte diagnostics can fault on that path. */
+	if (!data)
+		nand_print("[NE]%s:malloc 4096 fail!\n", __func__);
+	physical = get_phy_block_addr((struct nftl_phy_outer *)zone, block);
+	/* OEM passes the caller's page as the plane argument and fixes the
+	 * physical page argument at eight. Preserve the swapped semantics. */
+	set_physic_op_par(&op, *(unsigned short *)physical, page, 8, data, oob);
+	result = zone->read(zone, &op);
+	nand_print_dbg("[ND]spare: %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x",
+		       oob[0], oob[1], oob[2], oob[3],
+		       oob[4], oob[5], oob[6], oob[7],
+		       oob[8], oob[9], oob[10], oob[11],
+		       oob[12], oob[13], oob[14], oob[15]);
+	nand_print_dbg("[ND]buf:%x %x %x %x %x %x %x %x %x %x %x.\n",
+		       data[0], data[1], data[2], data[3],
+		       data[4], data[5], data[6], data[7],
+		       data[8], data[9], data[10]);
+	nftl_free(data);
+	return result;
+}
