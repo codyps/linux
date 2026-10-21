@@ -6979,7 +6979,9 @@ done:
 	return 0;
 }
 
-unsigned char toshiba_read_retry_start_cmd[2] = { 0x5c, 0xc5 };
+/* Keep this address in the stock-ordered table span. The vendor bus helper
+ * trusts its count, so bytes beyond the declared array can be observed. */
+extern unsigned char toshiba_read_retry_start_cmd[2];
 int toshiba_vender_pre_condition(void *chip)
 {
 	int result;
@@ -6993,7 +6995,8 @@ int toshiba_vender_pre_condition(void *chip)
 	return 0;
 }
 
-unsigned char sandisk_A19_read_retry_cmd_1y = 0xef;
+/* As above, the command byte must keep its stock table neighbors. */
+extern unsigned char sandisk_A19_read_retry_cmd_1y;
 int sandisk_A19_vender_set_param(void *chip, void *value, void *address,
 				 int unused)
 {

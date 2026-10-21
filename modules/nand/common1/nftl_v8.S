@@ -33737,9 +33737,7 @@ sandisk_A19_read_retry_enable_cmd_1y:
 sandisk_A19_read_retry_exit_cmd_1y:
 	.byte	-1
 	.balign	8
-#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 sandisk_A19_read_retry_cmd_1y:
-#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.byte	-17
 	.balign	8
 sandisk_A19_read_retry_reg_adr_1y:
@@ -34127,9 +34125,7 @@ sandisk_A19_1z_8g:
 	.byte	12
 	.byte	8
 	.balign	8
-#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 toshiba_read_retry_start_cmd:
-#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.byte	92
 	.byte	-59
 	.balign	8
