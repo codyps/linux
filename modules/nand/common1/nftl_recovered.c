@@ -4343,12 +4343,10 @@ struct scan_zone {
 	unsigned char before_reserve_geometry[2760];
 	struct scan_reserve_geometry *reserve_geometry;
 };
-int init_zone_after_first_scan(struct build_zone *owner,
+int init_zone_after_first_scan(struct scan_zone *zone,
 			       unsigned int available_blocks)
 {
-	struct scan_zone *zone = (struct scan_zone *)owner;
 	unsigned int needed_blocks;
-	unsigned int free_blocks;
 
 	/* Stock performs both unsigned divisions without checking for zero.
 	 * AArch64 UDIV yields zero for a zero divisor in the shipped binary;
@@ -4363,22 +4361,25 @@ int init_zone_after_first_scan(struct build_zone *owner,
 			   available_blocks, needed_blocks);
 		return 1;
 	}
-	free_blocks = available_blocks - needed_blocks;
-	zone->free_capacity = free_blocks * zone->geometry->page_factor *
+	/* OEM recomputes this difference at each use, including after writing
+	 * free_capacity; retain that evaluation and instruction order. */
+	zone->free_capacity = (available_blocks - needed_blocks) *
+		zone->geometry->page_factor *
 		zone->geometry->pages_per_block;
 	/* The OEM subtracts in 32 bits, so a zero minimum wraps to UINT_MAX. */
-	if (free_blocks < (unsigned int)zone->reserve_geometry->min_free_blocks - 1) {
+	if (available_blocks - needed_blocks <
+	    (unsigned int)zone->reserve_geometry->min_free_blocks - 1) {
 		nand_print("[NE]this zone not enough free block %d , %d!!\n",
 			   available_blocks, needed_blocks);
 		return 1;
 	}
-	zone->gc_reserve = free_blocks / 5;
+	zone->gc_reserve = (available_blocks - needed_blocks) / 5;
 	if (zone->gc_reserve < zone->reserve_geometry->min_gc_blocks)
 		zone->gc_reserve = zone->reserve_geometry->min_gc_blocks;
 	/* Preserve 32-bit product wrap, unchecked divisor and halfword truncation.
 	 * Stock UDIV returns zero when reserve_denominator is zero; C does not
 	 * define that case, despite the current compiled body using UDIV. */
-	zone->write_reserve = (free_blocks *
+	zone->write_reserve = ((available_blocks - needed_blocks) *
 		zone->reserve_geometry->reserve_numerator) /
 		zone->reserve_geometry->reserve_denominator;
 	if (zone->write_reserve < zone->gc_reserve + 2)
@@ -4398,7 +4399,8 @@ int build_zone_list(struct build_zone *zone)
 	nand_print_dbg("[ND]first\n");
 	if (first_scan_all_blocks(zone))
 		return 1;
-	result = init_zone_after_first_scan(zone, zone->block_count);
+	result = init_zone_after_first_scan((struct scan_zone *)zone,
+					    zone->block_count);
 	if (result) {
 		nand_print("[NE]init_zone_after_first_scan error\n");
 		return 1;
