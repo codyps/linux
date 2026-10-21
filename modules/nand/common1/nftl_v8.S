@@ -574,6 +574,7 @@ nftl_malloc:
 	ret
 	.size	nftl_malloc, .-nftl_malloc
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_free
 	.type	nftl_free, %function
 nftl_free:
@@ -586,6 +587,7 @@ nftl_free:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	nftl_free, .-nftl_free
+	#endif
 	.align	2
 	.global	add_nftl_blk_list
 	.type	add_nftl_blk_list, %function
@@ -1289,6 +1291,7 @@ _nand_sector_write:
 	ret
 	.size	_nand_sector_write, .-_nand_sector_write
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nand_flush_sector_write_cache
 	.type	_nand_flush_sector_write_cache, %function
 _nand_flush_sector_write_cache:
@@ -1300,6 +1303,7 @@ _nand_flush_sector_write_cache:
 	add	sp, sp, 32
 	ret
 	.size	_nand_flush_sector_write_cache, .-_nand_flush_sector_write_cache
+	#endif
 	.align	2
 	.global	_shutdown_op
 	.type	_shutdown_op, %function
@@ -2819,6 +2823,7 @@ samsung_readretry_init:
 	ret
 	.size	samsung_readretry_init, .-samsung_readretry_init
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	samsung_readretry_exit
 	.type	samsung_readretry_exit, %function
 samsung_readretry_exit:
@@ -2828,6 +2833,7 @@ samsung_readretry_exit:
 	add	sp, sp, 16
 	ret
 	.size	samsung_readretry_exit, .-samsung_readretry_exit
+	#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC40: relocated in rooted readonly order below. */
@@ -6033,6 +6039,7 @@ toshiba_readretry_init:
 	ret
 	.size	toshiba_readretry_init, .-toshiba_readretry_init
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	toshiba_readretry_exit
 	.type	toshiba_readretry_exit, %function
 toshiba_readretry_exit:
@@ -6042,6 +6049,7 @@ toshiba_readretry_exit:
 	add	sp, sp, 16
 	ret
 	.size	toshiba_readretry_exit, .-toshiba_readretry_exit
+	#endif
 	.align	2
 	.global	toshiba_exit_readretry
 	.type	toshiba_exit_readretry, %function
@@ -8752,6 +8760,7 @@ sandisk_A19_readretry_init:
 	ret
 	.size	sandisk_A19_readretry_init, .-sandisk_A19_readretry_init
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_readretry_exit
 	.type	sandisk_A19_readretry_exit, %function
 sandisk_A19_readretry_exit:
@@ -8761,6 +8770,7 @@ sandisk_A19_readretry_exit:
 	add	sp, sp, 16
 	ret
 	.size	sandisk_A19_readretry_exit, .-sandisk_A19_readretry_exit
+	#endif
 	.align	2
 	.global	sandisk_A19_read_retry_clock_save
 	.type	sandisk_A19_read_retry_clock_save, %function
@@ -12345,6 +12355,7 @@ sandisk_readretry_init:
 	ret
 	.size	sandisk_readretry_init, .-sandisk_readretry_init
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_readretry_exit
 	.type	sandisk_readretry_exit, %function
 sandisk_readretry_exit:
@@ -12354,6 +12365,7 @@ sandisk_readretry_exit:
 	add	sp, sp, 16
 	ret
 	.size	sandisk_readretry_exit, .-sandisk_readretry_exit
+	#endif
 	.align	2
 	.global	sandisk_exit_readretry
 	.type	sandisk_exit_readretry, %function
@@ -22969,6 +22981,7 @@ adjust_free_list:
 	ret
 	.size	adjust_free_list, .-adjust_free_list
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_get_bad_block_cnt
 	.type	nftl_get_bad_block_cnt, %function
 nftl_get_bad_block_cnt:
@@ -22980,6 +22993,7 @@ nftl_get_bad_block_cnt:
 	add	sp, sp, 16
 	ret
 	.size	nftl_get_bad_block_cnt, .-nftl_get_bad_block_cnt
+	#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC329: relocated in rooted readonly order below. */
@@ -28190,6 +28204,7 @@ nand_discard:
 	ret
 	.size	nand_discard, .-nand_discard
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	__shutdown_op
 	.type	__shutdown_op, %function
 __shutdown_op:
@@ -28200,6 +28215,7 @@ __shutdown_op:
 	add	sp, sp, 32
 	ret
 	.size	__shutdown_op, .-__shutdown_op
+	#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC431: relocated in rooted readonly order below. */

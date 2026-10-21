@@ -311,3 +311,60 @@ struct nftl_free_erase_node *out_phy_block_from_free_list_by_erase_time(
 		best = out_phy_block_from_free_list_by_block(owner, best);
 	return best;
 }
+
+int samsung_readretry_exit(void *chip)
+{
+	/* OEM ignores the chip and reports success without exit work. */
+	return 0;
+}
+
+int sandisk_A19_readretry_exit(void *chip)
+{
+	return 0;
+}
+
+int sandisk_readretry_exit(void *chip)
+{
+	return 0;
+}
+
+int toshiba_readretry_exit(void *chip)
+{
+	return 0;
+}
+
+int __shutdown_op(void *object)
+{
+	/* OEM returns success without using the device; keep its local frame. */
+	int result = 0;
+	return result;
+}
+
+int _nand_flush_sector_write_cache(void *object, int flag)
+{
+	/* OEM discards both arguments and reports a successful flush. */
+	int result = 0;
+	return result;
+}
+
+struct nftl_small_owner {
+	unsigned char before_zone[24];
+	struct nftl_small_zone *zone;
+};
+struct nftl_small_zone {
+	unsigned char before_bad_count[28];
+	unsigned short bad_block_count;
+};
+
+unsigned short nftl_get_bad_block_cnt(struct nftl_small_owner *owner)
+{
+	/* OEM dereferences both pointers without a null guard. */
+	return owner->zone->bad_block_count;
+}
+
+extern void nand_free(void *object);
+
+void nftl_free(void *object)
+{
+	nand_free(object);
+}
