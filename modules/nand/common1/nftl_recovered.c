@@ -9084,8 +9084,8 @@ struct crc_page_zone {
 static int crc_wrong(struct crc_page_zone *zone, const unsigned char *data,
 	      unsigned char *oob)
 {
-	unsigned short actual = 0;
 	unsigned short stored = 0;
+	unsigned short actual = 0;
 	unsigned int length = 0;
 
 	length = zone->geometry->page_size_factor << 9;
