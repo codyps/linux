@@ -7169,3 +7169,90 @@ int nand_discard(struct discard_zone *input, unsigned int sector,
 	} while (pages);
 	return 0;
 }
+
+struct no_use_geometry {
+	unsigned char before_sectors[8];
+	unsigned char sectors_per_page;
+	unsigned char before_pages[11];
+	unsigned short pages_per_block;
+	unsigned char before_page_size[6];
+	unsigned short page_size;
+};
+struct no_use_block {
+	unsigned short number;
+	unsigned short state;
+	unsigned char remaining[60];
+};
+struct no_use_zone {
+	unsigned char before_geometry[8];
+	struct no_use_geometry *geometry;
+	unsigned char before_scanned[10];
+	unsigned short scanned;
+	unsigned char before_sector_count[4];
+	unsigned int sector_count;
+	unsigned char before_offset[4];
+	unsigned int offset;
+	struct no_use_block *blocks;
+	struct no_use_block *current;
+	unsigned char before_data[512 - 64];
+	void *data;
+	unsigned char before_read[3464 - 520];
+	int (*read)(struct no_use_zone *, struct physic_op_param *);
+	unsigned char before_check[3488 - 3472];
+	int (*check)(struct no_use_zone *, struct physic_op_param *);
+};
+_Static_assert(sizeof(struct no_use_block) == 64, "no-use block stride");
+_Static_assert(__builtin_offsetof(struct no_use_zone, scanned) == 26,
+	       "no-use scan count");
+_Static_assert(__builtin_offsetof(struct no_use_zone, read) == 3464,
+	       "no-use read callback");
+_Static_assert(__builtin_offsetof(struct no_use_zone, check) == 3488,
+	       "no-use block callback");
+__attribute__((optimize("-fno-stack-protector")))
+int is_no_use_device(struct no_use_zone *zone, unsigned int expected_size)
+{
+	struct no_use_block *block = zone->blocks;
+	struct physic_op_param op;
+	unsigned char oob[16];
+	unsigned int limit;
+	int read_result;
+
+	/* OEM divides by both geometry fields without checking for zero.
+	 * AArch64 UDIV returns zero on a zero divisor in the shipped build. */
+	if (zone->sector_count)
+		limit = ((zone->sector_count + zone->offset) /
+			 zone->geometry->sectors_per_page) /
+			zone->geometry->pages_per_block;
+	else
+		limit = -1U;
+	zone->scanned = 0;
+	while (zone->scanned < limit) {
+		zone->current = block;
+		set_physic_op_par(&op, block->number, 0,
+				   zone->geometry->page_size, zone->data, oob);
+		if (zone->check(zone, &op) == 1) {
+			read_result = zone->read(zone, &op);
+			if (is_ftl_start_flag_page(oob) == 1 &&
+			    (read_result == 0 || read_result == 10)) {
+				if (get_spare_data(oob, 3, 4) != expected_size) {
+					nand_print("[NE]mtd size changed !\n");
+					return 1;
+				}
+				zone->blocks = (struct no_use_block *)
+					((unsigned char *)block + 64);
+				return 0;
+			}
+			return 1;
+		}
+		/* OEM writes 0x00ff, not 0xffff, and wraps its 16-bit scan
+		 * counter; a never-ending scan is possible when the limit exceeds
+		 * 65535 and no block is marked last. */
+		block->state = 255;
+		zone->scanned++;
+		if (is_last_phy_block((struct physical_block *)block,
+				      (struct physical_zone *)zone) == 1)
+			break;
+		block = (struct no_use_block *)((unsigned char *)block + 64);
+	}
+	return 1;
+}

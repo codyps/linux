@@ -16605,6 +16605,7 @@ zone_param_exit:
 // readonly payload moved below: 	.string	"[NE]mtd size changed !\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_no_use_device
 	.type	is_no_use_device, %function
 is_no_use_device:
@@ -16746,6 +16747,7 @@ is_no_use_device:
 	ldp	x29, x30, [sp], 96
 	ret
 	.size	is_no_use_device, .-is_no_use_device
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_vaild_blocks
