@@ -1328,6 +1328,43 @@ int is_last_phy_block(struct physical_block *block,
 	return 0;
 }
 
+struct valid_block_chip {
+	unsigned char before_blocks[32];
+	struct physical_block *blocks;
+};
+struct valid_block_zone {
+	unsigned char before_chip[8];
+	struct valid_block_chip *chip;
+	unsigned char before_check[3472];
+	int (*check)(struct valid_block_zone *, struct physic_op_param *);
+};
+int get_vaild_blocks(struct valid_block_zone *zone, unsigned int start,
+		     unsigned int end)
+{
+	struct physic_op_param op;
+	struct physical_block *block = (struct physical_block *)
+		((unsigned char *)zone->chip->blocks + ((unsigned long)start << 6));
+	unsigned int range = end - start;
+	unsigned int remaining = range;
+	unsigned int index = start;
+
+	/* OEM compares the absolute index with the range length. Preserve this
+	 * mistake: nonzero start can skip work or stop before end. */
+	while (index < range) {
+		op.block = block->number;
+		if (zone->check(zone, &op) == 159) {
+			remaining--;
+			if (remaining == 0)
+				return 0;
+		}
+		if (is_last_phy_block(block, (struct physical_zone *)zone) == 1)
+			break;
+		block = (struct physical_block *)((unsigned char *)block + 64);
+		index++;
+	}
+	return remaining;
+}
+
 /* Isolated NFTL C candidates; private structure names are inferred. */
 
 struct nftl_chain {

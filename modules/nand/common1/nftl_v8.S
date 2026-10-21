@@ -16649,6 +16649,7 @@ is_no_use_device:
 	ret
 	.size	is_no_use_device, .-is_no_use_device
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_vaild_blocks
 	.type	get_vaild_blocks, %function
 get_vaild_blocks:
@@ -16719,6 +16720,7 @@ get_vaild_blocks:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	get_vaild_blocks, .-get_vaild_blocks
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC209: relocated in rooted readonly order below. */
