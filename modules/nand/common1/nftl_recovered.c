@@ -3442,7 +3442,46 @@ struct gc_policy_zone {
 	unsigned short active;
 };
 extern unsigned int gc_src_type;
-extern int gc_one(void *zone, unsigned short pages);
+struct gc_one_state {
+	unsigned char before_limit[4];
+	unsigned short limit;
+};
+struct gc_one_zone {
+	unsigned char before_first_stat[30];
+	unsigned short first_stat;
+	unsigned char before_state[320];
+	struct gc_one_state *state;
+	unsigned char before_second_stat[320];
+	unsigned short second_stat;
+	unsigned short third_stat;
+};
+extern int garbage_collect_first(struct gc_one_zone *, void *, int);
+extern const char *nand_get_cur_task_name(void);
+extern int nand_get_cur_task_pid(void);
+int gc_one(struct gc_one_zone *zone, unsigned short priority)
+{
+	struct gc_one_state *state = zone->state;
+	int result;
+
+	if (!state)
+		return 8;
+	if (priority < state->limit) {
+		result = garbage_collect_first(zone, 0, -1);
+		if (result == 8)
+			return 8;
+		if (result == 0) {
+			nand_print_dbg("[ND]gc_one ok! from: %d [%d %d %d] @%s %d\n",
+				       gc_src_type, zone->first_stat, zone->second_stat,
+				       zone->third_stat, nand_get_cur_task_name(),
+				       nand_get_cur_task_pid());
+			return 0;
+		}
+		/* OEM collapses every nonzero, non-eight result to one. */
+		nand_print("[NE][NE]gc_one error!\n");
+		return 1;
+	}
+	return 8;
+}
 
 struct gc_win_chip {
 	unsigned char before_pages[20];
@@ -3471,7 +3510,7 @@ int gc_win_block(struct gc_win_zone *zone, unsigned short blocks)
 			return 0;
 		progress += zone->current->count;
 		progress--;
-		result = gc_one(zone, 1);
+		result = gc_one((struct gc_one_zone *)zone, 1);
 		if (result) {
 			if (result == 1)
 				nand_print_dbg("[ND][NE] gc_win_block gc_one error \n");
@@ -3490,7 +3529,7 @@ int gc_all_cnt(struct gc_policy_zone *zone, unsigned short pages,
 	/* OEM ignores all failures except result 8. A negative signed caller
 	 * count becomes a huge unsigned retry span. */
 	while (count--) {
-		result = gc_one(zone, pages);
+		result = gc_one((struct gc_one_zone *)zone, pages);
 		if (result == 8)
 			break;
 	}
@@ -3503,7 +3542,7 @@ int gc_all(void *zone, unsigned short count)
 	gc_src_type = 255;
 	/* OEM retries without a timeout until the callback returns nonzero. */
 	while (1) {
-		result = gc_one(zone, count);
+		result = gc_one((struct gc_one_zone *)zone, count);
 		if (result != 0)
 			break;
 	}
@@ -3519,7 +3558,7 @@ int all_time_gc(struct gc_policy_zone *zone)
 	if (zone->used < zone->target && zone->active != 0) {
 		gc_src_type = 1;
 		/* OEM ignores GC failure. */
-		gc_one(zone, pages);
+		gc_one((struct gc_one_zone *)zone, pages);
 	}
 	return 0;
 }

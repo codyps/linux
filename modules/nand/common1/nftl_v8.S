@@ -30656,6 +30656,7 @@ prio_gc_one:
 // readonly payload moved below: 	.string	"[NE][NE]gc_one error!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	gc_one
 	.type	gc_one, %function
 gc_one:
@@ -30736,6 +30737,7 @@ gc_one:
 	ldp	x29, x30, [sp], 96
 	ret
 	.size	gc_one, .-gc_one
+	#endif
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	gc_all_cnt
