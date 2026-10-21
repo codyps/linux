@@ -2678,6 +2678,49 @@ int nftl_cache_exit(void *zone)
 	return 0;
 }
 
+struct cache_clean_geometry {
+	unsigned char before_slots[22];
+	unsigned short slots;
+};
+struct cache_clean_zone {
+	unsigned char before_geometry[3448];
+	struct cache_clean_geometry *geometry;
+};
+int nftl_cache_clean(struct cache_clean_zone *zone)
+{
+	unsigned char *cache = (unsigned char *)zone + 1072;
+	unsigned int index;
+
+	*(unsigned short *)(cache + 0) = zone->geometry->slots;
+	*(unsigned short *)(cache + 2) = 0;
+	*(unsigned short *)(cache + 4) = 0;
+	*(unsigned short *)(cache + 6) = 0;
+	*(void **)(cache + 1712) = 0;
+	*(void **)(cache + 1720) = 0;
+	*(void **)(cache + 1728) = 0;
+	*(void **)(cache + 1736) = 0;
+	*(void **)(cache + 1768) = 0;
+	*(void **)(cache + 1776) = 0;
+	*(void **)(cache + 1784) = 0;
+	*(void **)(cache + 1792) = 0;
+	for (index = 0; index < *(unsigned short *)cache; index++) {
+		unsigned char *entry = cache + index * 56;
+
+		*(unsigned short *)(entry + 8) = index;
+		*(unsigned short *)(entry + 10) = 255;
+		*(unsigned int *)(entry + 16) = -1;
+		*(void **)(entry + 32) = 0;
+		*(void **)(entry + 40) = 0;
+		*(void **)(entry + 48) = 0;
+		/* OEM clears eight bytes at offset 56. This is the next
+		 * 56-byte entry's header, including after the final entry. */
+		*(void **)(entry + 56) = 0;
+		*(unsigned short *)(entry + 12) = 0;
+		*(unsigned short *)(entry + 14) = 0;
+	}
+	return 0;
+}
+
 struct nftl_zone_storage_view {
 	unsigned char before_allocation[32];
 	void *allocation;

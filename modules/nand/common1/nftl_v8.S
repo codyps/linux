@@ -26714,6 +26714,7 @@ nftl_cache_exit:
 	.size	nftl_cache_exit, .-nftl_cache_exit
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_cache_clean
 	.type	nftl_cache_clean, %function
 nftl_cache_clean:
@@ -26852,6 +26853,7 @@ nftl_cache_clean:
 	add	sp, sp, 32
 	ret
 	.size	nftl_cache_clean, .-nftl_cache_clean
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	search_from_cache_read_list
