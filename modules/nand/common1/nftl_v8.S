@@ -13953,6 +13953,7 @@ _nftl_discard_logic_page:
 // readonly payload moved below: 	.string	"[NE]do_write_error sb@%d nftl_nand_copy_page error!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	do_write_error
 	.type	do_write_error, %function
 do_write_error:
@@ -14189,6 +14190,7 @@ do_write_error:
 	ldp	x29, x30, [sp], 96
 	ret
 	.size	do_write_error, .-do_write_error
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC152: relocated in rooted readonly order below. */

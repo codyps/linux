@@ -8876,3 +8876,135 @@ int write_phy_data_to_current_block(struct phy_write_zone *zone,
 		retry++;
 	}
 }
+
+struct do_write_geometry {
+	unsigned char before_fixed_page[28];
+	unsigned short fixed_page;
+};
+struct do_write_block {
+	unsigned short number;
+	unsigned short active;
+	unsigned short page;
+	unsigned short erase_count;
+	unsigned int tag;
+};
+struct do_write_state {
+	struct do_write_block *block;
+	unsigned char before_map[16];
+	unsigned int *map;
+	unsigned char before_page[24];
+	unsigned short page;
+};
+struct do_write_zone {
+	unsigned char before_geometry[8];
+	struct do_write_geometry *geometry;
+	unsigned char before_free_count[14];
+	unsigned short free_count;
+	unsigned char before_data[480];
+	void *data;
+	unsigned char before_retry_word[160];
+	unsigned short retry_word;
+	unsigned char before_erase[2774];
+	int (*erase)(struct do_write_zone *, struct physic_op_param *);
+	unsigned char before_copy[16];
+	int (*copy)(struct do_write_zone *, struct do_write_block *,
+		    struct do_write_block *, void *, unsigned short);
+	unsigned char before_mark_bad[8];
+	int (*mark_bad)(struct do_write_zone *, struct physic_op_param *);
+};
+_Static_assert(sizeof(struct do_write_block) == 12,
+	       "write error block size");
+_Static_assert(__builtin_offsetof(struct do_write_state, map) == 24,
+	       "write error map offset");
+_Static_assert(__builtin_offsetof(struct do_write_state, page) == 56,
+	       "write error page offset");
+_Static_assert(__builtin_offsetof(struct do_write_zone, data) == 512,
+	       "write error data offset");
+_Static_assert(__builtin_offsetof(struct do_write_zone, retry_word) == 680,
+	       "write error retry limit offset");
+_Static_assert(__builtin_offsetof(struct do_write_zone, erase) == 3456,
+	       "write error erase callback offset");
+_Static_assert(__builtin_offsetof(struct do_write_zone, copy) == 3480,
+	       "write error copy callback offset");
+_Static_assert(__builtin_offsetof(struct do_write_zone, mark_bad) == 3496,
+	       "write error mark-bad callback offset");
+
+__attribute__((optimize("-fno-stack-protector")))
+int do_write_error(struct phy_write_zone *owner,
+		   struct phy_write_state *current)
+{
+	struct do_write_zone *zone = (struct do_write_zone *)owner;
+	struct do_write_state *state = (struct do_write_state *)current;
+	struct do_write_block *replacement;
+	struct do_write_block *old;
+	struct physic_op_param op;
+	unsigned int *entry;
+	unsigned int page;
+	unsigned int logic_page;
+	int status;
+
+retry:
+	replacement = (struct do_write_block *)out_phy_block_from_free_list(
+		(struct free_block_zone *)zone);
+	if (!replacement) {
+		nand_print("[NE]no free block\n");
+		return 1;
+	}
+	set_physic_op_par(&op, replacement->number, 0,
+			  zone->geometry->fixed_page, 0, 0);
+	status = zone->erase(zone, &op);
+	/* OEM updates the block metadata even when erase fails. */
+	replacement->page = 0;
+	replacement->erase_count++;
+	if (status) {
+		zone->mark_bad(zone, &op);
+		nand_print("[NE]do_write_error erase error sb:%d!\n",
+			   replacement->number);
+		if (zone->free_count > (unsigned short)(zone->retry_word >> 2))
+			goto retry;
+		nand_print("[NE]no free block\n");
+		return 1;
+	}
+	old = state->block;
+	replacement->tag = old->tag + 1;
+	/* The current page itself is excluded from both walks. */
+	for (page = 0; page < state->page; page++) {
+		logic_page = state->map[page];
+		/* OEM stops copying at the first absent map entry. */
+		if (logic_page == ~0U)
+			break;
+		status = zone->copy(zone, old, replacement, zone->data,
+				    (unsigned short)page);
+		if (status) {
+			nand_print("[NE]do_write_error sb@%d nftl_nand_copy_page error!\n",
+				   replacement->number);
+			set_physic_op_par(&op, replacement->number, 0,
+					  zone->geometry->fixed_page, 0, 0);
+			zone->mark_bad(zone, &op);
+			goto retry;
+		}
+	}
+	replacement->page = old->page;
+	/* Stock initializes this unused physical op before erasing the old
+	 * block; retain the call and the ignored erase result. */
+	set_physic_op_par(&op, old->number, 0,
+			  zone->geometry->fixed_page, 0, 0);
+	erase_block((struct erase_block_zone *)zone,
+		    (struct erase_block_info *)old,
+		    (unsigned short)(old->erase_count + 1));
+	replacement->active = old->active;
+	state->block = replacement;
+	for (page = 0; page < state->page; page++) {
+		logic_page = state->map[page];
+		if (logic_page == ~0U)
+			continue;
+		entry = get_logic_page_map((struct logic_page_map_zone *)zone,
+					   logic_page);
+		if (!entry)
+			continue;
+		((unsigned short *)entry)[1] = state->block->number;
+		((unsigned short *)entry)[0] =
+			(((unsigned short *)entry)[0] & 0xf000) | (page & 0x0fff);
+	}
+	return 0;
+}
