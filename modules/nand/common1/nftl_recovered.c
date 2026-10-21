@@ -10531,7 +10531,7 @@ int hynix20nm_read_page_end(struct samsung_read_request *request)
 {
 	struct hynix20nm_page_chip *chip = (struct hynix20nm_page_chip *)
 		nci_get_from_nsi(g_nsi, request->channel);
-	unsigned int retry_count = 0;
+	int retry_count = 0;
 	int result = generic_read_page_end_not_retry(request);
 
 	if (result != -2)
