@@ -17311,6 +17311,7 @@ build_zone_list:
 // readonly payload moved below: 	.string	"[NI]nftl bad block: %d\n"
 	.text
 	.align	2
+	.if 0 /* C-backed first_scan_all_blocks; stock body retained as reference. */
 	.global	first_scan_all_blocks
 	.type	first_scan_all_blocks, %function
 first_scan_all_blocks:
@@ -17917,6 +17918,7 @@ first_scan_all_blocks:
 	ldp	x29, x30, [sp], 128
 	ret
 	.size	first_scan_all_blocks, .-first_scan_all_blocks
+	.endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC2: relocated in rooted readonly order below. */

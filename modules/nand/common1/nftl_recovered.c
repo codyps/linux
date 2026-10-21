@@ -4425,6 +4425,242 @@ int build_zone_list(struct build_zone *zone)
 	return 0;
 }
 
+struct first_scan_block {
+	unsigned short number;
+	unsigned short state;
+	unsigned short invalid_pages;
+	unsigned short erase_count;
+	unsigned int used_count;
+	unsigned char before_links[36];
+	void *next;
+	void *previous;
+};
+struct first_scan_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages;
+	unsigned char before_blocks[2];
+	unsigned short blocks;
+};
+struct first_scan_gc {
+	unsigned char before_claim[4];
+	unsigned short claim;
+};
+struct first_scan_zone {
+	unsigned char before_geometry[8];
+	struct first_scan_geometry *geometry;
+	unsigned char before_partition_id[8];
+	unsigned char partition_id;
+	unsigned char before_free_count[1];
+	unsigned short free_count;
+	unsigned short bad_count;
+	unsigned char before_first_block[18];
+	struct first_scan_block *first_block;
+	struct first_scan_block *last_read;
+	unsigned char before_data[448];
+	void *data;
+	unsigned char before_gc[2928];
+	struct first_scan_gc *gc;
+	unsigned char before_read[8];
+	int (*read)(struct first_scan_zone *, struct physic_op_param *);
+	unsigned char before_good[16];
+	int (*is_good)(struct first_scan_zone *, struct physic_op_param *);
+};
+_Static_assert(sizeof(struct first_scan_block) == 64,
+	       "first-scan block stride");
+_Static_assert(__builtin_offsetof(struct first_scan_zone, first_block) == 48,
+	       "first-scan block offset");
+_Static_assert(__builtin_offsetof(struct first_scan_zone, gc) == 3448,
+	       "first-scan GC offset");
+_Static_assert(__builtin_offsetof(struct first_scan_zone, is_good) == 3488,
+	       "first-scan good callback offset");
+struct move_zone;
+struct move_node;
+struct erase_block_zone;
+struct erase_block_info;
+struct torture_zone;
+struct prio_gc_owner;
+struct panic_header;
+struct panic_block;
+extern char mod[];
+extern char *nand_fdt_get_prop_string_by_path(void *, const char *,
+						const char *);
+extern int nand_memcmp(const void *, const void *, unsigned long);
+extern int panic_recover_info(struct panic_header *, struct panic_block *);
+extern int add_block_count_list(struct block_count_zone *,
+				 struct block_count_node *);
+extern int put_phy_block_to_free_list(struct move_zone *, struct move_node *);
+extern int erase_block(struct erase_block_zone *, struct erase_block_info *,
+		       unsigned short);
+extern int torture_block_and_mark(struct torture_zone *,
+				   struct erase_block_info *);
+extern int add_prio_gc(struct prio_gc_owner *, void *, unsigned short);
+
+__attribute__((optimize("-fno-stack-protector")))
+int first_scan_all_blocks(struct build_zone *raw_zone)
+{
+	struct first_scan_zone *zone = (struct first_scan_zone *)raw_zone;
+	struct first_scan_block *block = zone->first_block;
+	struct physic_op_param op;
+	unsigned char oob[16];
+	const char path[2] = {'/', 0};
+	const char vendor[5] = {'s', 'u', 'n', 'x', 'i'};
+	char *compatible;
+	unsigned int last_erase = 0, used;
+	int status;
+
+	compatible = nand_fdt_get_prop_string_by_path(0, path, mod);
+	if (!compatible || nand_memcmp(compatible, vendor, 3))
+		return -1;
+	nand_print_dbg("[ND]fsab\n");
+	zone->free_count = 0;
+	while (block->number < zone->geometry->blocks) {
+		set_physic_op_par(&op, block->number, 0, 0, 0, oob);
+		if (zone->is_good(zone, &op) != 1) {
+			nand_print("[NI]nftl bad block: %d\n", block->number);
+			block->state = 255;
+			block->erase_count = 0;
+			zone->bad_count++;
+			goto next;
+		}
+		status = zone->read(zone, &op);
+		zone->last_read = block;
+		used = get_block_used_count_from_oob(oob);
+		if (is_ftl_end_flag_page(oob) == 1) {
+			nand_print("[NI]ftl end block! %d!\n", block->number);
+			return 0;
+		}
+		if (is_panic_data_page(oob) == 1) {
+			if (oob[3] == zone->partition_id)
+				panic_recover_info((struct panic_header *)oob,
+						   (struct panic_block *)block);
+			goto next;
+		}
+		if (is_nouse_page(oob) == 1) {
+			zone->free_count++;
+			block->state = 0;
+			block->erase_count = 0;
+			block->invalid_pages = 0;
+			put_phy_block_to_free_list((struct move_zone *)zone,
+						    (struct move_node *)block);
+			goto next;
+		}
+		if ((is_ftl_logic_page_data(oob) == 1 ||
+		     is_function_info_page(oob) == 1) &&
+		    (status == 0 || status == 10))
+			goto counted;
+		if (is_ftl_start_flag_page(oob) == 1) {
+			nand_print("[NI]start page , do nothing\n");
+			goto next;
+		}
+		if (is_fill_page(oob) == 1) {
+			zone->free_count++;
+			block->state = 0;
+			block->erase_count = get_erase_count_from_oob(oob);
+			last_erase = block->erase_count;
+			block->invalid_pages = zone->geometry->pages;
+			put_phy_block_to_free_list((struct move_zone *)zone,
+						    (struct move_node *)block);
+			nand_print_dbg("[ND]fill block %d\n", block->number);
+			goto next;
+		}
+		/* OEM prints all 16 spare bytes, then increments the last valid
+		 * erase count even when this block has no trustworthy OOB. */
+		nand_print("[NI]b@%d p@0 unknow spare data:%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x.\n",
+			   block->number, oob[0], oob[1], oob[2], oob[3],
+			   oob[4], oob[5], oob[6], oob[7], oob[8], oob[9],
+			   oob[10], oob[11], oob[12], oob[13], oob[14], oob[15]);
+		block->erase_count = (unsigned short)(last_erase + 1);
+		if (status == 0 || status == 10) {
+			if (oob[0] != 255) {
+				nand_print("[NE]nftl bad block: %d\n",
+					   block->number);
+				block->state = 255;
+				zone->bad_count++;
+			} else if (erase_block((struct erase_block_zone *)zone,
+				    (struct erase_block_info *)block,
+				    (unsigned short)(block->erase_count + 1)) == 0) {
+				zone->free_count++;
+			}
+			goto next;
+		}
+		nand_print("[NE]nftl b@%d p@0 ecc error\n", block->number);
+		/* OEM puts the last-page index in the plane field and reads page
+		 * zero. Preserve this apparent parameter mix-up. */
+		set_physic_op_par(&op, block->number,
+				  (unsigned short)(zone->geometry->pages - 1), 0,
+				  0, oob);
+		status = zone->read(zone, &op);
+		if (status == 0 || status == 10) {
+			if (is_phy_mapping_page(oob) == 1) {
+				nand_print("[NE]b@%d last page ok !\n",
+					   block->number);
+				used = get_block_used_count_from_oob(oob);
+				goto counted_last;
+			}
+			if (is_nouse_page(oob) == 1) {
+				nand_print("[NE]last page blank ! %d!\n",
+					   block->number);
+				if (erase_block((struct erase_block_zone *)zone,
+				    (struct erase_block_info *)block,
+				    (unsigned short)(block->erase_count + 1)) == 0)
+					zone->free_count++;
+			} else {
+				nand_print("[NE]last page unkown ! %d!\n",
+					   block->number);
+				if (erase_block((struct erase_block_zone *)zone,
+				    (struct erase_block_info *)block,
+				    (unsigned short)(block->erase_count + 1)) == 0)
+					zone->free_count++;
+			}
+			goto next;
+		}
+		nand_print("[NE]b@%d first page last page ecc error\n",
+			   block->number);
+		nand_print("[NE]b@%d last page spare data %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n",
+			   block->number, oob[0], oob[1], oob[2], oob[3],
+			   oob[4], oob[5], oob[6], oob[7], oob[8], oob[9],
+			   oob[10], oob[11], oob[12], oob[13], oob[14], oob[15]);
+		if (torture_block_and_mark((struct torture_zone *)zone,
+					   (struct erase_block_info *)block) == 0)
+			zone->free_count++;
+		goto next;
+counted:
+		zone->free_count++;
+		block->state = 1;
+		block->erase_count = get_erase_count_from_oob(oob);
+		last_erase = block->erase_count;
+		block->invalid_pages = 0;
+		block->used_count = used;
+		block->next = 0;
+		block->previous = 0;
+		add_block_count_list((struct block_count_zone *)zone,
+				     (struct block_count_node *)block);
+		if (status == 10 && zone->gc->claim) {
+			add_prio_gc((struct prio_gc_owner *)zone, block, 1);
+			nand_print_dbg("[ND]READ_RECLAIM!\n");
+		}
+		goto next;
+counted_last:
+		zone->free_count++;
+		block->state = 1;
+		block->erase_count = get_erase_count_from_oob(oob);
+		last_erase = block->erase_count;
+		block->invalid_pages = 0;
+		block->used_count = used;
+		block->next = 0;
+		block->previous = 0;
+		add_block_count_list((struct block_count_zone *)zone,
+				     (struct block_count_node *)block);
+		if (status == 10 && zone->gc->claim) {
+			add_prio_gc((struct prio_gc_owner *)zone, block, 1);
+			nand_print("[NI]READ_RECLAIM!\n");
+		}
+next:
+		block++;
+	}
+	return 0;
+}
+
 struct first_list_geometry {
 	unsigned char before_factor[8];
 	unsigned char factor;
