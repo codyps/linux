@@ -2840,6 +2840,7 @@ samsung_read_page_end:
 // readonly payload moved below: 	.string	"samsung read retry conut: %d !\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	samsung_readretry_init
 	.type	samsung_readretry_init, %function
 samsung_readretry_init:
@@ -2880,6 +2881,7 @@ samsung_readretry_init:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	samsung_readretry_init, .-samsung_readretry_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	samsung_readretry_exit
@@ -29674,6 +29676,7 @@ del_from_gc_list:
 	.size	del_from_gc_list, .-del_from_gc_list
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	add_prio_gc
 	.type	add_prio_gc, %function
 add_prio_gc:
@@ -29722,6 +29725,7 @@ add_prio_gc:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	add_prio_gc, .-add_prio_gc
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC447: relocated in rooted readonly order below. */

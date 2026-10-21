@@ -2321,7 +2321,9 @@ extern int set_one_cmd(struct command_chip *chip, unsigned int command,
 SANDISK_COMMAND(sandisk_A19_cmd25, 0x25)
 SANDISK_COMMAND(sandisk_A19_dsp_on, 0x26)
 
-extern int add_prio_gc(void *zone, void *physical, unsigned short priority);
+struct prio_gc_owner;
+extern int add_prio_gc(struct prio_gc_owner *zone, void *physical,
+		       unsigned short priority);
 int prio_gc_one(void *zone, unsigned short block, unsigned int priority)
 {
 	void *physical = get_phy_block_addr((struct nftl_phy_outer *)zone,
@@ -2337,7 +2339,8 @@ int prio_gc_one(void *zone, unsigned short block, unsigned int priority)
 	else
 		priority = 3;
 	/* OEM ignores failed insertion and reports success. */
-	add_prio_gc(zone, physical, (unsigned short)priority);
+	add_prio_gc((struct prio_gc_owner *)zone, physical,
+		    (unsigned short)priority);
 	return 0;
 }
 
@@ -2378,4 +2381,63 @@ struct nftl_free_erase_node *out_phy_block_from_free_list_by_block(
         return node;
     }
     return node;
+}
+
+struct prio_gc_node {
+	unsigned short state;
+	unsigned short priority;
+	unsigned char pad[4];
+	void *block;
+	void *next;
+	void *prev;
+};
+struct prio_gc_pool { unsigned char opaque[320]; };
+struct prio_gc_owner { unsigned char before[696]; struct prio_gc_pool pool; };
+extern struct prio_gc_node *get_empty_gc_node(struct prio_gc_pool *pool);
+int add_prio_gc(struct prio_gc_owner *owner, void *block,
+		unsigned short priority)
+{
+	struct prio_gc_node *node;
+	node = (struct prio_gc_node *)search_gc_node(
+		(struct gc_search_zone *)&owner->pool, block);
+	/* OEM reports one for both existing entries and pool exhaustion. */
+	if (node)
+		return 1;
+	node = get_empty_gc_node(&owner->pool);
+	if (!node)
+		return 1;
+	/* OEM trusts owner, block, and every helper result. */
+	node->block = block;
+	node->priority = priority;
+	node->next = 0;
+	node->prev = 0;
+	add_to_gc_list_tail((struct gc_list *)&owner->pool,
+			    (struct gc_list_node *)node);
+	return 0;
+}
+
+struct samsung_init_inner {
+	unsigned char before_flags[52];
+	unsigned int flags;
+};
+struct samsung_init_chip {
+	unsigned char before_state[184];
+	unsigned int state;
+	unsigned char until_inner[92];
+	struct samsung_init_inner *inner;
+};
+extern unsigned char samsung_read_retry_mode;
+extern unsigned char samsung_read_retry_cycle;
+int samsung_readretry_init(struct samsung_init_chip *chip)
+{
+	chip->state = 0;
+	samsung_read_retry_mode = (unsigned char)(chip->inner->flags >> 16);
+	samsung_read_retry_cycle = 15;
+	/* Preserve OEM typo and fixed cycle count. */
+	nand_print_dbg("samsung read retry conut: %d !\n",
+		       samsung_read_retry_cycle);
+	/* OEM rejects other modes after mutating global state. */
+	if (samsung_read_retry_mode != 32)
+		return -100;
+	return 0;
 }
