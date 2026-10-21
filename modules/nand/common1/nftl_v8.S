@@ -33376,6 +33376,7 @@ nftl_zone_release:
  * TODO: bound those buffers and propagate failures in a separate fix.
  * The original C declarations and complete original BSS extent are unknown.
  */
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.bss
 	.balign	8
 	.type	phyinfo, %object
@@ -33641,6 +33642,7 @@ sandisk_sclk1_bak:
 #endif
 sandisk_toggle_mode_flag:
 	.zero	4
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 
 /* TG3040 #860 initialized NFTL tables. 36 starts are decoded from paired
  * instructions; the complete 1120-byte candidate span matches stock. Eight
