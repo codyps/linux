@@ -1410,6 +1410,7 @@ _nftl_nand_erase_superblk:
 	.size	_nftl_nand_erase_superblk, .-_nftl_nand_erase_superblk
 	#endif
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nftl_nand_read_page
 	.type	_nftl_nand_read_page, %function
 _nftl_nand_read_page:
@@ -1463,7 +1464,9 @@ _nftl_nand_read_page:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	_nftl_nand_read_page, .-_nftl_nand_read_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nftl_nand_write_page
 	.type	_nftl_nand_write_page, %function
 _nftl_nand_write_page:
@@ -1517,6 +1520,7 @@ _nftl_nand_write_page:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	_nftl_nand_write_page, .-_nftl_nand_write_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	_nftl_nand_is_blk_good

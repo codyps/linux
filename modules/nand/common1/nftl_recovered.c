@@ -199,7 +199,8 @@ int hynix20nm_vender_get_param(struct samsung_set_chip *chip,
 struct nftl_chip_block_ops {
 	unsigned char before_callbacks[88];
 	int (*erase)(struct nftl_chip_block_ops *, struct physic_op_param *);
-	unsigned char between_callbacks[16];
+	int (*read)(struct nftl_chip_block_ops *, struct physic_op_param *);
+	int (*write)(struct nftl_chip_block_ops *, struct physic_op_param *);
 	int (*is_good)(struct nftl_chip_block_ops *, struct physic_op_param *);
 	int (*mark_bad)(struct nftl_chip_block_ops *, struct physic_op_param *);
 };
@@ -234,6 +235,47 @@ int name(void *zone, struct physic_op_param *request) \
 NFTL_BLOCK_WRAPPER(_nftl_nand_erase_superblk, erase)
 NFTL_BLOCK_WRAPPER(_nftl_nand_is_blk_good, is_good)
 NFTL_BLOCK_WRAPPER(_nftl_nand_mark_bad_blk, mark_bad)
+
+struct nftl_page_stats {
+	unsigned char before_reads[80];
+	unsigned long long reads;
+	unsigned long long writes;
+	unsigned char before_errors[36];
+	unsigned int read_errors;
+	unsigned int write_errors;
+};
+struct nftl_page_zone {
+	unsigned char before_stats[3440];
+	struct nftl_page_stats *stats;
+};
+
+/* OEM increments the attempt counter before calling the chip. Read errors
+ * count only -2; write errors count every nonzero result. Both return the
+ * callback result unmodified and trust the zone, stats, and chip pointers. */
+#define NFTL_PAGE_WRAPPER(name, callback, counter, error, failed) \
+__attribute__((optimize("-fno-stack-protector"))) \
+int name(struct nftl_page_zone *zone, struct physic_op_param *request) \
+{ \
+	struct nftl_zone_priv_block_ops *priv; \
+	struct nftl_chip_block_ops *chip; \
+	struct physic_op_param op; \
+	int result; \
+	priv = nftl_get_zone_priv(zone); \
+	chip = priv->chip; \
+	zone->stats->counter++; \
+	op.block = request->block; \
+	op.plane = request->plane; \
+	op.page = request->page; \
+	op.data = request->data; \
+	op.oob = request->oob; \
+	result = chip->callback(priv->chip, &op); \
+	if (failed) \
+		zone->stats->error++; \
+	return result; \
+}
+
+NFTL_PAGE_WRAPPER(_nftl_nand_read_page, read, reads, read_errors, result == -2)
+NFTL_PAGE_WRAPPER(_nftl_nand_write_page, write, writes, write_errors, result != 0)
 
 struct nftl_free_erase_node {
 	unsigned char before_erase[6];
@@ -2797,16 +2839,14 @@ struct nftl_ops {
 	void (*read_logic)(void);
 	void (*discard)(void);
 };
-extern void _nftl_nand_read_page(void);
-extern void _nftl_nand_write_page(void);
 extern void _nftl_nand_copy_page(void);
 extern void _nftl_nand_read_logic_page(void);
 void nftl_ops_init(struct nftl_ops *ops)
 {
 	/* OEM never clears other slots or checks the pointer. */
 	ops->erase = (void (*)(void))_nftl_nand_erase_superblk;
-	ops->read = _nftl_nand_read_page;
-	ops->write = _nftl_nand_write_page;
+	ops->read = (void (*)(void))_nftl_nand_read_page;
+	ops->write = (void (*)(void))_nftl_nand_write_page;
 	ops->good = (void (*)(void))_nftl_nand_is_blk_good;
 	ops->bad = (void (*)(void))_nftl_nand_mark_bad_blk;
 	ops->copy = _nftl_nand_copy_page;
