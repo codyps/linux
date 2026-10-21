@@ -1323,6 +1323,30 @@ int hynix26nm_get_default_param(struct hynix_default_chip *chip)
 	hynix26nm_setdefaultparam(chip);
 	return 0;
 }
+extern unsigned char hynix26nm_read_retry_reg_num;
+extern unsigned char hynix26nm_read_retry_reg_adr[4];
+struct hynix_saved_chip {
+	unsigned char before_saved[56];
+	unsigned char saved[4];
+};
+/* The global build's stack protector swaps these two scalar local slots;
+ * the OEM frame uses the unprotected layout despite having no canary. */
+__attribute__((optimize("-fno-stack-protector")))
+int hynix26nm_getdefaultparam(void *chip, unsigned char *values)
+{
+	int index;
+	int result = 0;
+
+	result = hynix26nm_vender_get_param((struct samsung_set_chip *)chip,
+			((struct hynix_saved_chip *)chip)->saved,
+		hynix26nm_read_retry_reg_adr,
+		hynix26nm_read_retry_reg_num);
+	/* OEM copies from the chip scratch bytes even when the bus read failed.
+	 * It reloads the mutable global count on every loop condition. */
+	for (index = 0; hynix26nm_read_retry_reg_num > index; index++)
+		values[index] = ((struct hynix_saved_chip *)chip)->saved[index];
+	return result;
+}
 
 struct nftl_retry_chip {
 	unsigned char preceding[0xb8];

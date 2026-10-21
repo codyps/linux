@@ -7099,6 +7099,7 @@ hynix26nm_lsb_exit:
 	ret
 	.size	hynix26nm_lsb_exit, .-hynix26nm_lsb_exit
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_getdefaultparam
 	.type	hynix26nm_getdefaultparam, %function
 hynix26nm_getdefaultparam:
@@ -7146,6 +7147,7 @@ hynix26nm_getdefaultparam:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix26nm_getdefaultparam, .-hynix26nm_getdefaultparam
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	hynix26nm_setdefaultparam
 	.type	hynix26nm_setdefaultparam, %function
