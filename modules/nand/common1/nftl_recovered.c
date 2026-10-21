@@ -3636,6 +3636,42 @@ int all_time_gc(struct gc_policy_zone *zone)
 	}
 	return 0;
 }
+struct shutdown_gc_zone {
+	unsigned char before_first[30];
+	unsigned short first;
+	unsigned char before_current[320];
+	void *current;
+	unsigned char before_second[320];
+	unsigned short second;
+	unsigned short third;
+	unsigned short enabled;
+};
+int shutdown_on_gc(struct shutdown_gc_zone *zone)
+{
+	void *current = zone->current;
+
+	gc_src_type = 4;
+	/* Preserve the malformed trailing percent in the OEM diagnostic. */
+	nand_print_dbg("[ND]%s %p %d %d %d %\n", __func__, current,
+		       zone->enabled, zone->first, zone->second, zone->third);
+	while (zone->first <= zone->third) {
+		current = zone->current;
+		if (!current) {
+			nand_print("[NI]shutdown_on_gc end! [%d %d %d]\n",
+				   zone->first, zone->second, zone->third);
+			break;
+		}
+		/* With enabled==0, stock may loop forever without changing the
+		 * counters. When enabled, it ignores gc_one failure and still logs
+		 * success. Both behaviors are retained. */
+		if (zone->enabled) {
+			gc_one((struct gc_one_zone *)zone, 0);
+			nand_print_dbg("[ND]shutdown_on_gc one ok! [%d %d %d]\n",
+				       zone->first, zone->second, zone->third);
+		}
+	}
+	return 0;
+}
 
 struct nftl_shutdown_view {
 	unsigned char preceding[24];

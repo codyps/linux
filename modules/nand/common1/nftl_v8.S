@@ -31386,6 +31386,7 @@ all_time_gc:
 // readonly payload moved below: 	.string	"[ND]shutdown_on_gc one ok! [%d %d %d]\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	shutdown_on_gc
 	.type	shutdown_on_gc, %function
 shutdown_on_gc:
@@ -31474,6 +31475,7 @@ shutdown_on_gc:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	shutdown_on_gc, .-shutdown_on_gc
+	#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC468: relocated in rooted readonly order below. */
