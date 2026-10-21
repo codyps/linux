@@ -18637,6 +18637,7 @@ second_scan_all_blocks:
 	ret
 	.size	second_scan_all_blocks, .-second_scan_all_blocks
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	check_bit_nums
 	.type	check_bit_nums, %function
 check_bit_nums:
@@ -18687,7 +18688,9 @@ check_bit_nums:
 	add	sp, sp, 32
 	ret
 	.size	check_bit_nums, .-check_bit_nums
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_all_bit_ff
 	.type	is_all_bit_ff, %function
 is_all_bit_ff:
@@ -18719,7 +18722,9 @@ is_all_bit_ff:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	is_all_bit_ff, .-is_all_bit_ff
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_all_byte_ff
 	.type	is_all_byte_ff, %function
 is_all_byte_ff:
@@ -18765,6 +18770,7 @@ is_all_byte_ff:
 	add	sp, sp, 32
 	ret
 	.size	is_all_byte_ff, .-is_all_byte_ff
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC250: relocated in rooted readonly order below. */
@@ -29843,6 +29849,7 @@ do_prio_gc:
 	ret
 	.size	do_prio_gc, .-do_prio_gc
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	prio_gc_all
 	.type	prio_gc_all, %function
 prio_gc_all:
@@ -29870,6 +29877,7 @@ prio_gc_all:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	prio_gc_all, .-prio_gc_all
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC452: relocated in rooted readonly order below. */
@@ -30705,6 +30713,7 @@ gc_win_block:
 	ret
 	.size	gc_win_block, .-gc_win_block
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_total_invalid_page
 	.type	get_total_invalid_page, %function
 get_total_invalid_page:
@@ -30735,6 +30744,7 @@ get_total_invalid_page:
 	add	sp, sp, 32
 	ret
 	.size	get_total_invalid_page, .-get_total_invalid_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	is_current_blcok
 	.type	is_current_blcok, %function
@@ -31537,6 +31547,7 @@ set_oob_special_page:
 	ret
 	.size	set_oob_special_page, .-set_oob_special_page
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_no_use_page
 	.type	set_no_use_page, %function
 set_no_use_page:
@@ -31561,6 +31572,7 @@ set_no_use_page:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	set_no_use_page, .-set_no_use_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_start_block_flag
@@ -31595,6 +31607,7 @@ set_start_block_flag:
 	.size	set_start_block_flag, .-set_start_block_flag
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_end_block_flag
 	.type	set_end_block_flag, %function
 set_end_block_flag:
@@ -31619,6 +31632,7 @@ set_end_block_flag:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	set_end_block_flag, .-set_end_block_flag
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_bad_flag_from_oob

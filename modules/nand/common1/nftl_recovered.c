@@ -1109,3 +1109,121 @@ int nftl_sector_cache_exit(struct nftl_cache_owner *owner)
 	nftl_free(cache->allocation);
 	return 0;
 }
+
+/* Inferred NFTL C body, checked against both linked stock object builds.
+ * Layout and parameter names remain provisional. */
+
+__attribute__((optimize("-fno-stack-protector")))
+int is_all_byte_ff(const unsigned char *buffer, int length, int tolerance)
+{
+	int count = 0;
+	int required = length - tolerance;
+	int index;
+
+	/* OEM scans the entire length, then allows `tolerance` non-FF bytes.
+	 * A negative length scans nothing and can still report success. Signed
+	 * overflow in length - tolerance is also unguarded. Preserve both. */
+	for (index = 0; index < length; index++) {
+		if (buffer[index] == 0xff)
+			count++;
+	}
+	if (count >= required)
+		return 1;
+	return 0;
+}
+
+/* Inferred NFTL per-byte bit counter. */
+/* The byte mask compiles as AND #0xff, where stock uses UXTB. Both discard
+ * the upper 24 bits before the same bit-count loop. */
+__attribute__((optimize("-fno-stack-protector")))
+int check_bit_nums(const unsigned char *data, int length)
+{
+	int index;
+	int bit;
+	int total;
+	unsigned char mask;
+
+	total = 0;
+	for (index = 0; index < length; index++) {
+		mask = 1;
+		for (bit = 0; bit <= 7; bit++) {
+			if (data[index] & mask)
+				total++;
+			mask <<= 1;
+		}
+	}
+	/* OEM skips the loop for a negative length and does not guard a
+	 * positive length against the actual buffer extent. */
+	return total;
+}
+
+/* Isolated OEM C equivalents; aggregate names are inferred from access. */
+
+extern void set_spare_data(unsigned char *oob, int value, int offset,
+			   int count);
+
+void set_end_block_flag(void *unused, unsigned char *oob)
+{
+	/* OEM ignores the first argument and does not propagate write errors. */
+	oob[0] = 0xff;
+	set_spare_data(oob, 0xaa, 1, 1);
+	set_spare_data(oob, 0xcc, 2, 1);
+}
+
+void set_no_use_page(void *unused, unsigned char *oob)
+{
+	/* OEM ignores the first argument and does not propagate write errors. */
+	oob[0] = 0xff;
+	set_spare_data(oob, 0xaa, 1, 1);
+	set_spare_data(oob, 0xbb, 2, 1);
+}
+
+struct invalid_page_node {
+	unsigned char before_count[4];
+	unsigned short invalid_pages;
+	unsigned char before_next[10];
+	struct invalid_page_node *next;
+};
+
+unsigned int get_total_invalid_page(void *zone)
+{
+	struct invalid_page_node *node;
+	unsigned int total;
+	total = 0;
+	node = (struct invalid_page_node *)((char *)zone + 336);
+	/* OEM assumes a finite, intact list and allows unsigned wraparound. */
+	while (node->next) {
+		total += node->next->invalid_pages;
+		node = node->next;
+	}
+	return total;
+}
+
+/* OEM shifts a signed byte count and subtracts unchecked exclusions; bad
+ * caller counts can overflow before the bit count is compared. */
+__attribute__((optimize("-fno-stack-protector")))
+int is_all_bit_ff(void *data, int bytes, int excluded_bits)
+{
+	int expected = bytes << 3;
+	int counted;
+	expected -= excluded_bits;
+	counted = check_bit_nums(data, bytes);
+	if (counted >= expected)
+		return 1;
+	return 0;
+}
+
+extern int do_prio_gc(void *zone);
+__attribute__((optimize("-fno-stack-protector")))
+int prio_gc_all(void *zone)
+{
+	unsigned int index;
+	int result;
+	result = 0;
+	index = 0;
+	while (index <= 9) {
+		result |= do_prio_gc(zone);
+		++index;
+	}
+	return result;
+}
