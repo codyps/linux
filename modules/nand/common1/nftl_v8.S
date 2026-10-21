@@ -17311,7 +17311,7 @@ build_zone_list:
 // readonly payload moved below: 	.string	"[NI]nftl bad block: %d\n"
 	.text
 	.align	2
-	.if 0 /* C-backed first_scan_all_blocks; stock body retained as reference. */
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C /* stock fallback body */
 	.global	first_scan_all_blocks
 	.type	first_scan_all_blocks, %function
 first_scan_all_blocks:
@@ -17918,7 +17918,7 @@ first_scan_all_blocks:
 	ldp	x29, x30, [sp], 128
 	ret
 	.size	first_scan_all_blocks, .-first_scan_all_blocks
-	.endif
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC2: relocated in rooted readonly order below. */
@@ -18127,7 +18127,7 @@ init_zone_after_first_scan:
 // readonly payload moved below: 	.string	"[ND]free block nums is %d, aec: %d, iec: %d, a_buc: %d, i_buc: %d!\n"
 	.text
 	.align	2
-	.if 0 /* C-backed second_scan_all_blocks; stock body retained as reference. */
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C /* stock fallback body */
 	.global	second_scan_all_blocks
 	.type	second_scan_all_blocks, %function
 second_scan_all_blocks:
@@ -18951,7 +18951,7 @@ second_scan_all_blocks:
 	ldp	x29, x30, [sp], 176
 	ret
 	.size	second_scan_all_blocks, .-second_scan_all_blocks
-	.endif
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	check_bit_nums
