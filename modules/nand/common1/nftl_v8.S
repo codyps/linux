@@ -7224,6 +7224,7 @@ hynix26nm_setdefaultparam:
 // readonly payload moved below: 	.string	"hynix26nm_get_default_param: ch: %d, chip: %d, value: 0x%x 0x%x 0x%x 0x%x \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_get_default_param
 	.type	hynix26nm_get_default_param, %function
 hynix26nm_get_default_param:
@@ -7256,6 +7257,7 @@ hynix26nm_get_default_param:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix26nm_get_default_param, .-hynix26nm_get_default_param
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	hynix26nm_readretry_init
 	.type	hynix26nm_readretry_init, %function

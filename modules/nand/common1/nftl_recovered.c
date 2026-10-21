@@ -1072,6 +1072,32 @@ extern void nftl_free(void *object);
 extern void hynix16nm_set_default_param(void *chip);
 extern void hynix20nm_set_default_param(void *chip);
 extern void hynix26nm_setdefaultparam(void *chip);
+extern int hynix26nm_getdefaultparam(void *chip, unsigned char *values);
+
+struct hynix_default_channel {
+	unsigned char before_number[12];
+	unsigned int number;
+};
+struct hynix_default_chip {
+	unsigned char before_chip[28];
+	unsigned int chip;
+	unsigned char before_channel[240];
+	struct hynix_default_channel *channel;
+};
+int hynix26nm_get_default_param(struct hynix_default_chip *chip)
+{
+	/* Eight-byte alignment keeps the scratch bytes at OEM frame offset 40. */
+	unsigned char values[4] __attribute__((aligned(8)));
+
+	/* OEM ignores the helper result and may print uninitialized bytes
+	 * before resetting the device to defaults. */
+	hynix26nm_getdefaultparam(chip, values);
+	nand_print_dbg("hynix26nm_get_default_param: ch: %d, chip: %d, value: 0x%x 0x%x 0x%x 0x%x \n",
+		       chip->channel->number, chip->chip,
+		       values[0], values[1], values[2], values[3]);
+	hynix26nm_setdefaultparam(chip);
+	return 0;
+}
 
 struct nftl_retry_chip {
 	unsigned char preceding[0xb8];
