@@ -10398,7 +10398,8 @@ __attribute__((optimize("-fno-stack-protector")))
 int nand_dbg_phy_read(unsigned short channel, unsigned short block,
 		      unsigned short page)
 {
-	unsigned char oob[16];
+	/* Stock reserves twenty stack bytes although it prints only sixteen. */
+	unsigned char oob[20];
 	unsigned char *data = nftl_malloc(4096);
 	int result;
 
