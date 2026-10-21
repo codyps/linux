@@ -29105,6 +29105,7 @@ read_reclaim:
 // readonly payload moved below: 	.string	"[NE]garbage_collect_first wrong fbn:%d\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	garbage_collect
 	.type	garbage_collect, %function
 garbage_collect:
@@ -29256,6 +29257,7 @@ garbage_collect:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	garbage_collect, .-garbage_collect
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC436: relocated in rooted readonly order below. */

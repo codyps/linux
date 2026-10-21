@@ -7256,3 +7256,90 @@ int is_no_use_device(struct no_use_zone *zone, unsigned int expected_size)
 	}
 	return 1;
 }
+
+struct garbage_collect_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages_per_block;
+};
+struct garbage_collect_node {
+	unsigned char before_invalid[4];
+	unsigned short invalid_pages;
+};
+struct garbage_collect_state {
+	unsigned char before_limit[16];
+	unsigned short free_limit;
+};
+struct garbage_collect_zone {
+	unsigned char before_geometry[8];
+	struct garbage_collect_geometry *geometry;
+	unsigned char before_free_blocks[14];
+	unsigned short free_blocks;
+	unsigned char before_candidate[320];
+	struct garbage_collect_node *candidate;
+	unsigned char before_limits[320];
+	unsigned short reset_limit;
+	unsigned short start_limit;
+	unsigned short active;
+	unsigned short frequency;
+	unsigned short request;
+	unsigned char before_state[3448 - 690];
+	struct garbage_collect_state *state;
+};
+_Static_assert(__builtin_offsetof(struct garbage_collect_zone, candidate) == 352,
+	       "garbage candidate offset");
+_Static_assert(__builtin_offsetof(struct garbage_collect_zone, request) == 688,
+	       "garbage request offset");
+_Static_assert(__builtin_offsetof(struct garbage_collect_zone, state) == 3448,
+	       "garbage state offset");
+int garbage_collect(void *input)
+{
+	struct garbage_collect_zone *zone = input;
+	unsigned short request;
+	unsigned short invalid_pages;
+	unsigned short pages_per_block;
+
+	if (zone->free_blocks <= zone->reset_limit)
+		zone->active = 0;
+	gc_src_type = 3;
+	if (zone->active)
+		return 0;
+	if (zone->free_blocks >= zone->start_limit) {
+		zone->active = 1;
+		zone->frequency = 0;
+		zone->request = 0;
+		return 0;
+	}
+	if (!zone->frequency) {
+		if (!zone->candidate) {
+			nand_print("[NE]garbage_collect phy_block null\n");
+			return 1;
+		}
+		invalid_pages = zone->candidate->invalid_pages;
+		pages_per_block = zone->geometry->pages_per_block;
+		if (invalid_pages >= pages_per_block >> 1)
+			zone->request = 4;
+		else if (invalid_pages >= pages_per_block >> 2)
+			zone->request = 8;
+		else if (invalid_pages >= pages_per_block >> 3)
+			zone->request = 16;
+		else {
+			nand_print_dbg("[ND]garbage too frequency! %d:%d\n",
+				       zone->free_blocks, invalid_pages);
+			zone->request = 0xffff;
+		}
+		if (zone->free_blocks <= zone->state->free_limit)
+			zone->request = 0xffff;
+	}
+	request = zone->request;
+	if (request == 0xffff) {
+		/* OEM ignores the result of the fallback GC attempt. */
+		gc_win_block((struct gc_win_zone *)zone, 1);
+		return 0;
+	}
+	if (garbage_collect_first((struct gc_one_zone *)zone, 0, request)) {
+		nand_print("[NE]garbage_collect_first wrong fbn:%d\n",
+			   zone->free_blocks);
+		return 1;
+	}
+	return 0;
+}
