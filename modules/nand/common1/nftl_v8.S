@@ -34675,6 +34675,7 @@ hynix20nm_read_retry_reg_adr_2:
  * Payload directives are retained; original C declarations and complete
  * contribution boundaries remain unknown. Keep the observed order.
  */
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.section	.rodata
 	.balign	8
 com:
@@ -36547,3 +36548,4 @@ __func__.5524:
 	.balign	8
 __func__.6409:
 	.string	"sandisk_A19_special_exit"
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */

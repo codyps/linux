@@ -4,11 +4,13 @@ ifdef CONFIG_ARM64
 nftl = nftl_v8.S
 obj-$(CONFIG_TRIMUI_NFTL_RECOVERED_C) += nftl_tables_recovered.o
 obj-$(CONFIG_TRIMUI_NFTL_RECOVERED_C) += nftl_bss_recovered.o
+obj-$(CONFIG_TRIMUI_NFTL_RECOVERED_C) += nftl_rodata_recovered.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_v8.o
 obj-$(CONFIG_TRIMUI_NFTL_RECOVERED_C) += nftl_recovered.o
 CFLAGS_nftl_recovered.o += -O0 -fno-builtin -fno-pic -mcmodel=small
 CFLAGS_nftl_tables_recovered.o += -O0
 CFLAGS_nftl_bss_recovered.o += -O0
+CFLAGS_nftl_rodata_recovered.o += -O0
 endif
 
 ifdef CONFIG_ARM
