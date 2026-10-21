@@ -4688,6 +4688,54 @@ int micron_read_page_end(struct samsung_read_request *request)
 	}
 	return result;
 }
+/* An exported alias retains the original local BSS symbol and its assembly
+ * relocations while letting this C body address the same four-byte slot. */
+extern unsigned int toshiba_retry_flag_recovered;
+extern unsigned char toshiba_read_retry_cycle;
+extern int toshiba_set_readretry(struct samsung_set_chip *);
+extern int toshiba_exit_readretry(struct samsung_set_chip *);
+int toshiba_read_page_end(struct samsung_read_request *request)
+{
+	struct samsung_set_chip *chip;
+	int result;
+	int retry;
+
+	retry = 0;
+	result = 0;
+	chip = (struct samsung_set_chip *)nci_get_from_nsi(g_nsi,
+						      request->channel);
+	result = generic_read_page_end_not_retry(request);
+	if (result == -2) {
+		nand_print_dbg("toshiba retry!\n");
+		toshiba_retry_flag_recovered = 1;
+		retry = 0;
+		while (toshiba_read_retry_cycle > retry) {
+			chip->retry = retry;
+			result = toshiba_set_readretry(chip);
+			if (result == 0) {
+				result = generic_read_page_start(request);
+				result |= generic_read_page_end_not_retry(request);
+				if (result == 10 || result == 0) {
+					result = 10;
+					nand_print_dbg(
+						"toshiba ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+						((struct samsung_read_controller *)chip->controller)->channel,
+						((struct samsung_read_chip_id *)chip)->chip,
+						request->block, request->page,
+						chip->retry);
+					break;
+				}
+			}
+			retry++;
+		}
+		/* OEM clears the global flag and resets retry even after failures,
+		 * then ignores the exit callback's result. */
+		toshiba_retry_flag_recovered = 0;
+		chip->retry = 0;
+		toshiba_exit_readretry(chip);
+	}
+	return result;
+}
 extern int set_one_cmd(struct command_chip *chip, unsigned int command,
 			unsigned int argument);
 extern unsigned char sandisk_A19_read_retry_reg_adr_1y;
@@ -4945,7 +4993,6 @@ int toshiba_readretry_init(struct samsung_init_chip *chip)
 extern int micron_readretry_init(void *);
 extern int hynix20nm_readretry_init(void *);
 extern int hynix26nm_readretry_init(void *);
-extern void toshiba_read_page_end(void);
 extern void hynix16nm_read_page_end(void);
 extern void hynix20nm_read_page_end(void);
 extern void hynix26nm_read_page_end(void);

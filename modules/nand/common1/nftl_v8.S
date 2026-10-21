@@ -6012,6 +6012,7 @@ toshiba_set_readretry:
 	.align	2
 	.global	toshiba_read_page_end
 	.type	toshiba_read_page_end, %function
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 toshiba_read_page_end:
 	stp	x29, x30, [sp, -48]!
 	add	x29, sp, 0
@@ -6112,6 +6113,7 @@ toshiba_read_page_end:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	toshiba_read_page_end, .-toshiba_read_page_end
+#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC81: relocated in rooted readonly order below. */
@@ -33424,6 +33426,10 @@ toshiba_toggle_mode_flag:
 	.zero	4
 	.type	toshiba_retry_flag, %object
 	.size	toshiba_retry_flag, 4
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	toshiba_retry_flag_recovered
+toshiba_retry_flag_recovered:
+#endif
 toshiba_retry_flag:
 	.zero	4
 	.type	toshiba_sclk0_bak, %object
