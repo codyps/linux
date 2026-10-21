@@ -28512,6 +28512,7 @@ __nand_flush_write_cache:
 // readonly payload moved below: 	.string	"[NE]nand_discard paramter error!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_discard
 	.type	nand_discard, %function
 nand_discard:
@@ -28667,6 +28668,7 @@ nand_discard:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	nand_discard, .-nand_discard
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	__shutdown_op

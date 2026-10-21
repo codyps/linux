@@ -7089,3 +7089,83 @@ int get_new_current_block(struct get_new_zone *zone,
 		current->block->sequence++;
 	return 0;
 }
+
+struct nand_discard_geometry {
+	unsigned char before_sectors_per_page[8];
+	unsigned char sectors_per_page;
+};
+struct nand_discard_view {
+	unsigned char before_geometry[8];
+	struct nand_discard_geometry *geometry;
+	unsigned char before_sector_count[16];
+	unsigned int sector_count;
+	unsigned char before_cache[1072 - 36];
+	unsigned char cache[3440 - 1072];
+	struct smart_print_payload *smart;
+	unsigned short *write_cache_active;
+	unsigned char before_discard[3520 - 3456];
+	void (*discard_page)(struct nand_discard_view *, unsigned int);
+};
+_Static_assert(__builtin_offsetof(struct nand_discard_view, cache) == 1072,
+	       "discard cache offset");
+_Static_assert(__builtin_offsetof(struct nand_discard_view, smart) == 3440,
+	       "discard SMART offset");
+_Static_assert(__builtin_offsetof(struct nand_discard_view, discard_page) == 3520,
+	       "discard callback offset");
+int nand_discard(struct discard_zone *input, unsigned int sector,
+		 unsigned int count)
+{
+	struct nand_discard_view *zone = (struct nand_discard_view *)input;
+	struct cache_write_zone *write_cache =
+		(struct cache_write_zone *)zone->cache;
+	struct cache_read_zone *read_cache =
+		(struct cache_read_zone *)zone->cache;
+	unsigned int page, remainder, first_page_sectors;
+	unsigned int pages;
+	struct cache_write_node *write_node;
+	struct cache_read_node *read_node;
+
+	/* OEM's 32-bit addition wraps, allowing an out-of-range request through. */
+	if (sector + count > zone->sector_count) {
+		nand_print("[NE]nand_discard paramter error!\n");
+		return 1;
+	}
+	zone->smart->recv_discard_sectors += count;
+	page = sector / zone->geometry->sectors_per_page;
+	remainder = sector % zone->geometry->sectors_per_page;
+	first_page_sectors = (unsigned short)(
+		zone->geometry->sectors_per_page - remainder);
+	if (remainder) {
+		page++;
+		if (first_page_sectors > count)
+			count = 0;
+		else
+			count -= first_page_sectors;
+	} else if (zone->geometry->sectors_per_page > count) {
+		count = 0;
+	}
+	pages = count / zone->geometry->sectors_per_page;
+	if (!pages)
+		return 0;
+	do {
+		if (*zone->write_cache_active == 0) {
+			write_node = search_from_cache_write_list(write_cache, page);
+			if (write_node)
+				del_from_cache_write_list(
+					(struct cache_list_owner *)write_cache,
+					(struct cache_list_node *)write_node);
+			read_node = search_from_cache_read_list(read_cache, page);
+			if (read_node)
+				del_from_cache_read_list(
+					(struct cache_read_delete_owner *)read_cache,
+					(struct cache_read_delete_node *)read_node);
+		}
+		/* OEM ignores callback failures and still counts the page. */
+		zone->discard_page(zone, page);
+		pages--;
+		page++;
+		zone->smart->real_discard_sectors +=
+			zone->geometry->sectors_per_page;
+	} while (pages);
+	return 0;
+}
