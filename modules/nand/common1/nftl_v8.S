@@ -13245,6 +13245,7 @@ nand_sector_cache_read:
 // readonly payload moved below: 	.string	"[NE]nand_sector_cache_write 2!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_sector_cache_write
 	.type	nand_sector_cache_write, %function
 nand_sector_cache_write:
@@ -13339,6 +13340,7 @@ nand_sector_cache_write:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	nand_sector_cache_write, .-nand_sector_cache_write
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC145: relocated in rooted readonly order below. */

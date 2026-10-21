@@ -3331,6 +3331,47 @@ struct sector_node *del_from_sector_cache_write_list(struct sector_owner *owner,
     return node;
 }
 
+int nand_sector_cache_write(void *zone, unsigned int sector, void *data)
+{
+	struct sector_owner *cache =
+		(struct sector_owner *)((unsigned char *)zone + 2880);
+	struct sector_node *node = (struct sector_node *)
+		search_from_sector_cache_write_list(
+			(struct sector_cache_zone *)cache, sector);
+	unsigned short bytes = 512;
+	int result;
+
+	if (node) {
+		del_from_sector_cache_write_list(cache, node);
+		/* OEM discards the copy and list-operation return values. */
+		nand_memcpy(node->data, data, bytes);
+		add_to_sector_cache_write_list_tail(cache, node);
+		return 0;
+	}
+	if (cache->count > 7) {
+		/* OEM assumes a nonempty list whenever count exceeds seven. */
+		node = del_from_sector_cache_write_list(cache, cache->head.next);
+		result = __nand_write(zone, node->sector, 1, node->data);
+		/* On write failure the evicted node stays unlinked and its data
+		 * is lost; retain this stock ordering and return convention. */
+		if (result) {
+			nand_print("[NE]nand_sector_cache_write 1!\n");
+			return 1;
+		}
+	} else {
+		node = get_empty_sector_cahce_node(
+			(struct empty_sector_pool *)cache);
+		if (!node) {
+			nand_print("[NE]nand_sector_cache_write 2!\n");
+			return 1;
+		}
+	}
+	node->sector = sector;
+	nand_memcpy(node->data, data, bytes);
+	add_to_sector_cache_write_list_tail(cache, node);
+	return 0;
+}
+
 int __nand_flush_sector_write_cache(void *zone, unsigned int limit)
 {
 	struct sector_owner *cache =
