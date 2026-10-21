@@ -31663,6 +31663,7 @@ nftl_get_gc_info:
 	.align	2
 	.global	_nftl_nand_copy_page
 	.type	_nftl_nand_copy_page, %function
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 _nftl_nand_copy_page:
 	stp	x29, x30, [sp, -144]!
 	add	x29, sp, 0
@@ -31749,6 +31750,7 @@ _nftl_nand_copy_page:
 	ldp	x29, x30, [sp], 144
 	ret
 	.size	_nftl_nand_copy_page, .-_nftl_nand_copy_page
+#endif
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_spare_data
