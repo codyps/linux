@@ -3962,6 +3962,7 @@ hynix20nm_vender_get_param_otp_hynix:
 	ret
 	.size	hynix20nm_vender_get_param_otp_hynix, .-hynix20nm_vender_get_param_otp_hynix
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_saveotpvalue
 	.type	hynix20nm_saveotpvalue, %function
 hynix20nm_saveotpvalue:
@@ -3991,6 +3992,7 @@ hynix20nm_saveotpvalue:
 	add	sp, sp, 32
 	ret
 	.size	hynix20nm_saveotpvalue, .-hynix20nm_saveotpvalue
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC54: relocated in rooted readonly order below. */
@@ -10849,6 +10851,7 @@ hynix16nm_get_rr_value_otp_hynix:
 	ret
 	.size	hynix16nm_get_rr_value_otp_hynix, .-hynix16nm_get_rr_value_otp_hynix
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_save_otp_value
 	.type	hynix16nm_save_otp_value, %function
 hynix16nm_save_otp_value:
@@ -10878,6 +10881,7 @@ hynix16nm_save_otp_value:
 	add	sp, sp, 32
 	ret
 	.size	hynix16nm_save_otp_value, .-hynix16nm_save_otp_value
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	hynix16nm_get_otp_param
 	.type	hynix16nm_get_otp_param, %function

@@ -1466,3 +1466,27 @@ int nand_check_table(void *zone)
 	/* OEM ignores every call's error and returns success. */
 	return 0;
 }
+
+struct otp_chip {
+	unsigned char before_saved[0x38];
+	unsigned char saved[64];
+};
+void hynix16nm_save_otp_value(struct otp_chip *chip,
+			      const unsigned char *value)
+{
+	unsigned int index;
+
+	/* OEM copies a fixed span without validating source or destination. */
+	for (index = 0; index < 32; index++)
+		chip->saved[index] = value[index];
+}
+
+/* OEM copies all 64 bytes without checking either pointer or extent. */
+void hynix20nm_saveotpvalue(struct otp_chip *chip,
+			    const unsigned char *value)
+{
+	unsigned int index;
+
+	for (index = 0; index < 64; index++)
+		chip->saved[index] = value[index];
+}
