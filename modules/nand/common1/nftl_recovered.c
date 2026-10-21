@@ -2737,6 +2737,47 @@ extern unsigned char hynix20nm_lsb_mode_reg_num;
 extern unsigned char hynix20nm_lsb_mode_reg_adr[];
 extern unsigned char hynix20nm_lsb_mode_default_val[];
 extern unsigned char hynix20nm_lsb_mode_val[];
+extern unsigned char hynix20nm_read_retry_mode;
+extern unsigned char hynix20nm_read_retry_cycle;
+extern unsigned char hynix20nm_read_retry_reg_num;
+struct hynix20nm_lsb_params {
+	unsigned char before_retry_spec[52];
+	unsigned int retry_spec;
+};
+struct hynix20nm_lsb_chip {
+	unsigned char before_params[280];
+	struct hynix20nm_lsb_params *params;
+};
+int hynix20nm_lsb_init(struct hynix20nm_lsb_chip *chip)
+{
+	/* OEM reloads the nested retry word for each byte and trusts its
+	 * pointer unchecked. Other modes leave the LSB tables unchanged. */
+	hynix20nm_read_retry_mode = chip->params->retry_spec >> 16;
+	hynix20nm_read_retry_cycle = chip->params->retry_spec >> 8;
+	hynix20nm_read_retry_reg_num = chip->params->retry_spec;
+	if (hynix20nm_read_retry_mode == 2) {
+		hynix20nm_lsb_mode_reg_num = 4;
+		hynix20nm_lsb_mode_reg_adr[0] = 0xb0;
+		hynix20nm_lsb_mode_reg_adr[1] = 0xb1;
+		hynix20nm_lsb_mode_reg_adr[2] = 0xa0;
+		hynix20nm_lsb_mode_reg_adr[3] = 0xa1;
+		hynix20nm_lsb_mode_val[0] = 10;
+		hynix20nm_lsb_mode_val[1] = 10;
+		hynix20nm_lsb_mode_val[2] = 10;
+		hynix20nm_lsb_mode_val[3] = 10;
+	} else if (hynix20nm_read_retry_mode == 3) {
+		hynix20nm_lsb_mode_reg_num = 4;
+		hynix20nm_lsb_mode_reg_adr[0] = 0xa0;
+		hynix20nm_lsb_mode_reg_adr[1] = 0xa1;
+		hynix20nm_lsb_mode_reg_adr[2] = 0xa7;
+		hynix20nm_lsb_mode_reg_adr[3] = 0xa8;
+		hynix20nm_lsb_mode_val[0] = 10;
+		hynix20nm_lsb_mode_val[1] = 10;
+		hynix20nm_lsb_mode_val[2] = 10;
+		hynix20nm_lsb_mode_val[3] = 10;
+	}
+	return 0;
+}
 extern int hynix20nm_vender_set_param(void *chip, unsigned char *values,
 				     unsigned char *addresses,
 				     unsigned int count);

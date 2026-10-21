@@ -3484,6 +3484,7 @@ hynix20nm_vender_get_param:
 	.size	hynix20nm_vender_get_param, .-hynix20nm_vender_get_param
 	#endif
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_lsb_init
 	.type	hynix20nm_lsb_init, %function
 hynix20nm_lsb_init:
@@ -3601,6 +3602,7 @@ hynix20nm_lsb_init:
 	add	sp, sp, 16
 	ret
 	.size	hynix20nm_lsb_init, .-hynix20nm_lsb_init
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_lsb_enable
