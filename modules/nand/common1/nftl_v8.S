@@ -31573,6 +31573,7 @@ shutdown_on_gc:
 // readonly payload moved below: 	.string	"%08d:%04d "
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_get_gc_info
 	.type	nftl_get_gc_info, %function
 nftl_get_gc_info:
@@ -31744,6 +31745,7 @@ nftl_get_gc_info:
 	ldp	x29, x30, [sp], 96
 	ret
 	.size	nftl_get_gc_info, .-nftl_get_gc_info
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	_nftl_nand_copy_page
 	.type	_nftl_nand_copy_page, %function

@@ -7623,3 +7623,73 @@ int hynix20nm_read_page_end(struct samsung_read_request *request)
 	hynix20nm_set_readretry((struct hynix20nm_retry_chip *)chip);
 	return result;
 }
+
+struct nftl_gc_info_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages_per_block;
+};
+struct nftl_gc_info_node {
+	unsigned short block;
+	unsigned short unused;
+	unsigned short invalid_pages;
+	unsigned char before_next[10];
+	struct nftl_gc_info_node *next;
+};
+struct nftl_gc_info_zone {
+	unsigned char before_geometry[8];
+	struct nftl_gc_info_geometry *geometry;
+	unsigned char before_free[14];
+	unsigned short free_blocks;
+	unsigned char before_list[320];
+	struct nftl_gc_info_node *list;
+	unsigned char before_thresholds[320];
+	unsigned short low_threshold;
+	unsigned short high_threshold;
+	unsigned char before_smart[3440 - 684];
+	struct smart_print_payload *smart;
+};
+_Static_assert(__builtin_offsetof(struct nftl_gc_info_zone, list) == 352,
+	       "GC info list offset");
+_Static_assert(__builtin_offsetof(struct nftl_gc_info_zone, smart) == 3440,
+	       "GC info SMART offset");
+extern int nand_snprint(char *, unsigned int, const char *, ...);
+int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
+		     unsigned int size)
+{
+	struct nftl_gc_info_node *node;
+	unsigned int high_invalid = 0;
+	unsigned int high_count = 0;
+	unsigned int total_invalid = 0;
+	unsigned int total_count = 0;
+	unsigned int printed = 0;
+	int written = 0;
+
+	for (node = zone->list; node; node = node->next) {
+		if (node->invalid_pages > zone->geometry->pages_per_block / 2) {
+			high_invalid += node->invalid_pages;
+			high_count++;
+		}
+		total_count++;
+		total_invalid += node->invalid_pages;
+	}
+	written = nand_snprint(buffer, size,
+			       "%d %d %d %d %d %d/%d %d/%d\n",
+			       zone->free_blocks, zone->low_threshold,
+			       zone->high_threshold, zone->smart->gc_times,
+			       zone->smart->gc_pages, high_count, total_count,
+			       high_invalid, total_invalid);
+	for (node = zone->list; size - written != 1; node = node->next) {
+		if (!node || !node->invalid_pages)
+			break;
+		written += nand_snprint(buffer + (long)written, size - written,
+					"%08d:%04d ", node->block,
+					node->invalid_pages);
+		printed++;
+		if ((printed & 7) == 0)
+			buffer[(long)written - 1] = '\n';
+	}
+	/* OEM writes before the buffer when the first formatter returns zero
+	 * and trusts its return even if it exceeds the remaining size. */
+	buffer[(long)written - 1] = '\n';
+	return written;
+}
