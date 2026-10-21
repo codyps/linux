@@ -24923,6 +24923,7 @@ del_free_list:
 	.size	del_free_list, .-del_free_list
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_free_list_by_block
 	.type	del_free_list_by_block, %function
 del_free_list_by_block:
@@ -24974,6 +24975,7 @@ del_free_list_by_block:
 	add	sp, sp, 32
 	ret
 	.size	del_free_list_by_block, .-del_free_list_by_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_block_in_free_list
@@ -25173,6 +25175,7 @@ del_block_invalid_list:
 	.size	del_block_invalid_list, .-del_block_invalid_list
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_block_invalid_list_by_block
 	.type	del_block_invalid_list_by_block, %function
 del_block_invalid_list_by_block:
@@ -25224,6 +25227,7 @@ del_block_invalid_list_by_block:
 	add	sp, sp, 32
 	ret
 	.size	del_block_invalid_list_by_block, .-del_block_invalid_list_by_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_block_in_invalid_list
@@ -25410,6 +25414,7 @@ del_block_count_list:
 	.size	del_block_count_list, .-del_block_count_list
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_block_count_by_block
 	.type	del_block_count_by_block, %function
 del_block_count_by_block:
@@ -25461,6 +25466,7 @@ del_block_count_by_block:
 	add	sp, sp, 32
 	ret
 	.size	del_block_count_by_block, .-del_block_count_by_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC406: relocated in rooted readonly order below. */

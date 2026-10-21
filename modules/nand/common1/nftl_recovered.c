@@ -2421,6 +2421,7 @@ struct count_list *del_block_count_list(struct count_zone *zone)
 	return list;
 }
 
+
 extern int garbage_collect(void *zone);
 int _nftl_nand_write_logic_page(void *zone, unsigned int page, void *data)
 {
@@ -2618,7 +2619,44 @@ struct free_block {
 struct free_block_zone {
 	unsigned char before_count[0x1e];
 	unsigned short count;
+	unsigned char before_head[240];
+	struct free_block head;
 };
+struct count_delete_node {
+	unsigned char before_links[48];
+	struct count_delete_node *next;
+	struct count_delete_node *previous;
+};
+struct count_delete_zone {
+	unsigned char before_head[400];
+	struct count_delete_node head;
+};
+
+/* OEM searches from the sentinel's next pointer. It does not validate the
+ * target or the predecessor backlink, detect cycles, or repair corruption. */
+#define NFTL_DELETE_BY_BLOCK(name, zone_type, node_type) \
+struct node_type *name(struct zone_type *zone, struct node_type *target) \
+{ \
+	struct node_type *node = &zone->head; \
+	node = node->next; \
+	while (node) { \
+		if (node == target) { \
+			node->previous->next = node->next; \
+			if (node->next) \
+				node->next->previous = node->previous; \
+			node->previous = 0; \
+			node->next = 0; \
+			break; \
+		} \
+		node = node->next; \
+	} \
+	return node; \
+}
+
+NFTL_DELETE_BY_BLOCK(del_free_list_by_block, free_block_zone, free_block)
+NFTL_DELETE_BY_BLOCK(del_block_invalid_list_by_block, invalid_zone, invalid_node)
+NFTL_DELETE_BY_BLOCK(del_block_count_by_block, count_delete_zone, count_delete_node)
+
 struct adjust_free_zone {
 	unsigned char before_current[64];
 	void *current;
