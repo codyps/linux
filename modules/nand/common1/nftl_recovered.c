@@ -6992,8 +6992,66 @@ int sandisk_exit_readretry(struct samsung_set_chip *chip)
 extern unsigned int toshiba_toggle_mode_flag_recovered;
 extern unsigned char toshiba_p1_1[], toshiba_p1_2[], toshiba_p1_3[];
 extern unsigned char toshiba_read_retry_addr_1[], toshiba_read_retry_addr_2[];
-extern int toshiba_vender_set_param(struct samsung_set_chip *,
-				   unsigned char *, unsigned char *, unsigned int);
+extern unsigned char toshiba_read_retry_cmd_1[], toshiba_read_retry_cmd_2[];
+extern unsigned char toshiba_read_retry_exit_cmd[];
+extern unsigned char toshiba_read_retry_last_cmd[];
+extern unsigned char toshiba_read_retry_end_cmd[];
+extern unsigned int toshiba_retry_flag_recovered;
+int toshiba_vender_set_param(struct samsung_set_chip *chip,
+			    unsigned char *values, unsigned char *addresses,
+			    unsigned int count)
+{
+	int result = 0;
+
+	if (toshiba_read_retry_mode == 18) {
+		result |= set_cmd_with_nand_bus(chip,
+				  toshiba_read_retry_cmd_2, 0,
+				  addresses, values, 1, count);
+		if (values[0] == 0 && values[1] == 0 &&
+		    values[2] == 0 && values[3] == 0 &&
+		    toshiba_retry_flag_recovered == 0) {
+			result |= set_one_cmd((struct command_chip *)chip,
+					      toshiba_read_retry_exit_cmd[0], 1);
+			return result;
+		}
+	}
+	if (toshiba_read_retry_mode == 17) {
+		result |= set_cmd_with_nand_bus(chip,
+				  toshiba_read_retry_cmd_2, 0,
+				  addresses, values, 1, count);
+		if (values[0] == 0 && values[1] == 0 &&
+		    values[2] == 0 && values[3] == 0) {
+			result |= set_one_cmd((struct command_chip *)chip,
+					      toshiba_read_retry_exit_cmd[0], 1);
+			return result;
+		}
+		if (values[0] == 2 && values[1] == 0 &&
+		    values[2] == 126 && values[3] == 124)
+			result |= set_one_cmd((struct command_chip *)chip,
+					      toshiba_read_retry_last_cmd[0], 0);
+	}
+	if (toshiba_read_retry_mode == 16) {
+		if (values[0] == 255 && values[1] == 255 &&
+		    values[2] == 255 && values[3] == 255) {
+			result |= set_one_cmd((struct command_chip *)chip,
+					      toshiba_read_retry_exit_cmd[0], 1);
+			return result;
+		}
+		result |= set_cmd_with_nand_bus(chip,
+				  toshiba_read_retry_cmd_1, 0,
+				  addresses, values, 1, count);
+	}
+	result |= set_one_cmd((struct command_chip *)chip,
+			      toshiba_read_retry_end_cmd[0], 0);
+	result |= set_one_cmd((struct command_chip *)chip,
+			      toshiba_read_retry_end_cmd[1], 0);
+	/* OEM unconditionally inspects four bytes, including when count is zero;
+	 * the mode-16 exit caller uses that zero count. The NAND error results
+	 * are ORed together, so callers cannot recover the individual failure. */
+	nand_print_dbg("toshiba rr value 3 %x %x %x %x!\n",
+		       values[0], values[1], values[2], values[3]);
+	return result;
+}
 int toshiba_set_readretry(struct samsung_set_chip *chip)
 {
 	unsigned char *values;

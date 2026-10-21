@@ -5596,6 +5596,7 @@ toshiba_read_retry_clock_recover:
 // readonly payload moved below: 	.string	"toshiba rr value 3 %x %x %x %x!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	toshiba_vender_set_param
 	.type	toshiba_vender_set_param, %function
 toshiba_vender_set_param:
@@ -5844,6 +5845,7 @@ toshiba_vender_set_param:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	toshiba_vender_set_param, .-toshiba_vender_set_param
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC78: relocated in rooted readonly order below. */
