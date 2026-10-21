@@ -4157,7 +4157,7 @@ int _nftl_nand_copy_page(struct copy_page_zone *zone,
 	result = ((unsigned int)write_result << 8) | read_result;
 	return result;
 }
-extern void _nftl_nand_read_logic_page(void);
+extern int _nftl_nand_read_logic_page(void *, unsigned int, void *);
 void nftl_ops_init(struct nftl_ops *ops)
 {
 	/* OEM never clears other slots or checks the pointer. */
@@ -4167,7 +4167,7 @@ void nftl_ops_init(struct nftl_ops *ops)
 	ops->good = (void (*)(void))_nftl_nand_is_blk_good;
 	ops->bad = (void (*)(void))_nftl_nand_mark_bad_blk;
 	ops->copy = (void (*)(void))_nftl_nand_copy_page;
-	ops->read_logic = _nftl_nand_read_logic_page;
+	ops->read_logic = (void (*)(void))_nftl_nand_read_logic_page;
 	ops->write_logic = (void (*)(void))_nftl_nand_write_logic_page;
 	ops->discard = (void (*)(void))_nftl_discard_logic_page;
 }
@@ -5405,6 +5405,59 @@ struct logic_page_print_entry {
 	unsigned short code;
 	unsigned short marker;
 };
+struct logic_read_geometry {
+	unsigned char before_erased_size[26];
+	unsigned short erased_size;
+	unsigned short page_size;
+};
+struct logic_read_zone {
+	unsigned char before_geometry[8];
+	struct logic_read_geometry *geometry;
+	unsigned char before_read_flag[648];
+	unsigned int read_flag;
+	unsigned char before_read[2796];
+	int (*read)(struct logic_read_zone *, struct physic_op_param *);
+};
+/* Stock has a stack OOB array but no canary in this body. */
+__attribute__((optimize("-fno-stack-protector")))
+int _nftl_nand_read_logic_page(void *owner, unsigned int page, void *data)
+{
+	struct logic_read_zone *zone = owner;
+	struct logic_page_print_entry *entry =
+		(struct logic_page_print_entry *)get_logic_page_map(
+			(struct logic_page_map_zone *)zone, page);
+	struct physic_op_param op;
+	unsigned char oob[16];
+	int result;
+
+	if (!entry) {
+		nand_print_dbg("[ND]logic_page_map_temp NULL!!\n");
+		return 1;
+	}
+	if (entry->marker == 0xffff) {
+		nand_memset(data, -1, zone->geometry->erased_size);
+		return 0;
+	}
+	/* OEM edits the map flag before reading and leaves it changed even if
+	 * the read fails. Only bit four is replaced. */
+	((unsigned char *)entry)[1] =
+		(((unsigned char *)entry)[1] & ~0x10) |
+		((zone->read_flag & 1) << 4);
+	set_physic_op_par(&op, entry->marker, entry->code & 0xfff,
+			zone->geometry->page_size, data, oob);
+	result = zone->read(zone, &op);
+	if (result == -2) {
+		void *physical = get_phy_block_addr(
+			(struct nftl_phy_outer *)zone, entry->marker);
+		add_prio_gc((struct prio_gc_owner *)zone, physical, 1);
+		nand_print("[NE]read a page: %d READ_RECLAIM!\n", page);
+	}
+	/* OEM performs priority GC after every nonempty read and ignores its
+	 * result, including when the read itself has already failed. */
+	do_prio_gc(zone);
+	return result;
+}
+
 int print_logic_page_map(struct logic_page_map_zone *zone, unsigned int ignored)
 {
 	unsigned int total = zone->summary / zone->geometry->divisor;

@@ -13780,6 +13780,7 @@ _nftl_nand_write_logic_page:
 // readonly payload moved below: 	.string	"[NE]read a page: %d READ_RECLAIM!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nftl_nand_read_logic_page
 	.type	_nftl_nand_read_logic_page, %function
 _nftl_nand_read_logic_page:
@@ -13874,6 +13875,7 @@ _nftl_nand_read_logic_page:
 	ldp	x29, x30, [sp], 112
 	ret
 	.size	_nftl_nand_read_logic_page, .-_nftl_nand_read_logic_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nftl_discard_logic_page
