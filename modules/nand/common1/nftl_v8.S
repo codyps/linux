@@ -20885,6 +20885,7 @@ erase_block:
 	ret
 	.size	erase_block, .-erase_block
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_check_pattern
 	.type	nftl_check_pattern, %function
 nftl_check_pattern:
@@ -20918,6 +20919,7 @@ nftl_check_pattern:
 	add	sp, sp, 32
 	ret
 	.size	nftl_check_pattern, .-nftl_check_pattern
+#endif
 	.data
 	.align	3
 	.type	patterns, %object
@@ -31669,6 +31671,7 @@ is_ftl_logic_page_data:
 	ret
 	.size	is_ftl_logic_page_data, .-is_ftl_logic_page_data
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_nouse_page
 	.type	is_nouse_page, %function
 is_nouse_page:
@@ -31710,6 +31713,7 @@ is_nouse_page:
 	add	sp, sp, 32
 	ret
 	.size	is_nouse_page, .-is_nouse_page
+#endif
 	.align	2
 	.global	is_fill_page
 	.type	is_fill_page, %function
@@ -32051,6 +32055,7 @@ free_logic_page_map:
 	ret
 	.size	free_logic_page_map, .-free_logic_page_map
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_physic_op_par
 	.type	set_physic_op_par, %function
 set_physic_op_par:
@@ -32080,6 +32085,7 @@ set_physic_op_par:
 	add	sp, sp, 32
 	ret
 	.size	set_physic_op_par, .-set_physic_op_par
+#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC474: relocated in rooted readonly order below. */

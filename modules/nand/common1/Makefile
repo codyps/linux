@@ -3,6 +3,8 @@ obj-$(CONFIG_SUNXI_NAND) += nand.o
 ifdef CONFIG_ARM64
 nftl = nftl_v8.S
 obj-$(CONFIG_SUNXI_NAND) += nftl_v8.o
+obj-$(CONFIG_TRIMUI_NFTL_RECOVERED_C) += nftl_recovered.o
+CFLAGS_nftl_recovered.o += -O0 -fno-builtin -fno-pic -mcmodel=small
 endif
 
 ifdef CONFIG_ARM
