@@ -20040,6 +20040,7 @@ recover_logic_page_mapping:
 // readonly payload moved below: 	.string	"[NE]NAND EVENT:do_write_error erase error2!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	do_write_error_in_build_list
 	.type	do_write_error_in_build_list, %function
 do_write_error_in_build_list:
@@ -20154,6 +20155,7 @@ do_write_error_in_build_list:
 	ldp	x29, x30, [sp], 96
 	ret
 	.size	do_write_error_in_build_list, .-do_write_error_in_build_list
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC279: relocated in rooted readonly order below. */

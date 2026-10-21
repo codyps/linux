@@ -1430,6 +1430,65 @@ int new_block_init_for_write(struct new_write_zone *zone,
 	}
 	return 0;
 }
+struct write_error_geometry {
+	unsigned char before_page_bytes[28];
+	unsigned short page_bytes;
+};
+struct write_error_zone {
+	unsigned char before_geometry[8];
+	struct write_error_geometry *geometry;
+	unsigned char before_data[512 - 16];
+	void *data;
+	unsigned char before_current[528 - 520];
+	struct new_write_block *current;
+	unsigned char before_current_page[584 - 536];
+	unsigned short current_page;
+	unsigned char before_erase[3456 - 586];
+	int (*erase)(struct write_error_zone *, struct physic_op_param *);
+	unsigned char before_copy[3480 - 3464];
+	int (*copy)(struct write_error_zone *, struct new_write_block *,
+		    struct new_write_block *, void *, unsigned short);
+	unsigned char before_mark_bad[3496 - 3488];
+	int (*mark_bad)(struct write_error_zone *, struct physic_op_param *);
+};
+int do_write_error_in_build_list(struct write_error_zone *zone,
+				 struct new_write_block *source,
+				 struct new_write_block *failed,
+				 unsigned short pages)
+{
+	struct physic_op_param op;
+	unsigned int index;
+	int result;
+
+	set_physic_op_par(&op, failed->number, 0,
+			   zone->geometry->page_bytes, 0, 0);
+	result = zone->erase(zone, &op);
+	/* OEM updates metadata even when erase fails, without guarding the
+	 * 16-bit erase-count overflow. */
+	failed->page = 0;
+	failed->erase_count++;
+	if (result) {
+		nand_print("[NE]NAND EVENT:do_write_error erase error1!\n");
+		zone->mark_bad(zone, &op);
+		return 1;
+	}
+	for (index = 0; index < pages; index++) {
+		result = zone->copy(zone, source, failed, zone->data,
+				    (unsigned short)index);
+		/* Stock logs a failed copy and continues with the next page. */
+		if (result)
+			nand_print("[NE]NAND EVENT:do_write_error erase error2!\n");
+	}
+	set_physic_op_par(&op, source->number, 0,
+			   zone->geometry->page_bytes, 0, 0);
+	/* OEM ignores this result, including on the zero-page path. */
+	zone->mark_bad(zone, &op);
+	if (!pages) {
+		zone->current = failed;
+		zone->current_page = 0;
+	}
+	return 0;
+}
 int is_last_phy_block(struct physical_block *block,
 		      struct physical_zone *zone)
 {
