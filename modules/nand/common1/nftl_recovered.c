@@ -3331,6 +3331,48 @@ struct sector_node *del_from_sector_cache_write_list(struct sector_owner *owner,
     return node;
 }
 
+struct sector_cache_init_view {
+	unsigned short capacity;
+	unsigned short count;
+	unsigned char before_buffer[4];
+	unsigned char *buffer;
+	struct sector_node nodes[16];
+	struct sector_node head;
+};
+int nftl_sector_cache_init(void *zone)
+{
+	struct sector_cache_init_view *cache =
+		(struct sector_cache_init_view *)((unsigned char *)zone + 2880);
+	unsigned char *buffer;
+	unsigned int index;
+
+	cache->capacity = 16;
+	cache->count = 0;
+	cache->buffer = 0;
+	buffer = nftl_malloc(8192);
+	cache->buffer = buffer;
+	if (!buffer) {
+		/* OEM leaves the count and allocation fields changed on failure,
+		 * and never clears a preexisting list or frees an old buffer. */
+		nand_print("[NE]%s:malloc fail for cache_buf!\n", __func__);
+		return 1;
+	}
+	cache->head.next = 0;
+	cache->head.previous = 0;
+	for (index = 0; index < 16; index++) {
+		struct sector_node *node = &cache->nodes[index];
+
+		node->unknown = index;
+		node->flag = 255;
+		node->sector = -1;
+		node->next = 0;
+		node->previous = 0;
+		node->data = buffer;
+		buffer += 512;
+	}
+	return 0;
+}
+
 int nand_sector_cache_write(void *zone, unsigned int sector, void *data)
 {
 	struct sector_owner *cache =

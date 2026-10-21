@@ -12805,6 +12805,7 @@ sandisk_special_exit:
 // readonly payload moved below: 	.string	"[NE]%s:malloc fail for cache_buf!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_sector_cache_init
 	.type	nftl_sector_cache_init, %function
 nftl_sector_cache_init:
@@ -12906,6 +12907,7 @@ nftl_sector_cache_init:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	nftl_sector_cache_init, .-nftl_sector_cache_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_sector_cache_exit
