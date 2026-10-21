@@ -2884,6 +2884,40 @@ int hynix20nm_getotpparam(struct otp_chip *chip, unsigned char *value)
 
 extern unsigned char hynix20nm_read_retry_reg_num;
 extern unsigned char hynix20nm_read_retry_reg_adr[];
+extern unsigned char hynix20nm_read_retry_cycle;
+struct hynix20nm_retry_chip {
+	unsigned char before_saved[56];
+	unsigned char saved[128];
+	unsigned int cycle;
+};
+/* The mutable OEM register count is unchecked against this eight-byte stack
+ * buffer. Keep the overflow and frame layout for stock compatibility. */
+__attribute__((optimize("-fno-stack-protector")))
+int hynix20nm_set_readretry(struct hynix20nm_retry_chip *chip)
+{
+	struct {
+		unsigned char values[8];
+		int result;
+		unsigned int index;
+	} locals;
+
+	locals.result = 0;
+	if (chip->cycle > hynix20nm_read_retry_cycle)
+		return -92;
+	for (locals.index = 0; locals.index < hynix20nm_read_retry_reg_num;
+	     locals.index++)
+		locals.values[locals.index] =
+			chip->saved[(chip->cycle << 3) + locals.index];
+	locals.result = hynix20nm_vender_set_param(
+		chip, locals.values, hynix20nm_read_retry_reg_adr,
+		hynix20nm_read_retry_reg_num);
+	nand_print_dbg("retry para:");
+	for (locals.index = 0; locals.index < hynix20nm_read_retry_reg_num;
+	     locals.index++)
+		nand_print_dbg(" %x ", locals.values[locals.index]);
+	nand_print_dbg("\n");
+	return locals.result;
+}
 /* Stock omits a canary although its unchecked count can overrun the buffer. */
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_set_default_param(struct otp_chip *chip)
