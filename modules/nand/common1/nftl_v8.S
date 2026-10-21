@@ -16858,6 +16858,7 @@ get_vaild_blocks:
 // readonly payload moved below: 	.string	"[NE]no block %d\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	build_zone_list_first
 	.type	build_zone_list_first, %function
 build_zone_list_first:
@@ -17178,6 +17179,7 @@ build_zone_list_first:
 	ldp	x29, x30, [sp], 96
 	ret
 	.size	build_zone_list_first, .-build_zone_list_first
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC211: relocated in rooted readonly order below. */

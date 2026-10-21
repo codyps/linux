@@ -4327,6 +4327,156 @@ int build_zone_list(struct build_zone *zone)
 	return 0;
 }
 
+struct first_list_geometry {
+	unsigned char before_factor[8];
+	unsigned char factor;
+	unsigned char before_pages[11];
+	unsigned short pages;
+	unsigned char before_blocks[2];
+	unsigned short blocks;
+	unsigned char before_fixed_page[2];
+	unsigned short fixed_page;
+};
+struct first_list_block {
+	unsigned short number;
+	unsigned short state;
+	unsigned short erase_count;
+	unsigned short used_pages;
+	unsigned char before_links[8];
+	void *links[3];
+	unsigned char tail[24];
+};
+struct first_list_zone {
+	unsigned char before_geometry[8];
+	struct first_list_geometry *geometry;
+	unsigned char before_count[10];
+	unsigned short count;
+	unsigned char before_pages[4];
+	unsigned int logical_pages;
+	unsigned char before_extra_pages[4];
+	unsigned int extra_pages;
+	unsigned char before_cursor[4];
+	struct first_list_block *cursor;
+	struct first_list_block *last;
+	unsigned char before_data[448];
+	void *data;
+	unsigned char before_callbacks[2936];
+	int (*erase)(struct first_list_zone *, struct physic_op_param *);
+	void *unused_3464;
+	int (*write)(struct first_list_zone *, struct physic_op_param *);
+	void *unused_3480;
+	int (*is_good)(struct first_list_zone *, struct physic_op_param *);
+	int (*mark_bad)(struct first_list_zone *, struct physic_op_param *);
+};
+_Static_assert(sizeof(struct first_list_block) == 64,
+	       "first-scan block stride");
+_Static_assert(__builtin_offsetof(struct first_list_zone, count) == 26,
+	       "first-scan count offset");
+_Static_assert(__builtin_offsetof(struct first_list_zone, cursor) == 48,
+	       "first-scan cursor offset");
+_Static_assert(__builtin_offsetof(struct first_list_zone, data) == 512,
+	       "first-scan data offset");
+_Static_assert(__builtin_offsetof(struct first_list_zone, is_good) == 3488,
+	       "first-scan good callback offset");
+/* OEM keeps the stack OOB buffer without a canary. */
+__attribute__((optimize("-fno-stack-protector")))
+int build_zone_list_first(struct first_list_zone *zone, unsigned int number)
+{
+	struct first_list_block *block = zone->cursor;
+	struct physic_op_param op;
+	unsigned char oob[16];
+	unsigned int limit;
+	unsigned int page;
+	int result;
+
+	nand_print_dbg("[ND]build_zone_list_first.\n");
+	/* OEM performs two unguarded divisions, including when either divisor
+	 * is zero. Keep this crash behavior until stock compatibility ends. */
+	if (zone->logical_pages)
+		limit = (zone->logical_pages + zone->extra_pages) /
+			zone->geometry->factor / zone->geometry->pages;
+	else
+		limit = ~0U;
+	zone->count = 0;
+	while (zone->count < limit) {
+		zone->last = block;
+		set_physic_op_par(&op, block->number, 0,
+				  zone->geometry->fixed_page, zone->data, oob);
+		if (zone->is_good(zone, &op) == 1) {
+			result = zone->erase(zone, &op);
+			if (result) {
+				block->state = 255;
+				zone->mark_bad(zone, &op);
+			} else {
+				zone->count++;
+				block->state = 0;
+				block->used_pages = 0;
+				if (zone->count == 1) {
+					nand_memset(oob, -1, 16);
+					set_start_block_flag(zone, oob, number);
+					set_physic_op_par(&op, block->number, 0,
+						zone->geometry->fixed_page,
+						zone->data, oob);
+					/* OEM ignores every write result and advances only
+					 * the operation's plane field. */
+					for (page = 0; page < zone->geometry->pages;
+					     page++) {
+						zone->write(zone, &op);
+						op.plane++;
+					}
+					zone->cursor = block + 1;
+				}
+			}
+		} else {
+			block->state = 255;
+		}
+		block->erase_count = 0xffff;
+		block->links[2] = 0;
+		block->links[0] = 0;
+		block->links[1] = 0;
+		zone->last = block;
+		if (is_last_phy_block((struct physical_block *)block,
+				      (struct physical_zone *)zone) == 1)
+			break;
+		block++;
+	}
+	if (zone->count <= 1) {
+		nand_print("[NE]no block %d\n", zone->count);
+		return 1;
+	}
+	zone->count--;
+	if (limit == ~0U)
+		return 0;
+	if (is_last_phy_block((struct physical_block *)block,
+			      (struct physical_zone *)zone) == 1)
+		return 0;
+	while (block->number < zone->geometry->blocks) {
+		set_physic_op_par(&op, block->number, 0,
+				  zone->geometry->fixed_page, zone->data, oob);
+		if (zone->is_good(zone, &op) == 1) {
+			result = zone->erase(zone, &op);
+			if (result) {
+				block->state = 255;
+				zone->mark_bad(zone, &op);
+			} else {
+				nand_memset(oob, -1, 16);
+				set_end_block_flag(zone, oob);
+				set_physic_op_par(&op, block->number, 0,
+						  zone->geometry->fixed_page,
+						  zone->data, oob);
+				zone->write(zone, &op);
+				/* OEM ignores the end-flag write result. */
+				break;
+			}
+		} else {
+			block->state = 255;
+		}
+		block++;
+	}
+	/* OEM also reports success when the search exhausted all blocks. */
+	return 0;
+}
+
 /* Inferred cache write-list bodies. Private layout names are provisional.
  * Each 16-bit count update uses AND #0xffff where stock uses UXTH; both
  * preserve the same low halfword, including wraparound. */
