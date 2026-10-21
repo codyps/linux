@@ -1313,6 +1313,7 @@ _shutdown_op:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	_shutdown_op, .-_shutdown_op
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	_nftl_nand_erase_superblk
 	.type	_nftl_nand_erase_superblk, %function
@@ -1351,6 +1352,7 @@ _nftl_nand_erase_superblk:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	_nftl_nand_erase_superblk, .-_nftl_nand_erase_superblk
+	#endif
 	.align	2
 	.global	_nftl_nand_read_page
 	.type	_nftl_nand_read_page, %function
@@ -1459,6 +1461,7 @@ _nftl_nand_write_page:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	_nftl_nand_write_page, .-_nftl_nand_write_page
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	_nftl_nand_is_blk_good
 	.type	_nftl_nand_is_blk_good, %function
@@ -1497,6 +1500,8 @@ _nftl_nand_is_blk_good:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	_nftl_nand_is_blk_good, .-_nftl_nand_is_blk_good
+	#endif
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	_nftl_nand_mark_bad_blk
 	.type	_nftl_nand_mark_bad_blk, %function
@@ -1535,6 +1540,7 @@ _nftl_nand_mark_bad_blk:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	_nftl_nand_mark_bad_blk, .-_nftl_nand_mark_bad_blk
+	#endif
 	.local	panic_info
 /* panic_info: common storage replaced by its recovered BSS slot. */
 	.local	panic_part

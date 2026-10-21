@@ -170,3 +170,42 @@ int hynix20nm_vender_get_param(struct samsung_set_chip *chip,
 	/* OEM does not validate count or pointers, and discards read errors. */
 	return result;
 }
+
+struct nftl_chip_block_ops {
+	unsigned char before_callbacks[88];
+	int (*erase)(struct nftl_chip_block_ops *, struct physic_op_param *);
+	unsigned char between_callbacks[16];
+	int (*is_good)(struct nftl_chip_block_ops *, struct physic_op_param *);
+	int (*mark_bad)(struct nftl_chip_block_ops *, struct physic_op_param *);
+};
+struct nftl_zone_priv_block_ops {
+	void *unused;
+	struct nftl_chip_block_ops *chip;
+};
+extern struct nftl_zone_priv_block_ops *nftl_get_zone_priv(void *);
+
+/* The kernel-wide stack-protector option reorders this local aggregate and
+ * the two pointers without adding a canary. Keep OEM stack offsets in the
+ * optional C path; these wrappers have no protectable character array. */
+#define NFTL_BLOCK_WRAPPER(name, callback) \
+__attribute__((optimize("-fno-stack-protector"))) \
+int name(void *zone, struct physic_op_param *request) \
+{ \
+	struct nftl_zone_priv_block_ops *priv; \
+	struct nftl_chip_block_ops *chip; \
+	struct physic_op_param op; \
+	priv = nftl_get_zone_priv(zone); \
+	chip = priv->chip; \
+	/* OEM leaves the unused halfword uninitialized, trusts both pointers, \
+	 * and returns the callback result without translating errors. */ \
+	op.block = request->block; \
+	op.plane = request->plane; \
+	op.page = request->page; \
+	op.data = request->data; \
+	op.oob = request->oob; \
+	return chip->callback(priv->chip, &op); \
+}
+
+NFTL_BLOCK_WRAPPER(_nftl_nand_erase_superblk, erase)
+NFTL_BLOCK_WRAPPER(_nftl_nand_is_blk_good, is_good)
+NFTL_BLOCK_WRAPPER(_nftl_nand_mark_bad_blk, mark_bad)
