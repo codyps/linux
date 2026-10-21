@@ -11039,7 +11039,7 @@ struct new_write_block *current_block_ecc_error(struct ecc_rebuild_zone *zone,
 	struct new_write_block *replacement;
 	struct physic_op_param read_op, write_op;
 	unsigned char oob[16];
-	unsigned int page, written = 0;
+	unsigned int page, written;
 	int status;
 
 	for (;;) {
@@ -11058,6 +11058,7 @@ struct new_write_block *current_block_ecc_error(struct ecc_rebuild_zone *zone,
 		nand_print("[NE]something is error here 16!\n");
 	}
 	nand_print("[NE]do current_block_ecc_error %d!!\n", old->number);
+	written = 0;
 	for (page = 0; page < zone->geometry->pages; page++) {
 		set_physic_op_par(&read_op, old->number, page,
 				  zone->geometry->fixed_page, zone->data, oob);
