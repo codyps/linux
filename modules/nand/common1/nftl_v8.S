@@ -9024,6 +9024,7 @@ sandisk_A19_set_readretry:
 	ret
 	.size	sandisk_A19_set_readretry, .-sandisk_A19_set_readretry
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_exit_readretry
 	.type	sandisk_A19_exit_readretry, %function
 sandisk_A19_exit_readretry:
@@ -9062,6 +9063,7 @@ sandisk_A19_exit_readretry:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	sandisk_A19_exit_readretry, .-sandisk_A19_exit_readretry
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC100: relocated in rooted readonly order below. */

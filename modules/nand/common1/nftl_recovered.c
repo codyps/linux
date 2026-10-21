@@ -2518,6 +2518,25 @@ extern struct command_chip *nci_get_from_nsi(struct special_exit_info *nsi,
 					      unsigned int index);
 extern int set_one_cmd(struct command_chip *chip, unsigned int command,
 			unsigned int argument);
+extern unsigned char sandisk_A19_read_retry_reg_adr_1y;
+int sandisk_A19_exit_readretry(struct samsung_set_chip *chip)
+{
+	int result = 0;
+	/* Match the OEM value buffer's frame offset despite stack packing. */
+	unsigned char values[4] __attribute__((aligned(8))) = {0, 0, 0, 0};
+	unsigned char *address;
+	int count;
+
+	nand_enable_chip(chip);
+	ndfc_disable_randomize(chip->controller);
+	/* OEM ignores both command results and always disables the chip. */
+	set_one_cmd((struct command_chip *)chip, -1, 1);
+	address = &sandisk_A19_read_retry_reg_adr_1y;
+	count = 1;
+	result = sandisk_A19_vender_set_param(chip, values, address, count);
+	nand_disable_chip(chip);
+	return result;
+}
 #define SANDISK_COMMAND(name, opcode) \
 	int name(const unsigned int *index) \
 	{ \
