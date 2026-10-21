@@ -4179,6 +4179,115 @@ int __nand_flush_write_cache(void *zone, unsigned int limit)
 	return result;
 }
 
+struct flush_cache_geometry {
+	unsigned char before_sectors_per_page[8];
+	unsigned char sectors_per_page;
+	unsigned char before_page_bytes[17];
+	unsigned short page_bytes;
+};
+struct flush_cache_node {
+	unsigned char before_state[4];
+	unsigned short state;
+	unsigned short sectors;
+	unsigned int page;
+	unsigned int untouched;
+	unsigned char *data;
+	unsigned char before_links[16];
+	struct flush_cache_node *next;
+	struct flush_cache_node *previous;
+};
+struct flush_cache_data {
+	unsigned char before_write_count[6];
+	unsigned short write_count;
+	unsigned char before_write_head[1776];
+	struct flush_cache_node *write_head;
+	unsigned char before_buffer[8];
+	unsigned char *page_buffer;
+};
+struct flush_cache_zone {
+	unsigned char before_geometry[8];
+	struct flush_cache_geometry *geometry;
+	unsigned char before_pages[568];
+	unsigned short pages;
+	unsigned char before_cache[486];
+	struct flush_cache_data cache;
+	unsigned char before_callbacks[624];
+	int (*write)(struct flush_cache_zone *, unsigned int, void *);
+	int (*read)(struct flush_cache_zone *, unsigned int, void *);
+};
+_Static_assert(sizeof(struct flush_cache_node) == 56, "flush cache node size");
+_Static_assert(__builtin_offsetof(struct flush_cache_node, next) == 40,
+	       "flush cache node next offset");
+_Static_assert(__builtin_offsetof(struct flush_cache_zone, pages) == 584,
+	       "flush cache zone page offset");
+_Static_assert(__builtin_offsetof(struct flush_cache_zone, cache) == 1072,
+	       "flush cache zone cache offset");
+_Static_assert(__builtin_offsetof(struct flush_cache_zone, write) == 3504,
+	       "flush cache write callback offset");
+_Static_assert(__builtin_offsetof(struct flush_cache_zone, read) == 3512,
+	       "flush cache read callback offset");
+extern int nand_memcmp(const void *, const void *, unsigned long);
+extern int nand_phy_get_page_type(unsigned int);
+
+__attribute__((optimize("-fno-stack-protector")))
+int flush_write_cache_to_nand(void *owner, int ignored_count)
+{
+	struct flush_cache_zone *zone = owner;
+	struct flush_cache_data *cache = &zone->cache;
+	struct flush_cache_node *node;
+	unsigned char *data;
+	unsigned short offset;
+	int status = 0;
+	unsigned char signature_match;
+	unsigned char signature0[8] =
+		{0x2c, 0x64, 0x44, 0x32, 0xa5, 0xff, 0xff, 0xff};
+	unsigned char signature1[8] =
+		{0x2c, 0x84, 0x44, 0x32, 0xaa, 0x04, 0x00, 0x00};
+
+	(void)ignored_count;
+	if (!cache->write_head) {
+		nand_print("[NE]flush write cache to nand no cache!\n");
+		return 0;
+	}
+	node = (struct flush_cache_node *)del_from_cache_write_list(
+		(struct cache_list_owner *)cache,
+		(struct cache_list_node *)cache->write_head);
+	if (!node)
+		return 0;
+	data = node->data;
+	if (node->sectors != zone->geometry->sectors_per_page) {
+		status = zone->read(zone, node->page, cache->page_buffer);
+		/* OEM copies from the read buffer even after a read failure. */
+		/* OEM masks the sector count to seven bits and trusts that the
+		 * resulting offset does not exceed page_bytes. */
+		offset = (node->sectors & 127) << 9;
+		nand_memcpy(data + offset, cache->page_buffer + offset,
+			    (unsigned int)zone->geometry->page_bytes - offset);
+		if (status == 10)
+			nand_print("[NE]ECC_LIMIT happened 10! page:%d cache: %d!\n",
+				   node->page, cache->write_count);
+	}
+	node->state = 0;
+	node->sectors = zone->geometry->sectors_per_page;
+	status = zone->write(zone, node->page, data);
+	if (status)
+		nand_print("[NE]flush write cache to nand error!\n");
+	/* Only the low byte of nand_memcmp's signed result is retained. */
+	signature_match = nand_memcmp(zone->geometry, signature0, 8);
+	if (signature_match)
+		signature_match = nand_memcmp(zone->geometry, signature1, 8);
+	if (!signature_match && zone->pages &&
+	    nand_phy_get_page_type(zone->pages - 1) == 2) {
+		status = zone->write(zone, node->page, data);
+		if (status)
+			nand_print("[NE]flush write cache to nand error!\n");
+	}
+	add_to_cache_read_list_tail((struct cache_read_add_zone *)cache,
+				    (struct cache_read_delete_node *)node, 2);
+	/* OEM reports success even after both writes failed. */
+	return 0;
+}
+
 struct gc_list_node {
 	unsigned char before_next[0x10];
 	struct gc_list_node *next;

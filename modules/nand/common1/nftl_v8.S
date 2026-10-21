@@ -28267,6 +28267,7 @@ nand_cache_write:
 // readonly payload moved below: 	.string	"[NE]flush write cache to nand error!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	flush_write_cache_to_nand
 	.type	flush_write_cache_to_nand, %function
 flush_write_cache_to_nand:
@@ -28467,6 +28468,7 @@ flush_write_cache_to_nand:
 	ldp	x29, x30, [sp], 112
 	ret
 	.size	flush_write_cache_to_nand, .-flush_write_cache_to_nand
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC429: relocated in rooted readonly order below. */
