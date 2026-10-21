@@ -15283,6 +15283,7 @@ new_block_init_for_write:
 	.align	2
 	.global	check_invalid_page_right
 	.type	check_invalid_page_right, %function
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 check_invalid_page_right:
 	stp	x29, x30, [sp, -80]!
 	add	x29, sp, 0
@@ -15374,6 +15375,7 @@ check_invalid_page_right:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	check_invalid_page_right, .-check_invalid_page_right
+#endif
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_ops_init

@@ -5156,8 +5156,52 @@ struct page_map_write_zone {
 extern int write_phy_data_to_current_block(struct page_map_write_zone *,
 					   struct page_map_write_current *,
 					   void *, unsigned int, unsigned int);
-extern int check_invalid_page_right(struct page_map_write_zone *, void *,
-				    struct page_map_write_block *, unsigned short);
+struct invalid_page_map_data {
+	unsigned char before_pages[16];
+	unsigned int *pages;
+};
+struct invalid_page_location {
+	unsigned short page : 12;
+	unsigned short flags : 4;
+	unsigned short block;
+};
+int check_invalid_page_right(struct page_map_write_zone *zone,
+			     void *raw_map,
+			     struct page_map_write_block *block,
+			     unsigned short page_count)
+{
+	struct invalid_page_location *location;
+	unsigned int logic_page;
+	unsigned int invalid = 0;
+	unsigned int page = 0;
+
+	while (page_count > page) {
+		logic_page = ((struct invalid_page_map_data *)raw_map)->pages[page];
+		if (logic_page != ~0U) {
+			location = (struct invalid_page_location *)
+				get_logic_page_map((struct logic_page_map_zone *)zone,
+						   logic_page);
+			if (!location) {
+				nand_print_dbg("[ND]logic_page_map_temp NULL!!\n");
+				invalid++;
+			} else if (location->block != *(unsigned short *)block ||
+			   location->page != page) {
+				invalid++;
+			}
+		} else {
+			invalid++;
+		}
+		page++;
+	}
+	if (block->used_pages != invalid) {
+		/* OEM misspells "invalid"; its "used_page" field is the input
+		 * page count, while the second bracket is block->used_pages. */
+		nand_print("[NE]invaild_page num error:[%d] [%d]  used_page:[%d]!!\n",
+			   invalid, block->used_pages, page_count);
+		return 1;
+	}
+	return 0;
+}
 int write_phy_page_map_to_current_block(struct page_map_write_zone *zone,
 					struct page_map_write_current *current)
 {
