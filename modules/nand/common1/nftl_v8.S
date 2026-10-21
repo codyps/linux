@@ -10494,6 +10494,7 @@ hynix16nm_major_check_byte:
 // readonly payload moved below: 	.string	"%02x "
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_get_read_retry_cfg
 	.type	hynix16nm_get_read_retry_cfg, %function
 hynix16nm_get_read_retry_cfg:
@@ -10760,6 +10761,7 @@ hynix16nm_get_read_retry_cfg:
 	ldp	x29, x30, [sp], 144
 	ret
 	.size	hynix16nm_get_read_retry_cfg, .-hynix16nm_get_read_retry_cfg
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC123: relocated in rooted readonly order below. */

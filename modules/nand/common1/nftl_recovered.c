@@ -1836,10 +1836,73 @@ extern void nand_free_temp_buf(void *buffer);
 struct hynix16nm_otp_info_chip;
 extern int hynix16nm_read_otp_info_hynix(struct hynix16nm_otp_info_chip *chip,
 					  unsigned char *buffer);
-extern int hynix16nm_get_read_retry_cfg(unsigned char *mode,
-					 unsigned char *cycle,
-					 unsigned char *values,
-					 void *buffer);
+extern int hynix16nm_major_check_byte(unsigned char *value,
+				      unsigned int mode, unsigned int level,
+				      const unsigned char *primary,
+				      const unsigned char *secondary,
+				      unsigned int length);
+/* OEM's 144-byte frame has no stack canary around its OTP vote buffers. */
+__attribute__((optimize("-fno-stack-protector")))
+int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
+				 unsigned char *values, void *raw_buffer)
+{
+	const unsigned char *buffer = raw_buffer;
+	unsigned char primary[8] = {0};
+	unsigned char secondary[8] = {0};
+	unsigned int index;
+	unsigned int copy;
+	int result;
+	int error = 0;
+
+	for (copy = 0; copy <= 7; copy++)
+		primary[copy] = buffer[copy];
+	result = hynix16nm_major_check_byte(mode, 0, 4,
+					  primary, secondary, 8);
+	if (result < 0) {
+		nand_print("_get_read_retry_parameters, get rr count failed!\n");
+		return result;
+	}
+	nand_print_dbg("rr cnt: %d\n", *mode);
+	for (copy = 0; copy <= 7; copy++)
+		primary[copy] = buffer[copy + 8];
+	result = hynix16nm_major_check_byte(cycle, 0, 4,
+					  primary, secondary, 8);
+	if (result < 0) {
+		nand_print("_get_read_retry_parameters, get rr reg count failed!\n");
+		return result;
+	}
+	nand_print_dbg("rr reg cnt: %d\n", *cycle);
+	if (*mode != 8 || *cycle != 4) {
+		nand_print("read retry value from otp error: rr_cnt %d rr_reg_cnt %d!\n",
+			   *mode, *cycle);
+		return -81;
+	}
+	for (index = 0; index < 32; index++) {
+		for (copy = 0; copy <= 7; copy++) {
+			primary[copy] = 0;
+			secondary[copy] = 0;
+			primary[copy] = buffer[16 + copy * 64 + index];
+			secondary[copy] = buffer[48 + copy * 64 + index];
+		}
+		result = hynix16nm_major_check_byte(values + index, 1, 4,
+						  primary, secondary, 8);
+		if (result < 0) {
+			nand_print("_get_read_retry_parameters, get the %d-th byte of rr table failed!\n",
+				   index);
+			error = result;
+			break;
+		}
+	}
+	/* OEM prints all 32 result bytes, even after the first failed vote left
+	 * the remaining output bytes untouched. Keep this stale-data exposure. */
+	for (index = 0; index < 32; index++) {
+		if ((index & 7) == 0 && index != 0)
+			nand_print_dbg("\n");
+		nand_print_dbg("%02x ", values[index]);
+	}
+	nand_print_dbg("\n");
+	return error;
+}
 int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone)
 {
 	int result = 0;
