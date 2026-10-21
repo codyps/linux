@@ -3169,6 +3169,67 @@ int hynix16nm_init_readretry_param(void *owner)
 	return 0;
 }
 
+struct hynix20nm_readretry_zone {
+	unsigned char before_chip[24];
+	unsigned int chip;
+	unsigned char before_controller[272 - 28];
+	struct hynix16nm_otp_controller *controller;
+	struct hynix16nm_readretry_params *params;
+};
+extern int hynix20nm_getotpparam(struct otp_chip *, unsigned char *);
+__attribute__((optimize("-fno-stack-protector")))
+int hynix20nm_init_readretry_param(void *owner)
+{
+	struct hynix20nm_readretry_zone *zone = owner;
+	unsigned char otp_values[64];
+	unsigned char *page_buffer;
+	unsigned char *copy_buffer;
+	unsigned int index;
+	int result = 0;
+
+	/* Stock shifts the count in 32 bits and never checks whether the
+	 * resulting allocation can hold the 64-byte table. */
+	page_buffer = nand_get_temp_buf(zone->params->page_count << 9);
+	if (!page_buffer) {
+		nand_print_dbg("hynix20nm get default param error !\n");
+		return -94;
+	}
+	copy_buffer = nand_get_temp_buf(32768);
+	if (!copy_buffer) {
+		nand_free_temp_buf(page_buffer);
+		nand_print("[PHY_GetDefaultParam]:readbuf malloc fail\n");
+		return -76;
+	}
+	result = hynix16nm_get_special_info(copy_buffer, page_buffer, 64,
+					   zone->chip);
+	if (result == 0) {
+		nand_print_dbg("ch %d, chip %d Read Retry value Table from uboot:\n",
+			       zone->controller->channel, zone->chip);
+		for (index = 0; index <= 63; index++) {
+			nand_print_dbg("0x%x ", page_buffer[index]);
+			if ((index & 7) == 7)
+				nand_print_dbg("\n");
+		}
+		hynix20nm_saveotpvalue((struct otp_chip *)zone, page_buffer);
+		result = hynix20nm_set_default_param((struct otp_chip *)zone);
+	} else {
+		nand_print_dbg("[PHY_DBG] ch %d, can't get right otp value from nand otp blocks, then use otp command\n",
+			       zone->controller->channel);
+		result = hynix20nm_getotpparam((struct otp_chip *)zone,
+						otp_values);
+		if (result == 0) {
+			/* OEM ignores the default-program result on this fallback. */
+			hynix20nm_set_default_param((struct otp_chip *)zone);
+			nand_print_dbg("[PHY_DBG] repair ch %d otp value end\n",
+				       zone->controller->channel);
+		}
+	}
+	/* OEM frees only the page buffer here. The 32 KiB copy buffer leaks
+	 * on every normal completion; retain that behavior for equivalence. */
+	nand_free_temp_buf(page_buffer);
+	return result;
+}
+
 extern int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *chip);
 int hynix20nm_getotpparam(struct otp_chip *chip, unsigned char *value)
 {
