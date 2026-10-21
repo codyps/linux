@@ -3457,11 +3457,11 @@ int micron_readretry_exit(void *chip)
 	return 0;
 }
 
-extern void generic_read_page_end_not_retry(void);
+extern int generic_read_page_end_not_retry(void *);
 extern void (*df_read_page_end)(void);
 int generic_special_init(void)
 {
-	df_read_page_end = generic_read_page_end_not_retry;
+	df_read_page_end = (void (*)(void))generic_read_page_end_not_retry;
 	nand_print_dbg(" generic special init \n");
 	return 0;
 }
@@ -4592,6 +4592,61 @@ struct command_chip {
 };
 extern struct command_chip *nci_get_from_nsi(struct special_exit_info *nsi,
 					      unsigned int index);
+extern int generic_read_page_start(void *);
+extern unsigned char samsung_read_retry_cycle;
+struct samsung_read_request {
+	unsigned int channel;
+	unsigned int block;
+	unsigned int page;
+};
+struct samsung_read_controller {
+	unsigned char before_channel[12];
+	unsigned int channel;
+};
+struct samsung_read_chip_id {
+	unsigned char before_id[28];
+	unsigned int chip;
+};
+int samsung_read_page_end(struct samsung_read_request *request)
+{
+	struct samsung_set_chip *chip;
+	int result;
+	int retry;
+
+	retry = 0;
+	result = 0;
+	chip = (struct samsung_set_chip *)nci_get_from_nsi(g_nsi,
+						      request->channel);
+	result = generic_read_page_end_not_retry(request);
+	if (result == -2) {
+		nand_print_dbg("samsung retry!\n");
+		retry = 1;
+		while (samsung_read_retry_cycle > retry) {
+			chip->retry = retry;
+			result = samsung_set_readretry(chip);
+			if (result == 0) {
+				result = generic_read_page_start(request);
+				result |= generic_read_page_end_not_retry(request);
+				if (result == 10 || result == 0) {
+					result = 10;
+					nand_print_dbg(
+						"samsung ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+						((struct samsung_read_controller *)chip->controller)->channel,
+						((struct samsung_read_chip_id *)chip)->chip,
+						request->block, request->page,
+						chip->retry);
+					break;
+				}
+			}
+			retry++;
+		}
+		/* OEM resets retry mode even after errors and ignores reset failure.
+		 * It also returns ECC_LIMIT (10) after an eventual clean retry. */
+		chip->retry = 0;
+		samsung_set_readretry(chip);
+	}
+	return result;
+}
 extern int set_one_cmd(struct command_chip *chip, unsigned int command,
 			unsigned int argument);
 extern unsigned char sandisk_A19_read_retry_reg_adr_1y;
@@ -4849,7 +4904,6 @@ int toshiba_readretry_init(struct samsung_init_chip *chip)
 extern int micron_readretry_init(void *);
 extern int hynix20nm_readretry_init(void *);
 extern int hynix26nm_readretry_init(void *);
-extern void samsung_read_page_end(void);
 extern void micron_read_page_end(void);
 extern void toshiba_read_page_end(void);
 extern void hynix16nm_read_page_end(void);
@@ -4879,7 +4933,7 @@ int name(void) \
 		chip = chip->next; \
 	} \
 	if (result == 0) { \
-		df_read_page_end = end; \
+		df_read_page_end = (void (*)(void))end; \
 		nand_print_dbg(success, mode, cycle); \
 	} else { \
 		nand_print(failure, mode, cycle); \
@@ -4897,7 +4951,7 @@ int name(void) \
 		chip = chip->next; \
 	} \
 	if (result == 0) { \
-		df_read_page_end = end; \
+		df_read_page_end = (void (*)(void))end; \
 		nand_print_dbg(success, mode, cycle, reg); \
 	} else { \
 		nand_print(failure, mode, cycle, reg); \

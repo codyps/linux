@@ -2758,6 +2758,7 @@ samsung_set_readretry:
 	.align	2
 	.global	samsung_read_page_end
 	.type	samsung_read_page_end, %function
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 samsung_read_page_end:
 	stp	x29, x30, [sp, -48]!
 	add	x29, sp, 0
@@ -2852,6 +2853,7 @@ samsung_read_page_end:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	samsung_read_page_end, .-samsung_read_page_end
+#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC39: relocated in rooted readonly order below. */
