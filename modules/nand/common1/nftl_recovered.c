@@ -1445,10 +1445,30 @@ unsigned short nand_crc16(unsigned short crc, const unsigned char *data,
 
 /* Isolated C equivalents for four NFTL bodies, not original type claims. */
 
-extern void nftl_cache_exit(void *zone);
 extern void nftl_free(void *allocation);
 extern void clean_block_list(void *zone);
 extern void nand_clean_zone_table2(void *zone);
+
+struct nftl_cache_entry_view {
+	unsigned char before_allocation[24];
+	void *allocation;
+	unsigned char after_allocation[24];
+};
+int nftl_cache_exit(void *zone)
+{
+	unsigned char *cache = (unsigned char *)zone + 1072;
+	int index;
+
+	for (index = 0; index < *(unsigned short *)cache; index++) {
+		struct nftl_cache_entry_view *entry =
+			(struct nftl_cache_entry_view *)(cache + index * 56);
+		/* OEM calls nftl_free even for null entries and re-reads the
+		 * count after each call. It never clears an allocation slot. */
+		nftl_free(entry->allocation);
+	}
+	nftl_free(*(void **)(cache + 1800));
+	return 0;
+}
 
 struct nftl_zone_storage_view {
 	unsigned char before_allocation[32];

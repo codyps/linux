@@ -26452,6 +26452,7 @@ nftl_cache_init:
 	ret
 	.size	nftl_cache_init, .-nftl_cache_init
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_cache_exit
 	.type	nftl_cache_exit, %function
 nftl_cache_exit:
@@ -26491,6 +26492,7 @@ nftl_cache_exit:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nftl_cache_exit, .-nftl_cache_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	nftl_cache_clean
 	.type	nftl_cache_clean, %function
