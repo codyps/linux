@@ -1307,14 +1307,15 @@ int current_block_at_last_page(struct current_zone *zone,
 	return 0;
 }
 
-extern int do_after_write(void *zone);
+struct do_after_zone;
+extern int do_after_write(struct do_after_zone *zone);
 extern int do_before_write(void *zone);
 int nand_write_data_page(void *zone, unsigned int marker,
 			 unsigned int page, void *data)
 {
 	if (current_block_at_last_page((struct current_zone *)zone,
 				       (struct current_page *)((char *)zone + 528)) == 1) {
-		if (do_after_write(zone)) {
+		if (do_after_write((struct do_after_zone *)zone)) {
 			nand_print("[NE]do after write error1!\n");
 			return 1;
 		}
@@ -1327,7 +1328,7 @@ int nand_write_data_page(void *zone, unsigned int marker,
 		nand_print("[NE]write data to page error!\n");
 		return 1;
 	}
-	if (do_after_write(zone)) {
+	if (do_after_write((struct do_after_zone *)zone)) {
 		nand_print("[NE]do after write error2!\n");
 		return 1;
 	}
@@ -5047,6 +5048,47 @@ int write_phy_page_map_to_current_block(struct page_map_write_zone *zone,
 		put_phy_block_to_invalid_page_list(
 			zone, (struct invalid_node *)current->block);
 		adjust_invaild_list((struct move_zone *)zone);
+	}
+	return 0;
+}
+
+struct do_after_zone {
+	unsigned char before_flags[25];
+	unsigned char flags;
+	unsigned char before_current[502];
+	unsigned char current[64];
+	unsigned char page_map[76];
+	unsigned int completed;
+};
+extern int get_new_current_block(struct do_after_zone *, void *);
+int do_after_write(struct do_after_zone *zone)
+{
+	if (current_block_at_last_page((struct current_zone *)zone,
+				       (struct current_page *)zone->current) == 1) {
+		if (write_phy_page_map_to_current_block(
+				(struct page_map_write_zone *)zone,
+				(struct page_map_write_current *)zone->current)) {
+			nand_print("[NE]write_phy_page_map_to_current_block error!\n");
+			return 1;
+		}
+		if (zone->flags & 1) {
+			/* OEM logs the second map-write error and continues. */
+			if (write_phy_page_map_to_current_block(
+					(struct page_map_write_zone *)zone,
+					(struct page_map_write_current *)zone->page_map))
+				nand_print("[NE]write_phy_page_map_to_current_block error!\n");
+		}
+		if (get_new_current_block(zone, zone->current)) {
+			nand_print("[NE]get_new_current_block error1!\n");
+			return 1;
+		}
+		if (zone->flags & 1) {
+			if (get_new_current_block(zone, zone->page_map)) {
+				nand_print("[NE]get_new_current_block error2!\n");
+				return 1;
+			}
+		}
+		zone->completed++;
 	}
 	return 0;
 }

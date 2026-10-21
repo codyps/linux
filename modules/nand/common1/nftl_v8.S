@@ -14372,6 +14372,7 @@ do_before_write:
 // readonly payload moved below: 	.string	"[NE]get_new_current_block error2!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	do_after_write
 	.type	do_after_write, %function
 do_after_write:
@@ -14456,6 +14457,7 @@ do_after_write:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	do_after_write, .-do_after_write
+	#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC161: relocated in rooted readonly order below. */
