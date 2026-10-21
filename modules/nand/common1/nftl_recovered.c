@@ -1412,11 +1412,17 @@ struct new_write_zone {
 int new_block_init_for_write(struct new_write_zone *zone,
 			     struct new_write_block *block, unsigned int tag)
 {
-	int result;
-	struct physic_op_param op;
+	/* OEM keeps the operation and erase result at +0x30/+0x4c in its
+	 * 0x50-byte frame. Neither the gap nor op.reserved is initialized. */
+	struct {
+		struct physic_op_param op;
+		unsigned char gap[4];
+		int result;
+	} local;
 
-	set_physic_op_par(&op, block->number, 0, zone->geometry->page, 0, 0);
-	result = zone->erase(zone, &op);
+	set_physic_op_par(&local.op, block->number, 0,
+			  zone->geometry->page, 0, 0);
+	local.result = zone->erase(zone, &local.op);
 	/* OEM resets page and increments erase count before checking erase
 	 * failure; retain the resulting metadata update on a failed erase. */
 	block->page = 0;
@@ -1425,8 +1431,8 @@ int new_block_init_for_write(struct new_write_zone *zone,
 	    block->erase_count < zone->geometry->erase_limit)
 		zone->max_erase = block->erase_count;
 	block->tag = tag;
-	if (result) {
-		zone->mark_bad(zone, &op);
+	if (local.result) {
+		zone->mark_bad(zone, &local.op);
 		nand_print("[NE]new_block_init_for_write erase error!\n");
 		return 1;
 	}
