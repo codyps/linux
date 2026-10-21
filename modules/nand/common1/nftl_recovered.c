@@ -506,3 +506,215 @@ int is_panic_dummy_page(unsigned char *oob)
 {
 	return oob[1] == 0xaa && oob[2] == 0x62;
 }
+
+/* Offset-limited behavioral candidates; these are not original declarations. */
+
+extern int fill_no_use_page_to_current_block(void *object, int count);
+
+int generic_special_exit(void)
+{
+	nand_print_dbg(" generic special exit \n");
+	return 0;
+}
+
+int nand_before_shutdown(void *object)
+{
+	return fill_no_use_page_to_current_block(object, 8);
+}
+
+struct nftl_zone_cap_view {
+	unsigned char preceding[32];
+	unsigned int capacity;
+};
+
+unsigned int nftl_get_zone_cap(struct nftl_zone_cap_view *input)
+{
+	struct nftl_zone_cap_view *zone = input;
+	return zone->capacity;
+}
+
+struct nftl_zone_priv_view {
+	void *private_data;
+};
+
+struct nftl_zone_priv_block_ops *nftl_get_zone_priv(void *input)
+{
+	struct nftl_zone_priv_view *zone = input;
+	return zone->private_data;
+}
+
+struct nftl_zone_cache_view {
+	unsigned char preceding[0x434];
+	unsigned short write_cache_count;
+};
+
+unsigned short nftl_get_zone_write_cache_nums(struct nftl_zone_cache_view *input)
+{
+	struct nftl_zone_cache_view *zone = input;
+	return zone->write_cache_count;
+}
+
+int _nand_sector_read(void *object, unsigned int sector, unsigned int count,
+		      void *buffer)
+{
+	/* OEM reports success without reading data. */
+	int result = 0;
+	return result;
+}
+
+int _nand_sector_write(void *object, unsigned int sector, unsigned int count,
+		       void *buffer)
+{
+	/* OEM reports success without writing data. */
+	int result = 0;
+	return result;
+}
+
+struct nftl_boot_view {
+	unsigned char preceding[0x8c];
+	unsigned int boot_count;
+};
+
+struct nftl_boot_owner_view {
+	unsigned char preceding[0xd70];
+	struct nftl_boot_view *boot;
+};
+
+unsigned int nftl_get_boot_cnt(struct nftl_boot_owner_view *input)
+{
+	struct nftl_boot_owner_view *owner = input;
+	/* OEM has no null guard for either pointer. */
+	return owner->boot->boot_count;
+}
+
+/* C candidates for bounded OEM NFTL helpers; offsets are evidence, not types. */
+
+extern unsigned int get_spare_data(void *oob, unsigned int offset,
+				   unsigned int bytes);
+extern int block_erase(unsigned short block, unsigned short chip);
+
+unsigned int get_block_used_count_from_oob(void *oob)
+{
+	unsigned int value = get_spare_data(oob, 7, 4);
+	return value;
+}
+
+unsigned short get_erase_count_from_oob(void *oob)
+{
+	unsigned short value = get_spare_data(oob, 5, 2);
+	return value;
+}
+
+unsigned int get_special_data_from_oob(void *oob)
+{
+	unsigned int value = get_spare_data(oob, 1, 4);
+	return value;
+}
+
+struct nftl_phy_inner {
+	unsigned char preceding[32];
+	unsigned char *blocks;
+};
+
+struct nftl_phy_outer {
+	unsigned char preceding[8];
+	struct nftl_phy_inner *inner;
+};
+
+unsigned char *get_phy_block_addr(struct nftl_phy_outer *outer,
+				  unsigned short block)
+{
+	/* OEM performs no bounds check before indexing 64-byte blocks. */
+	return outer->inner->blocks + (unsigned long)block * 64;
+}
+
+int nand_dbg_phy_erase(unsigned short chip, unsigned short block)
+{
+	int result = block_erase(chip, block);
+	return result;
+}
+
+struct nftl_current_block {
+	unsigned char preceding[0x38];
+	unsigned short page;
+};
+
+int current_block_at_first_page(void *owner, struct nftl_current_block *block)
+{
+	/* OEM ignores owner and dereferences block without a guard. */
+	if (block->page == 0)
+		return 1;
+	else
+		return 0;
+}
+
+int is_ftl_special_data(unsigned char *oob)
+{
+	/* OEM reads byte one without checking the supplied buffer extent. */
+	if (oob[1] == 0xaa)
+		return 1;
+	else
+		return 0;
+}
+
+/* Bounded behavior-level NFTL C candidates, not original source claims. */
+
+extern int __nand_flush_write_cache(void *cache, int force);
+extern int write_data_to_page(void *zone, unsigned int marker,
+			      unsigned int page, void *data);
+extern int nand_write_data_page(void *zone, unsigned int type,
+				unsigned int page, void *data);
+extern void print_nftl_zone(void *zone);
+
+struct nftl_logic_owner {
+	unsigned char preceding[24];
+	void *cache;
+};
+
+int _nand_flush_write_cache(struct nftl_logic_owner *owner, int force)
+{
+	int result = 0;
+	result = __nand_flush_write_cache(owner->cache, force);
+	return result;
+}
+
+int is_ftl_logic_page_data(unsigned char *oob)
+{
+	/* OEM reads byte one without a buffer-length check. */
+	if ((oob[1] & 0xf0) == 0xc0)
+		return 1;
+	else
+		return 0;
+}
+
+int _nftl_discard_logic_page(void *zone, unsigned int page)
+{
+	int result = write_data_to_page(zone, 0xaa111111, page, 0);
+	return result;
+}
+
+unsigned int get_logic_page_from_oob(void *oob)
+{
+	unsigned int page = get_spare_data(oob, 1, 4);
+	/* OEM silently drops the upper nibble of the page number. */
+	page &= 0x0fffffff;
+	return page;
+}
+
+int nand_write_logic_page_no_gc(void *zone, unsigned int page, void *data)
+{
+	int result = nand_write_data_page(zone, 0xc0, page, data);
+	return result;
+}
+
+struct nftl_test_zone {
+	unsigned char preceding[0x290];
+	unsigned int test_mode;
+};
+
+void nftl_set_zone_test(struct nftl_test_zone *input, unsigned int enabled)
+{
+	struct nftl_test_zone *zone = input;
+	zone->test_mode = enabled;
+	print_nftl_zone(zone);
+}

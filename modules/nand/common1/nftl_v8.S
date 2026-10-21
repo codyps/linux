@@ -1253,6 +1253,7 @@ _nand_discard:
 	.size	_nand_discard, .-_nand_discard
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nand_flush_write_cache
 	.type	_nand_flush_write_cache, %function
 _nand_flush_write_cache:
@@ -1270,7 +1271,9 @@ _nand_flush_write_cache:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	_nand_flush_write_cache, .-_nand_flush_write_cache
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nand_sector_read
 	.type	_nand_sector_read, %function
 _nand_sector_read:
@@ -1284,7 +1287,9 @@ _nand_sector_read:
 	add	sp, sp, 48
 	ret
 	.size	_nand_sector_read, .-_nand_sector_read
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nand_sector_write
 	.type	_nand_sector_write, %function
 _nand_sector_write:
@@ -1298,6 +1303,7 @@ _nand_sector_write:
 	add	sp, sp, 48
 	ret
 	.size	_nand_sector_write, .-_nand_sector_write
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nand_flush_sector_write_cache
@@ -9281,6 +9287,7 @@ generic_special_init:
 // readonly payload moved below: 	.string	" generic special exit \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	generic_special_exit
 	.type	generic_special_exit, %function
 generic_special_exit:
@@ -9293,6 +9300,7 @@ generic_special_exit:
 	ldp	x29, x30, [sp], 16
 	ret
 	.size	generic_special_exit, .-generic_special_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.global	hynix16nm_read_retry_mode
 	.bss
 	.type	hynix16nm_read_retry_mode, %object
@@ -13645,6 +13653,7 @@ _nftl_nand_read_logic_page:
 	ret
 	.size	_nftl_nand_read_logic_page, .-_nftl_nand_read_logic_page
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nftl_discard_logic_page
 	.type	_nftl_discard_logic_page, %function
 _nftl_discard_logic_page:
@@ -13663,6 +13672,7 @@ _nftl_discard_logic_page:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	_nftl_discard_logic_page, .-_nftl_discard_logic_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC149: relocated in rooted readonly order below. */
@@ -13991,6 +14001,7 @@ nand_write_data_page:
 	ret
 	.size	nand_write_data_page, .-nand_write_data_page
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_write_logic_page_no_gc
 	.type	nand_write_logic_page_no_gc, %function
 nand_write_logic_page_no_gc:
@@ -14009,6 +14020,7 @@ nand_write_logic_page_no_gc:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	nand_write_logic_page_no_gc, .-nand_write_logic_page_no_gc
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC156: relocated in rooted readonly order below. */
@@ -15211,6 +15223,7 @@ current_block_at_last_page:
 	ret
 	.size	current_block_at_last_page, .-current_block_at_last_page
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	current_block_at_first_page
 	.type	current_block_at_first_page, %function
 current_block_at_first_page:
@@ -15229,6 +15242,7 @@ current_block_at_first_page:
 	add	sp, sp, 16
 	ret
 	.size	current_block_at_first_page, .-current_block_at_first_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	fill_no_use_data_to_page
 	.type	fill_no_use_data_to_page, %function
@@ -15417,6 +15431,7 @@ fill_no_use_page_to_current_block:
 	ret
 	.size	fill_no_use_page_to_current_block, .-fill_no_use_page_to_current_block
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_before_shutdown
 	.type	nand_before_shutdown, %function
 nand_before_shutdown:
@@ -15429,7 +15444,9 @@ nand_before_shutdown:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	nand_before_shutdown, .-nand_before_shutdown
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_get_boot_cnt
 	.type	nftl_get_boot_cnt, %function
 nftl_get_boot_cnt:
@@ -15443,7 +15460,9 @@ nftl_get_boot_cnt:
 	add	sp, sp, 32
 	ret
 	.size	nftl_get_boot_cnt, .-nftl_get_boot_cnt
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_get_zone_cap
 	.type	nftl_get_zone_cap, %function
 nftl_get_zone_cap:
@@ -15456,7 +15475,9 @@ nftl_get_zone_cap:
 	add	sp, sp, 32
 	ret
 	.size	nftl_get_zone_cap, .-nftl_get_zone_cap
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_set_zone_test
 	.type	nftl_set_zone_test, %function
 nftl_set_zone_test:
@@ -15475,7 +15496,9 @@ nftl_set_zone_test:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nftl_set_zone_test, .-nftl_set_zone_test
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_get_zone_priv
 	.type	nftl_get_zone_priv, %function
 nftl_get_zone_priv:
@@ -15488,7 +15511,9 @@ nftl_get_zone_priv:
 	add	sp, sp, 32
 	ret
 	.size	nftl_get_zone_priv, .-nftl_get_zone_priv
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_get_zone_write_cache_nums
 	.type	nftl_get_zone_write_cache_nums, %function
 nftl_get_zone_write_cache_nums:
@@ -15501,6 +15526,7 @@ nftl_get_zone_write_cache_nums:
 	add	sp, sp, 32
 	ret
 	.size	nftl_get_zone_write_cache_nums, .-nftl_get_zone_write_cache_nums
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC176: relocated in rooted readonly order below. */
@@ -21514,6 +21540,7 @@ is_phy_block_valid:
 	.size	is_phy_block_valid, .-is_phy_block_valid
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_phy_block_addr
 	.type	get_phy_block_addr, %function
 get_phy_block_addr:
@@ -21529,6 +21556,7 @@ get_phy_block_addr:
 	add	sp, sp, 16
 	ret
 	.size	get_phy_block_addr, .-get_phy_block_addr
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC307: relocated in rooted readonly order below. */
@@ -24029,6 +24057,7 @@ nand_dbg_zone_erase:
 	ret
 	.size	nand_dbg_zone_erase, .-nand_dbg_zone_erase
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_dbg_phy_erase
 	.type	nand_dbg_phy_erase, %function
 nand_dbg_phy_erase:
@@ -24044,6 +24073,7 @@ nand_dbg_phy_erase:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nand_dbg_phy_erase, .-nand_dbg_phy_erase
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	nand_dbg_single_phy_erase
 	.type	nand_dbg_single_phy_erase, %function
@@ -31571,6 +31601,7 @@ get_bad_flag_from_oob:
 	ret
 	.size	get_bad_flag_from_oob, .-get_bad_flag_from_oob
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_block_used_count_from_oob
 	.type	get_block_used_count_from_oob, %function
 get_block_used_count_from_oob:
@@ -31586,7 +31617,9 @@ get_block_used_count_from_oob:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	get_block_used_count_from_oob, .-get_block_used_count_from_oob
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_logic_page_from_oob
 	.type	get_logic_page_from_oob, %function
 get_logic_page_from_oob:
@@ -31605,7 +31638,9 @@ get_logic_page_from_oob:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	get_logic_page_from_oob, .-get_logic_page_from_oob
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_special_data_from_oob
 	.type	get_special_data_from_oob, %function
 get_special_data_from_oob:
@@ -31621,7 +31656,9 @@ get_special_data_from_oob:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	get_special_data_from_oob, .-get_special_data_from_oob
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_erase_count_from_oob
 	.type	get_erase_count_from_oob, %function
 get_erase_count_from_oob:
@@ -31637,6 +31674,7 @@ get_erase_count_from_oob:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	get_erase_count_from_oob, .-get_erase_count_from_oob
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_ftl_start_flag_page
@@ -31690,6 +31728,7 @@ is_ftl_end_flag_page:
 	.size	is_ftl_end_flag_page, .-is_ftl_end_flag_page
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_ftl_special_data
 	.type	is_ftl_special_data, %function
 is_ftl_special_data:
@@ -31708,7 +31747,9 @@ is_ftl_special_data:
 	add	sp, sp, 16
 	ret
 	.size	is_ftl_special_data, .-is_ftl_special_data
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_ftl_logic_page_data
 	.type	is_ftl_logic_page_data, %function
 is_ftl_logic_page_data:
@@ -31728,6 +31769,7 @@ is_ftl_logic_page_data:
 	add	sp, sp, 16
 	ret
 	.size	is_ftl_logic_page_data, .-is_ftl_logic_page_data
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_nouse_page
