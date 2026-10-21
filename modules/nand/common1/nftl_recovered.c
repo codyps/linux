@@ -7693,3 +7693,67 @@ int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
 	buffer[(long)written - 1] = '\n';
 	return written;
 }
+
+struct nand_op_geometry {
+	unsigned char before_sectors[8];
+	unsigned char sectors_per_page;
+};
+struct nand_op_zone {
+	unsigned char before_geometry[8];
+	struct nand_op_geometry *geometry;
+	unsigned char before_capacity[16];
+	unsigned int capacity;
+};
+extern int nand_cache_write(void *, int, unsigned short, void *);
+int nand_op(int kind, void *input, unsigned int sector,
+	    unsigned int count, void *data)
+{
+	struct nand_op_zone *zone = input;
+	int (*operation)(void *, int, unsigned short, void *);
+	unsigned int page;
+	unsigned short offset;
+	unsigned short take;
+	unsigned short previous;
+	unsigned short packed;
+	unsigned int factor;
+	int result;
+
+	if (!count)
+		return 0;
+	/* OEM's capacity addition wraps before comparison. */
+	if (sector + count > zone->capacity) {
+		nand_print("[NE]paramter error. beyond reality capacity\n");
+		return 1;
+	}
+	/* OEM truncates the operation selector to one byte. */
+	operation = (unsigned char)kind == 0 ? nand_cache_read : nand_cache_write;
+	factor = zone->geometry->sectors_per_page;
+	/* OEM performs AArch64 unsigned division even for a zero geometry. */
+	page = sector / factor;
+	offset = sector % factor;
+	take = factor - offset;
+	if (take >= count) {
+		take = count;
+		count = 0;
+	} else {
+		count -= take;
+	}
+	previous = take;
+	packed = (offset << 8) | take;
+	result = operation(zone, page, packed, data);
+	if (!count)
+		return result;
+	while (count > factor) {
+		take = factor;
+		page++;
+		data = (unsigned char *)data + ((unsigned int)previous << 9);
+		previous = take;
+		count -= factor;
+		result |= operation(zone, page, take, data);
+	}
+	take = count;
+	page++;
+	data = (unsigned char *)data + ((unsigned int)previous << 9);
+	result |= operation(zone, page, take, data);
+	return result;
+}

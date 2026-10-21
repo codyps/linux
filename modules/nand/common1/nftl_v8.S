@@ -27379,6 +27379,7 @@ __nand_discard:
 // readonly payload moved below: 	.string	"[NE]paramter error. beyond reality capacity\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_op
 	.type	nand_op, %function
 nand_op:
@@ -27556,6 +27557,7 @@ nand_op:
 	ldp	x29, x30, [sp], 96
 	ret
 	.size	nand_op, .-nand_op
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC419: relocated in rooted readonly order below. */
