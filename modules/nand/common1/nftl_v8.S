@@ -27076,6 +27076,7 @@ del_from_cache_write_list:
 	.size	del_from_cache_write_list, .-del_from_cache_write_list
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_empty_cahce_node
 	.type	get_empty_cahce_node, %function
 get_empty_cahce_node:
@@ -27178,6 +27179,7 @@ get_empty_cahce_node:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	get_empty_cahce_node, .-get_empty_cahce_node
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC415: relocated in rooted readonly order below. */

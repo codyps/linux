@@ -1114,6 +1114,44 @@ struct cache_read_add_zone {
 	unsigned char before_head[1680];
 	struct cache_read_delete_node head;
 };
+struct cache_read_empty_node {
+	unsigned char before_state[2];
+	unsigned short state;
+	unsigned char before_next[20];
+	struct cache_read_empty_node *next;
+	unsigned char remainder[24];
+};
+struct cache_read_empty_zone {
+	unsigned short node_count;
+	unsigned char before_second_count[4];
+	unsigned short second_count;
+	struct cache_read_empty_node nodes[30];
+	struct cache_read_empty_node head;
+};
+struct cache_read_empty_node *get_empty_cahce_node(
+	struct cache_read_empty_zone *zone)
+{
+	struct cache_read_empty_node *node;
+	unsigned short index;
+	unsigned short desired_state;
+
+	for (index = 0; index < zone->node_count; index++) {
+		/* OEM trusts node_count, even beyond the 30 in-place nodes. */
+		if (zone->nodes[index].state == 255)
+			return &zone->nodes[index];
+	}
+	/* OEM's count threshold selects only one state; it does not fall back
+	 * to the other list state and does not detect a list cycle. */
+	desired_state = zone->second_count > 9 ? 2 : 0;
+	for (node = zone->head.next; node; node = node->next) {
+		if (node->state == desired_state)
+			return (struct cache_read_empty_node *)
+				del_from_cache_read_list(
+					(struct cache_read_delete_owner *)zone,
+					(struct cache_read_delete_node *)node);
+	}
+	return 0;
+}
 int add_to_cache_read_list_tail(struct cache_read_add_zone *zone,
 				struct cache_read_delete_node *node,
 				unsigned int state)
