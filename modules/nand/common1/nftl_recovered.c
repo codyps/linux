@@ -1490,6 +1490,31 @@ int hynix16nm_set_readretry(struct hynix16nm_retry_zone *zone)
 	return result;
 }
 
+int hynix16nm_vender_set_param(struct hynix16nm_retry_zone *zone,
+			      unsigned char *values,
+			      unsigned char *addresses, unsigned int count)
+{
+	int result = 0;
+	unsigned char command = 54;
+	unsigned char confirm = 22;
+	unsigned int index;
+
+	nand_enable_chip((struct samsung_set_chip *)zone);
+	ndfc_disable_randomize(((struct samsung_set_chip *)zone)->controller);
+	/* OEM ignores both command results for every register and returns
+	 * success. It also reads four values for the final diagnostic even
+	 * when the caller's count is less than four. */
+	for (index = 0; index < count; index++) {
+		set_cmd_with_nand_bus(zone, &command, 0, addresses + index,
+				      values + index, 1, 1);
+		set_one_cmd((struct command_chip *)zone, confirm, 0);
+	}
+	nand_disable_chip((struct samsung_set_chip *)zone);
+	nand_print_dbg("rr value %x %x %x %x!\n", values[0],
+		       values[1], values[2], values[3]);
+	return result;
+}
+
 struct hynix16nm_otp_controller {
 	unsigned char before_channel[12];
 	unsigned int channel;

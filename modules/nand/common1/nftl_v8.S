@@ -9469,6 +9469,7 @@ generic_special_exit:
 /* .zero 4: preserve the original source-line positions here. */
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_vender_set_param
 	.type	hynix16nm_vender_set_param, %function
 hynix16nm_vender_set_param:
@@ -9542,6 +9543,7 @@ hynix16nm_vender_set_param:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	hynix16nm_vender_set_param, .-hynix16nm_vender_set_param
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_set_readretry
