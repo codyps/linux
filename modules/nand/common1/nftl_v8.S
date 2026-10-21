@@ -8988,6 +8988,7 @@ sandisk_A19_vender_set_param:
 	.size	sandisk_A19_vender_set_param, .-sandisk_A19_vender_set_param
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_set_readretry
 	.type	sandisk_A19_set_readretry, %function
 sandisk_A19_set_readretry:
@@ -9061,6 +9062,7 @@ sandisk_A19_set_readretry:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	sandisk_A19_set_readretry, .-sandisk_A19_set_readretry
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_exit_readretry

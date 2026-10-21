@@ -1642,6 +1642,39 @@ int check_cross_talk(struct cross_talk_zone *zone,
 	/* OEM reports success even if every physical read failed. */
 	return 0;
 }
+extern unsigned char sandisk_A19_read_retry_reg_adr_1y;
+extern unsigned char sandisk_A19_1z_16g[128];
+extern unsigned char sandisk_A19_1z_8g[124];
+extern unsigned char sandisk_A19_1y[124];
+extern unsigned char sandisk_A19_read_retry_mode;
+extern int sandisk_A19_vender_set_param(void *chip, void *value,
+					void *address, int unused);
+int sandisk_A19_set_readretry(struct samsung_set_chip *chip,
+			      unsigned short ignored)
+{
+	int result = 0;
+	unsigned char *values;
+	unsigned char *address;
+	unsigned int count;
+
+	nand_enable_chip(chip);
+	ndfc_disable_randomize(chip->controller);
+	/* OEM indexes unchecked four-byte rows; an out-of-range retry reads
+	 * beyond the vendor table and sends the resulting bytes to NAND. */
+	if (sandisk_A19_read_retry_mode == 52)
+		values = sandisk_A19_1z_16g + ((unsigned long)chip->retry << 2);
+	else if (sandisk_A19_read_retry_mode == 53)
+		values = sandisk_A19_1z_8g + ((unsigned long)chip->retry << 2);
+	else
+		values = sandisk_A19_1y + ((unsigned long)chip->retry << 2);
+	address = &sandisk_A19_read_retry_reg_adr_1y;
+	count = 1;
+	result = sandisk_A19_vender_set_param(chip, values, address, count);
+	/* OEM ignores the final command result. */
+	set_one_cmd((struct command_chip *)chip, 93, 0);
+	nand_disable_chip(chip);
+	return result;
+}
 extern int page_write(unsigned short chip, unsigned short block,
 		      unsigned short page, unsigned int mode,
 		      void *data, void *oob);
