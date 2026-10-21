@@ -744,8 +744,31 @@ int is_ftl_special_data(unsigned char *oob)
 /* Bounded behavior-level NFTL C candidates, not original source claims. */
 
 extern int __nand_flush_write_cache(void *cache, int force);
-extern int write_data_to_page(void *zone, unsigned int marker,
-			      unsigned int page, void *data);
+extern int write_logic_data_to_current_block(void *zone, void *current,
+				     unsigned int marker, unsigned int page,
+				     void *data);
+struct write_page_zone {
+	unsigned char before_flags[25];
+	unsigned char flags;
+};
+int write_data_to_page(void *zone, unsigned int marker,
+		       unsigned int page, void *data)
+{
+	if (write_logic_data_to_current_block(zone,
+			(unsigned char *)zone + 528, marker, page, data)) {
+		nand_print("[NE]write logic data to current block error\n");
+		return 1;
+	}
+	/* OEM writes the second plane only when bit zero of byte 25 is set.
+	 * The first plane may already have committed before a second failure. */
+	if ((((struct write_page_zone *)zone)->flags & 1) &&
+	    write_logic_data_to_current_block(zone,
+			(unsigned char *)zone + 592, marker, page, data)) {
+		nand_print("[NE]write logic data to current block error\n");
+		return 1;
+	}
+	return 0;
+}
 extern int nand_write_data_page(void *zone, unsigned int type,
 				unsigned int page, void *data);
 extern void print_nftl_zone(void *zone);
@@ -1981,6 +2004,33 @@ int nftl_write_end(void)
 		node = node->next;
 	}
 	return 0;
+}
+struct nftl_discard_node {
+	unsigned int capacity;
+	unsigned char before_next[12];
+	struct nftl_discard_node *next;
+	unsigned char before_discard[72];
+	int (*discard)(struct nftl_discard_node *node, unsigned int sector,
+		       unsigned int count);
+};
+int nftl_discard(unsigned int sector, unsigned int count)
+{
+	struct nftl_discard_node *node =
+		(struct nftl_discard_node *)nftl_blk_head.next;
+
+	if (count == 0)
+		return 0;
+	/* OEM does not validate the first node, detect cycles, or split a
+	 * request crossing the selected node's capacity. */
+	while (node->capacity <= sector) {
+		sector -= node->capacity;
+		node = node->next;
+		if (!node) {
+			nand_print("[NE]parameter error %d,%d !\n", sector, count);
+			return 1;
+		}
+	}
+	return node->discard(node, sector, count);
 }
 
 /* Inferred NFTL orchestration body; callback signatures remain provisional. */

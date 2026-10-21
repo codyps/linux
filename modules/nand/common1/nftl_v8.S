@@ -449,6 +449,7 @@ nftl_write:
 	ret
 	.size	nftl_write, .-nftl_write
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_discard
 	.type	nftl_discard, %function
 nftl_discard:
@@ -500,6 +501,7 @@ nftl_discard:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nftl_discard, .-nftl_discard
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_flush_write_cache
@@ -14384,6 +14386,7 @@ do_after_write:
 // readonly payload moved below: 	.string	"[NE]write logic data to current block error\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	write_data_to_page
 	.type	write_data_to_page, %function
 write_data_to_page:
@@ -14435,6 +14438,7 @@ write_data_to_page:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	write_data_to_page, .-write_data_to_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC162: relocated in rooted readonly order below. */
