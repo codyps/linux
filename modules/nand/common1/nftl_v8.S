@@ -21112,6 +21112,7 @@ no_cross_talk_rebuild_current_block:
 // readonly payload moved below: 	.string	"[NE]erase_block block fail %d!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	erase_block
 	.type	erase_block, %function
 erase_block:
@@ -21196,6 +21197,7 @@ erase_block:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	erase_block, .-erase_block
+	#endif
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_check_pattern

@@ -4073,7 +4073,60 @@ int sandisk_A19_vender_set_param(void *chip, void *value, void *address,
 	return result;
 }
 
-extern int erase_block(void *zone, void *block, unsigned short mode);
+struct erase_block_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages;
+	unsigned char before_fixed_page[6];
+	unsigned short fixed_page;
+};
+struct erase_block_info {
+	unsigned short number;
+	unsigned short state;
+	unsigned short pages;
+	unsigned short erase_count;
+	unsigned int tag;
+};
+struct erase_block_zone {
+	unsigned char before_geometry[8];
+	struct erase_block_geometry *geometry;
+	unsigned char before_bad_count[12];
+	unsigned short bad_count;
+	unsigned char before_erase[3426];
+	int (*erase)(struct erase_block_zone *, struct physic_op_param *);
+	unsigned char before_mark_bad[32];
+	int (*mark_bad)(struct erase_block_zone *, struct physic_op_param *);
+};
+extern int mark_free_block(struct erase_block_zone *, struct erase_block_info *);
+int erase_block(struct erase_block_zone *zone, struct erase_block_info *block,
+		unsigned short mode)
+{
+	struct physic_op_param op;
+	int result;
+
+	nand_print("[NI]erase_block block %d!\n", block->number);
+	set_physic_op_par(&op, block->number, 0, zone->geometry->fixed_page,
+			  0, 0);
+	result = zone->erase(zone, &op);
+	if (result) {
+		nand_print("[NE]erase_block block fail %d!\n",
+			   block->number);
+		/* OEM ignores the bad-block callback result and returns the
+		 * original erase status after updating the metadata. */
+		zone->mark_bad(zone, &op);
+		block->pages = 0;
+		block->state = 255;
+		zone->bad_count++;
+	} else {
+		block->erase_count = mode;
+		block->tag = -1;
+		put_phy_block_to_free_list((struct move_zone *)zone,
+					   (struct move_node *)block);
+		mark_free_block(zone, block);
+		block->pages = zone->geometry->pages;
+		block->state = 0;
+	}
+	return result;
+}
 int nand_dbg_zone_erase(void *zone, unsigned short block,
 			unsigned short mode)
 {
@@ -4084,7 +4137,8 @@ int nand_dbg_zone_erase(void *zone, unsigned short block,
 		(struct nftl_free_erase_owner *)zone,
 		(struct nftl_free_erase_node *)physical);
 	/* OEM passes a null removal result directly to erase_block. */
-	result = erase_block(zone, physical, mode);
+	result = erase_block((struct erase_block_zone *)zone,
+			     (struct erase_block_info *)physical, mode);
 	return result;
 }
 
@@ -4246,7 +4300,9 @@ int adjust_free_list(struct adjust_free_zone *zone)
 	/* OEM logs a missing block but dereferences it immediately afterward. */
 	if (!block)
 		nand_print("[NE]adjust free list fail!!\n");
-	erase_block(zone, block, (unsigned short)(block->erase_time + 1));
+	erase_block((struct erase_block_zone *)zone,
+		    (struct erase_block_info *)block,
+		    (unsigned short)(block->erase_time + 1));
 	block = (struct adjust_free_block *)out_phy_block_from_free_list_by_block(
 		(struct nftl_free_erase_owner *)zone,
 		(struct nftl_free_erase_node *)block);
