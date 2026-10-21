@@ -5964,6 +5964,49 @@ extern unsigned char toshiba_p1_1[], toshiba_p1_2[], toshiba_p1_3[];
 extern unsigned char toshiba_read_retry_addr_1[], toshiba_read_retry_addr_2[];
 extern int toshiba_vender_set_param(struct samsung_set_chip *,
 				   unsigned char *, unsigned char *, unsigned int);
+int toshiba_set_readretry(struct samsung_set_chip *chip)
+{
+	unsigned char *values;
+	unsigned char *addresses;
+	int count;
+	int result;
+
+	if (toshiba_read_retry_mode != 16 &&
+	    toshiba_read_retry_mode != 17 &&
+	    toshiba_read_retry_mode != 18)
+		return -89;
+	toshiba_read_retry_clock_save((struct clock_chip *)chip);
+	nand_enable_chip(chip);
+	ndfc_disable_randomize(chip->controller);
+	if (chip->retry == 0)
+		/* OEM ignores precondition failure and still programs retry. */
+		toshiba_vender_pre_condition(chip);
+	if (ndfc_is_toggle_interface(chip->controller)) {
+		ndfc_set_legacy_interface(chip->controller);
+		toshiba_toggle_mode_flag_recovered = 1;
+	}
+	if (toshiba_read_retry_mode == 17) {
+		values = toshiba_p1_2 + chip->retry * 5;
+		addresses = toshiba_read_retry_addr_2;
+		count = 5;
+	} else if (toshiba_read_retry_mode == 18) {
+		values = toshiba_p1_3 + chip->retry * 5;
+		addresses = toshiba_read_retry_addr_2;
+		count = 5;
+	} else {
+		values = toshiba_p1_1 + chip->retry * 4;
+		addresses = toshiba_read_retry_addr_1;
+		count = 4;
+	}
+	/* Retry indexes are unchecked against the tables. Stock also keeps
+	 * the toggle flag sticky across chips and ignores restore failures. */
+	result = toshiba_vender_set_param(chip, values, addresses, count);
+	if (toshiba_toggle_mode_flag_recovered == 1)
+		ndfc_set_toggle_interface(chip->controller);
+	nand_disable_chip(chip);
+	toshiba_read_retry_clock_recover((struct clock_chip *)chip);
+	return result;
+}
 int toshiba_exit_readretry(struct samsung_set_chip *chip)
 {
 	unsigned char *values;

@@ -5876,6 +5876,7 @@ toshiba_vender_pre_condition:
 	.size	toshiba_vender_pre_condition, .-toshiba_vender_pre_condition
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	toshiba_set_readretry
 	.type	toshiba_set_readretry, %function
 toshiba_set_readretry:
@@ -6009,6 +6010,7 @@ toshiba_set_readretry:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	toshiba_set_readretry, .-toshiba_set_readretry
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC79: relocated in rooted readonly order below. */
