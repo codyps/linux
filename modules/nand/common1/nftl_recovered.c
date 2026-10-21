@@ -8367,6 +8367,135 @@ struct sandisk_first_chip {
 	unsigned char before_controller[272 - 48];
 	struct sandisk_first_controller *controller;
 };
+struct hynix_ff_request {
+	unsigned int channel;
+	unsigned int block;
+	unsigned int page;
+	unsigned int reserved;
+	unsigned char *data;
+};
+struct hynix_ff_command {
+	unsigned int index;
+	unsigned int before_wait;
+	unsigned int wait;
+	unsigned int code;
+	unsigned int valid;
+	unsigned int before_address;
+	unsigned char address[16];
+	unsigned int address_cycles;
+	unsigned int data_enable;
+	unsigned int flag0;
+	unsigned int flag1;
+	unsigned int flag2;
+	unsigned int transfer_length;
+	unsigned char before_data[8];
+	void *data;
+	unsigned char before_final[12];
+	unsigned int final;
+};
+struct hynix_ff_controller {
+	unsigned char before_channel[12];
+	unsigned int channel;
+	unsigned int chips;
+	unsigned char before_commands[20];
+	struct hynix_ff_command commands;
+};
+struct hynix_ff_chip {
+	unsigned char before_index[28];
+	unsigned int index;
+	unsigned int blocks;
+	unsigned char before_page_shift[8];
+	unsigned int page_shift;
+	unsigned char before_controller[224];
+	struct hynix_ff_controller *controller;
+};
+_Static_assert(__builtin_offsetof(struct hynix_ff_command, address) == 24,
+	       "Hynix FF command address offset");
+_Static_assert(__builtin_offsetof(struct hynix_ff_command, data) == 72,
+	       "Hynix FF command buffer offset");
+_Static_assert(__builtin_offsetof(struct hynix_ff_command, final) == 92,
+	       "Hynix FF command final offset");
+_Static_assert(__builtin_offsetof(struct hynix_ff_chip, controller) == 272,
+	       "Hynix FF controller offset");
+extern int nand_read_chip_status_ready(void *chip);
+extern void ndfc_clean_cmd_seq(struct sandisk_first_command *commands);
+extern unsigned int get_row_addr(unsigned int, unsigned int, unsigned int);
+extern void fill_cmd_addr(unsigned int, unsigned int, unsigned int,
+			  unsigned int, void *);
+extern int ndfc_execute_cmd(void *, struct sandisk_first_command *);
+extern void ndfc_disable_ecc(void *controller);
+int hynix16nm_write_page_FF(struct hynix_ff_request *request,
+			    unsigned int mode)
+{
+	struct hynix_ff_chip *chip = (struct hynix_ff_chip *)
+		nci_get_from_nsi(g_nsi, request->channel);
+	struct hynix_ff_controller *controller = chip->controller;
+	struct hynix_ff_command *command = &controller->commands;
+	unsigned int chunks = 0;
+	unsigned int last_length = 0;
+	unsigned int row = 0;
+	unsigned int column = 0;
+	unsigned int index;
+	int result;
+
+	if (chip->index >= controller->chips || request->block >= chip->blocks) {
+		nand_print("fatal err -0, wrong input parameter, ch: %d  chip: %d/%d  block: %d/%d \n",
+			   controller->channel, chip->index, controller->chips,
+			   request->block, chip->blocks);
+		return -108;
+	}
+	nand_read_chip_status_ready(chip);
+	nand_enable_chip((struct samsung_set_chip *)chip);
+	ndfc_disable_randomize(controller);
+	ndfc_disable_ecc(controller);
+	ndfc_clean_cmd_seq((struct sandisk_first_command *)command);
+	if (mode == 8) {
+		chunks = 9;
+		last_length = 832;
+	} else if (mode == 16) {
+		chunks = 18;
+		last_length = 640;
+	}
+	/* Unknown modes send only the final command. Every execute result is
+	 * discarded; OEM returns the final ready status without restoring ECC
+	 * or randomization on the controller. */
+	for (index = 0; index < chunks; index++) {
+		command->index = 0;
+		command->code = index == 0 ? 128 : 133;
+		command->wait = 1;
+		command->valid = 1;
+		command->flag2 = 1;
+		command->flag0 = 1;
+		command->flag1 = 1;
+		command->data = request->data + index * 1024;
+		command->transfer_length = index == chunks - 1 ?
+			last_length : 1024;
+		command->data_enable = 1;
+		if (index == 0) {
+			row = get_row_addr(chip->page_shift, request->block,
+					   request->page);
+			command->address_cycles = 5;
+			fill_cmd_addr(column, 2, row, 3, command->address);
+		} else {
+			command->address_cycles = 2;
+			fill_cmd_addr(column, 2, row, 0, command->address);
+		}
+		ndfc_execute_cmd(controller,
+				 (struct sandisk_first_command *)command);
+		column += 1024;
+	}
+	command->index = 0;
+	command->code = 16;
+	command->wait = 1;
+	command->valid = 1;
+	command->final = 1;
+	ndfc_execute_cmd(controller, (struct sandisk_first_command *)command);
+	result = nand_read_chip_status_ready(chip);
+	if (result)
+		nand_print("m1 write page FF wrong\n");
+	nand_disable_chip((struct samsung_set_chip *)chip);
+	return result;
+}
 _Static_assert(__builtin_offsetof(struct sandisk_first_command, address_cycles)
 	       == 112, "first-burn address cycles");
 _Static_assert(__builtin_offsetof(struct sandisk_first_command, third_count)

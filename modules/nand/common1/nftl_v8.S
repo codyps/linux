@@ -9912,6 +9912,7 @@ hynix16nm_read_page_end:
 // readonly payload moved below: 	.string	"m1 write page FF wrong\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_write_page_FF
 	.type	hynix16nm_write_page_FF, %function
 hynix16nm_write_page_FF:
@@ -10218,6 +10219,7 @@ hynix16nm_write_page_FF:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	hynix16nm_write_page_FF, .-hynix16nm_write_page_FF
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	hynix16nm_vender_get_param
