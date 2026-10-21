@@ -5262,6 +5262,47 @@ int sandisk_end_one_read_retry(struct samsung_set_chip *chip)
 	return 0;
 }
 
+extern unsigned char sandisk_read_retry_reg_adr_19[];
+extern unsigned char sandisk_read_retry_reg_adr_24[];
+extern unsigned char sandisk_read_retry_reg_adr_1y[];
+/* The four-byte value array has no canary in the stock object. */
+__attribute__((optimize("-fno-stack-protector")))
+int sandisk_exit_readretry(struct samsung_set_chip *chip)
+{
+	unsigned char values[4] = {0, 0, 0, 0};
+	unsigned char *addresses;
+	int count;
+	int result = 0;
+
+	nand_enable_chip(chip);
+	ndfc_disable_randomize(chip->controller);
+	if (ndfc_is_toggle_interface(chip->controller)) {
+		ndfc_set_legacy_interface(chip->controller);
+		sandisk_toggle_mode_flag = 1;
+	}
+	if (sandisk_read_retry_mode == 48) {
+		addresses = sandisk_read_retry_reg_adr_19;
+		count = 3;
+		result = sandisk_vender_set_param(chip, values, addresses, count);
+	} else if (sandisk_read_retry_mode == 49) {
+		addresses = sandisk_read_retry_reg_adr_24;
+		count = 3;
+		result = sandisk_vender_set_param(chip, values, addresses, count);
+	} else if (sandisk_read_retry_mode == 50) {
+		/* OEM ignores the command result before programming one byte. */
+		set_one_cmd((struct command_chip *)chip, -1, 1);
+		addresses = sandisk_read_retry_reg_adr_1y;
+		count = 1;
+		result = sandisk_vender_set_param(chip, values, addresses, count);
+	}
+	/* OEM retains this flag across calls, so a different chip can trigger
+	 * restoration even when this invocation never switched interface. */
+	if (sandisk_toggle_mode_flag == 1)
+		ndfc_set_toggle_interface(chip->controller);
+	nand_disable_chip(chip);
+	return result;
+}
+
 extern unsigned int toshiba_toggle_mode_flag_recovered;
 extern unsigned char toshiba_p1_1[], toshiba_p1_2[], toshiba_p1_3[];
 extern unsigned char toshiba_read_retry_addr_1[], toshiba_read_retry_addr_2[];
