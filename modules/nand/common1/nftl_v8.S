@@ -26511,6 +26511,7 @@ adjust_invaild_list:
 // readonly payload moved below: 	.string	"[NE]%s:malloc fail for cache_page_buf!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_cache_init
 	.type	nftl_cache_init, %function
 nftl_cache_init:
@@ -26703,6 +26704,7 @@ nftl_cache_init:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nftl_cache_init, .-nftl_cache_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_cache_exit

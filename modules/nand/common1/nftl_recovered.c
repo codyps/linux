@@ -2726,6 +2726,101 @@ struct nftl_cache_entry_view {
 	void *allocation;
 	unsigned char after_allocation[24];
 };
+/* The 32 slots and terminal page buffer occupy bytes 8..1807 of the
+ * embedded cache. The OEM loop trusts the count from the configuration;
+ * it does not cap it at the physical number of slots. */
+struct cache_init_entry {
+	unsigned short index;
+	unsigned short status;
+	unsigned short field0;
+	unsigned short field1;
+	unsigned int page;
+	unsigned int untouched;
+	void *allocation;
+	void *links[4];
+};
+struct cache_init_data {
+	unsigned short count;
+	unsigned short field0;
+	unsigned short field1;
+	unsigned short field2;
+	struct cache_init_entry entries[32];
+	void *page_buffer;
+};
+struct cache_init_geometry {
+	unsigned char before_allocation_size[26];
+	unsigned short allocation_size;
+};
+struct cache_init_configuration {
+	unsigned char before_count[22];
+	unsigned short count;
+};
+struct cache_init_zone {
+	unsigned char before_geometry[8];
+	struct cache_init_geometry *geometry;
+	unsigned char before_cache[1056];
+	struct cache_init_data cache;
+	unsigned char before_configuration[568];
+	struct cache_init_configuration *configuration;
+};
+_Static_assert(sizeof(struct cache_init_entry) == 56, "cache entry stride");
+_Static_assert(__builtin_offsetof(struct cache_init_entry, allocation) == 16,
+	       "cache entry allocation offset");
+_Static_assert(__builtin_offsetof(struct cache_init_data, page_buffer) == 1800,
+	       "cache page buffer offset");
+_Static_assert(__builtin_offsetof(struct cache_init_zone, cache) == 1072,
+	       "zone cache offset");
+_Static_assert(__builtin_offsetof(struct cache_init_zone, configuration) == 3448,
+	       "zone configuration offset");
+
+int nftl_cache_init(void *owner)
+{
+	struct cache_init_zone *zone = owner;
+	struct cache_init_data *cache = &zone->cache;
+	unsigned int index;
+
+	cache->count = zone->configuration->count;
+	cache->field0 = 0;
+	cache->field1 = 0;
+	cache->field2 = 0;
+	/* These eight slots are also the links of entries 30 and 31. OEM
+	 * clears them before the allocation loop, even when count is zero. */
+	cache->entries[30].links[0] = 0;
+	cache->entries[30].links[1] = 0;
+	cache->entries[30].links[2] = 0;
+	cache->entries[30].links[3] = 0;
+	cache->entries[31].links[0] = 0;
+	cache->entries[31].links[1] = 0;
+	cache->entries[31].links[2] = 0;
+	cache->entries[31].links[3] = 0;
+	for (index = 0; index < cache->count; index++) {
+		struct cache_init_entry *entry = &cache->entries[index];
+
+		entry->index = index;
+		entry->status = 255;
+		entry->page = -1;
+		entry->links[0] = 0;
+		entry->links[1] = 0;
+		entry->links[2] = 0;
+		entry->links[3] = 0;
+		entry->field0 = 0;
+		entry->field1 = 0;
+		entry->allocation = nftl_malloc(zone->geometry->allocation_size);
+		if (!entry->allocation) {
+			/* OEM leaks all earlier allocations on this failure. */
+			nand_print("[NE]%s:malloc fail for cache_node!\n", __func__);
+			return 1;
+		}
+	}
+	cache->page_buffer = nftl_malloc(zone->geometry->allocation_size);
+	if (!cache->page_buffer) {
+		/* OEM leaves the node allocations live on this failure. */
+		nand_print("[NE]%s:malloc fail for cache_page_buf!\n", __func__);
+		return 1;
+	}
+	return 0;
+}
+
 int nftl_cache_exit(void *zone)
 {
 	unsigned char *cache = (unsigned char *)zone + 1072;
@@ -3712,7 +3807,6 @@ extern void clean_block_list(void *);
 extern int nand_clean_zone_table2(struct nftl_clean_zone *);
 struct build_zone;
 extern int build_zone_list(struct build_zone *);
-extern void nftl_cache_init(void *);
 struct invalid_print_zone;
 extern void print_block_invalid_list(struct invalid_print_zone *);
 struct free_print_zone;
