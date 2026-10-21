@@ -21654,6 +21654,7 @@ torture_block_and_mark:
 	ret
 	.size	torture_block_and_mark, .-torture_block_and_mark
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	mark_free_block
 	.type	mark_free_block, %function
 mark_free_block:
@@ -21799,6 +21800,7 @@ mark_free_block:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	mark_free_block, .-mark_free_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_last_phy_block

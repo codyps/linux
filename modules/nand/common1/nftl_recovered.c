@@ -5065,6 +5065,39 @@ struct erase_block_zone {
 	unsigned char before_mark_bad[32];
 	int (*mark_bad)(struct erase_block_zone *, struct physic_op_param *);
 };
+struct mark_free_zone {
+	unsigned char before_geometry[8];
+	struct erase_block_geometry *geometry;
+	unsigned char before_page_data[512 - 16];
+	void *page_data;
+	unsigned char before_write[3472 - 520];
+	int (*write)(struct mark_free_zone *, struct physic_op_param *);
+};
+__attribute__((optimize("-fno-stack-protector")))
+int mark_free_block(struct erase_block_zone *owner,
+		    struct erase_block_info *block)
+{
+	struct mark_free_zone *zone = (struct mark_free_zone *)owner;
+	struct physic_op_param op;
+	unsigned char oob[16];
+	unsigned int index;
+
+	nand_memset(oob, -91, 16);
+	for (index = 0; index < 4; index++) {
+		unsigned short page = index < 2 ? index :
+			zone->geometry->pages - (4 - index);
+
+		set_physic_op_par(&op, block->number, page,
+				   zone->geometry->fixed_page,
+				   zone->page_data, oob);
+		set_oob_special_page(zone, oob, 0x55555555,
+				     block->tag, block->erase_count);
+		/* OEM ignores both OOB-helper and page-write failures and
+		 * reports success even if none of the four marks persisted. */
+		zone->write(zone, &op);
+	}
+	return 0;
+}
 extern int mark_free_block(struct erase_block_zone *, struct erase_block_info *);
 int erase_block(struct erase_block_zone *zone, struct erase_block_info *block,
 		unsigned short mode)
