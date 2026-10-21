@@ -673,6 +673,7 @@ del_last_nftl_blk:
 	.size	del_last_nftl_blk, .-del_last_nftl_blk
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_support_boot_check_crc_from_dts
 	.type	nftl_support_boot_check_crc_from_dts, %function
 nftl_support_boot_check_crc_from_dts:
@@ -685,6 +686,7 @@ nftl_support_boot_check_crc_from_dts:
 	ldp	x29, x30, [sp], 16
 	ret
 	.size	nftl_support_boot_check_crc_from_dts, .-nftl_support_boot_check_crc_from_dts
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* Stock #860 reports NFTL 5.0.000, built 2020.12.24 at 09:50.
@@ -1341,6 +1343,7 @@ _nand_flush_sector_write_cache:
 	.size	_nand_flush_sector_write_cache, .-_nand_flush_sector_write_cache
 	#endif
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_shutdown_op
 	.type	_shutdown_op, %function
 _shutdown_op:
@@ -1353,6 +1356,7 @@ _shutdown_op:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	_shutdown_op, .-_shutdown_op
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	_nftl_nand_erase_superblk
@@ -24153,6 +24157,7 @@ nand_dbg_phy_erase:
 	.size	nand_dbg_phy_erase, .-nand_dbg_phy_erase
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_dbg_single_phy_erase
 	.type	nand_dbg_single_phy_erase, %function
 nand_dbg_single_phy_erase:
@@ -24168,6 +24173,7 @@ nand_dbg_single_phy_erase:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nand_dbg_single_phy_erase, .-nand_dbg_single_phy_erase
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	clean_block_list
 	.type	clean_block_list, %function
@@ -28512,6 +28518,7 @@ get_nftl_need_read_claim:
 	ret
 	.size	get_nftl_need_read_claim, .-get_nftl_need_read_claim
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_nftl_read_claim_page_no
 	.type	get_nftl_read_claim_page_no, %function
 get_nftl_read_claim_page_no:
@@ -28528,6 +28535,7 @@ get_nftl_read_claim_page_no:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	get_nftl_read_claim_page_no, .-get_nftl_read_claim_page_no
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	clean_read_reclaim_complete_flag
 	.type	clean_read_reclaim_complete_flag, %function

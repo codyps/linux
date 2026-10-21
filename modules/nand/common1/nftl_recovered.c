@@ -1899,3 +1899,35 @@ int all_time_gc(struct gc_policy_zone *zone)
 	}
 	return 0;
 }
+
+struct nftl_shutdown_view {
+	unsigned char preceding[24];
+	void *operation;
+};
+int _shutdown_op(struct nftl_shutdown_view *object)
+{
+	/* OEM dereferences the owner even though its shutdown callee always
+	 * reports success without using the resulting operation pointer. */
+	return __shutdown_op(object->operation);
+}
+
+extern int nand_get_support_boot_check_crc(void);
+unsigned char nftl_support_boot_check_crc_from_dts(void)
+{
+	return nand_get_support_boot_check_crc() != 0;
+}
+
+extern int nand_physic_erase_block(unsigned short chip, unsigned short block);
+int nand_dbg_single_phy_erase(unsigned short chip, unsigned short block)
+{
+	int result = nand_physic_erase_block(chip, block);
+	return result;
+}
+
+int get_nftl_read_claim_page_no(struct read_claim_node *head)
+{
+	struct read_claim_node *last =
+		(struct read_claim_node *)get_last_nftl((struct nftl_list_node *)head);
+	/* OEM does not check any pointer in this chain. */
+	return last->zone->settings->page;
+}
