@@ -15481,6 +15481,7 @@ fill_no_use_data_to_page:
 	ret
 	.size	fill_no_use_data_to_page, .-fill_no_use_data_to_page
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	fill_no_use_data_to_current_block
 	.type	fill_no_use_data_to_current_block, %function
 fill_no_use_data_to_current_block:
@@ -15515,6 +15516,7 @@ fill_no_use_data_to_current_block:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	fill_no_use_data_to_current_block, .-fill_no_use_data_to_current_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	fill_no_use_page_to_current_block

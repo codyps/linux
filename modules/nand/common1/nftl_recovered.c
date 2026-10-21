@@ -1095,6 +1095,30 @@ int fill_no_use_page_to_current_block(void *zone, int count)
 	return 1;
 }
 
+struct no_use_data_extent {
+	unsigned char before_count[20];
+	unsigned short count;
+};
+struct no_use_data_zone {
+	unsigned char before_extent[8];
+	struct no_use_data_extent *extent;
+};
+__attribute__((optimize("-fno-stack-protector")))
+int fill_no_use_data_to_current_block(struct no_use_data_zone *zone)
+{
+	int index;
+	int result;
+
+	for (index = 0; index < zone->extent->count; index++) {
+		result = fill_no_use_data_to_page(zone);
+		/* OEM treats zero as early success and re-reads count each
+		 * iteration, including after the helper mutates the extent. */
+		if (result == 0)
+			return 0;
+	}
+	return 1;
+}
+
 /* Bounded C candidates for stock NFTL assembly, not OEM declaration claims. */
 
 extern void *nand_malloc(unsigned int size);
