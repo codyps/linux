@@ -22533,6 +22533,7 @@ init_smart_info:
 	ret
 	.size	init_smart_info, .-init_smart_info
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_used_block_count
 	.type	get_used_block_count, %function
 get_used_block_count:
@@ -22562,6 +22563,7 @@ get_used_block_count:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	get_used_block_count, .-get_used_block_count
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC313: relocated in rooted readonly order below. */
@@ -25532,6 +25534,7 @@ put_phy_block_to_free_list:
 	ret
 	.size	put_phy_block_to_free_list, .-put_phy_block_to_free_list
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	out_phy_block_from_free_list
 	.type	out_phy_block_from_free_list, %function
 out_phy_block_from_free_list:
@@ -25563,6 +25566,7 @@ out_phy_block_from_free_list:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	out_phy_block_from_free_list, .-out_phy_block_from_free_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	out_phy_block_from_free_list_by_erase_time
@@ -30366,6 +30370,7 @@ done_static_wear_leveling:
 	ret
 	.size	done_static_wear_leveling, .-done_static_wear_leveling
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	do_static_wear_leveling
 	.type	do_static_wear_leveling, %function
 do_static_wear_leveling:
@@ -30400,6 +30405,7 @@ do_static_wear_leveling:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	do_static_wear_leveling, .-do_static_wear_leveling
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	prio_gc_one
 	.type	prio_gc_one, %function

@@ -2228,3 +2228,73 @@ int nand_dbg_zone_erase(void *zone, unsigned short block,
 	result = erase_block(zone, physical, mode);
 	return result;
 }
+
+struct wear_options {
+	unsigned char before_enabled[6];
+	unsigned short enabled;
+};
+struct wear_zone {
+	unsigned char before_active[0x2ac];
+	unsigned short active;
+	unsigned char before_options[0xd78 - 0x2ae];
+	struct wear_options *options;
+};
+extern int check_static_wear_leveling(struct wear_zone *zone);
+extern int done_static_wear_leveling(struct wear_zone *zone);
+int do_static_wear_leveling(struct wear_zone *zone)
+{
+	/* OEM dereferences options unchecked and reports one when inactive. */
+	if (zone->options->enabled == 0)
+		return 0;
+	if (zone->active == 0)
+		return 1;
+	if (check_static_wear_leveling(zone) == 0)
+		return done_static_wear_leveling(zone);
+	return 0;
+}
+
+struct free_block {
+	unsigned char before_links[0x20];
+	struct free_block *next;
+	struct free_block *previous;
+};
+struct free_block_zone {
+	unsigned char before_count[0x1e];
+	unsigned short count;
+};
+struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone)
+{
+	struct free_block *block = (struct free_block *)
+		del_free_list((struct diag_free_zone *)zone);
+
+	if (block) {
+		block->next = 0;
+		block->previous = 0;
+		/* OEM silently preserves zero count after successful removal. */
+		if (zone->count != 0)
+			zone->count--;
+	}
+	return block;
+}
+
+struct used_count_block {
+	unsigned short number;
+};
+struct used_count_zone {
+	unsigned char before_read[0xd88];
+	int (*read)(struct used_count_zone *zone, struct physic_op_param *op);
+};
+__attribute__((optimize("-fno-stack-protector")))
+int get_used_block_count(struct used_count_zone *zone,
+			 struct used_count_block *block)
+{
+	int count;
+	struct physic_op_param op;
+	unsigned char oob[16];
+
+	set_physic_op_par(&op, block->number, 0, 0, 0, oob);
+	/* OEM ignores callback errors and reads potentially stale OOB data. */
+	zone->read(zone, &op);
+	count = get_block_used_count_from_oob(oob);
+	return count;
+}
