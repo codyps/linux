@@ -19908,6 +19908,7 @@ recover_block_phy_page_mapping:
 // readonly payload moved below: 	.string	"[NE]build invalid_page_count more than pages_per_blk!!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	recover_logic_page_mapping
 	.type	recover_logic_page_mapping, %function
 recover_logic_page_mapping:
@@ -20045,6 +20046,7 @@ recover_logic_page_mapping:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	recover_logic_page_mapping, .-recover_logic_page_mapping
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC277: relocated in rooted readonly order below. */

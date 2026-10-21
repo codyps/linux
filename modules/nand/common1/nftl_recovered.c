@@ -6331,6 +6331,57 @@ struct logic_page_print_entry {
 	unsigned short code;
 	unsigned short marker;
 };
+int recover_logic_page_mapping(struct logic_page_map_zone *zone,
+			       struct invalid_page_node *current,
+			       const unsigned int *pages, unsigned int count)
+{
+	unsigned int index;
+
+	for (index = 0; index < count; index++) {
+		unsigned int page = pages[index];
+
+		if (page < zone->total_pages) {
+			struct logic_page_print_entry *entry =
+				(struct logic_page_print_entry *)
+				get_logic_page_map(zone, page);
+			if (!entry) {
+				nand_print("[NI]logic_page_map is NULL\n");
+				current->invalid_pages++;
+				continue;
+			}
+			if (entry->marker != 0xffff) {
+				struct invalid_page_node *previous =
+					(struct invalid_page_node *)
+					get_phy_block_addr(
+						(struct nftl_phy_outer *)zone,
+						entry->marker);
+				if (previous != current)
+					phy_block_from_invalid_page_incr(
+						(struct invalid_page_zone *)zone,
+						previous);
+				else
+					previous->invalid_pages++;
+				if (previous->invalid_pages >
+				    ((struct page_geometry *)zone->geometry)->pages_per_block)
+					nand_print("[NE]invalid_page_count more than pages_per_blk :%d\n",
+						   previous->number);
+			}
+			/* OEM replaces only the low 12 bits of the map code. */
+			entry->code = (entry->code & 0xf000) | (index & 0xfff);
+			entry->marker = current->number;
+		} else {
+			if (page != 0xffffffff)
+				nand_print("[NE]invalid_page data block:%d page:%d,logic_page 0x%x!!\n",
+					   current->number, index, page);
+			current->invalid_pages++;
+			if (current->invalid_pages >
+			    ((struct page_geometry *)zone->geometry)->pages_per_block)
+				nand_print("[NE]build invalid_page_count more than pages_per_blk!!\n");
+		}
+	}
+	return 0;
+}
+
 struct logic_read_geometry {
 	unsigned char before_erased_size[26];
 	unsigned short erased_size;
