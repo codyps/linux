@@ -11885,6 +11885,7 @@ sandisk_read_retry_clock_save:
 	.size	sandisk_read_retry_clock_save, .-sandisk_read_retry_clock_save
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_vender_set_param
 	.type	sandisk_vender_set_param, %function
 sandisk_vender_set_param:
@@ -11953,6 +11954,7 @@ sandisk_vender_set_param:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	sandisk_vender_set_param, .-sandisk_vender_set_param
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_read_retry_clock_recover

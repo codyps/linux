@@ -1534,6 +1534,27 @@ int hynix16nm_get_otp_param(struct hynix16nm_otp_zone *zone,
 	}
 	return 0;
 }
+extern unsigned char sandisk_acti_start_cmd[2];
+extern unsigned char sandisk_read_retry_mode;
+extern unsigned char sandisk_read_retry_cmd_19[3];
+extern unsigned char sandisk_read_retry_cmd_1y[1];
+int sandisk_vender_set_param(void *chip, unsigned char *data,
+			     unsigned char *address, unsigned int ignored)
+{
+	int result = 0;
+
+	if (sandisk_read_retry_mode == 48 || sandisk_read_retry_mode == 49) {
+		result = set_cmd_with_nand_bus(chip, sandisk_acti_start_cmd,
+					       0, 0, 0, 0, 2);
+		/* OEM ORs status codes rather than returning the first error. */
+		result |= set_cmd_with_nand_bus(chip, sandisk_read_retry_cmd_19,
+						0, address, data, 1, 3);
+	}
+	if (sandisk_read_retry_mode == 50)
+		result = set_cmd_with_nand_bus(chip, sandisk_read_retry_cmd_1y,
+						1, address, data, 4, 1);
+	return result;
+}
 extern int page_write(unsigned short chip, unsigned short block,
 		      unsigned short page, unsigned int mode,
 		      void *data, void *oob);
