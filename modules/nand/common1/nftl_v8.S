@@ -9642,6 +9642,7 @@ hynix16nm_set_readretry:
 // readonly payload moved below: 	.string	"physic info start_block %d\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_get_special_info
 	.type	hynix16nm_get_special_info, %function
 hynix16nm_get_special_info:
@@ -9757,6 +9758,7 @@ hynix16nm_get_special_info:
 	ldp	x29, x30, [sp], 96
 	ret
 	.size	hynix16nm_get_special_info, .-hynix16nm_get_special_info
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC110: relocated in rooted readonly order below. */
