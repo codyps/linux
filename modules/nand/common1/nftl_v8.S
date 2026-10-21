@@ -1815,6 +1815,7 @@ panic_backup_block:
 	ret
 	.size	panic_backup_block, .-panic_backup_block
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	panic_read
 	.type	panic_read, %function
 panic_read:
@@ -1872,6 +1873,7 @@ panic_read:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	panic_read, .-panic_read
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC22: relocated in rooted readonly order below. */
@@ -28862,6 +28864,7 @@ get_cold_logic_page:
 	ret
 	.size	get_cold_logic_page, .-get_cold_logic_page
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	read_reclaim
 	.type	read_reclaim, %function
 read_reclaim:
@@ -28917,6 +28920,7 @@ read_reclaim:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	read_reclaim, .-read_reclaim
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.local	gc_src_type
 /* gc_src_type: common storage replaced by its recovered BSS slot. */
 	.section	.rodata

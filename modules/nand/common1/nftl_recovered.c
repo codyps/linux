@@ -2464,9 +2464,33 @@ unsigned char is_on_panic(void)
 }
 
 /* Preserve OEM's unchecked shared BSS flag and byte result. */
-unsigned char is_panic_enable(void)
+int is_panic_enable(void)
 {
 	return panic_enable != 0;
+}
+
+struct panic_read_ops {
+	unsigned char before_read[72];
+	int (*read)(struct panic_read_ops *, unsigned int, unsigned int, void *);
+};
+int panic_read(struct panic_read_ops *ops, unsigned int sector,
+	       unsigned int count, void *buffer)
+{
+	void *cursor = buffer;
+
+	if (!is_panic_enable())
+		return -1;
+	panic_mark_panic();
+	/* OEM splits at 32768 sectors and ignores every read callback result. */
+	while (count > 32767) {
+		ops->read(ops, sector, 32768, cursor);
+		cursor += 32768;
+		sector += 32768;
+		count -= 32768;
+	}
+	if (count)
+		ops->read(ops, sector, count, cursor);
+	return 0;
 }
 
 struct gc_policy_geometry {
@@ -3436,4 +3460,46 @@ int set_nftl_read_claim_complete(struct read_claim_node *head,
 	}
 	last->zone->settings->page = 0;
 	return 0;
+}
+
+struct reclaim_cache_mode {
+	unsigned char before_mode[8];
+	unsigned char mode;
+};
+struct reclaim_page_zone {
+	unsigned char before_cache[8];
+	struct reclaim_cache_mode *cache;
+	unsigned char before_marker[8];
+	unsigned char marker;
+	unsigned char before_pages[11];
+	unsigned int pages;
+};
+extern int get_cold_logic_page(void *zone, int page, unsigned int pages);
+extern int nand_cache_read(void *zone, int page, unsigned short mode,
+			   void *buffer);
+int read_reclaim(struct read_claim_node *head,
+		 struct read_claim_node *selected, void *buffer)
+{
+	int cold_page;
+	int claim_page;
+	int result;
+
+	result = 0;
+	claim_page = get_nftl_read_claim_page_no(head);
+	cold_page = get_cold_logic_page(selected->zone, claim_page,
+		((struct reclaim_page_zone *)selected->zone)->pages);
+
+	if (cold_page == -1) {
+		result = set_nftl_read_claim_complete(head, selected);
+	} else {
+		/* OEM discards cache-read and flag-set errors, and follows every
+		 * private pointer without validation. */
+		nand_cache_read(selected->zone, cold_page,
+			((struct reclaim_page_zone *)selected->zone)->cache->mode,
+			buffer);
+		set_nftl_read_claim_flag(head,
+			((struct reclaim_page_zone *)selected->zone)->marker,
+			cold_page);
+	}
+	return result;
 }
