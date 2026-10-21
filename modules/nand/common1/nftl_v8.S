@@ -15498,6 +15498,7 @@ current_block_at_first_page:
 	.size	current_block_at_first_page, .-current_block_at_first_page
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	fill_no_use_data_to_page
 	.type	fill_no_use_data_to_page, %function
 fill_no_use_data_to_page:
@@ -15616,6 +15617,7 @@ fill_no_use_data_to_page:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	fill_no_use_data_to_page, .-fill_no_use_data_to_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	fill_no_use_data_to_current_block

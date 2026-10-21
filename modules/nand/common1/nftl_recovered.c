@@ -5889,6 +5889,56 @@ int do_after_write(struct do_after_zone *zone)
 	return 0;
 }
 
+int fill_no_use_data_to_page(void *owner)
+{
+	struct do_after_zone *zone = owner;
+	if (current_block_at_last_page((struct current_zone *)zone,
+				       (struct current_page *)zone->current)) {
+		if (write_phy_page_map_to_current_block(
+				(struct page_map_write_zone *)zone,
+				(struct page_map_write_current *)zone->current)) {
+			nand_print("[NE]write_phy_page_map_to_current_block error!\n");
+			return 1;
+		}
+		if (zone->flags & 1) {
+			/* OEM only logs a failure for the secondary page map. */
+			if (write_phy_page_map_to_current_block(
+					(struct page_map_write_zone *)zone,
+					(struct page_map_write_current *)zone->page_map))
+				nand_print("[NE]write_phy_page_map_to_current_block error!\n");
+		}
+		if (get_new_current_block((struct get_new_zone *)zone,
+				(struct get_new_current_entry *)zone->current)) {
+			nand_print("[NE]get_new_current_block error1!\n");
+			return 1;
+		}
+		if (zone->flags & 1) {
+			if (get_new_current_block((struct get_new_zone *)zone,
+					(struct get_new_current_entry *)zone->page_map)) {
+				nand_print("[NE]get_new_current_block error2!\n");
+				return 1;
+			}
+		}
+		return 0;
+	}
+	if (current_block_at_first_page(zone,
+					(struct nftl_current_block *)zone->current))
+		return 0;
+	/* OEM ignores page-map failures on a non-last page and returns eight
+	 * even if both writes failed. The diagnostic is the only indication. */
+	if (write_phy_page_map_to_current_block(
+			(struct page_map_write_zone *)zone,
+			(struct page_map_write_current *)zone->current))
+		nand_print("[NE]write_phy_page_map_to_current_block error!\n");
+	if (zone->flags & 1) {
+		if (write_phy_page_map_to_current_block(
+				(struct page_map_write_zone *)zone,
+				(struct page_map_write_current *)zone->page_map))
+			nand_print("[NE]write_phy_page_map_to_current_block error!\n");
+	}
+	return 8;
+}
+
 struct get_new_geometry {
 	unsigned char before_limit[16];
 	unsigned short erase_limit;
