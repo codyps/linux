@@ -3322,6 +3322,60 @@ int hynix20nm_set_default_param(struct otp_chip *chip)
 	return locals.result;
 }
 
+extern unsigned char hynix26nm_read_retry_cycle;
+extern unsigned char hynix26nm_read_retry_reg_num;
+extern unsigned char hynix26nm_read_retry_reg_adr[];
+extern signed short hynix26nm_read_retry_val[];
+__attribute__((optimize("-fno-stack-protector")))
+int hynix26nm_set_readretry(void *owner)
+{
+	struct hynix20nm_retry_chip *chip = owner;
+	struct {
+		unsigned char values[8];
+		unsigned short padding;
+		unsigned short base;
+		int result;
+		unsigned short padding2;
+		unsigned short adjusted;
+		unsigned int index;
+	} locals;
+
+	locals.result = 0;
+	if (chip->cycle > hynix26nm_read_retry_cycle)
+		return -53;
+	/* OEM trusts the mutable register count and does not guard this
+	 * eight-byte stack buffer against overflow. */
+	for (locals.index = 0; locals.index < hynix26nm_read_retry_reg_num;
+	     locals.index++) {
+		locals.base = chip->saved[locals.index];
+		locals.adjusted = (unsigned short)(
+			hynix26nm_read_retry_val[chip->cycle * 4 + locals.index]
+			+ locals.base);
+		/* Stock truncates to 16 bits before interpreting the sum as
+		 * signed and clamping it to the byte range. */
+		if ((short)locals.adjusted > 255)
+			locals.adjusted = 255;
+		else if ((short)locals.adjusted < 0)
+			locals.adjusted = 0;
+		else
+			locals.adjusted &= 255;
+		locals.values[locals.index] = locals.adjusted;
+	}
+	if (chip->cycle >= 2 && chip->cycle <= 6)
+		locals.values[0] = 0;
+	if (chip->cycle == 5 || chip->cycle == 6)
+		locals.values[1] = 0;
+	locals.result = hynix26nm_vender_set_param(
+		chip, locals.values, hynix26nm_read_retry_reg_adr,
+		hynix26nm_read_retry_reg_num);
+	nand_print_dbg("hynix26nm retry param:");
+	for (locals.index = 0; locals.index < hynix26nm_read_retry_reg_num;
+	     locals.index++)
+		nand_print_dbg(" %x ", locals.values[locals.index]);
+	nand_print_dbg("\n");
+	return locals.result;
+}
+
 extern unsigned char hynix26nm_read_retry_reg_num;
 extern unsigned char hynix26nm_read_retry_reg_adr[];
 /* Stock uses a signed index and omits a canary around its unchecked buffer. */

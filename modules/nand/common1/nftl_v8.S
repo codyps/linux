@@ -6610,6 +6610,7 @@ hynix26nm_vender_set_param:
 // readonly payload moved below: 	.string	"hynix26nm retry param:"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_set_readretry
 	.type	hynix26nm_set_readretry, %function
 hynix26nm_set_readretry:
@@ -6751,6 +6752,7 @@ hynix26nm_set_readretry:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	hynix26nm_set_readretry, .-hynix26nm_set_readretry
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC86: relocated in rooted readonly order below. */
