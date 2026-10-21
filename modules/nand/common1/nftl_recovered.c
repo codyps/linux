@@ -3917,8 +3917,11 @@ int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *owner)
 	for (copy = 0; copy <= 7; copy++) {
 		invalid_copy = 0;
 		for (index = 0; index <= 63; index++) {
-			owner->saved[index] = buffer[copy * 128 + index];
-			complement[index] = buffer[copy * 128 + 64 + index];
+			/* OEM widens the 32-bit copy stride before adding index. */
+			owner->saved[index] =
+				buffer[(unsigned long)(copy * 128) + index];
+			complement[index] =
+				buffer[(unsigned long)(copy * 128) + 64 + index];
 			if (owner->saved[index] + complement[index] != 255) {
 				invalid_copy = 1;
 				break;
