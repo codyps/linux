@@ -20461,6 +20461,7 @@ free_nrc:
 // readonly payload moved below: 	.string	"[NE]page lost %d %d\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	cross_talk_rebuild_current_block
 	.type	cross_talk_rebuild_current_block, %function
 cross_talk_rebuild_current_block:
@@ -20801,6 +20802,7 @@ cross_talk_rebuild_current_block:
 	ldp	x29, x30, [sp], 176
 	ret
 	.size	cross_talk_rebuild_current_block, .-cross_talk_rebuild_current_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC294: relocated in rooted readonly order below. */
