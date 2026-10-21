@@ -1673,6 +1673,21 @@ struct sector_node {
     struct sector_node *next;
     struct sector_node *previous;
 };
+struct empty_sector_pool {
+	unsigned char before_nodes[16];
+	struct sector_node nodes[16];
+};
+struct sector_node *get_empty_sector_cahce_node(struct empty_sector_pool *pool)
+{
+	unsigned short index;
+
+	for (index = 0; index <= 15; index++) {
+		/* Preserve OEM's 16-bit 0x00ff sentinel and misspelled symbol. */
+		if (pool->nodes[index].flag == 255)
+			return &pool->nodes[index];
+	}
+	return 0;
+}
 struct sector_owner {
     unsigned char unknown[2];
     unsigned short count;
@@ -2406,9 +2421,23 @@ struct prio_gc_node {
 	void *next;
 	void *prev;
 };
-struct prio_gc_pool { unsigned char opaque[320]; };
+struct prio_gc_pool {
+	unsigned char before_nodes[8];
+	struct prio_gc_node nodes[10];
+};
 struct prio_gc_owner { unsigned char before[696]; struct prio_gc_pool pool; };
-extern struct prio_gc_node *get_empty_gc_node(struct prio_gc_pool *pool);
+struct prio_gc_node *get_empty_gc_node(struct prio_gc_pool *pool)
+{
+	unsigned short index;
+
+	for (index = 0; index <= 9; index++) {
+		/* OEM treats priority zero as an available slot. This can
+		 * reuse a live node inserted with zero priority. */
+		if (pool->nodes[index].priority == 0)
+			return &pool->nodes[index];
+	}
+	return 0;
+}
 int add_prio_gc(struct prio_gc_owner *owner, void *block,
 		unsigned short priority)
 {

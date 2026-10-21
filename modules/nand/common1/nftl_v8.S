@@ -12863,6 +12863,7 @@ search_from_sector_cache_write_list:
 	.size	search_from_sector_cache_write_list, .-search_from_sector_cache_write_list
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_empty_sector_cahce_node
 	.type	get_empty_sector_cahce_node, %function
 get_empty_sector_cahce_node:
@@ -12900,6 +12901,7 @@ get_empty_sector_cahce_node:
 	add	sp, sp, 32
 	ret
 	.size	get_empty_sector_cahce_node, .-get_empty_sector_cahce_node
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	add_to_sector_cache_write_list_tail
@@ -29524,6 +29526,7 @@ garbage_collect_first:
 	ret
 	.size	garbage_collect_first, .-garbage_collect_first
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_empty_gc_node
 	.type	get_empty_gc_node, %function
 get_empty_gc_node:
@@ -29561,6 +29564,7 @@ get_empty_gc_node:
 	add	sp, sp, 32
 	ret
 	.size	get_empty_gc_node, .-get_empty_gc_node
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	search_gc_node
