@@ -5170,6 +5170,8 @@ struct samsung_read_request {
 	unsigned int channel;
 	unsigned int block;
 	unsigned int page;
+	unsigned char before_data[24 - 12];
+	unsigned char *data;
 };
 struct samsung_read_controller {
 	unsigned char before_channel[12];
@@ -5342,6 +5344,60 @@ int toshiba_read_page_end(struct samsung_read_request *request)
 		toshiba_retry_flag_recovered = 0;
 		chip->retry = 0;
 		toshiba_exit_readretry(chip);
+	}
+	return result;
+}
+
+extern int sandisk_set_readretry(struct samsung_set_chip *, unsigned short);
+extern int sandisk_end_one_read_retry(struct samsung_set_chip *);
+extern int sandisk_exit_readretry(struct samsung_set_chip *);
+int sandisk_read_page_end(struct samsung_read_request *request)
+{
+	struct samsung_set_chip *chip;
+	int result = 0;
+	int retry = 0;
+
+	chip = (struct samsung_set_chip *)nci_get_from_nsi(g_nsi,
+						      request->channel);
+	result = generic_read_page_end_not_retry(request);
+	if (result == -2) {
+		nand_print_dbg("sandisk retry!\n");
+		retry = 0;
+		while (sandisk_read_retry_cycle > retry) {
+			chip->retry = retry;
+			result = sandisk_set_readretry(chip,
+					       (unsigned short)request->page);
+			if (result == 0) {
+				result = generic_read_page_start(request);
+				result |= generic_read_page_end_not_retry(request);
+				/* OEM runs this command after every completed retry read,
+				 * including reads that still report an error. */
+				sandisk_end_one_read_retry(chip);
+				if (is_nouse_page(request->data) == 1) {
+					result = -2;
+					nand_print_dbg(
+						"retry spare all 0xff! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+						((struct samsung_read_controller *)chip->controller)->channel,
+						((struct samsung_read_chip_id *)chip)->chip,
+						request->block, request->page,
+						chip->retry);
+				} else if (result == 10 || result == 0) {
+					result = 10;
+					nand_print_dbg(
+						"sandisk ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+						((struct samsung_read_controller *)chip->controller)->channel,
+						((struct samsung_read_chip_id *)chip)->chip,
+						request->block, request->page,
+						chip->retry);
+					break;
+				}
+			}
+			retry++;
+		}
+		/* Stock resets the retry count and ignores exit failure even when
+		 * every read or the setter failed. */
+		chip->retry = 0;
+		sandisk_exit_readretry(chip);
 	}
 	return result;
 }
@@ -5687,7 +5743,7 @@ extern int micron_readretry_init(void *);
 extern int hynix20nm_readretry_init(void *);
 extern int hynix26nm_readretry_init(void *);
 extern void hynix20nm_read_page_end(void);
-extern void sandisk_read_page_end(void);
+extern int sandisk_read_page_end(struct samsung_read_request *);
 extern void sandisk_A19_read_page_end(void);
 extern unsigned char hynix16nm_read_retry_mode, hynix16nm_read_retry_cycle,
 	hynix16nm_read_retry_reg_num;

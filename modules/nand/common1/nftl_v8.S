@@ -12284,6 +12284,7 @@ sandisk_set_readretry:
 // readonly payload moved below: 	.string	"sandisk ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_read_page_end
 	.type	sandisk_read_page_end, %function
 sandisk_read_page_end:
@@ -12408,6 +12409,7 @@ sandisk_read_page_end:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	sandisk_read_page_end, .-sandisk_read_page_end
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC136: relocated in rooted readonly order below. */
