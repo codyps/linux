@@ -2964,6 +2964,7 @@ samsung_special_init:
 // readonly payload moved below: 	.string	" samsung_special_exit \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	samsung_special_exit
 	.type	samsung_special_exit, %function
 samsung_special_exit:
@@ -2992,6 +2993,7 @@ samsung_special_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	samsung_special_exit, .-samsung_special_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.global	hynix20nm_read_retry_mode
 	.bss
 	.type	hynix20nm_read_retry_mode, %object
@@ -4601,6 +4603,7 @@ hynix20nm_special_init:
 // readonly payload moved below: 	.string	" hynix20nm_special_exit \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_special_exit
 	.type	hynix20nm_special_exit, %function
 hynix20nm_special_exit:
@@ -4629,6 +4632,7 @@ hynix20nm_special_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	hynix20nm_special_exit, .-hynix20nm_special_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.global	micron_read_retry_mode
 	.bss
 	.type	micron_read_retry_mode, %object
@@ -5206,6 +5210,7 @@ micron_special_init:
 // readonly payload moved below: 	.string	" micron_special_exit \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	micron_special_exit
 	.type	micron_special_exit, %function
 micron_special_exit:
@@ -5234,6 +5239,7 @@ micron_special_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	micron_special_exit, .-micron_special_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.global	toshiba_read_retry_mode
 	.bss
 	.type	toshiba_read_retry_mode, %object
@@ -6299,6 +6305,7 @@ toshiba_special_init:
 // readonly payload moved below: 	.string	" toshiba_special_exit \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	toshiba_special_exit
 	.type	toshiba_special_exit, %function
 toshiba_special_exit:
@@ -6327,6 +6334,7 @@ toshiba_special_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	toshiba_special_exit, .-toshiba_special_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.global	hynix26nm_read_retry_mode
 	.bss
 	.type	hynix26nm_read_retry_mode, %object
@@ -7542,6 +7550,7 @@ hynix26nm_special_init:
 // readonly payload moved below: 	.string	" hynix26nm_special_exit \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_special_exit
 	.type	hynix26nm_special_exit, %function
 hynix26nm_special_exit:
@@ -7570,6 +7579,7 @@ hynix26nm_special_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	hynix26nm_special_exit, .-hynix26nm_special_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.global	sandisk_A19_read_retry_mode
 	.bss
 	.type	sandisk_A19_read_retry_mode, %object
@@ -11389,6 +11399,7 @@ hynix16nm_special_init:
 // readonly payload moved below: 	.string	" hynix16nm_special_exit \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_special_exit
 	.type	hynix16nm_special_exit, %function
 hynix16nm_special_exit:
@@ -11417,6 +11428,7 @@ hynix16nm_special_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	hynix16nm_special_exit, .-hynix16nm_special_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.global	sandisk_read_retry_mode
 	.bss
 	.type	sandisk_read_retry_mode, %object
@@ -12629,6 +12641,7 @@ sandisk_special_init:
 // readonly payload moved below: 	.string	" sandisk_special_exit \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_special_exit
 	.type	sandisk_special_exit, %function
 sandisk_special_exit:
@@ -12657,6 +12670,7 @@ sandisk_special_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	sandisk_special_exit, .-sandisk_special_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC141: relocated in rooted readonly order below. */

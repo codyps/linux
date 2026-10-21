@@ -1931,3 +1931,31 @@ int get_nftl_read_claim_page_no(struct read_claim_node *head)
 	/* OEM does not check any pointer in this chain. */
 	return last->zone->settings->page;
 }
+
+struct special_exit_chip {
+	struct special_exit_chip *next;
+};
+struct special_exit_info {
+	void *before_chips;
+	struct special_exit_chip *chips;
+};
+extern struct special_exit_info *g_nsi;
+
+#define SPECIAL_EXIT(vendor) \
+	int vendor##_special_exit(void) \
+	{ \
+		struct special_exit_chip *chip; \
+		/* OEM ignores retry-exit errors and follows unchecked links. */ \
+		for (chip = g_nsi->chips; chip != 0; chip = chip->next) \
+			vendor##_readretry_exit((void *)chip); \
+		nand_print_dbg(" " #vendor "_special_exit \n"); \
+		return 0; \
+	}
+
+SPECIAL_EXIT(samsung)
+SPECIAL_EXIT(hynix20nm)
+SPECIAL_EXIT(micron)
+SPECIAL_EXIT(toshiba)
+SPECIAL_EXIT(hynix26nm)
+SPECIAL_EXIT(hynix16nm)
+SPECIAL_EXIT(sandisk)
