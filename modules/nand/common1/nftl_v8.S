@@ -3276,6 +3276,7 @@ hynix20nm_set_readretry:
 // readonly payload moved below: 	.string	"hynix20nm ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_read_page_end
 	.type	hynix20nm_read_page_end, %function
 hynix20nm_read_page_end:
@@ -3434,6 +3435,7 @@ hynix20nm_read_page_end:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix20nm_read_page_end, .-hynix20nm_read_page_end
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.align	2
 	.global	hynix20nm_vender_get_param

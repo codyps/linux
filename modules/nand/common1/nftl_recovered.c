@@ -6102,7 +6102,7 @@ int toshiba_readretry_init(struct samsung_init_chip *chip)
 extern int micron_readretry_init(void *);
 extern int hynix20nm_readretry_init(void *);
 extern int hynix26nm_readretry_init(void *);
-extern void hynix20nm_read_page_end(void);
+extern int hynix20nm_read_page_end(struct samsung_read_request *);
 extern int sandisk_read_page_end(struct samsung_read_request *);
 extern void sandisk_A19_read_page_end(void);
 extern unsigned char hynix16nm_read_retry_mode, hynix16nm_read_retry_cycle,
@@ -7562,5 +7562,64 @@ int nand_dbg_zone_phy_read(struct nand_dbg_zone_read *zone,
 		       data[4], data[5], data[6], data[7],
 		       data[8], data[9], data[10]);
 	nftl_free(data);
+	return result;
+}
+
+struct hynix20nm_page_chip {
+	unsigned char before_retry[184];
+	unsigned int retry;
+	unsigned char before_controller[272 - 188];
+	void *controller;
+};
+int hynix20nm_read_page_end(struct samsung_read_request *request)
+{
+	struct hynix20nm_page_chip *chip = (struct hynix20nm_page_chip *)
+		nci_get_from_nsi(g_nsi, request->channel);
+	unsigned int retry_count = 0;
+	int result = generic_read_page_end_not_retry(request);
+
+	if (result != -2)
+		return result;
+	nand_print_dbg("hynix20nm retry!\n");
+	while (hynix20nm_read_retry_cycle > retry_count) {
+		result = 0;
+		chip->retry++;
+		if (chip->retry > hynix20nm_read_retry_cycle)
+			chip->retry = 0;
+		result = hynix20nm_set_readretry(
+			(struct hynix20nm_retry_chip *)chip);
+		if (result) {
+			/* OEM tries the reset setter here and once again below,
+			 * ignoring both reset results. */
+			chip->retry = 0;
+			hynix20nm_set_readretry(
+				(struct hynix20nm_retry_chip *)chip);
+			break;
+		}
+		result = generic_read_page_start(request);
+		result |= generic_read_page_end_not_retry(request);
+		if (is_nouse_page(request->data) == 1) {
+			result = -2;
+			nand_print_dbg(
+				"retry spare all 0xff! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+				((struct samsung_read_controller *)chip->controller)->channel,
+				((struct samsung_read_chip_id *)chip)->chip,
+				request->block, request->page, chip->retry);
+		} else if (result == 10 || result == 0) {
+			result = 10;
+			nand_print_dbg("sdata:0x%x %x %x %x ",
+				       request->data[1], request->data[2],
+				       request->data[3], request->data[4]);
+			nand_print_dbg(
+				"hynix20nm ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+				((struct samsung_read_controller *)chip->controller)->channel,
+				((struct samsung_read_chip_id *)chip)->chip,
+				request->block, request->page, chip->retry);
+			break;
+		}
+		retry_count++;
+	}
+	chip->retry = 0;
+	hynix20nm_set_readretry((struct hynix20nm_retry_chip *)chip);
 	return result;
 }
