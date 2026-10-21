@@ -2560,6 +2560,37 @@ extern unsigned char hynix26nm_lsb_mode_reg_num;
 extern unsigned char hynix26nm_lsb_mode_reg_adr[];
 extern unsigned char hynix26nm_lsb_mode_default_val[];
 extern unsigned char hynix26nm_lsb_mode_val[];
+extern unsigned char hynix26nm_read_retry_mode;
+extern unsigned char hynix26nm_read_retry_cycle;
+extern unsigned char hynix26nm_read_retry_reg_num;
+struct hynix26nm_lsb_params {
+	unsigned char before_retry_spec[52];
+	unsigned int retry_spec;
+};
+struct hynix26nm_lsb_chip {
+	unsigned char before_params[280];
+	struct hynix26nm_lsb_params *params;
+};
+int hynix26nm_lsb_init(struct hynix26nm_lsb_chip *chip)
+{
+	/* OEM separately reloads the packed retry word for all three fields
+	 * and trusts the nested pointer without checking it. */
+	hynix26nm_read_retry_mode = chip->params->retry_spec >> 16;
+	hynix26nm_read_retry_cycle = chip->params->retry_spec >> 8;
+	hynix26nm_read_retry_reg_num = chip->params->retry_spec;
+	hynix26nm_lsb_mode_reg_num = 5;
+	hynix26nm_lsb_mode_reg_adr[0] = 0xa4;
+	hynix26nm_lsb_mode_reg_adr[1] = 0xa5;
+	hynix26nm_lsb_mode_reg_adr[2] = 0xb0;
+	hynix26nm_lsb_mode_reg_adr[3] = 0xb1;
+	hynix26nm_lsb_mode_reg_adr[4] = 0xc9;
+	hynix26nm_lsb_mode_val[0] = 37;
+	hynix26nm_lsb_mode_val[1] = 37;
+	hynix26nm_lsb_mode_val[2] = 37;
+	hynix26nm_lsb_mode_val[3] = 37;
+	hynix26nm_lsb_mode_val[4] = 1;
+	return 0;
+}
 extern int hynix26nm_vender_set_param(void *chip, unsigned char *values,
 				     unsigned char *addresses,
 				     unsigned int count);

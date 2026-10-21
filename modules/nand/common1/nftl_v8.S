@@ -6902,6 +6902,7 @@ hynix26nm_vender_get_param:
 	.size	hynix26nm_vender_get_param, .-hynix26nm_vender_get_param
 	#endif
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_lsb_init
 	.type	hynix26nm_lsb_init, %function
 hynix26nm_lsb_init:
@@ -6978,6 +6979,7 @@ hynix26nm_lsb_init:
 	add	sp, sp, 16
 	ret
 	.size	hynix26nm_lsb_init, .-hynix26nm_lsb_init
+	#endif
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_lsb_enable
