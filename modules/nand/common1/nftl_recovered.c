@@ -2716,7 +2716,8 @@ unsigned short nand_crc16(unsigned short crc, const unsigned char *data,
 
 extern void nftl_free(void *allocation);
 extern void clean_block_list(void *zone);
-extern void nand_clean_zone_table2(void *zone);
+struct nftl_clean_zone;
+extern int nand_clean_zone_table2(struct nftl_clean_zone *zone);
 
 struct nftl_cache_entry_view {
 	unsigned char before_allocation[24];
@@ -3706,7 +3707,7 @@ NFTL_RW(nftl_write, write)
 /* Inferred NFTL orchestration body; callback signatures remain provisional. */
 
 extern void clean_block_list(void *);
-extern void nand_clean_zone_table2(void *);
+extern int nand_clean_zone_table2(struct nftl_clean_zone *);
 struct build_zone;
 extern int build_zone_list(struct build_zone *);
 extern void nftl_cache_init(void *);
@@ -7934,5 +7935,111 @@ int hynix26nm_readretry_init(struct hynix26nm_init_chip *chip)
 		chip->saved[row] = 0;
 	/* OEM ignores the default-parameter result. */
 	hynix26nm_get_default_param((struct hynix_default_chip *)chip);
+	return 0;
+}
+
+struct nftl_clean_geometry {
+	unsigned char before_sectors[8];
+	unsigned char sectors_per_page;
+};
+struct nftl_clean_slot {
+	unsigned short index;
+	unsigned short state;
+	unsigned int other;
+	void *first;
+	void *second;
+	void *third;
+};
+struct nftl_clean_zone {
+	unsigned char before_geometry[8];
+	struct nftl_clean_geometry *geometry;
+	unsigned char before_zone_number[8];
+	unsigned char zone_number;
+	unsigned char before_flags[3];
+	unsigned short flag0, flag1;
+	unsigned int capacity;
+	unsigned char before_maps[36];
+	void *maps[27];
+	void *lists0[6];
+	unsigned char before_lists1[16];
+	void *lists1[6];
+	unsigned char before_lists2[16];
+	void *lists2[6];
+	unsigned char before_current[64];
+	void *current;
+	unsigned char before_current_block[48];
+	unsigned short current_block;
+	unsigned char before_next[6];
+	void *next;
+	unsigned char before_next_block[48];
+	unsigned short next_block;
+	unsigned char before_list_count[46];
+	unsigned short list_count;
+	unsigned short list_state;
+	unsigned char before_slots[4];
+	struct nftl_clean_slot slots[11];
+};
+_Static_assert(__builtin_offsetof(struct nftl_clean_zone, maps) == 72,
+	       "clean-zone map offset");
+_Static_assert(__builtin_offsetof(struct nftl_clean_zone, lists0) == 288,
+	       "clean-zone first list offset");
+_Static_assert(__builtin_offsetof(struct nftl_clean_zone, current) == 528,
+	       "clean-zone current pointer offset");
+_Static_assert(__builtin_offsetof(struct nftl_clean_zone, slots) == 704,
+	       "clean-zone slot offset");
+_Static_assert(sizeof(struct nftl_clean_slot) == 32,
+	       "clean-zone slot size");
+int nand_clean_zone_table2(struct nftl_clean_zone *zone)
+{
+	unsigned int pages;
+	unsigned int bytes;
+	unsigned int full;
+	unsigned int tail;
+	unsigned int index;
+
+	/* The stock AArch64 division returns zero for a zero divisor. */
+	pages = zone->geometry->sectors_per_page ?
+		zone->capacity / zone->geometry->sectors_per_page : 0;
+	bytes = pages << 2;
+	nand_print_dbg("[ND]zoneNO:%d total_pages: %d\n",
+		       zone->zone_number, pages);
+	full = bytes >> 20;
+	/* OEM trusts the map pointer array even if the computed byte count
+	 * requires more than its 27 observed pointer slots. */
+	for (index = 0; index < full; index++) {
+		nand_memset(zone->maps[index], -1, 1048576);
+		nand_print_dbg("[ND]nand_memset bytes: %d\n", 1048576);
+	}
+	tail = bytes & 1048575;
+	if (tail) {
+		nand_memset(zone->maps[index], -1, tail);
+		nand_print_dbg("[ND]nand_memset bytes: %d\n", tail);
+	}
+	zone->current = 0;
+	zone->current_block = 0xffff;
+	zone->next = 0;
+	zone->next_block = 0xffff;
+	for (index = 0; index < 6; index++)
+		zone->lists0[index] = 0;
+	for (index = 0; index < 6; index++)
+		zone->lists1[index] = 0;
+	for (index = 0; index < 6; index++)
+		zone->lists2[index] = 0;
+	zone->flag0 = 0;
+	zone->flag1 = 0;
+	zone->list_count = 0;
+	for (index = 0; index < 10; index++) {
+		zone->slots[index].index = index;
+		zone->slots[index].state = 0;
+		zone->slots[index].first = 0;
+		zone->slots[index].second = 0;
+		zone->slots[index].third = 0;
+	}
+	zone->slots[10].index = 255;
+	zone->list_state = 0;
+	zone->slots[10].state = 0;
+	zone->slots[10].first = 0;
+	zone->slots[10].second = 0;
+	zone->slots[10].third = 0;
 	return 0;
 }

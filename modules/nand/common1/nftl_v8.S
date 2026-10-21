@@ -24516,6 +24516,7 @@ clean_block_list:
 // readonly payload moved below: 	.string	"[ND]nand_memset bytes: %d\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_clean_zone_table2
 	.type	nand_clean_zone_table2, %function
 nand_clean_zone_table2:
@@ -24700,6 +24701,7 @@ nand_clean_zone_table2:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	nand_clean_zone_table2, .-nand_clean_zone_table2
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_clean_zone_table
