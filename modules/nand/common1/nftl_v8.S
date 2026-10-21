@@ -24181,6 +24181,7 @@ nand_dbg_zone_phy_write:
 	ret
 	.size	nand_dbg_zone_phy_write, .-nand_dbg_zone_phy_write
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_dbg_phy_write
 	.type	nand_dbg_phy_write, %function
 nand_dbg_phy_write:
@@ -24242,6 +24243,7 @@ nand_dbg_phy_write:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	nand_dbg_phy_write, .-nand_dbg_phy_write
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_dbg_zone_erase

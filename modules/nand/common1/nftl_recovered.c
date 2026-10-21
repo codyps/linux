@@ -1508,6 +1508,41 @@ int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone)
 	nand_free_temp_buf(buffer);
 	return result;
 }
+extern int page_write(unsigned short chip, unsigned short block,
+		      unsigned short page, unsigned int mode,
+		      void *data, void *oob);
+extern void *nftl_malloc(unsigned int size);
+extern void *nand_memset(void *destination, int value, unsigned int size);
+/* OEM's diagnostic writer has no stack-canary prologue despite its local OOB. */
+__attribute__((optimize("-fno-stack-protector")))
+int nand_dbg_phy_write(unsigned short chip, unsigned short block,
+		       unsigned short page)
+{
+	/* The stock stack reserves twenty bytes for eleven initialized OOB bytes. */
+	unsigned char oob[20];
+	void *buffer = nftl_malloc(8192);
+	int result;
+
+	/* OEM logs allocation failure but still passes NULL to nand_memset and
+	 * page_write. Preserve that behavior for the pinned build. */
+	if (!buffer)
+		nand_print("[NE]%s:malloc 8192 fail!\n", __func__);
+	nand_memset(buffer, -91, 4096);
+	oob[0] = 0xff;
+	oob[1] = 0xff;
+	oob[2] = 0xff;
+	oob[3] = 0xff;
+	oob[4] = 0xff;
+	oob[5] = 0xa5;
+	oob[6] = 0xa5;
+	oob[7] = 0xff;
+	oob[8] = 0xff;
+	oob[9] = 0xff;
+	oob[10] = 0xff;
+	result = page_write(chip, block, page, 8, buffer, oob);
+	nftl_free(buffer);
+	return result;
+}
 
 /* Isolated NFTL C candidates; private structure names are inferred. */
 
