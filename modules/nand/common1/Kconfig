@@ -9,14 +9,3 @@ choice
 		bool "sunxi spi nand driver"
 
 endchoice
-
-config TRIMUI_NFTL_RECOVERED_C
-	bool "Build recovered NFTL code and data from C"
-	depends on SUNXI_NAND && ARM64
-	default n
-	help
-	  Build all 358 observed NFTL function bodies and their initialized,
-	  BSS, and read-only data from C. The observed stock bytes and linked
-	  addresses are checked separately; original private C element types
-	  and hidden extents remain uncertain. The stock configuration leaves
-	  this disabled so the retained vendor assembly remains available.
