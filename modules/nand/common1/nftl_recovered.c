@@ -9444,6 +9444,188 @@ int garbage_collect(void *input)
 	return 0;
 }
 
+struct gc_first_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages;
+	unsigned char before_fixed_page[6];
+	unsigned short fixed_page;
+};
+struct gc_first_map {
+	unsigned char before_pages[16];
+	unsigned int *pages;
+	unsigned int bytes;
+};
+struct gc_first_stats {
+	unsigned char before_runs[120];
+	unsigned int runs;
+	unsigned int copied_pages;
+};
+struct gc_first_block {
+	unsigned short number;
+	unsigned short state;
+	unsigned short invalid_pages;
+	unsigned short erase_count;
+};
+struct gc_first_zone {
+	unsigned char before_geometry[8];
+	struct gc_first_geometry *geometry;
+	unsigned char before_mode[8];
+	unsigned char mode;
+	unsigned char before_map[464 - 25];
+	struct gc_first_map map;
+	unsigned char before_data[512 - 496];
+	void *data;
+	void *logic_buffer;
+	unsigned char before_active[686 - 528];
+	unsigned short active;
+	unsigned char before_stats[3440 - 688];
+	struct gc_first_stats *stats;
+	unsigned char before_read[3464 - 3448];
+	int (*read)(struct gc_first_zone *, struct physic_op_param *);
+};
+_Static_assert(__builtin_offsetof(struct gc_first_zone, map) == 464,
+	       "first GC map offset");
+_Static_assert(__builtin_offsetof(struct gc_first_zone, stats) == 3440,
+	       "first GC stats offset");
+_Static_assert(__builtin_offsetof(struct gc_first_zone, read) == 3464,
+	       "first GC read offset");
+struct page_map_recovery_zone;
+extern int recover_block_phy_page_mapping(struct page_map_recovery_zone *,
+					   struct new_write_block *,
+					   unsigned int *);
+
+__attribute__((optimize("-fno-stack-protector")))
+int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
+			  int requested_limit)
+{
+	struct gc_first_zone *zone = (struct gc_first_zone *)raw_zone;
+	struct gc_first_block *block;
+	struct invalid_page_location *entry;
+	struct physic_op_param op;
+	unsigned char oob[16];
+	unsigned short limit = requested_limit;
+	unsigned int page, logic, observed;
+	int status, bad = 0;
+
+	nand_memset(oob, 0x5a, 16);
+	if (!requested)
+		block = (struct gc_first_block *)
+			out_phy_block_from_invalid_page_list((struct move_zone *)zone);
+	else {
+		if (is_current_blcok((struct diag_current_zone *)zone,
+				      requested) == 1)
+			return 0;
+		block = (struct gc_first_block *)
+			out_phy_block_from_invalid_page_list_by_block(
+				(struct invalid_zone *)zone,
+				(struct invalid_node *)requested);
+	}
+	if (!block) {
+		nand_print("[NI]garbage_collect_first none!!\n");
+		return 8;
+	}
+	zone->stats->runs++;
+	set_physic_op_par(&op, block->number, zone->geometry->pages - 1,
+			  zone->geometry->fixed_page, zone->data, oob);
+	status = zone->read(zone, &op);
+	if (is_phy_mapping_page(oob) != 1) {
+		nand_print_dbg("[ND]garbage_collect_first wrong!!\n");
+		nand_print_dbg("[ND]garbage_collect_first cannot find PHY_MAPPING_PAGE%d %d %d %d!!\n",
+			       block->number, zone->geometry->pages - 1, 0,
+			       zone->geometry->fixed_page);
+		/* Stock supplies only fifteen values for sixteen %x conversions.
+		 * The final diagnostic word comes from its uninitialized frame. */
+		nand_print_dbg("[ND]garbage_collect_first cannot find PHY_MAPPING_PAGE%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x.\n",
+			       oob[1], oob[2], oob[3], oob[4], oob[5],
+			       oob[6], oob[7], oob[8], oob[9], oob[10],
+			       oob[11], oob[12], oob[13], oob[14], oob[15]);
+		nand_print_dbg("[ND][NE]garbage_collect_first rebuild %d,%d!!\n",
+			       zone->mode, block->number);
+		recover_block_phy_page_mapping(
+			(struct page_map_recovery_zone *)zone,
+			(struct new_write_block *)block, zone->map.pages);
+		bad = 1;
+	} else if (status && status != 10) {
+		nand_print_dbg("[ND]garbage_collect_first PHY_MAPPING_PAGEecc err block:%d !!\n",
+			       block->number);
+		recover_block_phy_page_mapping(
+			(struct page_map_recovery_zone *)zone,
+			(struct new_write_block *)block, zone->map.pages);
+		bad = 1;
+	} else {
+		nand_memcpy(zone->map.pages, zone->data, zone->map.bytes);
+	}
+	status = check_invalid_page_right((struct page_map_write_zone *)zone,
+					  &zone->map,
+					  (struct page_map_write_block *)block,
+					  zone->geometry->pages);
+	if (status) {
+		nand_print("[NE]garbage_collect_first invaild_page num error!!\n");
+		bad = 1;
+	}
+	if (bad)
+		limit = 0xffff;
+	for (page = 0; page < (unsigned int)zone->geometry->pages - 1;
+	     page++) {
+		logic = zone->map.pages[page];
+		if (logic == ~0U)
+			continue;
+		entry = (struct invalid_page_location *)
+			get_logic_page_map((struct logic_page_map_zone *)zone, logic);
+		if (!entry || entry->block != block->number ||
+		    entry->page != page)
+			continue;
+		zone->stats->copied_pages++;
+		set_physic_op_par(&op, block->number, page,
+				  zone->geometry->fixed_page,
+				  zone->logic_buffer, oob);
+		/* OEM's retry counter is initialized to zero and never changed;
+		 * only one physical read is made. */
+		status = zone->read(zone, &op);
+		observed = get_logic_page_from_oob(oob);
+		if (status == 0 || status == 10) {
+			if (observed != logic) {
+				nand_print_dbg("[ND]garbage_collect_first read a logic page error%d %d %d %d spare data:\n",
+					       block->number, page, observed, logic);
+				nand_print("%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
+					   oob[0], oob[1], oob[2], oob[3],
+					   oob[4], oob[5], oob[6], oob[7],
+					   oob[8], oob[9], oob[10], oob[11],
+					   oob[12], oob[13], oob[14], oob[15]);
+				entry->block = 0xffff;
+				entry->page = 0xfff;
+				bad = 1;
+				limit = 0xffff;
+				block->invalid_pages++;
+			} else if (nand_write_logic_page_no_gc(zone, logic,
+						      zone->logic_buffer)) {
+				nand_print("[NE]nand_write_logic_page_no_gc gc fail!!\n");
+				return 1;
+			}
+		} else {
+			block->invalid_pages++;
+			bad = 1;
+			limit = 0xffff;
+		}
+		limit--;
+		if (!limit)
+			break;
+	}
+	if (page == (unsigned int)zone->geometry->pages - 1)
+		zone->active = 0;
+	if (bad && page == (unsigned int)zone->geometry->pages - 1) {
+		nand_print("[NE]erase ecc error block\n");
+		erase_block((struct erase_block_zone *)zone,
+			    (struct erase_block_info *)block,
+			    (unsigned short)(block->erase_count + 1));
+	} else {
+		put_phy_block_to_invalid_page_list(zone,
+					(struct invalid_node *)block);
+		adjust_invaild_list((struct move_zone *)zone);
+	}
+	return 0;
+}
+
 struct sandisk_first_request {
 	unsigned int channel;
 	unsigned int block;

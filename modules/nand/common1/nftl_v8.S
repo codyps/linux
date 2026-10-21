@@ -29370,6 +29370,7 @@ garbage_collect:
 // readonly payload moved below: 	.string	"[NE]erase ecc error block\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	garbage_collect_first
 	.type	garbage_collect_first, %function
 garbage_collect_first:
@@ -29861,6 +29862,7 @@ garbage_collect_first:
 	ldp	x29, x30, [sp], 144
 	ret
 	.size	garbage_collect_first, .-garbage_collect_first
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_empty_gc_node
