@@ -24855,6 +24855,7 @@ nand_power_off_ecc_error:
 	ret
 	.size	nand_power_off_ecc_error, .-nand_power_off_ecc_error
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	add_free_list
 	.type	add_free_list, %function
 add_free_list:
@@ -24911,6 +24912,7 @@ add_free_list:
 	add	sp, sp, 32
 	ret
 	.size	add_free_list, .-add_free_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_free_list
@@ -25113,6 +25115,7 @@ print_free_list:
 	.size	print_free_list, .-print_free_list
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	add_block_invalid_list
 	.type	add_block_invalid_list, %function
 add_block_invalid_list:
@@ -25169,6 +25172,7 @@ add_block_invalid_list:
 	add	sp, sp, 32
 	ret
 	.size	add_block_invalid_list, .-add_block_invalid_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_block_invalid_list
@@ -25362,6 +25366,7 @@ print_block_invalid_list:
 	ret
 	.size	print_block_invalid_list, .-print_block_invalid_list
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	add_block_count_list
 	.type	add_block_count_list, %function
 add_block_count_list:
@@ -25418,6 +25423,7 @@ add_block_count_list:
 	add	sp, sp, 32
 	ret
 	.size	add_block_count_list, .-add_block_count_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_block_count_list

@@ -850,7 +850,9 @@ int is_block_in_free_list(struct free_zone *zone, struct free_node *target)
 }
 
 struct invalid_node {
-	unsigned char before_count[8];
+	unsigned char before_erase[4];
+	unsigned short erase_time;
+	unsigned char after_erase[2];
 	volatile unsigned int count;
 	unsigned char before_next[4];
 	struct invalid_node *next;
@@ -911,14 +913,15 @@ struct invalid_node *get_block_min_count_from_invalid_list(
 struct block_count_node {
 	unsigned short block;
 	unsigned char before_count[6];
-	unsigned int count;
+	int count;
 	unsigned char before_next[36];
 	struct block_count_node *next;
+	struct block_count_node *previous;
 };
 struct block_count_zone {
 	unsigned char before_head[400];
 	struct block_count_node head;
-	unsigned char before_debug[656 - 456];
+	unsigned char before_debug[656 - 464];
 	unsigned int debug_level;
 };
 void print_block_count_list(struct block_count_zone *zone)
@@ -2812,7 +2815,8 @@ void nftl_ops_init(struct nftl_ops *ops)
 	ops->discard = (void (*)(void))_nftl_discard_logic_page;
 }
 
-extern int add_block_invalid_list(void *zone, struct invalid_node *block);
+extern int add_block_invalid_list(struct invalid_zone *zone,
+				  struct invalid_node *block);
 int put_phy_block_to_invalid_page_list(void *zone,
 				       struct invalid_node *block)
 {
@@ -2915,7 +2919,9 @@ int do_static_wear_leveling(struct wear_zone *zone)
 }
 
 struct free_block {
-	unsigned char before_links[0x20];
+	unsigned char before_erase[6];
+	unsigned short erase_time;
+	unsigned char after_erase[0x18];
 	struct free_block *next;
 	struct free_block *previous;
 };
@@ -2925,6 +2931,74 @@ struct free_block_zone {
 	unsigned char before_head[240];
 	struct free_block head;
 };
+
+/* OEM inserts equal erase counts before the existing block and trusts both
+ * backlinks. A damaged or cyclic list is neither rejected nor repaired. */
+int add_free_list(struct free_block_zone *zone, struct free_block *target)
+{
+	struct free_block *node = &zone->head;
+
+	while (node->next) {
+		if (node->next->erase_time >= target->erase_time) {
+			node->next->previous = target;
+			target->next = node->next;
+			node->next = target;
+			target->previous = node;
+			return 0;
+		}
+		node = node->next;
+	}
+	node->next = target;
+	target->next = 0;
+	target->previous = node;
+	return 0;
+}
+
+/* The invalid list sorts descending by unsigned erase time. Equal values
+ * insert before the old node; all links are followed without validation. */
+int add_block_invalid_list(struct invalid_zone *zone,
+			   struct invalid_node *target)
+{
+	struct invalid_node *node = &zone->head;
+
+	while (node->next) {
+		if (node->next->erase_time <= target->erase_time) {
+			node->next->previous = target;
+			target->next = node->next;
+			node->next = target;
+			target->previous = node;
+			return 0;
+		}
+		node = node->next;
+	}
+	node->next = target;
+	target->next = 0;
+	target->previous = node;
+	return 0;
+}
+
+/* This signed count comparison is stock behavior, despite the 32-bit count
+ * field being treated as unsigned by some other list operations. */
+int add_block_count_list(struct block_count_zone *zone,
+			 struct block_count_node *target)
+{
+	struct block_count_node *node = &zone->head;
+
+	while (node->next) {
+		if (node->next->count >= target->count) {
+			node->next->previous = target;
+			target->next = node->next;
+			node->next = target;
+			target->previous = node;
+			return 0;
+		}
+		node = node->next;
+	}
+	node->next = target;
+	target->next = 0;
+	target->previous = node;
+	return 0;
+}
 struct count_delete_node {
 	unsigned char before_links[48];
 	struct count_delete_node *next;
