@@ -30831,6 +30831,7 @@ gc_all_enhance:
 	.size	gc_all_enhance, .-gc_all_enhance
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	gc_all_base_on_free_blks
 	.type	gc_all_base_on_free_blks, %function
 gc_all_base_on_free_blks:
@@ -30935,6 +30936,7 @@ gc_all_base_on_free_blks:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	gc_all_base_on_free_blks, .-gc_all_base_on_free_blks
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC461: relocated in rooted readonly order below. */

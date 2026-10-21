@@ -1404,6 +1404,36 @@ int gc_all_enhance(struct gc_enhance_zone *zone)
 		return 0;
 	return gc_all(zone, zone->geometry->half_count >> 1);
 }
+struct gc_policy_zone;
+extern int gc_all_cnt(struct gc_policy_zone *zone, unsigned short pages,
+		      unsigned int count);
+int gc_all_base_on_free_blks(struct gc_enhance_zone *zone)
+{
+	struct gc_phyinfo_view *info = (struct gc_phyinfo_view *)phyinfo;
+	struct gc_enhance_geometry *geometry = zone->geometry;
+	unsigned int used = zone->used;
+	unsigned long quantity;
+	unsigned int pages;
+	unsigned int base;
+
+	if (zone->free_blocks > used)
+		return 0;
+	if ((unsigned int)zone->invalid_blocks * 3 < used)
+		return 0;
+	quantity = (unsigned int)(info->pages * info->blocks);
+	quantity *= info->chips;
+	quantity >>= 11;
+	if (quantity > 128)
+		return 0;
+	base = geometry->half_count >> 1;
+	pages = base - 3;
+	pages *= used - zone->free_blocks;
+	/* OEM does not check a zero divisor. AArch64 UDIV returns zero there;
+	 * preserve the stock machine behavior under the pinned compiler. */
+	pages /= (unsigned int)zone->invalid_blocks * 3 - zone->free_blocks;
+	pages += geometry->half_count >> 1;
+	return gc_all_cnt((struct gc_policy_zone *)zone, (unsigned short)pages, 3);
+}
 
 /* Isolated NFTL C candidates; private structure names are inferred. */
 
