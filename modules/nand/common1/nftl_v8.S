@@ -13216,8 +13216,10 @@ __nand_flush_sector_write_cache:
 	.size	__nand_flush_sector_write_cache, .-__nand_flush_sector_write_cache
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.type	nand_crc16_table, %object
 	.size	nand_crc16_table, 512
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 /* nand_crc16_table: relocated in rooted readonly order below. */
 // readonly payload moved below: 	.hword	0
 // readonly payload moved below: 	.hword	-16191
@@ -13477,6 +13479,7 @@ __nand_flush_sector_write_cache:
 // readonly payload moved below: 	.hword	16448
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.type	nand_crc16_byte, %function
 nand_crc16_byte:
 	sub	sp, sp, #16
@@ -13498,7 +13501,9 @@ nand_crc16_byte:
 	add	sp, sp, 16
 	ret
 	.size	nand_crc16_byte, .-nand_crc16_byte
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_crc16
 	.type	nand_crc16, %function
 nand_crc16:
@@ -13527,6 +13532,7 @@ nand_crc16:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	nand_crc16, .-nand_crc16
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC146: relocated in rooted readonly order below. */
@@ -34880,6 +34886,7 @@ mod:
 .LC199:
 	.string	"[ND]smart->read_reclaim_page_no:%d;\n"
 	.balign	8
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 nand_crc16_table:
 	.hword	0
 	.hword	-16191
@@ -35137,6 +35144,7 @@ nand_crc16_table:
 	.hword	-32319
 	.hword	-32639
 	.hword	16448
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.balign	8
 .LC146:
 	.string	"[NE]error nand_write_logic_page_no_gc page_no:%u\n"
