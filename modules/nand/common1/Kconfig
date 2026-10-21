@@ -15,6 +15,6 @@ config TRIMUI_NFTL_RECOVERED_C
 	depends on SUNXI_NAND && ARM64
 	default n
 	help
-	  Replace three relocation-free retained NFTL assembly helpers with
-	  separately verified C bodies. The stock configuration leaves this
+	  Replace five separately verified NFTL assembly bodies with C.
+	  The stock configuration leaves this
 	  disabled so the retained assembly continues to reproduce its layout.

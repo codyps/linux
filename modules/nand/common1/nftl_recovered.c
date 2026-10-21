@@ -54,3 +54,54 @@ int is_nouse_page(const unsigned char *bytes)
 		return 1;
 	return 0;
 }
+
+struct samsung_set_chip {
+	unsigned char until_count[184];
+	unsigned int retry;
+	unsigned char until_controller[84];
+	void *controller;
+};
+struct samsung_retry_values {
+	unsigned char bytes[4];
+};
+extern struct samsung_retry_values samsung_p1[15];
+extern unsigned char samsung_read_retry_addr[4];
+extern unsigned char samsung_read_retry_cmd[4];
+extern void nand_enable_chip(struct samsung_set_chip *);
+extern void ndfc_disable_randomize(void *);
+extern void nand_print(const char *, ...);
+extern void nand_print_dbg(const char *, ...);
+extern void nand_disable_chip(struct samsung_set_chip *);
+extern int set_cmd_with_nand_bus(void *, unsigned char *, int,
+				 unsigned char *, unsigned char *, int,
+				 unsigned int);
+
+int samsung_vender_set_param(struct samsung_set_chip *chip,
+			    unsigned char *values,
+			    unsigned char *addresses, unsigned int count)
+{
+	int result;
+
+	result = set_cmd_with_nand_bus(chip, samsung_read_retry_cmd, 0,
+					 addresses, values, 1, count);
+	/* OEM reads four diagnostic bytes even when count is smaller or the
+	 * bus command failed. */
+	nand_print_dbg("rr value %x %x %x %x!\n", values[0], values[1],
+		       values[2], values[3]);
+	return result;
+}
+
+int samsung_set_readretry(struct samsung_set_chip *chip)
+{
+	int result;
+
+	nand_enable_chip(chip);
+	ndfc_disable_randomize(chip->controller);
+	/* OEM indexes the 15-entry table without a bounds check. */
+	result = samsung_vender_set_param(chip, samsung_p1[chip->retry].bytes,
+					   samsung_read_retry_addr, 4);
+	if (result)
+		nand_print("samsung set readretry error ! %x \n", chip->retry);
+	nand_disable_chip(chip);
+	return result;
+}

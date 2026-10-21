@@ -2569,6 +2569,7 @@ panic_recover_data:
 // readonly payload moved below: 	.string	"rr value %x %x %x %x!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	samsung_vender_set_param
 	.type	samsung_vender_set_param, %function
 samsung_vender_set_param:
@@ -2657,6 +2658,7 @@ samsung_set_readretry:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	samsung_set_readretry, .-samsung_set_readretry
+#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC37: relocated in rooted readonly order below. */
