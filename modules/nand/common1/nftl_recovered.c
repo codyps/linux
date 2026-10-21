@@ -1643,28 +1643,39 @@ struct valid_block_zone {
 int get_vaild_blocks(struct valid_block_zone *zone, unsigned int start,
 		     unsigned int end)
 {
-	struct physic_op_param op;
-	struct physical_block *block = (struct physical_block *)
+	/* The OEM keeps the operation parameter below the loop locals in its
+	 * 0x50-byte frame. The four-byte gap is observed, not initialized. */
+	struct {
+		struct physic_op_param op;
+		unsigned char gap[4];
+		unsigned int range;
+		struct physical_block *block;
+		unsigned int index;
+		unsigned int remaining;
+	} local;
+
+	local.block = (struct physical_block *)
 		((unsigned char *)zone->chip->blocks + ((unsigned long)start << 6));
-	unsigned int range = end - start;
-	unsigned int remaining = range;
-	unsigned int index = start;
+	local.range = end - start;
+	local.remaining = local.range;
+	local.index = start;
 
 	/* OEM compares the absolute index with the range length. Preserve this
 	 * mistake: nonzero start can skip work or stop before end. */
-	while (index < range) {
-		op.block = block->number;
-		if (zone->check(zone, &op) == 159) {
-			remaining--;
-			if (remaining == 0)
+	while (local.index < local.range) {
+		local.op.block = local.block->number;
+		if (zone->check(zone, &local.op) == 159) {
+			local.remaining--;
+			if (local.remaining == 0)
 				return 0;
 		}
-		if (is_last_phy_block(block, (struct physical_zone *)zone) == 1)
+		if (is_last_phy_block(local.block, (struct physical_zone *)zone) == 1)
 			break;
-		block = (struct physical_block *)((unsigned char *)block + 64);
-		index++;
+		local.block = (struct physical_block *)
+			((unsigned char *)local.block + 64);
+		local.index++;
 	}
-	return remaining;
+	return local.remaining;
 }
 
 struct gc_enhance_geometry {
