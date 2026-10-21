@@ -15882,6 +15882,7 @@ nftl_get_zone_write_cache_nums:
 // readonly payload moved below: 	.string	"[ND]smart->read_reclaim_page_no:%d;\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	print_smart
 	.type	print_smart, %function
 print_smart:
@@ -16024,6 +16025,7 @@ print_smart:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	print_smart, .-print_smart
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC200: relocated in rooted readonly order below. */

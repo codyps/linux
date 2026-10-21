@@ -1476,11 +1476,72 @@ struct smart_info_zone {
 	unsigned char *data;
 	unsigned char before_offset[560 - 520];
 	unsigned int offset;
-	unsigned char before_smart[3440 - 564];
+	unsigned char before_print_enabled[656 - 564];
+	unsigned int print_enabled;
+	unsigned char before_smart[3440 - 660];
 	struct smart_info_payload *smart;
 	unsigned char before_read[3464 - 3448];
 	int (*read)(struct smart_info_zone *, struct physic_op_param *);
 };
+struct smart_print_payload {
+	unsigned char before_totals[64];
+	unsigned long long recv_read_sectors;
+	unsigned long long recv_write_sectors;
+	unsigned long long real_read_pages;
+	unsigned long long real_write_pages;
+	unsigned long long recv_discard_sectors;
+	unsigned long long real_discard_sectors;
+	unsigned int version;
+	unsigned int read_claim_pages;
+	unsigned int gc_times;
+	unsigned int gc_pages;
+	unsigned int wl_times;
+	unsigned int read_errors;
+	unsigned int write_errors;
+	unsigned int normal_power_cycles;
+	unsigned int unusual_power_cycles;
+	unsigned int max_erase_times;
+	unsigned int min_erase_times;
+	unsigned int max_used_count;
+	unsigned int min_used_count;
+	unsigned int read_reclaim_utc;
+	unsigned int cross_talk_times;
+	unsigned int read_reclaim_zone;
+	unsigned int read_reclaim_page;
+	unsigned int wl_gc_times;
+};
+void print_smart(struct smart_info_zone *zone)
+{
+	struct smart_print_payload *smart;
+
+	if (!zone->print_enabled)
+		return;
+	smart = (struct smart_print_payload *)zone->smart;
+	nand_print_dbg("[ND]smart->version:%x;\n", smart->version);
+	nand_print_dbg("[ND]smart->total_recv_read_sectors:%lld;\n", smart->recv_read_sectors);
+	nand_print_dbg("[ND]smart->total_recv_write_sectors:%lld;\n", smart->recv_write_sectors);
+	nand_print_dbg("[ND]smart->total_real_read_pages:%lld;\n", smart->real_read_pages);
+	nand_print_dbg("[ND]smart->total_real_write_pages:%lld;\n", smart->real_write_pages);
+	nand_print_dbg("[ND]smart->total_recv_discard_sectors:%lld;\n", smart->recv_discard_sectors);
+	nand_print_dbg("[ND]smart->total_real_discard_sectors:%lld;\n", smart->real_discard_sectors);
+	nand_print_dbg("[ND]smart->total_recv_read_claim_pages:%d;\n", smart->read_claim_pages);
+	nand_print_dbg("[ND]smart->total_gc_times:%d;\n", smart->gc_times);
+	nand_print_dbg("[ND]smart->total_gc_pages:%d;\n", smart->gc_pages);
+	nand_print_dbg("[ND]smart->total_wl_times:%d;\n", smart->wl_times);
+	nand_print_dbg("[ND]smart->total_wl_gc_times:%d;\n", smart->wl_gc_times);
+	nand_print_dbg("[ND]smart->total_real_read_error_pages:%d;\n", smart->read_errors);
+	nand_print_dbg("[ND]smart->total_real_write_error_pages:%d;\n", smart->write_errors);
+	nand_print_dbg("[ND]smart->total_normal_power_cycles:%x;\n", smart->normal_power_cycles);
+	nand_print_dbg("[ND]smart->total_unusual_power_cycles:%x;\n", smart->unusual_power_cycles);
+	nand_print_dbg("[ND]smart->max_block_erase_times:%d;\n", smart->max_erase_times);
+	nand_print_dbg("[ND]smart->min_block_erase_times:%d;\n", smart->min_erase_times);
+	nand_print_dbg("[ND]smart->max_block_used_counter:%d;\n", smart->max_used_count);
+	nand_print_dbg("[ND]smart->min_block_used_counter:%d;\n", smart->min_used_count);
+	nand_print_dbg("[ND]smart->read_reclaim_utc:%d;\n", smart->read_reclaim_utc);
+	nand_print_dbg("[ND]smart->cross_talk_times:%d;\n", smart->cross_talk_times);
+	nand_print_dbg("[ND]smart->read_reclaim_zone_no:%d;\n", smart->read_reclaim_zone);
+	nand_print_dbg("[ND]smart->read_reclaim_page_no:%d;\n", smart->read_reclaim_page);
+}
 struct smart_info_block {
 	unsigned short number;
 };
