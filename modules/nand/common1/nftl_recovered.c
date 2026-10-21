@@ -1465,6 +1465,50 @@ int hynix16nm_set_readretry(struct hynix16nm_retry_zone *zone)
 	return result;
 }
 
+struct hynix16nm_otp_controller {
+	unsigned char before_channel[12];
+	unsigned int channel;
+};
+struct hynix16nm_otp_zone {
+	unsigned char before_chip[28];
+	unsigned int chip;
+	unsigned char before_values[24];
+	unsigned char values[216];
+	struct hynix16nm_otp_controller *controller;
+};
+extern void *nand_get_temp_buf(unsigned int size);
+extern void nand_free_temp_buf(void *buffer);
+extern int hynix16nm_read_otp_info_hynix(struct hynix16nm_otp_zone *zone,
+					  void *buffer);
+extern int hynix16nm_get_read_retry_cfg(unsigned char *mode,
+					 unsigned char *cycle,
+					 unsigned char *values,
+					 void *buffer);
+int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone)
+{
+	int result = 0;
+	void *buffer = nand_get_temp_buf(528);
+	unsigned char cycle;
+	unsigned char mode;
+
+	if (!buffer) {
+		nand_print("otp_info_hynix_16nm : allocate memory fail\n");
+		return -78;
+	}
+	result = hynix16nm_read_otp_info_hynix(zone, buffer);
+	/* OEM still parses the buffer after a failed OTP read. */
+	if (result < 0)
+		nand_print("m1 CH %d chip %d get otp info failed!\n",
+			   zone->controller->channel, zone->chip);
+	result = hynix16nm_get_read_retry_cfg(&mode, &cycle, zone->values,
+					       buffer);
+	if (result < 0)
+		nand_print("m1 CH %d chip %d get read retry cfg from otp info failed!\n",
+			   zone->controller->channel, zone->chip);
+	nand_free_temp_buf(buffer);
+	return result;
+}
+
 /* Isolated NFTL C candidates; private structure names are inferred. */
 
 struct nftl_chain {

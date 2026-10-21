@@ -10903,6 +10903,7 @@ hynix16nm_read_otp_info_hynix:
 // readonly payload moved below: 	.string	"m1 CH %d chip %d get read retry cfg from otp info failed!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_get_rr_value_otp_hynix
 	.type	hynix16nm_get_rr_value_otp_hynix, %function
 hynix16nm_get_rr_value_otp_hynix:
@@ -10964,6 +10965,7 @@ hynix16nm_get_rr_value_otp_hynix:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	hynix16nm_get_rr_value_otp_hynix, .-hynix16nm_get_rr_value_otp_hynix
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_save_otp_value
