@@ -1161,6 +1161,7 @@ nftl_initialize:
 // readonly payload moved below: 	.byte	114
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_exit
 	.type	nftl_exit, %function
 nftl_exit:
@@ -1180,7 +1181,9 @@ nftl_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	nftl_exit, .-nftl_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nand_read
 	.type	_nand_read, %function
 _nand_read:
@@ -1202,7 +1205,9 @@ _nand_read:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	_nand_read, .-_nand_read
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nand_write
 	.type	_nand_write, %function
 _nand_write:
@@ -1224,7 +1229,9 @@ _nand_write:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	_nand_write, .-_nand_write
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	_nand_discard
 	.type	_nand_discard, %function
 _nand_discard:
@@ -1244,6 +1251,7 @@ _nand_discard:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	_nand_discard, .-_nand_discard
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	_nand_flush_write_cache
 	.type	_nand_flush_write_cache, %function
@@ -2145,6 +2153,7 @@ panic_write:
 	ret
 	.size	panic_write, .-panic_write
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_panic_data_page
 	.type	is_panic_data_page, %function
 is_panic_data_page:
@@ -2168,7 +2177,9 @@ is_panic_data_page:
 	add	sp, sp, 16
 	ret
 	.size	is_panic_data_page, .-is_panic_data_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_panic_dummy_page
 	.type	is_panic_dummy_page, %function
 is_panic_dummy_page:
@@ -2192,6 +2203,7 @@ is_panic_dummy_page:
 	add	sp, sp, 16
 	ret
 	.size	is_panic_dummy_page, .-is_panic_dummy_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC26: relocated in rooted readonly order below. */
@@ -21478,6 +21490,7 @@ is_last_phy_block:
 	ret
 	.size	is_last_phy_block, .-is_last_phy_block
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_phy_block_valid
 	.type	is_phy_block_valid, %function
 is_phy_block_valid:
@@ -21499,6 +21512,7 @@ is_phy_block_valid:
 	add	sp, sp, 16
 	ret
 	.size	is_phy_block_valid, .-is_phy_block_valid
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	get_phy_block_addr
 	.type	get_phy_block_addr, %function
@@ -31624,6 +31638,7 @@ get_erase_count_from_oob:
 	ret
 	.size	get_erase_count_from_oob, .-get_erase_count_from_oob
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_ftl_start_flag_page
 	.type	is_ftl_start_flag_page, %function
 is_ftl_start_flag_page:
@@ -31647,7 +31662,9 @@ is_ftl_start_flag_page:
 	add	sp, sp, 16
 	ret
 	.size	is_ftl_start_flag_page, .-is_ftl_start_flag_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_ftl_end_flag_page
 	.type	is_ftl_end_flag_page, %function
 is_ftl_end_flag_page:
@@ -31671,6 +31688,7 @@ is_ftl_end_flag_page:
 	add	sp, sp, 16
 	ret
 	.size	is_ftl_end_flag_page, .-is_ftl_end_flag_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	is_ftl_special_data
 	.type	is_ftl_special_data, %function
@@ -31755,6 +31773,7 @@ is_nouse_page:
 	.size	is_nouse_page, .-is_nouse_page
 #endif
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_fill_page
 	.type	is_fill_page, %function
 is_fill_page:
@@ -31776,7 +31795,9 @@ is_fill_page:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	is_fill_page, .-is_fill_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_phy_mapping_page
 	.type	is_phy_mapping_page, %function
 is_phy_mapping_page:
@@ -31798,7 +31819,9 @@ is_phy_mapping_page:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	is_phy_mapping_page, .-is_phy_mapping_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_function_info_page
 	.type	is_function_info_page, %function
 is_function_info_page:
@@ -31821,7 +31844,9 @@ is_function_info_page:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	is_function_info_page, .-is_function_info_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_power_down_info_page
 	.type	is_power_down_info_page, %function
 is_power_down_info_page:
@@ -31844,6 +31869,7 @@ is_power_down_info_page:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	is_power_down_info_page, .-is_power_down_info_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC470: relocated in rooted readonly order below. */

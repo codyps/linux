@@ -368,3 +368,141 @@ void nftl_free(void *object)
 {
 	nand_free(object);
 }
+
+/* Stock NFTL operation wrappers and spare-area marker classifiers. */
+/* Bounded C candidates for retained NFTL assembly, not original declarations. */
+
+extern void free_nand_partition(void *partition);
+extern void nftl_zone_release(void *zone);
+extern void nftl_free(void *allocation);
+extern int __nand_read(void *zone, unsigned int sector, unsigned int count,
+		       void *data);
+extern int __nand_write(void *zone, unsigned int sector, unsigned int count,
+			void *data);
+extern int __nand_discard(void *zone, unsigned int sector,
+			  unsigned int count);
+extern unsigned int get_special_data_from_oob(void *oob);
+
+struct nftl_exit_view {
+	unsigned char before_partition[8];
+	void *partition;
+	unsigned char before_zone[8];
+	void *zone;
+	void *allocation;
+};
+_Static_assert(__builtin_offsetof(struct nftl_exit_view, partition) == 8, "partition offset");
+_Static_assert(__builtin_offsetof(struct nftl_exit_view, zone) == 24, "zone offset");
+_Static_assert(__builtin_offsetof(struct nftl_exit_view, allocation) == 32, "allocation offset");
+
+int nftl_exit(struct nftl_exit_view *owner)
+{
+	/* OEM dereferences all three fields without a NULL guard. */
+	free_nand_partition(owner->partition);
+	nftl_zone_release(owner->zone);
+	nftl_free(owner->allocation);
+	return 0;
+}
+
+struct nftl_io_view {
+	unsigned char before_zone[24];
+	void *zone;
+};
+_Static_assert(__builtin_offsetof(struct nftl_io_view, zone) == 24, "I/O zone offset");
+
+int _nand_read(struct nftl_io_view *owner, unsigned int sector,
+	       unsigned int count, void *data)
+{
+	int result = 0;
+	result = __nand_read(owner->zone, sector, count, data);
+	return result;
+}
+
+int _nand_write(struct nftl_io_view *owner, unsigned int sector,
+		unsigned int count, void *data)
+{
+	int result = 0;
+	result = __nand_write(owner->zone, sector, count, data);
+	return result;
+}
+
+int _nand_discard(struct nftl_io_view *owner, unsigned int sector,
+		  unsigned int count)
+{
+	int result = 0;
+	result = __nand_discard(owner->zone, sector, count);
+	return result;
+}
+
+struct nftl_block_limit_view {
+	unsigned char before_limit[24];
+	unsigned short limit;
+};
+
+struct nftl_block_owner_view {
+	unsigned char before_limit_ptr[8];
+	struct nftl_block_limit_view *limits;
+};
+_Static_assert(__builtin_offsetof(struct nftl_block_owner_view, limits) == 8, "limit pointer offset");
+_Static_assert(__builtin_offsetof(struct nftl_block_limit_view, limit) == 24, "limit offset");
+
+int is_phy_block_valid(unsigned short *block,
+		       struct nftl_block_owner_view *owner)
+{
+	/* OEM trusts both pointers and compares unsigned 16-bit block numbers. */
+	if (*block < owner->limits->limit)
+		return 1;
+	return 0;
+}
+
+int is_fill_page(void *oob)
+{
+	unsigned int marker = get_special_data_from_oob(oob);
+	if (marker == 0x55555555U)
+		return 1;
+	return 0;
+}
+
+int is_phy_mapping_page(void *oob)
+{
+	unsigned int marker = get_special_data_from_oob(oob);
+	if (marker == 0xaaaaffffU)
+		return 1;
+	return 0;
+}
+
+int is_function_info_page(void *oob)
+{
+	unsigned int marker = get_special_data_from_oob(oob);
+	if ((marker & 0xffff0000U) == 0xaa110000U)
+		return 1;
+	return 0;
+}
+
+int is_power_down_info_page(void *oob)
+{
+	unsigned int marker = get_special_data_from_oob(oob);
+	if (marker == 0xaa113333U)
+		return 1;
+	return 0;
+}
+
+int is_ftl_start_flag_page(unsigned char *oob)
+{
+	/* OEM reads bytes 1 and 2 directly, with no length or NULL check. */
+	return oob[1] == 0xaa && oob[2] == 0xee;
+}
+
+int is_ftl_end_flag_page(unsigned char *oob)
+{
+	return oob[1] == 0xaa && oob[2] == 0xcc;
+}
+
+int is_panic_data_page(unsigned char *oob)
+{
+	return oob[1] == 0xaa && oob[2] == 0x63;
+}
+
+int is_panic_dummy_page(unsigned char *oob)
+{
+	return oob[1] == 0xaa && oob[2] == 0x62;
+}
