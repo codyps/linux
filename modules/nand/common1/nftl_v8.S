@@ -11091,6 +11091,7 @@ hynix16nm_get_otp_param:
 	.size	hynix16nm_get_otp_param, .-hynix16nm_get_otp_param
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_set_default_param
 	.type	hynix16nm_set_default_param, %function
 hynix16nm_set_default_param:
@@ -11166,6 +11167,7 @@ hynix16nm_set_default_param:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix16nm_set_default_param, .-hynix16nm_set_default_param
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC128: relocated in rooted readonly order below. */

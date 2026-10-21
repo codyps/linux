@@ -1515,6 +1515,36 @@ int hynix16nm_vender_set_param(struct hynix16nm_retry_zone *zone,
 	return result;
 }
 
+/* The OEM leaves this unchecked stack array without a canary. */
+__attribute__((optimize("-fno-stack-protector")))
+int hynix16nm_set_default_param(void *zone_ptr)
+{
+	struct {
+		unsigned char values[8];
+		int result;
+		unsigned int index;
+	} locals;
+
+	locals.result = 0;
+	/* OEM's mutable register count can overwrite the result and then the
+	 * index after the eight-byte local buffer. */
+	for (locals.index = 0; locals.index < hynix16nm_read_retry_reg_num;
+	     locals.index++)
+		locals.values[locals.index] =
+			((struct hynix16nm_retry_zone *)zone_ptr)->values[locals.index];
+	locals.result = hynix16nm_vender_set_param(
+					   (struct hynix16nm_retry_zone *)zone_ptr,
+					   locals.values,
+					   hynix16nm_read_retry_reg_adr,
+					   hynix16nm_read_retry_reg_num);
+	nand_print_dbg("set retry default value: ");
+	for (locals.index = 0; locals.index < hynix16nm_read_retry_reg_num;
+	     locals.index++)
+		nand_print_dbg(" %x", locals.values[locals.index]);
+	nand_print_dbg("\n");
+	return locals.result;
+}
+
 struct hynix16nm_otp_controller {
 	unsigned char before_channel[12];
 	unsigned int channel;
@@ -1995,7 +2025,7 @@ int fill_no_use_data_to_current_block(struct no_use_data_zone *zone)
 
 extern void *nand_malloc(unsigned int size);
 extern void nftl_free(void *object);
-extern void hynix16nm_set_default_param(void *chip);
+extern int hynix16nm_set_default_param(void *chip);
 struct otp_chip;
 extern int hynix20nm_set_default_param(struct otp_chip *chip);
 extern int hynix26nm_setdefaultparam(void *chip);
