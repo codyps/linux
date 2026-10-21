@@ -12841,6 +12841,7 @@ get_empty_sector_cahce_node:
 	ret
 	.size	get_empty_sector_cahce_node, .-get_empty_sector_cahce_node
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	add_to_sector_cache_write_list_tail
 	.type	add_to_sector_cache_write_list_tail, %function
 add_to_sector_cache_write_list_tail:
@@ -12881,7 +12882,9 @@ add_to_sector_cache_write_list_tail:
 	add	sp, sp, 32
 	ret
 	.size	add_to_sector_cache_write_list_tail, .-add_to_sector_cache_write_list_tail
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_from_sector_cache_write_list
 	.type	del_from_sector_cache_write_list, %function
 del_from_sector_cache_write_list:
@@ -12921,6 +12924,7 @@ del_from_sector_cache_write_list:
 	add	sp, sp, 32
 	ret
 	.size	del_from_sector_cache_write_list, .-del_from_sector_cache_write_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	__nand_sector_read
 	.type	__nand_sector_read, %function
@@ -24451,6 +24455,7 @@ nand_clean_zone_table:
 // readonly payload moved below: 	.string	"[ND]nand_find_zone_table end\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_find_zone_table
 	.type	nand_find_zone_table, %function
 nand_find_zone_table:
@@ -24490,6 +24495,7 @@ nand_find_zone_table:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nand_find_zone_table, .-nand_find_zone_table
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC392: relocated in rooted readonly order below. */
@@ -26660,6 +26666,7 @@ add_to_cache_read_list_tail:
 	ret
 	.size	add_to_cache_read_list_tail, .-add_to_cache_read_list_tail
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	add_to_cache_write_list_tail
 	.type	add_to_cache_write_list_tail, %function
 add_to_cache_write_list_tail:
@@ -26700,6 +26707,7 @@ add_to_cache_write_list_tail:
 	add	sp, sp, 32
 	ret
 	.size	add_to_cache_write_list_tail, .-add_to_cache_write_list_tail
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	del_from_cache_read_list
 	.type	del_from_cache_read_list, %function
@@ -26754,6 +26762,7 @@ del_from_cache_read_list:
 	ret
 	.size	del_from_cache_read_list, .-del_from_cache_read_list
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_from_cache_write_list
 	.type	del_from_cache_write_list, %function
 del_from_cache_write_list:
@@ -26793,6 +26802,7 @@ del_from_cache_write_list:
 	add	sp, sp, 32
 	ret
 	.size	del_from_cache_write_list, .-del_from_cache_write_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	get_empty_cahce_node
 	.type	get_empty_cahce_node, %function

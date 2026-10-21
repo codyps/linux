@@ -1591,3 +1591,116 @@ int nftl_write_end(void)
 	}
 	return 0;
 }
+
+/* Inferred NFTL orchestration body; callback signatures remain provisional. */
+
+extern void clean_block_list(void *);
+extern void nand_clean_zone_table2(void *);
+extern void build_zone_list(void *);
+extern void nftl_cache_init(void *);
+extern void print_block_invalid_list(void *);
+extern void print_free_list(void *);
+
+int nand_find_zone_table(void *zone)
+{
+	void *current = zone;
+
+	/* OEM ignores each stage's result, including the zone build and cache
+	 * initialization; it always reports success. Retain that behavior. */
+	clean_block_list(current);
+	nand_clean_zone_table2(current);
+	nand_print_dbg("[ND]build_zone_list start\n");
+	build_zone_list(current);
+	nand_print_dbg("[ND]nftl_cache_init start\n");
+	nftl_cache_init(current);
+	nand_print_dbg("[ND]=================================2=======================================\n");
+	print_block_invalid_list(current);
+	print_free_list(current);
+	nand_print_dbg("[ND]=================================2=======================================\n");
+	nand_print_dbg("[ND]nand_find_zone_table end\n");
+	return 0;
+}
+
+/* Inferred cache write-list bodies. Private layout names are provisional.
+ * Each 16-bit count update uses AND #0xffff where stock uses UXTH; both
+ * preserve the same low halfword, including wraparound. */
+struct cache_list_node {
+    unsigned short unknown;
+    unsigned short flag;
+    unsigned char until_next[36];
+    struct cache_list_node *next;
+    struct cache_list_node *previous;
+};
+struct cache_list_owner {
+    unsigned char unknown[4];
+    unsigned short count;
+    unsigned char until_head[1738];
+    struct cache_list_node head;
+};
+int add_to_cache_write_list_tail(struct cache_list_owner *owner, struct cache_list_node *node)
+{
+    struct cache_list_node *cursor = &owner->head;
+    /* OEM never checks for a cycle in either list. */
+    while (cursor->next)
+        cursor = cursor->next;
+    cursor->next = node;
+    node->next = 0;
+    node->previous = cursor;
+    node->flag = 1;
+    owner->count++;
+    return 0;
+}
+struct sector_node {
+    unsigned short unknown;
+    unsigned short flag;
+    unsigned char until_next[12];
+    struct sector_node *next;
+    struct sector_node *previous;
+};
+struct sector_owner {
+    unsigned char unknown[2];
+    unsigned short count;
+    unsigned char until_head[524];
+    struct sector_node head;
+};
+int add_to_sector_cache_write_list_tail(struct sector_owner *owner, struct sector_node *node)
+{
+    struct sector_node *cursor = &owner->head;
+    /* OEM never checks for a cycle in either list. */
+    while (cursor->next)
+        cursor = cursor->next;
+    cursor->next = node;
+    node->next = 0;
+    node->previous = cursor;
+    node->flag = 1;
+    owner->count++;
+    return 0;
+}
+struct cache_list_node *del_from_cache_write_list(struct cache_list_owner *owner, struct cache_list_node *node)
+{
+    struct cache_list_node *previous = node->previous;
+    /* OEM dereferences previous without checking whether node is linked. */
+    previous->next = node->next;
+    if (node->next)
+        node->next->previous = previous;
+    node->next = 0;
+    node->previous = 0;
+    node->flag = 255;
+    /* Deliberately allow the 16-bit list count to wrap below zero. */
+    owner->count--;
+    return node;
+}
+struct sector_node *del_from_sector_cache_write_list(struct sector_owner *owner, struct sector_node *node)
+{
+    struct sector_node *previous = node->previous;
+    /* OEM dereferences previous without checking whether node is linked. */
+    previous->next = node->next;
+    if (node->next)
+        node->next->previous = previous;
+    node->next = 0;
+    node->previous = 0;
+    node->flag = 255;
+    /* Deliberately allow the 16-bit list count to wrap below zero. */
+    owner->count--;
+    return node;
+}
