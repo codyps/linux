@@ -5110,6 +5110,52 @@ int sandisk_end_one_read_retry(struct samsung_set_chip *chip)
 	return 0;
 }
 
+extern unsigned int toshiba_toggle_mode_flag_recovered;
+extern unsigned char toshiba_p1_1[], toshiba_p1_2[], toshiba_p1_3[];
+extern unsigned char toshiba_read_retry_addr_1[], toshiba_read_retry_addr_2[];
+extern int toshiba_vender_set_param(struct samsung_set_chip *,
+				   unsigned char *, unsigned char *, unsigned int);
+int toshiba_exit_readretry(struct samsung_set_chip *chip)
+{
+	unsigned char *values;
+	unsigned char *addresses;
+	int count;
+	int result;
+
+	if (toshiba_read_retry_mode != 16 &&
+	    toshiba_read_retry_mode != 17 &&
+	    toshiba_read_retry_mode != 18)
+		return -88;
+	nand_enable_chip(chip);
+	ndfc_disable_randomize(chip->controller);
+	if (ndfc_is_toggle_interface(chip->controller)) {
+		ndfc_set_legacy_interface(chip->controller);
+		toshiba_toggle_mode_flag_recovered = 1;
+	}
+	if (toshiba_read_retry_mode == 17) {
+		values = toshiba_p1_2 + 35;
+		addresses = toshiba_read_retry_addr_2;
+		count = 5;
+	} else if (toshiba_read_retry_mode == 18) {
+		values = toshiba_p1_3 + 50;
+		addresses = toshiba_read_retry_addr_2;
+		count = 5;
+	} else {
+		values = toshiba_p1_1 + 24;
+		addresses = toshiba_read_retry_addr_1;
+		/* OEM passes zero rather than the available register count in
+		 * mode 16. Preserve this apparent reset-programming bug. */
+		count = 0;
+	}
+	result = toshiba_vender_set_param(chip, values, addresses, count);
+	/* OEM's global flag is sticky. A previous chip can force toggle
+	 * restoration even when this call did not enter legacy mode. */
+	if (toshiba_toggle_mode_flag_recovered == 1)
+		ndfc_set_toggle_interface(chip->controller);
+	nand_disable_chip(chip);
+	return result;
+}
+
 struct reclaim_flag_zone {
 	unsigned char before_complete[664];
 	unsigned int complete;

@@ -6179,6 +6179,7 @@ toshiba_readretry_exit:
 	.align	2
 	.global	toshiba_exit_readretry
 	.type	toshiba_exit_readretry, %function
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 toshiba_exit_readretry:
 	stp	x29, x30, [sp, -64]!
 	add	x29, sp, 0
@@ -6279,6 +6280,7 @@ toshiba_exit_readretry:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	toshiba_exit_readretry, .-toshiba_exit_readretry
+#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC82: relocated in rooted readonly order below. */
@@ -33422,6 +33424,10 @@ sandisk_A19_sclk1_bak:
 	.zero	4
 	.type	toshiba_toggle_mode_flag, %object
 	.size	toshiba_toggle_mode_flag, 4
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	toshiba_toggle_mode_flag_recovered
+toshiba_toggle_mode_flag_recovered:
+#endif
 toshiba_toggle_mode_flag:
 	.zero	4
 	.type	toshiba_retry_flag, %object
