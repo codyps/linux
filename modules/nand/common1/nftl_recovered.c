@@ -1018,8 +1018,23 @@ struct exit_zone {
 	unsigned char before_c[0x258 - 0x220];
 	void *c;
 };
-extern int free_logic_page_map(struct exit_zone *zone);
 extern void nftl_free(void *ptr);
+int free_logic_page_map(struct exit_zone *zone)
+{
+	unsigned int index;
+
+	for (index = 0; index <= 24; index++) {
+		/* OEM probes each pointer and then reads it again for the free.
+		 * The zone layout is inferred from slot offsets 72..264.
+		 * It leaves freed pointers dangling and never checks zone. */
+		void *const volatile *slot = (void *const volatile *)
+			((char *)zone + 72 + index * 8);
+
+		if (*slot)
+			nftl_free(*slot);
+	}
+	return 0;
+}
 int zone_param_exit(struct exit_zone *zone)
 {
 	/* OEM ignores every cleanup result and leaves dangling pointers. */

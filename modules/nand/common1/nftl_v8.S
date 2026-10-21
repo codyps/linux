@@ -32340,6 +32340,7 @@ malloc_logic_page_map:
 	ret
 	.size	malloc_logic_page_map, .-malloc_logic_page_map
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	free_logic_page_map
 	.type	free_logic_page_map, %function
 free_logic_page_map:
@@ -32376,6 +32377,7 @@ free_logic_page_map:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	free_logic_page_map, .-free_logic_page_map
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_physic_op_par
