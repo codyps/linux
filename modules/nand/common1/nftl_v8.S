@@ -14904,6 +14904,7 @@ write_phy_page_map_to_current_block:
 // readonly payload moved below: 	.string	"[NE]write phy data to current block error2\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	write_logic_data_to_current_block
 	.type	write_logic_data_to_current_block, %function
 write_logic_data_to_current_block:
@@ -15159,6 +15160,7 @@ write_logic_data_to_current_block:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	write_logic_data_to_current_block, .-write_logic_data_to_current_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC172: relocated in rooted readonly order below. */

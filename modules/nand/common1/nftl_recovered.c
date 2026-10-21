@@ -9268,6 +9268,112 @@ struct do_write_state {
 	unsigned char before_page[24];
 	unsigned short page;
 };
+struct write_logic_zone {
+	unsigned char before_geometry[8];
+	struct page_geometry *geometry;
+	unsigned char before_mode[648];
+	unsigned int mode;
+};
+_Static_assert(__builtin_offsetof(struct do_write_state, map) == 24,
+	       "logic-write map pointer offset");
+_Static_assert(__builtin_offsetof(struct do_write_state, page) == 56,
+	       "logic-write page offset");
+_Static_assert(__builtin_offsetof(struct write_logic_zone, mode) == 664,
+	       "logic-write mode offset");
+int write_logic_data_to_current_block(void *raw_zone, void *raw_current,
+				      unsigned int marker, unsigned int logic_page,
+				      void *data)
+{
+	struct write_logic_zone *zone = raw_zone;
+	struct do_write_state *current = raw_current;
+	struct invalid_page_location *location;
+	struct phy_write_block *old_block = 0;
+	int moved = 0;
+	int result;
+
+	if (marker == 192) {
+		location = (struct invalid_page_location *)
+			get_logic_page_map((struct logic_page_map_zone *)zone,
+					   logic_page);
+		if (!location) {
+			nand_print_dbg("[ND]logic_page_map NULL!!\n");
+			return 1;
+		}
+		if (location->block != 0xffff) {
+			old_block = (struct phy_write_block *)
+				get_phy_block_addr((struct nftl_phy_outer *)zone,
+						   location->block);
+			if (current->block == (struct do_write_block *)old_block) {
+				old_block->used_pages++;
+				if (old_block->used_pages >
+				    zone->geometry->pages_per_block)
+					nand_print_dbg("[ND]invalid_page_count more than pages_per_blk at write logic data to current block:%d!!\n",
+						       current->page);
+			} else {
+				moved = 1;
+			}
+		}
+		result = write_phy_data_to_current_block(
+			(struct phy_write_zone *)zone,
+			(struct phy_write_state *)current,
+			data, logic_page, 192);
+		if (result) {
+			nand_print("[NE]write_phy_data_to_current_block error2\n");
+			return result;
+		}
+		location->block = current->block->number;
+		location->page = current->page & 0xfff;
+		location->flags = (location->flags & ~1U) |
+			(zone->mode == 0);
+		current->map[location->page] = logic_page;
+		current->page++;
+	} else if (marker == 0xaa111111) {
+		location = (struct invalid_page_location *)
+			get_logic_page_map((struct logic_page_map_zone *)zone,
+					   logic_page);
+		if (!location) {
+			nand_print_dbg("[ND]logic_page_map NULL!!\n");
+			return 1;
+		}
+		if (location->block != 0xffff) {
+			old_block = (struct phy_write_block *)
+				get_phy_block_addr((struct nftl_phy_outer *)zone,
+						   location->block);
+			if (current->block == (struct do_write_block *)old_block) {
+				current->map[location->page] = ~0U;
+				old_block->used_pages++;
+				if (old_block->used_pages >
+				    zone->geometry->pages_per_block)
+					nand_print("[NE]invalid_page_count more than pages_per_blk at write logic data to current block:%d!!\n",
+						   current->page);
+			} else {
+				moved = 1;
+			}
+		}
+		location->block = 0xffff;
+		location->page = 0xfff;
+		location->flags |= 1;
+	} else if (marker == 0xaa113333) {
+		current->block->page++;
+		result = write_phy_data_to_current_block(
+			(struct phy_write_zone *)zone,
+			(struct phy_write_state *)current,
+			data, logic_page, marker);
+		if (result) {
+			nand_print("[NE]write phy data to current block error2\n");
+			return result;
+		}
+		current->page++;
+	}
+	if (moved)
+		phy_block_from_invalid_page_incr(
+			(struct invalid_page_zone *)zone,
+			(struct invalid_page_node *)old_block);
+	/* OEM does not undo the metadata mutations on write failure and ignores
+	 * both list-helper results. Keep this ordering for stock compatibility. */
+	adjust_invaild_list((struct move_zone *)zone);
+	return 0;
+}
 struct do_write_zone {
 	unsigned char before_geometry[8];
 	struct do_write_geometry *geometry;
