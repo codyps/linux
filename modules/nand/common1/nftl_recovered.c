@@ -718,3 +718,261 @@ void nftl_set_zone_test(struct nftl_test_zone *input, unsigned int enabled)
 	zone->test_mode = enabled;
 	print_nftl_zone(zone);
 }
+
+/* Isolated NFTL list-search C candidates; structure labels are inferred. */
+
+struct free_node {
+	unsigned char before_next[32];
+	struct free_node *next;
+};
+struct free_zone {
+	unsigned char before_head[272];
+	struct free_node head;
+};
+int is_block_in_free_list(struct free_zone *zone, struct free_node *target)
+{
+	struct free_node *node = &zone->head;
+	node = node->next;
+	/* OEM does not detect list cycles. */
+	while (node) {
+		if (node == target)
+			return 1;
+		node = node->next;
+	}
+	return 0;
+}
+
+struct invalid_node {
+	unsigned char before_next[16];
+	struct invalid_node *next;
+};
+struct invalid_zone {
+	unsigned char before_head[336];
+	struct invalid_node head;
+};
+int is_block_in_invalid_list(struct invalid_zone *zone,
+			     struct invalid_node *target)
+{
+	struct invalid_node *node = &zone->head;
+	node = node->next;
+	/* OEM does not detect list cycles. */
+	while (node) {
+		if (node == target)
+			return 1;
+		node = node->next;
+	}
+	return 0;
+}
+
+struct cache_read_node {
+	unsigned char before_key[8];
+	int key;
+	unsigned char before_next[12];
+	struct cache_read_node *next;
+};
+struct cache_read_zone {
+	unsigned char before_head[1688];
+	struct cache_read_node head;
+};
+/* Four key searches below compile with the two equality operands loaded into
+ * opposite registers from stock. The memory reads, comparison, branches and
+ * return paths are otherwise identical; equality is symmetric. */
+struct cache_read_node *search_from_cache_read_list(
+	struct cache_read_zone *zone, int key)
+{
+	struct cache_read_node *node = &zone->head;
+	node = node->next;
+	while (node) {
+		if (key == node->key)
+			return node;
+		node = node->next;
+	}
+	return 0;
+}
+
+struct cache_write_node {
+	unsigned char before_key[8];
+	int key;
+	unsigned char before_next[28];
+	struct cache_write_node *next;
+};
+struct cache_write_zone {
+	unsigned char before_head[1744];
+	struct cache_write_node head;
+};
+struct cache_write_node *search_from_cache_write_list(
+	struct cache_write_zone *zone, int key)
+{
+	struct cache_write_node *node = &zone->head;
+	node = node->next;
+	while (node) {
+		if (key == node->key)
+			return node;
+		node = node->next;
+	}
+	return 0;
+}
+
+struct sector_cache_node {
+	unsigned char before_key[4];
+	int key;
+	unsigned char before_next[8];
+	struct sector_cache_node *next;
+};
+struct sector_cache_zone {
+	unsigned char before_head[528];
+	struct sector_cache_node head;
+};
+struct sector_cache_node *search_from_sector_cache_write_list(
+	struct sector_cache_zone *zone, int key)
+{
+	struct sector_cache_node *node = &zone->head;
+	node = node->next;
+	while (node) {
+		if (key == node->key)
+			return node;
+		node = node->next;
+	}
+	return 0;
+}
+
+struct gc_search_node {
+	unsigned char before_key[8];
+	void *key;
+	struct gc_search_node *next;
+};
+struct gc_search_zone {
+	unsigned char before_head[328];
+	struct gc_search_node head;
+};
+struct gc_search_node *search_gc_node(struct gc_search_zone *zone, void *key)
+{
+	struct gc_search_node *node = &zone->head;
+	node = node->next;
+	while (node) {
+		if (key == node->key)
+			return node;
+		node = node->next;
+	}
+	return 0;
+}
+
+/* Isolated C equivalents; field names and aggregate types are inferred. */
+
+int get_bad_flag_from_oob(void *oob)
+{
+	int bad = get_spare_data(oob, 1, 4);
+	if (bad == 0)
+		return 0;
+	return 1;
+}
+
+struct current_page {
+	unsigned char before_page[56];
+	unsigned short page;
+};
+struct page_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages_per_block;
+};
+struct current_zone {
+	unsigned char before_geometry[8];
+	struct page_geometry *geometry;
+};
+int current_block_at_last_page(struct current_zone *zone,
+			       struct current_page *block)
+{
+	if (block->page == zone->geometry->pages_per_block - 1)
+		return 1;
+	return 0;
+}
+
+struct physical_block {
+	unsigned short number;
+};
+struct physical_geometry {
+	unsigned char before_blocks[24];
+	unsigned short blocks_per_chip;
+};
+struct physical_zone {
+	unsigned char before_geometry[8];
+	struct physical_geometry *geometry;
+};
+int is_last_phy_block(struct physical_block *block,
+		      struct physical_zone *zone)
+{
+	if (block->number == zone->geometry->blocks_per_chip - 1)
+		return 1;
+	return 0;
+}
+
+/* Isolated NFTL C candidates; private structure names are inferred. */
+
+struct nftl_chain {
+	unsigned char before_next[16];
+	struct nftl_chain *next;
+};
+
+void add_nftl_blk_list(struct nftl_chain *head, struct nftl_chain *new_node)
+{
+	struct nftl_chain *current = head;
+	new_node->next = 0;
+	/* OEM does not detect an existing cycle or duplicate node. */
+	while (current->next)
+		current = current->next;
+	current->next = new_node;
+}
+
+struct nrc_buffers {
+	unsigned char before_first[8];
+	void *first;
+	void *second;
+	void *third;
+};
+int free_nrc(struct nrc_buffers *buffers)
+{
+	if (buffers == 0)
+		return 0;
+	nftl_free(buffers->second);
+	nftl_free(buffers->first);
+	nftl_free(buffers->third);
+	nftl_free(buffers);
+	return 0;
+}
+
+extern void set_spare_data(unsigned char *oob, int value, int offset,
+			   int count);
+void set_start_block_flag(void *unused, unsigned char *oob, int number)
+{
+	/* OEM ignores the first argument and all spare-data write failures. */
+	oob[0] = 0xff;
+	set_spare_data(oob, 0xaa, 1, 1);
+	set_spare_data(oob, 0xee, 2, 1);
+	set_spare_data(oob, number, 3, 4);
+}
+
+struct read_claim_settings {
+	unsigned char before_flags[172];
+	int flag;
+	int page;
+};
+struct read_claim_zone {
+	unsigned char before_settings[3440];
+	struct read_claim_settings *settings;
+};
+struct read_claim_node {
+	unsigned char before_next[16];
+	struct read_claim_node *next;
+	struct read_claim_zone *zone;
+};
+int set_nftl_read_claim_flag(struct read_claim_node *head, int flag, int page)
+{
+	struct read_claim_node *node = head;
+	/* OEM follows unchecked list and settings pointers. */
+	while (node) {
+		node->zone->settings->flag = flag;
+		node->zone->settings->page = page;
+		node = node->next;
+	}
+	return 0;
+}

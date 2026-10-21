@@ -589,6 +589,7 @@ nftl_free:
 	.size	nftl_free, .-nftl_free
 	#endif
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	add_nftl_blk_list
 	.type	add_nftl_blk_list, %function
 add_nftl_blk_list:
@@ -616,6 +617,7 @@ add_nftl_blk_list:
 	add	sp, sp, 32
 	ret
 	.size	add_nftl_blk_list, .-add_nftl_blk_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	del_last_nftl_blk
 	.type	del_last_nftl_blk, %function
@@ -12730,6 +12732,7 @@ nftl_sector_cache_exit:
 	ret
 	.size	nftl_sector_cache_exit, .-nftl_sector_cache_exit
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	search_from_sector_cache_write_list
 	.type	search_from_sector_cache_write_list, %function
 search_from_sector_cache_write_list:
@@ -12764,6 +12767,7 @@ search_from_sector_cache_write_list:
 	add	sp, sp, 32
 	ret
 	.size	search_from_sector_cache_write_list, .-search_from_sector_cache_write_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	get_empty_sector_cahce_node
 	.type	get_empty_sector_cahce_node, %function
@@ -15199,6 +15203,7 @@ nftl_ops_init:
 	ret
 	.size	nftl_ops_init, .-nftl_ops_init
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	current_block_at_last_page
 	.type	current_block_at_last_page, %function
 current_block_at_last_page:
@@ -15222,6 +15227,7 @@ current_block_at_last_page:
 	add	sp, sp, 16
 	ret
 	.size	current_block_at_last_page, .-current_block_at_last_page
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	current_block_at_first_page
@@ -20052,6 +20058,7 @@ init_nrc:
 	ret
 	.size	init_nrc, .-init_nrc
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	free_nrc
 	.type	free_nrc, %function
 free_nrc:
@@ -20080,6 +20087,7 @@ free_nrc:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	free_nrc, .-free_nrc
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC284: relocated in rooted readonly order below. */
@@ -21492,6 +21500,7 @@ mark_free_block:
 	ret
 	.size	mark_free_block, .-mark_free_block
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_last_phy_block
 	.type	is_last_phy_block, %function
 is_last_phy_block:
@@ -21515,6 +21524,7 @@ is_last_phy_block:
 	add	sp, sp, 16
 	ret
 	.size	is_last_phy_block, .-is_last_phy_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_phy_block_valid
@@ -24813,6 +24823,7 @@ del_free_list_by_block:
 	ret
 	.size	del_free_list_by_block, .-del_free_list_by_block
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_block_in_free_list
 	.type	is_block_in_free_list, %function
 is_block_in_free_list:
@@ -24846,6 +24857,7 @@ is_block_in_free_list:
 	add	sp, sp, 32
 	ret
 	.size	is_block_in_free_list, .-is_block_in_free_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC400: relocated in rooted readonly order below. */
@@ -25059,6 +25071,7 @@ del_block_invalid_list_by_block:
 	ret
 	.size	del_block_invalid_list_by_block, .-del_block_invalid_list_by_block
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_block_in_invalid_list
 	.type	is_block_in_invalid_list, %function
 is_block_in_invalid_list:
@@ -25092,6 +25105,7 @@ is_block_in_invalid_list:
 	add	sp, sp, 32
 	ret
 	.size	is_block_in_invalid_list, .-is_block_in_invalid_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC404: relocated in rooted readonly order below. */
@@ -26461,6 +26475,7 @@ nftl_cache_clean:
 	ret
 	.size	nftl_cache_clean, .-nftl_cache_clean
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	search_from_cache_read_list
 	.type	search_from_cache_read_list, %function
 search_from_cache_read_list:
@@ -26495,7 +26510,9 @@ search_from_cache_read_list:
 	add	sp, sp, 32
 	ret
 	.size	search_from_cache_read_list, .-search_from_cache_read_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	search_from_cache_write_list
 	.type	search_from_cache_write_list, %function
 search_from_cache_write_list:
@@ -26530,6 +26547,7 @@ search_from_cache_write_list:
 	add	sp, sp, 32
 	ret
 	.size	search_from_cache_write_list, .-search_from_cache_write_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	add_to_cache_read_list_tail
 	.type	add_to_cache_read_list_tail, %function
@@ -28497,6 +28515,7 @@ set_nftl_read_claim_complete:
 	ret
 	.size	set_nftl_read_claim_complete, .-set_nftl_read_claim_complete
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_nftl_read_claim_flag
 	.type	set_nftl_read_claim_flag, %function
 set_nftl_read_claim_flag:
@@ -28529,6 +28548,7 @@ set_nftl_read_claim_flag:
 	add	sp, sp, 32
 	ret
 	.size	set_nftl_read_claim_flag, .-set_nftl_read_claim_flag
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	get_cold_logic_page
 	.type	get_cold_logic_page, %function
@@ -29380,6 +29400,7 @@ get_empty_gc_node:
 	ret
 	.size	get_empty_gc_node, .-get_empty_gc_node
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	search_gc_node
 	.type	search_gc_node, %function
 search_gc_node:
@@ -29414,6 +29435,7 @@ search_gc_node:
 	add	sp, sp, 32
 	ret
 	.size	search_gc_node, .-search_gc_node
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	add_to_gc_list_tail
 	.type	add_to_gc_list_tail, %function
@@ -31522,6 +31544,7 @@ set_no_use_page:
 	ret
 	.size	set_no_use_page, .-set_no_use_page
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_start_block_flag
 	.type	set_start_block_flag, %function
 set_start_block_flag:
@@ -31552,6 +31575,7 @@ set_start_block_flag:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	set_start_block_flag, .-set_start_block_flag
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	set_end_block_flag
 	.type	set_end_block_flag, %function
@@ -31578,6 +31602,7 @@ set_end_block_flag:
 	ret
 	.size	set_end_block_flag, .-set_end_block_flag
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_bad_flag_from_oob
 	.type	get_bad_flag_from_oob, %function
 get_bad_flag_from_oob:
@@ -31600,6 +31625,7 @@ get_bad_flag_from_oob:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	get_bad_flag_from_oob, .-get_bad_flag_from_oob
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_block_used_count_from_oob
