@@ -2919,6 +2919,7 @@ samsung_readretry_exit:
 // readonly payload moved below: 	.string	" samsung_special_init error samsung_read_retry_mode:%d samsung_read_retry_cycle :%d \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	samsung_special_init
 	.type	samsung_special_init, %function
 samsung_special_init:
@@ -2982,6 +2983,7 @@ samsung_special_init:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	samsung_special_init, .-samsung_special_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC42: relocated in rooted readonly order below. */
@@ -4554,6 +4556,7 @@ hynix20nm_readretry_exit:
 // readonly payload moved below: 	.string	" hynix20nm_special_init error hynix20nm_read_retry_mode: %d hynix20nm_read_retry_cycle:%d hynix20nm_read_retry_reg_num:%d\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_special_init
 	.type	hynix20nm_special_init, %function
 hynix20nm_special_init:
@@ -4625,6 +4628,7 @@ hynix20nm_special_init:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	hynix20nm_special_init, .-hynix20nm_special_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC68: relocated in rooted readonly order below. */
@@ -5171,6 +5175,7 @@ micron_readretry_exit:
 // readonly payload moved below: 	.string	" micron_special_init error micron_read_retry_mode:%d micron_read_retry_cycle:%d \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	micron_special_init
 	.type	micron_special_init, %function
 micron_special_init:
@@ -5234,6 +5239,7 @@ micron_special_init:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	micron_special_init, .-micron_special_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC76: relocated in rooted readonly order below. */
@@ -6266,6 +6272,7 @@ toshiba_exit_readretry:
 // readonly payload moved below: 	.string	" toshiba_special_init error toshiba_read_retry_mode :%d toshiba_read_retry_cycle :%d toshiba_read_retry_reg_cnt :%d \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	toshiba_special_init
 	.type	toshiba_special_init, %function
 toshiba_special_init:
@@ -6337,6 +6344,7 @@ toshiba_special_init:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	toshiba_special_init, .-toshiba_special_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC84: relocated in rooted readonly order below. */
@@ -7517,6 +7525,7 @@ hynix26nm_readretry_exit:
 // readonly payload moved below: 	.string	" hynix26nm_special_init error hynix26nm_read_retry_mode: %d hynix26nm_read_retry_cycle:%d hynix26nm_read_retry_reg_num:%d\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_special_init
 	.type	hynix26nm_special_init, %function
 hynix26nm_special_init:
@@ -7588,6 +7597,7 @@ hynix26nm_special_init:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	hynix26nm_special_init, .-hynix26nm_special_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC93: relocated in rooted readonly order below. */
@@ -9101,6 +9111,7 @@ sandisk_A19_exit_readretry:
 // readonly payload moved below: 	.string	" sandisk_A19_special_init error sandisk_A19_read_retry_mode:%d sandisk_A19_read_retry_cycle :%d sandisk_A19_read_retry_reg_cnt %d \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_A19_special_init
 	.type	sandisk_A19_special_init, %function
 sandisk_A19_special_init:
@@ -9172,6 +9183,7 @@ sandisk_A19_special_init:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	sandisk_A19_special_init, .-sandisk_A19_special_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC102: relocated in rooted readonly order below. */
@@ -11380,6 +11392,7 @@ hynix16nm_readretry_exit:
 // readonly payload moved below: 	.string	" hynix16nm_special_init error hynix16nm_read_retry_mode: %d hynix16nm_read_retry_cycle:%d hynix16nm_read_retry_reg_num:%d\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_special_init
 	.type	hynix16nm_special_init, %function
 hynix16nm_special_init:
@@ -11451,6 +11464,7 @@ hynix16nm_special_init:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	hynix16nm_special_init, .-hynix16nm_special_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC133: relocated in rooted readonly order below. */
@@ -12626,6 +12640,7 @@ sandisk_exit_readretry:
 // readonly payload moved below: 	.string	" sandisk_special_init error sandisk_read_retry_mode:%d sandisk_read_retry_cycle :%d sandisk_read_retry_reg_cnt %d \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	sandisk_special_init
 	.type	sandisk_special_init, %function
 sandisk_special_init:
@@ -12697,6 +12712,7 @@ sandisk_special_init:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	sandisk_special_init, .-sandisk_special_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC140: relocated in rooted readonly order below. */

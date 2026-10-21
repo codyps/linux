@@ -3671,6 +3671,107 @@ int toshiba_readretry_init(struct samsung_init_chip *chip)
 	return 0;
 }
 
+extern int micron_readretry_init(void *);
+extern int hynix16nm_readretry_init(void *);
+extern int hynix20nm_readretry_init(void *);
+extern int hynix26nm_readretry_init(void *);
+extern int sandisk_readretry_init(void *);
+extern int sandisk_A19_readretry_init(void *);
+extern void samsung_read_page_end(void);
+extern void micron_read_page_end(void);
+extern void toshiba_read_page_end(void);
+extern void hynix16nm_read_page_end(void);
+extern void hynix20nm_read_page_end(void);
+extern void hynix26nm_read_page_end(void);
+extern void sandisk_read_page_end(void);
+extern void sandisk_A19_read_page_end(void);
+extern unsigned char hynix16nm_read_retry_mode, hynix16nm_read_retry_cycle,
+	hynix16nm_read_retry_reg_num;
+extern unsigned char hynix20nm_read_retry_mode, hynix20nm_read_retry_cycle,
+	hynix20nm_read_retry_reg_num;
+extern unsigned char hynix26nm_read_retry_mode, hynix26nm_read_retry_cycle;
+extern unsigned char sandisk_read_retry_mode, sandisk_read_retry_cycle,
+	sandisk_read_retry_reg_cnt;
+extern unsigned char sandisk_A19_read_retry_mode,
+	sandisk_A19_read_retry_cycle, sandisk_A19_read_retry_reg_cnt;
+
+/* OEM ORs retry-init results across every chip, publishes the read-end
+ * callback only when the aggregate is zero, and never checks list cycles. */
+#define SPECIAL_INIT_TWO(name, init, end, mode, cycle, success, failure) \
+int name(void) \
+{ \
+	int result = 0; \
+	struct special_exit_chip *chip = g_nsi->chips; \
+	while (chip) { \
+		result |= init((void *)chip); \
+		chip = chip->next; \
+	} \
+	if (result == 0) { \
+		df_read_page_end = end; \
+		nand_print_dbg(success, mode, cycle); \
+	} else { \
+		nand_print(failure, mode, cycle); \
+	} \
+	return result; \
+}
+
+#define SPECIAL_INIT_THREE(name, init, end, mode, cycle, reg, success, failure) \
+int name(void) \
+{ \
+	int result = 0; \
+	struct special_exit_chip *chip = g_nsi->chips; \
+	while (chip) { \
+		result |= init((void *)chip); \
+		chip = chip->next; \
+	} \
+	if (result == 0) { \
+		df_read_page_end = end; \
+		nand_print_dbg(success, mode, cycle, reg); \
+	} else { \
+		nand_print(failure, mode, cycle, reg); \
+	} \
+	return result; \
+}
+
+SPECIAL_INIT_TWO(samsung_special_init, samsung_readretry_init,
+	samsung_read_page_end, samsung_read_retry_mode, samsung_read_retry_cycle,
+	" samsung_special_init samsung_read_retry_mode:%d samsung_read_retry_cycle :%d \n",
+	" samsung_special_init error samsung_read_retry_mode:%d samsung_read_retry_cycle :%d \n")
+SPECIAL_INIT_TWO(micron_special_init, micron_readretry_init,
+	micron_read_page_end, micron_read_retry_mode, micron_read_retry_cycle,
+	" micron_special_init micron_read_retry_mode:%d micron_read_retry_cycle:%d \n",
+	" micron_special_init error micron_read_retry_mode:%d micron_read_retry_cycle:%d \n")
+SPECIAL_INIT_THREE(toshiba_special_init, toshiba_readretry_init,
+	toshiba_read_page_end, toshiba_read_retry_mode, toshiba_read_retry_cycle,
+	toshiba_read_retry_reg_cnt,
+	" toshiba_special_init toshiba_read_retry_mode :%d toshiba_read_retry_cycle :%d toshiba_read_retry_reg_cnt :%d \n",
+	" toshiba_special_init error toshiba_read_retry_mode :%d toshiba_read_retry_cycle :%d toshiba_read_retry_reg_cnt :%d \n")
+SPECIAL_INIT_THREE(hynix16nm_special_init, hynix16nm_readretry_init,
+	hynix16nm_read_page_end, hynix16nm_read_retry_mode,
+	hynix16nm_read_retry_cycle, hynix16nm_read_retry_reg_num,
+	" hynix16nm_special_init hynix16nm_read_retry_mode: %d hynix16nm_read_retry_cycle:%d hynix16nm_read_retry_reg_num:%d\n",
+	" hynix16nm_special_init error hynix16nm_read_retry_mode: %d hynix16nm_read_retry_cycle:%d hynix16nm_read_retry_reg_num:%d\n")
+SPECIAL_INIT_THREE(hynix20nm_special_init, hynix20nm_readretry_init,
+	hynix20nm_read_page_end, hynix20nm_read_retry_mode,
+	hynix20nm_read_retry_cycle, hynix20nm_read_retry_reg_num,
+	" hynix20nm_special_init hynix20nm_read_retry_mode: %d hynix20nm_read_retry_cycle:%d hynix20nm_read_retry_reg_num:%d\n",
+	" hynix20nm_special_init error hynix20nm_read_retry_mode: %d hynix20nm_read_retry_cycle:%d hynix20nm_read_retry_reg_num:%d\n")
+SPECIAL_INIT_THREE(hynix26nm_special_init, hynix26nm_readretry_init,
+	hynix26nm_read_page_end, hynix26nm_read_retry_mode,
+	hynix26nm_read_retry_cycle, hynix26nm_read_retry_reg_num,
+	" hynix26nm_special_init hynix26nm_read_retry_mode: %d hynix26nm_read_retry_cycle:%d hynix26nm_read_retry_reg_num:%d\n",
+	" hynix26nm_special_init error hynix26nm_read_retry_mode: %d hynix26nm_read_retry_cycle:%d hynix26nm_read_retry_reg_num:%d\n")
+SPECIAL_INIT_THREE(sandisk_special_init, sandisk_readretry_init,
+	sandisk_read_page_end, sandisk_read_retry_mode,
+	sandisk_read_retry_cycle, sandisk_read_retry_reg_cnt,
+	" sandisk_special_init sandisk_read_retry_mode:%d sandisk_read_retry_cycle :%d sandisk_read_retry_reg_cnt %d \n",
+	" sandisk_special_init error sandisk_read_retry_mode:%d sandisk_read_retry_cycle :%d sandisk_read_retry_reg_cnt %d \n")
+SPECIAL_INIT_THREE(sandisk_A19_special_init, sandisk_A19_readretry_init,
+	sandisk_A19_read_page_end, sandisk_A19_read_retry_mode,
+	sandisk_A19_read_retry_cycle, sandisk_A19_read_retry_reg_cnt,
+	" sandisk_A19_special_init sandisk_A19_read_retry_mode:%d sandisk_A19_read_retry_cycle :%d sandisk_A19_read_retry_reg_cnt %d \n",
+	" sandisk_A19_special_init error sandisk_A19_read_retry_mode:%d sandisk_A19_read_retry_cycle :%d sandisk_A19_read_retry_reg_cnt %d \n")
+
 struct reclaim_flag_zone {
 	unsigned char before_complete[664];
 	unsigned int complete;
