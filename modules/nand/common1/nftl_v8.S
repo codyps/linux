@@ -31550,6 +31550,7 @@ _nftl_nand_copy_page:
 	ret
 	.size	_nftl_nand_copy_page, .-_nftl_nand_copy_page
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	set_spare_data
 	.type	set_spare_data, %function
 set_spare_data:
@@ -31594,7 +31595,9 @@ set_spare_data:
 	add	sp, sp, 32
 	ret
 	.size	set_spare_data, .-set_spare_data
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_spare_data
 	.type	get_spare_data, %function
 get_spare_data:
@@ -31632,6 +31635,7 @@ get_spare_data:
 	add	sp, sp, 32
 	ret
 	.size	get_spare_data, .-get_spare_data
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	set_oob_logic_page
 	.type	set_oob_logic_page, %function

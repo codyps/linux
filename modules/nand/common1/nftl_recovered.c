@@ -591,8 +591,22 @@ unsigned int nftl_get_boot_cnt(struct nftl_boot_owner_view *input)
 
 /* C candidates for bounded OEM NFTL helpers; offsets are evidence, not types. */
 
-extern unsigned int get_spare_data(void *oob, unsigned int offset,
-				   unsigned int bytes);
+unsigned int get_spare_data(void *oob, unsigned int offset,
+			    unsigned int bytes)
+{
+	unsigned char offset8 = offset;
+	unsigned char bytes8 = bytes;
+	unsigned int index = 0;
+	unsigned int value = 0;
+
+	while (bytes8 > index) {
+		value <<= 8;
+		value |= ((unsigned char *)oob)[(unsigned int)offset8 + index];
+		index++;
+	}
+	/* OEM keeps only the final four bytes for lengths above four. */
+	return value;
+}
 extern int block_erase(unsigned short block, unsigned short chip);
 
 unsigned int get_block_used_count_from_oob(void *oob)
@@ -943,8 +957,22 @@ int free_nrc(struct nrc_buffers *buffers)
 	return 0;
 }
 
-extern void set_spare_data(unsigned char *oob, int value, int offset,
-			   int count);
+void set_spare_data(unsigned char *oob, int value, int offset, int count)
+{
+	unsigned char offset8 = offset;
+	unsigned char count8 = count;
+	unsigned int index = 0;
+	unsigned int shift;
+
+	while (index < count8) {
+		shift = (count8 - index - 1) * 8;
+		/* AArch64 masks variable 32-bit shift counts to five bits.
+		 * Preserve that OEM wraparound for counts above four. */
+		oob[(unsigned int)offset8 + index] =
+			(unsigned char)((unsigned int)value >> (shift & 31));
+		index++;
+	}
+}
 void set_start_block_flag(void *unused, unsigned char *oob, int number)
 {
 	/* OEM ignores the first argument and all spare-data write failures. */
@@ -1201,9 +1229,6 @@ int check_bit_nums(const unsigned char *data, int length)
 }
 
 /* Isolated OEM C equivalents; aggregate names are inferred from access. */
-
-extern void set_spare_data(unsigned char *oob, int value, int offset,
-			   int count);
 
 void set_end_block_flag(void *unused, unsigned char *oob)
 {
