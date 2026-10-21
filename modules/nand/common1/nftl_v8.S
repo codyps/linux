@@ -24851,6 +24851,7 @@ _DumpHexData:
 // readonly payload moved below: 	.string	"[NE]OOB :"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_power_off_ecc_error
 	.type	nand_power_off_ecc_error, %function
 nand_power_off_ecc_error:
@@ -24928,6 +24929,7 @@ nand_power_off_ecc_error:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	nand_power_off_ecc_error, .-nand_power_off_ecc_error
+	#endif
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	add_free_list

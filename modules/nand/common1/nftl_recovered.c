@@ -4639,6 +4639,42 @@ int crc_wrong(struct crc_page_zone *zone, const unsigned char *data,
 	}
 	return 0;
 }
+struct poweroff_ecc_geometry {
+	unsigned char before_crc_enabled[28];
+	unsigned short crc_enabled;
+};
+struct poweroff_ecc_zone {
+	unsigned char before_geometry[3448];
+	struct poweroff_ecc_geometry *geometry;
+};
+int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
+			     const unsigned char *data, unsigned char *oob)
+{
+	int error = 0;
+
+	/* OEM probes OOB before the unchecked zone/geometry pointer, then
+	 * uses CRC only when the geometry flag is set. Keep this fault order. */
+	if (oob[0] != 0xff) {
+		nand_print("[NE]exception case bad block\n");
+		error = 1;
+	} else if (zone->geometry->crc_enabled) {
+		if (crc_wrong((struct crc_page_zone *)zone, data, oob)) {
+			nand_print("[NE]exception case wbc\n");
+			error = 1;
+		}
+	} else if (oob[11] != 0xa5 || oob[15] != 0xa5) {
+		nand_print("[NE]exception case gd\n");
+		error = 1;
+	}
+	if (error == 1) {
+		/* OEM prints its original source line and dumps 16 bytes of OOB;
+		 * preserve that diagnostic even if the source line moves. */
+		nand_print("[NE]%s %d, flag = %d\n", __func__, 3046, error);
+		nand_print("[NE]OOB :");
+		_DumpHexData(oob, 16);
+	}
+	return error;
+}
 unsigned int *get_logic_page_map(struct logic_page_map_zone *zone,
 				 unsigned int page)
 {
