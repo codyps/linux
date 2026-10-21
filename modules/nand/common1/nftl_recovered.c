@@ -3005,6 +3005,131 @@ int nftl_cache_init(void *owner)
 	return 0;
 }
 
+struct nand_cache_read_geometry {
+	unsigned char before_sectors[8];
+	unsigned char sectors_per_page;
+	unsigned char before_page_bytes[17];
+	unsigned short page_bytes;
+};
+struct nand_cache_read_stats {
+	unsigned char before_ecc_reads[116];
+	unsigned int ecc_reads;
+};
+struct nand_cache_read_configuration {
+	unsigned short count;
+};
+struct nand_cache_read_zone {
+	unsigned char before_geometry[8];
+	struct nand_cache_read_geometry *geometry;
+	unsigned char before_cache[1056];
+	struct cache_init_data cache;
+	unsigned char before_stats[560];
+	struct nand_cache_read_stats *stats;
+	struct nand_cache_read_configuration *configuration;
+	unsigned char before_callbacks[48];
+	int (*refresh)(struct nand_cache_read_zone *, int, void *);
+	int (*read)(struct nand_cache_read_zone *, int, void *);
+};
+_Static_assert(__builtin_offsetof(struct nand_cache_read_zone, cache) == 1072,
+	       "NAND read cache offset");
+_Static_assert(__builtin_offsetof(struct nand_cache_read_zone, stats) == 3440,
+	       "NAND read statistics offset");
+_Static_assert(__builtin_offsetof(struct nand_cache_read_zone, read) == 3512,
+	       "NAND read callback offset");
+int nand_cache_read(void *raw_zone, int page, unsigned short sector_range,
+		    void *destination)
+{
+	struct nand_cache_read_zone *zone = raw_zone;
+	struct cache_init_data *cache = &zone->cache;
+	struct cache_init_entry *node;
+	unsigned char *buffer;
+	unsigned int offset;
+	unsigned int length;
+	unsigned short written_start;
+	unsigned short written_length;
+	int result = 0;
+
+	if (!destination) {
+		nand_print("[NI]nand_cache_read error buf is  NULL!\n");
+		return 0;
+	}
+	offset = ((sector_range >> 8) & 0xff) << 9;
+	length = (sector_range & 0xff) << 9;
+	if (zone->configuration->count) {
+		buffer = cache->entries[0].allocation;
+		result = zone->read(zone, page, buffer);
+		/* OEM copies even when the NAND read failed. */
+		nand_memcpy(destination, buffer + offset, length);
+		if (result == 10) {
+			zone->stats->ecc_reads++;
+			zone->refresh(zone, page, buffer);
+			result = 0;
+		}
+		return result;
+	}
+	node = (struct cache_init_entry *)search_from_cache_write_list(
+			(struct cache_write_zone *)cache, page);
+	if (node) {
+		buffer = node->allocation;
+		written_start = (unsigned short)(node->field0 << 9);
+		written_length = (unsigned short)(node->field1 << 9);
+		/* OEM tests only the upper bound. A request below written_start
+		 * can return unwritten cache bytes. */
+		if (written_start + written_length >= offset &&
+		    offset + length <= written_start + written_length) {
+			nand_memcpy(destination, buffer + offset, length);
+			return 0;
+		}
+		result = zone->read(zone, page, cache->page_buffer);
+		/* The read failure is ignored, and page_bytes - written_length
+		 * underflows if the cached span exceeds the page. */
+		nand_memcpy(buffer + written_length,
+			    (unsigned char *)cache->page_buffer + written_length,
+			    zone->geometry->page_bytes - written_length);
+		node->field1 = zone->geometry->sectors_per_page;
+		nand_memcpy(destination, buffer + offset, length);
+		return 0;
+	}
+	node = (struct cache_init_entry *)search_from_cache_read_list(
+			(struct cache_read_zone *)cache, page);
+	if (node) {
+		int move_to_tail = node->status == 0;
+
+		if (move_to_tail)
+			del_from_cache_read_list(
+				(struct cache_read_delete_owner *)cache,
+				(struct cache_read_delete_node *)node);
+		buffer = node->allocation;
+		nand_memcpy(destination, buffer + offset, length);
+		if (move_to_tail)
+			add_to_cache_read_list_tail(
+				(struct cache_read_add_zone *)cache,
+				(struct cache_read_delete_node *)node, 0);
+		return 0;
+	}
+	node = (struct cache_init_entry *)get_empty_cahce_node(
+			(struct cache_read_empty_zone *)cache);
+	if (!node) {
+		nand_print("[NE]error1 node %d,%d,%d!\n", cache->field1,
+			   cache->field0, cache->field2);
+		return 1;
+	}
+	node->page = page;
+	buffer = node->allocation;
+	result = zone->read(zone, page, buffer);
+	node->field0 = 0;
+	node->field1 = zone->geometry->sectors_per_page;
+	add_to_cache_read_list_tail((struct cache_read_add_zone *)cache,
+				    (struct cache_read_delete_node *)node, 0);
+	nand_memcpy(destination, buffer + offset, length);
+	if (result == 10) {
+		zone->stats->ecc_reads++;
+		zone->refresh(zone, page, buffer);
+		result = 0;
+	}
+	return result;
+}
+
 int nftl_cache_exit(void *zone)
 {
 	unsigned char *cache = (unsigned char *)zone + 1072;

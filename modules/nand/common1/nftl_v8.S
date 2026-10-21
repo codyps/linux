@@ -27601,6 +27601,7 @@ nand_op:
 // readonly payload moved below: 	.string	"[NE]error1 node %d,%d,%d!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_cache_read
 	.type	nand_cache_read, %function
 nand_cache_read:
@@ -27879,6 +27880,7 @@ nand_cache_read:
 	ldp	x29, x30, [sp], 96
 	ret
 	.size	nand_cache_read, .-nand_cache_read
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC421: relocated in rooted readonly order below. */
