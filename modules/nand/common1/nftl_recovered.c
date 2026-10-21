@@ -379,7 +379,8 @@ extern int __nand_read(void *zone, unsigned int sector, unsigned int count,
 		       void *data);
 extern int __nand_write(void *zone, unsigned int sector, unsigned int count,
 			void *data);
-extern int __nand_discard(void *zone, unsigned int sector,
+struct discard_zone;
+extern int __nand_discard(struct discard_zone *zone, unsigned int sector,
 			  unsigned int count);
 extern unsigned int get_special_data_from_oob(void *oob);
 
@@ -974,5 +975,137 @@ int set_nftl_read_claim_flag(struct read_claim_node *head, int flag, int page)
 		node->zone->settings->page = page;
 		node = node->next;
 	}
+	return 0;
+}
+
+/* Isolated NFTL C candidates; private aggregate labels are inferred. */
+
+void nftl_version(void)
+{
+	nand_print("sunxi nftl version %s.%s.%s  %s-%s\n",
+		   "5", "0", "000", "2020.12.24", "09:50");
+}
+
+struct discard_zone {
+	unsigned char before_debug[0x290];
+	int debug_level;
+};
+extern int nand_discard(struct discard_zone *zone, unsigned int sector,
+			unsigned int length);
+int __nand_discard(struct discard_zone *zone, unsigned int sector,
+		   unsigned int length)
+{
+	int result;
+
+	if (zone->debug_level == 3)
+		/* Preserve OEM's misspelled diagnostic. */
+		nand_print_dbg("[ND]dicard sector:0x%x,len:0x%x\n",
+			       sector, length);
+	result = nand_discard(zone, sector, length);
+	return result;
+}
+
+struct exit_zone {
+	unsigned char before_a[0x1d0];
+	void *a;
+	unsigned char before_d[0x200 - 0x1d8];
+	void *d;
+	void *e;
+	unsigned char before_b[0x218 - 0x210];
+	void *b;
+	unsigned char before_c[0x258 - 0x220];
+	void *c;
+};
+extern int free_logic_page_map(struct exit_zone *zone);
+extern void nftl_free(void *ptr);
+int zone_param_exit(struct exit_zone *zone)
+{
+	/* OEM ignores every cleanup result and leaves dangling pointers. */
+	free_logic_page_map(zone);
+	nftl_free(zone->a);
+	nftl_free(zone->b);
+	nftl_free(zone->c);
+	nftl_free(zone->d);
+	nftl_free(zone->e);
+	return 0;
+}
+
+extern int fill_no_use_data_to_page(void *zone);
+/* Kernel -fstack-protector reorders two integer locals without adding a
+ * canary; disabling it for this function restores the stock stack layout. */
+__attribute__((optimize("-fno-stack-protector")))
+int fill_no_use_page_to_current_block(void *zone, int count)
+{
+	int index;
+	int result;
+
+	for (index = 0; index < count; index++) {
+		result = fill_no_use_data_to_page(zone);
+		/* OEM treats zero as early success and nonzero as continuation. */
+		if (result == 0)
+			return 0;
+	}
+	return 1;
+}
+
+/* Bounded C candidates for stock NFTL assembly, not OEM declaration claims. */
+
+extern void *nand_malloc(unsigned int size);
+extern void nftl_free(void *object);
+extern void hynix16nm_set_default_param(void *chip);
+extern void hynix20nm_set_default_param(void *chip);
+extern void hynix26nm_setdefaultparam(void *chip);
+
+struct nftl_retry_chip {
+	unsigned char preceding[0xb8];
+	unsigned int retry_count;
+};
+
+int hynix16nm_readretry_exit(struct nftl_retry_chip *chip)
+{
+	nand_print_dbg("hynix16nm_readretry_exit. \n");
+	hynix16nm_set_default_param(chip);
+	chip->retry_count = 0;
+	return 0;
+}
+
+int hynix20nm_readretry_exit(struct nftl_retry_chip *chip)
+{
+	nand_print_dbg("hynix20nm_readretry_exit. \n");
+	hynix20nm_set_default_param(chip);
+	chip->retry_count = 0;
+	return 0;
+}
+
+int hynix26nm_readretry_exit(struct nftl_retry_chip *chip)
+{
+	nand_print_dbg("hynix26nm_readretry_exit. \n");
+	hynix26nm_setdefaultparam(chip);
+	chip->retry_count = 0;
+	return 0;
+}
+
+void *nftl_malloc(unsigned int size)
+{
+	/* OEM warns above 1.5 MiB but still attempts the allocation. */
+	if (size > 0x180000)
+		nand_print("[NE]malloc size too large %d!\n", size);
+	return nand_malloc(size);
+}
+
+struct nftl_sector_cache {
+	unsigned char preceding[8];
+	void *allocation;
+};
+
+struct nftl_cache_owner {
+	unsigned char preceding[0xb40];
+	struct nftl_sector_cache cache;
+};
+
+int nftl_sector_cache_exit(struct nftl_cache_owner *owner)
+{
+	struct nftl_sector_cache *cache = &owner->cache;
+	nftl_free(cache->allocation);
 	return 0;
 }

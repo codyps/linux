@@ -554,6 +554,7 @@ nftl_write_end:
 // readonly payload moved below: 	.string	"[NE]malloc size too large %d!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_malloc
 	.type	nftl_malloc, %function
 nftl_malloc:
@@ -573,6 +574,7 @@ nftl_malloc:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	nftl_malloc, .-nftl_malloc
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_free
@@ -691,6 +693,7 @@ nftl_support_boot_check_crc_from_dts:
 // readonly payload moved below: 	.string	"sunxi nftl version %s.%s.%s  %s-%s\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.type	nftl_version, %function
 nftl_version:
 	stp	x29, x30, [sp, -16]!
@@ -712,6 +715,7 @@ nftl_version:
 	ldp	x29, x30, [sp], 16
 	ret
 	.size	nftl_version, .-nftl_version
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_nftl_version
@@ -4460,6 +4464,7 @@ hynix20nm_readretry_init:
 // readonly payload moved below: 	.string	"hynix20nm_readretry_exit. \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_readretry_exit
 	.type	hynix20nm_readretry_exit, %function
 hynix20nm_readretry_exit:
@@ -4477,6 +4482,7 @@ hynix20nm_readretry_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	hynix20nm_readretry_exit, .-hynix20nm_readretry_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC66: relocated in rooted readonly order below. */
@@ -7395,6 +7401,7 @@ hynix26nm_readretry_init:
 // readonly payload moved below: 	.string	"hynix26nm_readretry_exit. \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix26nm_readretry_exit
 	.type	hynix26nm_readretry_exit, %function
 hynix26nm_readretry_exit:
@@ -7412,6 +7419,7 @@ hynix26nm_readretry_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	hynix26nm_readretry_exit, .-hynix26nm_readretry_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC91: relocated in rooted readonly order below. */
@@ -11236,6 +11244,7 @@ hynix16nm_readretry_init:
 // readonly payload moved below: 	.string	"hynix16nm_readretry_exit. \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_readretry_exit
 	.type	hynix16nm_readretry_exit, %function
 hynix16nm_readretry_exit:
@@ -11253,6 +11262,7 @@ hynix16nm_readretry_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	hynix16nm_readretry_exit, .-hynix16nm_readretry_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC131: relocated in rooted readonly order below. */
@@ -12715,6 +12725,7 @@ nftl_sector_cache_init:
 	ret
 	.size	nftl_sector_cache_init, .-nftl_sector_cache_init
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_sector_cache_exit
 	.type	nftl_sector_cache_exit, %function
 nftl_sector_cache_exit:
@@ -12731,6 +12742,7 @@ nftl_sector_cache_exit:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nftl_sector_cache_exit, .-nftl_sector_cache_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	search_from_sector_cache_write_list
@@ -15404,6 +15416,7 @@ fill_no_use_data_to_current_block:
 	ret
 	.size	fill_no_use_data_to_current_block, .-fill_no_use_data_to_current_block
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	fill_no_use_page_to_current_block
 	.type	fill_no_use_page_to_current_block, %function
 fill_no_use_page_to_current_block:
@@ -15436,6 +15449,7 @@ fill_no_use_page_to_current_block:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	fill_no_use_page_to_current_block, .-fill_no_use_page_to_current_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_before_shutdown
@@ -16290,6 +16304,7 @@ zone_param_init:
 	ret
 	.size	zone_param_init, .-zone_param_init
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	zone_param_exit
 	.type	zone_param_exit, %function
 zone_param_exit:
@@ -16317,6 +16332,7 @@ zone_param_exit:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	zone_param_exit, .-zone_param_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC208: relocated in rooted readonly order below. */
@@ -26934,6 +26950,7 @@ __nand_write:
 // readonly payload moved below: 	.string	"[ND]dicard sector:0x%x,len:0x%x\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	__nand_discard
 	.type	__nand_discard, %function
 __nand_discard:
@@ -26961,6 +26978,7 @@ __nand_discard:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	__nand_discard, .-__nand_discard
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC418: relocated in rooted readonly order below. */
