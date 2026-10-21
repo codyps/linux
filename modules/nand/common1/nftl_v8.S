@@ -25341,6 +25341,7 @@ add_block_count_list:
 	ret
 	.size	add_block_count_list, .-add_block_count_list
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	del_block_count_list
 	.type	del_block_count_list, %function
 del_block_count_list:
@@ -25363,6 +25364,7 @@ del_block_count_list:
 	add	sp, sp, 32
 	ret
 	.size	del_block_count_list, .-del_block_count_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	del_block_count_by_block
 	.type	del_block_count_by_block, %function
@@ -25985,6 +25987,7 @@ put_phy_block_to_invalid_page_list:
 	ret
 	.size	put_phy_block_to_invalid_page_list, .-put_phy_block_to_invalid_page_list
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	out_phy_block_from_invalid_page_list
 	.type	out_phy_block_from_invalid_page_list, %function
 out_phy_block_from_invalid_page_list:
@@ -26009,7 +26012,9 @@ out_phy_block_from_invalid_page_list:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	out_phy_block_from_invalid_page_list, .-out_phy_block_from_invalid_page_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	out_phy_block_from_invalid_page_list_by_block
 	.type	out_phy_block_from_invalid_page_list_by_block, %function
 out_phy_block_from_invalid_page_list_by_block:
@@ -26036,6 +26041,7 @@ out_phy_block_from_invalid_page_list_by_block:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	out_phy_block_from_invalid_page_list_by_block, .-out_phy_block_from_invalid_page_list_by_block
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC411: relocated in rooted readonly order below. */

@@ -2016,3 +2016,50 @@ extern int nand_get_clk(void *controller, unsigned int channel,
 CLOCK_SAVE(sandisk_A19)
 CLOCK_SAVE(sandisk)
 CLOCK_SAVE(toshiba)
+
+struct move_node *out_phy_block_from_invalid_page_list(struct move_zone *zone)
+{
+	struct invalid_node *block =
+		del_block_invalid_list((struct invalid_zone *)zone);
+
+	if (block) {
+		block->next = 0;
+		block->previous = 0;
+		return (struct move_node *)block;
+	}
+	return (struct move_node *)block;
+}
+
+extern struct invalid_node *del_block_invalid_list_by_block(
+	struct invalid_zone *zone, struct invalid_node *target);
+struct invalid_node *out_phy_block_from_invalid_page_list_by_block(
+	struct invalid_zone *zone, struct invalid_node *target)
+{
+	struct invalid_node *block =
+		del_block_invalid_list_by_block(zone, target);
+
+	if (block) {
+		block->next = 0;
+		block->previous = 0;
+		return block;
+	}
+	return block;
+}
+
+struct count_list {
+	unsigned char before_next[0x30];
+	struct count_list *next;
+};
+struct count_zone {
+	unsigned char before_list[0x190];
+	struct count_list list;
+};
+struct count_list *del_block_count_list(struct count_zone *zone)
+{
+	struct count_list *list = &zone->list;
+
+	/* OEM removes the first link without cycle or validity checks. */
+	if (list->next != 0)
+		list->next = list->next->next;
+	return list;
+}
