@@ -196,6 +196,29 @@ int hynix20nm_vender_get_param(struct samsung_set_chip *chip,
 	return result;
 }
 
+struct command_chip;
+extern int set_one_cmd(struct command_chip *chip, unsigned int command,
+		       unsigned int wait_ready);
+int hynix20nm_vender_set_param(void *chip, unsigned char *values,
+			      unsigned char *addresses, unsigned int count)
+{
+	int result = 0;
+	unsigned char command = 54;
+	unsigned char confirm = 22;
+	unsigned int index;
+
+	nand_enable_chip(chip);
+	ndfc_disable_randomize(((struct samsung_set_chip *)chip)->controller);
+	/* OEM ignores both command results on every register and returns zero. */
+	for (index = 0; index < count; index++) {
+		set_cmd_with_nand_bus(chip, &command, 0, addresses + index,
+				      values + index, 1, 1);
+		set_one_cmd((struct command_chip *)chip, confirm, 0);
+	}
+	nand_disable_chip(chip);
+	return result;
+}
+
 struct nftl_chip_block_ops {
 	unsigned char before_callbacks[88];
 	int (*erase)(struct nftl_chip_block_ops *, struct physic_op_param *);
@@ -2188,9 +2211,11 @@ NFTL_RW(nftl_write, write)
 
 extern void clean_block_list(void *);
 extern void nand_clean_zone_table2(void *);
-extern void build_zone_list(void *);
+struct build_zone;
+extern int build_zone_list(struct build_zone *);
 extern void nftl_cache_init(void *);
-extern void print_block_invalid_list(void *);
+struct invalid_print_zone;
+extern void print_block_invalid_list(struct invalid_print_zone *);
 struct free_print_zone;
 extern void print_free_list(struct free_print_zone *);
 
@@ -2211,6 +2236,40 @@ int nand_find_zone_table(void *zone)
 	print_free_list(current);
 	nand_print_dbg("[ND]=================================2=======================================\n");
 	nand_print_dbg("[ND]nand_find_zone_table end\n");
+	return 0;
+}
+
+struct build_zone {
+	unsigned char before_count[26];
+	unsigned short block_count;
+};
+extern int first_scan_all_blocks(struct build_zone *);
+extern int init_zone_after_first_scan(struct build_zone *, unsigned short);
+extern int second_scan_all_blocks(struct build_zone *);
+extern int power_on_gc(struct build_zone *);
+extern int panic_backup_block(struct build_zone *);
+int build_zone_list(struct build_zone *zone)
+{
+	int result;
+
+	nand_print_dbg("[ND]first\n");
+	if (first_scan_all_blocks(zone))
+		return 1;
+	result = init_zone_after_first_scan(zone, zone->block_count);
+	if (result) {
+		nand_print("[NE]init_zone_after_first_scan error\n");
+		return 1;
+	}
+	result = second_scan_all_blocks(zone);
+	if (result) {
+		nand_print("[NE]second_scan_all_blocks error\n");
+		return 1;
+	}
+	/* OEM still reports success if GC or panic backup fails. */
+	result = power_on_gc(zone);
+	print_nftl_zone(zone);
+	nand_print("[NI]nftl ok!\n");
+	panic_backup_block(zone);
 	return 0;
 }
 
@@ -3156,6 +3215,40 @@ void print_free_list(struct free_print_zone *zone)
 			nand_print_dbg("[ND]info:0x%x\n", node->info);
 			node = node->next;
 	}
+	}
+}
+struct invalid_print_node {
+	unsigned short number;
+	unsigned short info;
+	unsigned short invalid;
+	unsigned short erase_time;
+	unsigned int count;
+	unsigned char before_next[4];
+	struct invalid_print_node *next;
+	struct invalid_print_node *previous;
+};
+struct invalid_print_zone {
+	unsigned char before_head[336];
+	struct invalid_print_node head;
+	unsigned char before_debug[656 - 368];
+	unsigned int debug_level;
+};
+void print_block_invalid_list(struct invalid_print_zone *zone)
+{
+	struct invalid_print_node *node = &zone->head;
+
+	if (zone->debug_level) {
+		nand_print_dbg("[ND]invalid_page_count list: \n");
+		node = node->next;
+		/* OEM trusts every forward link and can loop on a cycle. */
+		while (node) {
+			nand_print_dbg("[ND]block NO:%4d; erase:%3d; ",
+				       node->number, node->erase_time);
+			nand_print_dbg("[ND]count:%4d; invalid:%3d;",
+				       node->count, node->invalid);
+			nand_print_dbg("[ND]info:0x%x\n", node->info);
+			node = node->next;
+		}
 	}
 }
 struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone)

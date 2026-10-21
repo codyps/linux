@@ -3093,6 +3093,7 @@ samsung_special_exit:
 /* .zero 1: preserve the original source-line positions here. */
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix20nm_vender_set_param
 	.type	hynix20nm_vender_set_param, %function
 hynix20nm_vender_set_param:
@@ -3148,6 +3149,7 @@ hynix20nm_vender_set_param:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	hynix20nm_vender_set_param, .-hynix20nm_vender_set_param
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC43: relocated in rooted readonly order below. */
@@ -17037,6 +17039,7 @@ build_zone_list_first:
 // readonly payload moved below: 	.string	"[NI]nftl ok!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	build_zone_list
 	.type	build_zone_list, %function
 build_zone_list:
@@ -17095,6 +17098,7 @@ build_zone_list:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	build_zone_list, .-build_zone_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC215: relocated in rooted readonly order below. */
@@ -25313,6 +25317,7 @@ is_block_in_invalid_list:
 // readonly payload moved below: 	.string	"[ND]count:%4d; invalid:%3d;"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	print_block_invalid_list
 	.type	print_block_invalid_list, %function
 print_block_invalid_list:
@@ -25371,6 +25376,7 @@ print_block_invalid_list:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	print_block_invalid_list, .-print_block_invalid_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	add_block_count_list
