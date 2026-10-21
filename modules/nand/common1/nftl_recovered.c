@@ -1508,6 +1508,32 @@ int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone)
 	nand_free_temp_buf(buffer);
 	return result;
 }
+int hynix16nm_get_otp_param(struct hynix16nm_otp_zone *zone,
+			    unsigned char *values)
+{
+	unsigned int attempt = 0;
+	unsigned int complete = 0;
+	int result;
+	unsigned int group;
+	unsigned int index;
+
+	/* OEM retries forever when OTP parsing never returns zero; keep the
+	 * unbounded loop for stock behavior. */
+	while (complete == 0) {
+		nand_print_dbg("_vender_get_param_otp_hynix time %d!\n",
+			       attempt);
+		result = hynix16nm_get_rr_value_otp_hynix(zone);
+		if (result == 0)
+			complete = 1;
+		attempt++;
+	}
+	for (group = 0; group <= 7; group++) {
+		for (index = 0; index <= 3; index++)
+			values[(group << 2) + index] =
+				zone->values[(group << 2) + index];
+	}
+	return 0;
+}
 extern int page_write(unsigned short chip, unsigned short block,
 		      unsigned short page, unsigned int mode,
 		      void *data, void *oob);

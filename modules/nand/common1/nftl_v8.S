@@ -10999,6 +10999,7 @@ hynix16nm_save_otp_value:
 	.size	hynix16nm_save_otp_value, .-hynix16nm_save_otp_value
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_get_otp_param
 	.type	hynix16nm_get_otp_param, %function
 hynix16nm_get_otp_param:
@@ -11070,6 +11071,7 @@ hynix16nm_get_otp_param:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	hynix16nm_get_otp_param, .-hynix16nm_get_otp_param
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	hynix16nm_set_default_param
 	.type	hynix16nm_set_default_param, %function
