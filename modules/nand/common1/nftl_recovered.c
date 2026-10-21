@@ -981,6 +981,33 @@ struct cache_read_delete_node *del_from_cache_read_list(
 	target->previous = 0;
 	return target;
 }
+struct cache_read_add_zone {
+	unsigned char before_first[2];
+	unsigned short first_count;
+	unsigned char before_second[2];
+	unsigned short second_count;
+	unsigned char before_head[1680];
+	struct cache_read_delete_node head;
+};
+int add_to_cache_read_list_tail(struct cache_read_add_zone *zone,
+				struct cache_read_delete_node *node,
+				unsigned int state)
+{
+	struct cache_read_delete_node *current = &zone->head;
+
+	/* OEM does not check cycles, duplicate insertion, or counter overflow. */
+	while (current->next)
+		current = current->next;
+	current->next = node;
+	node->next = 0;
+	node->previous = current;
+	node->state = state;
+	if (state == 0)
+		zone->first_count++;
+	else
+		zone->second_count++;
+	return 0;
+}
 /* Four key searches below compile with the two equality operands loaded into
  * opposite registers from stock. The memory reads, comparison, branches and
  * return paths are otherwise identical; equality is symmetric. */
@@ -1900,6 +1927,24 @@ void _DumpHexData(const unsigned char *data, int length)
 	}
 	nand_print("\n");
 }
+void dump_buf(const unsigned char *data, unsigned int length)
+{
+	int index = 0;
+
+	nand_print("\n");
+	index = 0;
+	/* OEM emits both a line terminator at each 16-byte boundary and a
+	 * final terminator, so a full final row gets two newlines. */
+	while (index < length) {
+		if ((index & 15) == 0)
+			nand_print("%08x: ", index);
+		nand_print("%02x ", data[index]);
+		if (((index + 1) & 15) == 0)
+			nand_print("\n");
+		index++;
+	}
+	nand_print("\n");
+}
 int nand_check_table(void *zone)
 {
 	void *block = zone;
@@ -2676,7 +2721,34 @@ struct nftl_build_owner {
 	unsigned char preceding[72];
 	struct nftl_build_node *first;
 };
-extern struct nftl_build_node *nftl_add(struct nftl_build_node *node);
+struct nftl_add_block {
+	unsigned char before_partition[8];
+	void *partition;
+};
+extern void *build_nand_partition(struct nftl_build_node *node);
+extern int nftl_initialize(void *block, unsigned short number);
+extern void panic_recover_data(void *block);
+struct nftl_build_node *nftl_add(struct nftl_build_node *node)
+{
+	struct nftl_add_block *block = nftl_malloc(136);
+
+	if (!block) {
+		nand_print("[NE]%s:malloc fail for nftl_blk\n", __func__);
+		return 0;
+	}
+	block->partition = build_nand_partition(node);
+	if (nftl_initialize(block, node->number)) {
+		/* OEM leaks the allocated block on initialization failure. */
+		nand_print("[NE]nftl_initialize failed\n");
+		return 0;
+	}
+	add_nftl_blk_list((struct nftl_chain *)&nftl_blk_head,
+			  (struct nftl_chain *)block);
+	/* OEM ignores panic recovery failure after publishing the new block. */
+	panic_recover_data(block);
+	nand_print_dbg("[ND]nftl_add ok\n");
+	return (struct nftl_build_node *)block;
+}
 int nftl_build_all(struct nftl_build_owner *owner)
 {
 	struct nftl_build_node *node = owner->first;

@@ -142,6 +142,7 @@ nftl_build_one:
 // readonly payload moved below: 	.string	"[ND]nftl_add ok\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nftl_add
 	.type	nftl_add, %function
 nftl_add:
@@ -194,6 +195,7 @@ nftl_add:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	nftl_add, .-nftl_add
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_ftl_exit
@@ -15898,6 +15900,7 @@ print_smart:
 // readonly payload moved below: 	.string	"%08x: "
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	dump_buf
 	.type	dump_buf, %function
 dump_buf:
@@ -15953,6 +15956,7 @@ dump_buf:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	dump_buf, .-dump_buf
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC201: relocated in rooted readonly order below. */
@@ -26753,6 +26757,7 @@ search_from_cache_write_list:
 	.size	search_from_cache_write_list, .-search_from_cache_write_list
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	add_to_cache_read_list_tail
 	.type	add_to_cache_read_list_tail, %function
 add_to_cache_read_list_tail:
@@ -26807,6 +26812,7 @@ add_to_cache_read_list_tail:
 	add	sp, sp, 48
 	ret
 	.size	add_to_cache_read_list_tail, .-add_to_cache_read_list_tail
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	add_to_cache_write_list_tail
