@@ -1451,6 +1451,76 @@ struct write_error_zone {
 	unsigned char before_mark_bad[3496 - 3488];
 	int (*mark_bad)(struct write_error_zone *, struct physic_op_param *);
 };
+struct smart_info_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages;
+	unsigned char before_page_bytes[6];
+	unsigned short page_bytes;
+};
+struct smart_info_payload {
+	unsigned char before_magic[112];
+	unsigned int magic;
+	unsigned char before_init_count[24];
+	unsigned int init_count;
+	unsigned char before_field_164[20];
+	unsigned int field_164;
+	unsigned char before_field_172[4];
+	unsigned int field_172;
+	unsigned int field_176;
+	unsigned char trailing[320 - 180];
+};
+struct smart_info_zone {
+	unsigned char before_geometry[8];
+	struct smart_info_geometry *geometry;
+	unsigned char before_data[512 - 16];
+	unsigned char *data;
+	unsigned char before_offset[560 - 520];
+	unsigned int offset;
+	unsigned char before_smart[3440 - 564];
+	struct smart_info_payload *smart;
+	unsigned char before_read[3464 - 3448];
+	int (*read)(struct smart_info_zone *, struct physic_op_param *);
+};
+struct smart_info_block {
+	unsigned short number;
+};
+extern void *nand_memset(void *destination, int value, unsigned int size);
+extern void print_smart(struct smart_info_zone *zone);
+__attribute__((optimize("-fno-stack-protector")))
+int init_smart_info(struct smart_info_zone *zone, struct smart_info_block *block)
+{
+	struct physic_op_param op;
+	unsigned char oob[16];
+	struct smart_info_payload *stored;
+	int read_result;
+
+	nand_memset(zone->smart, 0, 320);
+	zone->smart->magic = 0xaaaaaa01U;
+	zone->smart->init_count++;
+	if (!block)
+		return 0;
+	set_physic_op_par(&op, block->number,
+			   (unsigned short)(zone->geometry->pages - 1),
+			   zone->geometry->page_bytes, zone->data, oob);
+	read_result = zone->read(zone, &op);
+	/* OEM probes the OOB marker even when the page read failed. */
+	if (is_phy_mapping_page(oob) == 1 &&
+	    (read_result == 0 || read_result == 10)) {
+		stored = (struct smart_info_payload *)(zone->data + zone->offset);
+		if (stored->magic == 0xaaaaaa01U) {
+			nand_memcpy(zone->smart, stored, 320);
+			zone->smart->init_count++;
+			if (zone->smart->field_164 == ~0U)
+				zone->smart->field_164 = 0;
+			if (zone->smart->field_172 == ~0U)
+				zone->smart->field_172 = 0;
+			if (zone->smart->field_176 == ~0U)
+				zone->smart->field_176 = 0;
+		}
+	}
+	print_smart(zone);
+	return 0;
+}
 int do_write_error_in_build_list(struct write_error_zone *zone,
 				 struct new_write_block *source,
 				 struct new_write_block *failed,

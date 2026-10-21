@@ -22582,6 +22582,7 @@ check_cross_talk:
 	.size	check_cross_talk, .-check_cross_talk
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	init_smart_info
 	.type	init_smart_info, %function
 init_smart_info:
@@ -22700,6 +22701,7 @@ init_smart_info:
 	ldp	x29, x30, [sp], 128
 	ret
 	.size	init_smart_info, .-init_smart_info
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_used_block_count
