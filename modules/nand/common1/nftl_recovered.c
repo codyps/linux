@@ -376,10 +376,53 @@ extern void free_nand_partition(void *partition);
 struct nftl_zone_release_view;
 extern void nftl_zone_release(struct nftl_zone_release_view *zone);
 extern void nftl_free(void *allocation);
-extern int __nand_read(void *zone, unsigned int sector, unsigned int count,
-		       void *data);
-extern int __nand_write(void *zone, unsigned int sector, unsigned int count,
-			void *data);
+struct nand_rw_inner {
+	unsigned char before_read_count[64];
+	unsigned long long read_count;
+	unsigned long long write_count;
+};
+struct nand_rw_zone {
+	unsigned char before_debug_level[656];
+	unsigned int debug_level;
+	unsigned char before_inner[3440 - 660];
+	struct nand_rw_inner *inner;
+};
+extern int nand_op(int kind, void *zone, unsigned int sector,
+		   unsigned int count, void *data);
+int __nand_read(void *zone, unsigned int sector, unsigned int count,
+		void *data)
+{
+	struct nand_rw_zone *owner = zone;
+	struct nand_rw_inner *const volatile *slot =
+		(struct nand_rw_inner *const volatile *)&owner->inner;
+	struct nand_rw_inner *destination;
+	struct nand_rw_inner *source;
+
+	if (owner->debug_level == 3)
+		nand_print_dbg("[ND]read sector:0x%x,len:0x%x\n", sector, count);
+	/* OEM fetches the inner pointer twice, destination before source.
+	 * It updates the counter before the operation, even on failure. */
+	destination = *slot;
+	source = *slot;
+	destination->read_count = source->read_count + count;
+	return nand_op(0, zone, sector, count, data);
+}
+int __nand_write(void *zone, unsigned int sector, unsigned int count,
+		 void *data)
+{
+	struct nand_rw_zone *owner = zone;
+	struct nand_rw_inner *const volatile *slot =
+		(struct nand_rw_inner *const volatile *)&owner->inner;
+	struct nand_rw_inner *destination;
+	struct nand_rw_inner *source;
+
+	if (owner->debug_level == 3)
+		nand_print_dbg("[ND]write sector:0x%x,len:0x%x\n", sector, count);
+	destination = *slot;
+	source = *slot;
+	destination->write_count = source->write_count + count;
+	return nand_op(1, zone, sector, count, data);
+}
 struct discard_zone;
 extern int __nand_discard(struct discard_zone *zone, unsigned int sector,
 			  unsigned int count);

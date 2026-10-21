@@ -27006,6 +27006,7 @@ get_empty_cahce_node:
 // readonly payload moved below: 	.string	"[ND]read sector:0x%x,len:0x%x\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	__nand_read
 	.type	__nand_read, %function
 __nand_read:
@@ -27044,12 +27045,14 @@ __nand_read:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	__nand_read, .-__nand_read
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC416: relocated in rooted readonly order below. */
 // readonly payload moved below: 	.string	"[ND]write sector:0x%x,len:0x%x\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	__nand_write
 	.type	__nand_write, %function
 __nand_write:
@@ -27088,6 +27091,7 @@ __nand_write:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	__nand_write, .-__nand_write
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC417: relocated in rooted readonly order below. */
