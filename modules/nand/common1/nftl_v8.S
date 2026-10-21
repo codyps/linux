@@ -30479,6 +30479,7 @@ gc_one:
 	ret
 	.size	gc_one, .-gc_one
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	gc_all_cnt
 	.type	gc_all_cnt, %function
 gc_all_cnt:
@@ -30514,7 +30515,9 @@ gc_all_cnt:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	gc_all_cnt, .-gc_all_cnt
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	gc_all
 	.type	gc_all, %function
 gc_all:
@@ -30541,6 +30544,7 @@ gc_all:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	gc_all, .-gc_all
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	gc_all_enhance
 	.type	gc_all_enhance, %function
@@ -31055,6 +31059,7 @@ power_on_gc:
 	ret
 	.size	power_on_gc, .-power_on_gc
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	all_time_gc
 	.type	all_time_gc, %function
 all_time_gc:
@@ -31088,6 +31093,7 @@ all_time_gc:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	all_time_gc, .-all_time_gc
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC465: relocated in rooted readonly order below. */
@@ -33060,6 +33066,9 @@ hynix20nm_lsb_mode_reg_num:
 	.zero	3	/* recovered gap */
 	.type	gc_src_type, %object
 	.size	gc_src_type, 4
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	gc_src_type
+#endif
 gc_src_type:
 	.zero	4
 	.zero	4	/* recovered gap */

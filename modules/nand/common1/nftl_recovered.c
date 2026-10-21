@@ -1840,3 +1840,62 @@ unsigned char is_panic_enable(void)
 {
 	return panic_enable != 0;
 }
+
+struct gc_policy_geometry {
+	unsigned char before_pages[0x14];
+	unsigned short pages;
+};
+struct gc_policy_zone {
+	unsigned char before_geometry[8];
+	struct gc_policy_geometry *geometry;
+	unsigned char before_used[0x1e - 0x10];
+	unsigned short used;
+	unsigned char before_target[0x2aa - 0x20];
+	unsigned short target;
+	unsigned short active;
+};
+extern unsigned int gc_src_type;
+extern int gc_one(void *zone, unsigned short pages);
+
+int gc_all_cnt(struct gc_policy_zone *zone, unsigned short pages,
+	       unsigned int count)
+{
+	int result;
+
+	gc_src_type = 0xff;
+	/* OEM ignores all failures except result 8. A negative signed caller
+	 * count becomes a huge unsigned retry span. */
+	while (count--) {
+		result = gc_one(zone, pages);
+		if (result == 8)
+			break;
+	}
+	return 0;
+}
+
+int gc_all(void *zone, unsigned short count)
+{
+	int result;
+	gc_src_type = 255;
+	/* OEM retries without a timeout until the callback returns nonzero. */
+	while (1) {
+		result = gc_one(zone, count);
+		if (result != 0)
+			break;
+	}
+	return 0;
+}
+
+int all_time_gc(struct gc_policy_zone *zone)
+{
+	/* OEM dereferences geometry unchecked and wraps this 16-bit page
+	 * count when the source has fewer than three pages. */
+	unsigned short pages = zone->geometry->pages - 3;
+
+	if (zone->used < zone->target && zone->active != 0) {
+		gc_src_type = 1;
+		/* OEM ignores GC failure. */
+		gc_one(zone, pages);
+	}
+	return 0;
+}
