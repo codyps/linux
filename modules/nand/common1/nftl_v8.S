@@ -19508,6 +19508,7 @@ get_current_used_block:
 // readonly payload moved below: 	.string	"[NE]recover_phy_page_mapping ecc error block:%d;page:%d.\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	recover_phy_page_mapping
 	.type	recover_phy_page_mapping, %function
 recover_phy_page_mapping:
@@ -19713,6 +19714,7 @@ recover_phy_page_mapping:
 	ldp	x29, x30, [sp], 112
 	ret
 	.size	recover_phy_page_mapping, .-recover_phy_page_mapping
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC269: relocated in rooted readonly order below. */

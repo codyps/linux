@@ -8269,6 +8269,68 @@ _Static_assert(__builtin_offsetof(struct page_map_recovery_zone, mode) == 3448,
 _Static_assert(__builtin_offsetof(struct page_map_recovery_zone, read) == 3464,
 	       "page-map read offset");
 __attribute__((optimize("-fno-stack-protector")))
+int recover_phy_page_mapping(struct page_map_recovery_zone *zone,
+			     struct new_write_block *block,
+			     unsigned int *map)
+{
+	struct physic_op_param op;
+	unsigned char oob[16];
+	int page;
+	int status;
+
+	/* OEM trusts map_bytes even if it exceeds the caller's map buffer. */
+	nand_memset(map, -1, zone->map_bytes);
+	for (page = 0; page < zone->geometry->pages; page++) {
+		set_physic_op_par(&op, block->number, page,
+				  zone->geometry->fixed_page, zone->data, oob);
+		status = zone->read(zone, &op);
+		if (is_nouse_page(oob) == 1 &&
+		    (status == 0 || status == 10)) {
+			nand_print("[NE]sb@%d sp@%d recover_phy_page_mapping no used page\n",
+				   block->number, page);
+			break;
+		}
+		if (is_ftl_logic_page_data(oob) == 1) {
+			if (status == 0 || status == 10) {
+				if (nand_power_off_ecc_error(
+						(struct poweroff_ecc_zone *)zone,
+						zone->data, oob)) {
+					nand_print("[NE]sb@%d sp@%d power off ecc error1.\n",
+						   block->number, page);
+					status = -2;
+				} else {
+					map[page] = get_logic_page_from_oob(oob);
+					if (map[page] >= zone->capacity) {
+						nand_print("[NE]invalid logic_page block:%d page:%d,logic_page 0x%x.\n",
+							   block->number, page, map[page]);
+						map[page] = -1;
+					}
+				}
+			}
+		} else if (is_ftl_special_data(oob) == 1) {
+			nand_print("[NE]rppm invalid page %d!!\n", page);
+		} else if (is_power_down_info_page(oob) == 1) {
+			if (status == 0 || status == 10) {
+				map[page] = get_special_data_from_oob(oob);
+				nand_print("[NI]power_down page %d!!\n", page);
+			}
+		} else {
+			/* Stock diagnostic contains the original typo. */
+			nand_print("[NE]recover_phy_page_mapping unkown page data %d!!\n",
+				   page);
+		}
+		if (status != 0 && status != 10) {
+			nand_print("[NE]recover_phy_page_mapping ecc error block:%d;page:%d.\n",
+				   block->number, page);
+			return 65535;
+		}
+	}
+	/* OEM returns the first unused page or the geometry page count,
+	 * instead of the status of the final read. */
+	return page;
+}
+
+__attribute__((optimize("-fno-stack-protector")))
 int recover_block_phy_page_mapping(struct page_map_recovery_zone *zone,
 				   struct new_write_block *block,
 				   unsigned int *map)
