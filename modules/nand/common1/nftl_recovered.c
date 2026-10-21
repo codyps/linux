@@ -1803,6 +1803,21 @@ int write_data_to_nand(void *zone)
 	/* OEM ignores every write result, even after a failed allocation. */
 	return 0;
 }
+void _DumpHexData(const unsigned char *data, int length)
+{
+	const unsigned char *current = data;
+	int index = 0;
+
+	/* OEM inserts a newline after each sixteenth byte and another at the
+	 * end, even when length is zero or the final row is exactly full. */
+	while (index < length) {
+		nand_print("%.2x ", *current++);
+		if (index % 16 == 15)
+			nand_print("\n");
+		index++;
+	}
+	nand_print("\n");
+}
 int nand_check_table(void *zone)
 {
 	void *block = zone;

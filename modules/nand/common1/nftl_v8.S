@@ -24690,6 +24690,9 @@ nand_check_table:
 // readonly payload moved below: 	.string	"%.2x "
 	.text
 	.align	2
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	_DumpHexData
+#else
 	.type	_DumpHexData, %function
 _DumpHexData:
 	stp	x29, x30, [sp, -48]!
@@ -24735,6 +24738,7 @@ _DumpHexData:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	_DumpHexData, .-_DumpHexData
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC395: relocated in rooted readonly order below. */
