@@ -7440,3 +7440,31 @@ int sandisk_A19_check_bad_block_first_burn(
 	nand_disable_chip((struct samsung_set_chip *)chip);
 	return result;
 }
+
+extern int page_read(unsigned short, unsigned short, unsigned short,
+		     unsigned int, void *, void *);
+__attribute__((optimize("-fno-stack-protector")))
+int nand_dbg_phy_read(unsigned short channel, unsigned short block,
+		      unsigned short page)
+{
+	unsigned char oob[16];
+	unsigned char *data = nftl_malloc(4096);
+	int result;
+
+	/* OEM logs failed allocation but continues into page_read and then
+	 * dereferences the NULL data pointer while formatting diagnostics. */
+	if (!data)
+		nand_print("[NE]%s:malloc 4096 fail!\n", __func__);
+	result = page_read(channel, block, page, 8, data, oob);
+	nand_print_dbg("[ND]spare: %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x",
+		       oob[0], oob[1], oob[2], oob[3],
+		       oob[4], oob[5], oob[6], oob[7],
+		       oob[8], oob[9], oob[10], oob[11],
+		       oob[12], oob[13], oob[14], oob[15]);
+	nand_print_dbg("[ND]buf:%x %x %x %x %x %x %x %x %x %x %x.\n",
+		       data[0], data[1], data[2], data[3],
+		       data[4], data[5], data[6], data[7],
+		       data[8], data[9], data[10]);
+	nftl_free(data);
+	return result;
+}

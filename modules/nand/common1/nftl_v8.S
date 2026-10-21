@@ -23915,6 +23915,7 @@ print_nftl_zone:
 // readonly payload moved below: 	.string	"[ND]buf:%x %x %x %x %x %x %x %x %x %x %x.\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	nand_dbg_phy_read
 	.type	nand_dbg_phy_read, %function
 nand_dbg_phy_read:
@@ -24057,6 +24058,7 @@ nand_dbg_phy_read:
 	ldp	x29, x30, [sp], 64
 	ret
 	.size	nand_dbg_phy_read, .-nand_dbg_phy_read
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	.global	nand_dbg_zone_phy_read
 	.type	nand_dbg_zone_phy_read, %function
