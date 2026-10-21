@@ -11305,6 +11305,7 @@ hynix16nm_init_readretry_param:
 	ret
 	.size	hynix16nm_init_readretry_param, .-hynix16nm_init_readretry_param
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_readretry_init
 	.type	hynix16nm_readretry_init, %function
 hynix16nm_readretry_init:
@@ -11388,6 +11389,7 @@ hynix16nm_readretry_init:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	hynix16nm_readretry_init, .-hynix16nm_readretry_init
+	#endif
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC130: relocated in rooted readonly order below. */

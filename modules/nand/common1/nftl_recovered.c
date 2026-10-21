@@ -2592,6 +2592,48 @@ int hynix26nm_lsb_init(struct hynix26nm_lsb_chip *chip)
 	hynix26nm_lsb_mode_val[4] = 1;
 	return 0;
 }
+extern unsigned char hynix16nm_read_retry_mode;
+extern unsigned char hynix16nm_read_retry_cycle;
+extern unsigned char hynix16nm_read_retry_reg_num;
+extern unsigned char hynix16nm_read_retry_reg_adr[];
+struct hynix16nm_init_params {
+	unsigned char before_retry_spec[52];
+	unsigned int retry_spec;
+};
+struct hynix16nm_init_chip {
+	unsigned char before_otp[56];
+	unsigned char otp[128];
+	unsigned int retry;
+	unsigned char before_params[92];
+	struct hynix16nm_init_params *params;
+};
+extern int hynix16nm_init_readretry_param(struct hynix16nm_init_chip *);
+int hynix16nm_readretry_init(struct hynix16nm_init_chip *chip)
+{
+	unsigned int index;
+
+	/* OEM dereferences the nested configuration unchecked and reloads it
+	 * separately for all three global fields. */
+	hynix16nm_read_retry_mode = chip->params->retry_spec >> 16;
+	hynix16nm_read_retry_cycle = chip->params->retry_spec >> 8;
+	hynix16nm_read_retry_reg_num = chip->params->retry_spec;
+	if (hynix16nm_read_retry_mode == 4) {
+		hynix16nm_read_retry_reg_adr[0] = 56;
+		hynix16nm_read_retry_reg_adr[1] = 57;
+		hynix16nm_read_retry_reg_adr[2] = 58;
+		hynix16nm_read_retry_reg_adr[3] = 59;
+		chip->retry = 0;
+	} else {
+		nand_print("NFC_ReadRetryInit, unknown read retry mode 0x%x\n",
+			   hynix16nm_read_retry_mode);
+		return -75;
+	}
+	for (index = 0; index <= 127; index++)
+		chip->otp[index] = 0;
+	/* OEM discards OTP setup failure and reports initialization success. */
+	hynix16nm_init_readretry_param(chip);
+	return 0;
+}
 extern int hynix26nm_vender_set_param(void *chip, unsigned char *values,
 				     unsigned char *addresses,
 				     unsigned int count);
@@ -4620,7 +4662,6 @@ int toshiba_readretry_init(struct samsung_init_chip *chip)
 }
 
 extern int micron_readretry_init(void *);
-extern int hynix16nm_readretry_init(void *);
 extern int hynix20nm_readretry_init(void *);
 extern int hynix26nm_readretry_init(void *);
 extern void samsung_read_page_end(void);
