@@ -1590,6 +1590,7 @@ _nftl_nand_mark_bad_blk:
 	.local	panic_enable
 /* panic_enable: common storage replaced by its recovered BSS slot. */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.type	panic_mark_panic, %function
 panic_mark_panic:
 	adrp	x0, nand_on_panic
@@ -1599,7 +1600,9 @@ panic_mark_panic:
 	nop
 	ret
 	.size	panic_mark_panic, .-panic_mark_panic
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_on_panic
 	.type	is_on_panic, %function
 is_on_panic:
@@ -1611,7 +1614,9 @@ is_on_panic:
 	uxtb	w0, w0
 	ret
 	.size	is_on_panic, .-is_on_panic
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	panic_mark_enable
 	.type	panic_mark_enable, %function
 panic_mark_enable:
@@ -1622,7 +1627,9 @@ panic_mark_enable:
 	nop
 	ret
 	.size	panic_mark_enable, .-panic_mark_enable
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	is_panic_enable
 	.type	is_panic_enable, %function
 is_panic_enable:
@@ -1634,6 +1641,7 @@ is_panic_enable:
 	uxtb	w0, w0
 	ret
 	.size	is_panic_enable, .-is_panic_enable
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC18: relocated in rooted readonly order below. */
@@ -5099,6 +5107,7 @@ micron_readretry_init:
 	ret
 	.size	micron_readretry_init, .-micron_readretry_init
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	micron_readretry_exit
 	.type	micron_readretry_exit, %function
 micron_readretry_exit:
@@ -5114,6 +5123,7 @@ micron_readretry_exit:
 	add	sp, sp, 16
 	ret
 	.size	micron_readretry_exit, .-micron_readretry_exit
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC74: relocated in rooted readonly order below. */
@@ -9296,6 +9306,7 @@ sandisk_A19_check_bad_block_first_burn:
 // readonly payload moved below: 	.string	" generic special init \n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	generic_special_init
 	.type	generic_special_init, %function
 generic_special_init:
@@ -9313,6 +9324,7 @@ generic_special_init:
 	ldp	x29, x30, [sp], 16
 	ret
 	.size	generic_special_init, .-generic_special_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC106: relocated in rooted readonly order below. */
@@ -33061,10 +33073,16 @@ panic_part:
 	.zero	16
 	.type	nand_on_panic, %object
 	.size	nand_on_panic, 4
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	nand_on_panic
+#endif
 nand_on_panic:
 	.zero	4
 	.type	panic_enable, %object
 	.size	panic_enable, 4
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	panic_enable
+#endif
 panic_enable:
 	.zero	4
 	.type	sandisk_A19_sclk0_bak, %object

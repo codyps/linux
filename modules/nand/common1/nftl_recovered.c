@@ -1796,3 +1796,47 @@ int adjust_invaild_list(struct move_zone *zone)
 	}
 	return 0;
 }
+
+extern unsigned char micron_read_retry_mode;
+extern unsigned char micron_read_retry_cycle;
+int micron_readretry_exit(void *chip)
+{
+	/* OEM resets global retry state but ignores the chip argument. */
+	micron_read_retry_mode = 0;
+	micron_read_retry_cycle = 0;
+	return 0;
+}
+
+extern void generic_read_page_end_not_retry(void);
+extern void (*df_read_page_end)(void);
+int generic_special_init(void)
+{
+	df_read_page_end = generic_read_page_end_not_retry;
+	nand_print_dbg(" generic special init \n");
+	return 0;
+}
+
+extern unsigned int nand_on_panic;
+extern unsigned int panic_enable;
+
+void panic_mark_panic(void)
+{
+	nand_on_panic = 1;
+}
+
+void panic_mark_enable(void)
+{
+	panic_enable = 1;
+}
+
+/* AND #0xff and stock UXTB both zero-extend the comparison result. */
+unsigned char is_on_panic(void)
+{
+	return nand_on_panic != 0;
+}
+
+/* Preserve OEM's unchecked shared BSS flag and byte result. */
+unsigned char is_panic_enable(void)
+{
+	return panic_enable != 0;
+}
