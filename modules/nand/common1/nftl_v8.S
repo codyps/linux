@@ -10763,6 +10763,7 @@ hynix16nm_get_read_retry_cfg:
 // readonly payload moved below: 	.string	"invalid buffer for otp info!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	hynix16nm_read_otp_info_hynix
 	.type	hynix16nm_read_otp_info_hynix, %function
 hynix16nm_read_otp_info_hynix:
@@ -10953,6 +10954,7 @@ hynix16nm_read_otp_info_hynix:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	hynix16nm_read_otp_info_hynix, .-hynix16nm_read_otp_info_hynix
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC125: relocated in rooted readonly order below. */

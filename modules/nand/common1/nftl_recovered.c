@@ -1833,8 +1833,9 @@ struct hynix16nm_otp_zone {
 };
 extern void *nand_get_temp_buf(unsigned int size);
 extern void nand_free_temp_buf(void *buffer);
-extern int hynix16nm_read_otp_info_hynix(struct hynix16nm_otp_zone *zone,
-					  void *buffer);
+struct hynix16nm_otp_info_chip;
+extern int hynix16nm_read_otp_info_hynix(struct hynix16nm_otp_info_chip *chip,
+					  unsigned char *buffer);
 extern int hynix16nm_get_read_retry_cfg(unsigned char *mode,
 					 unsigned char *cycle,
 					 unsigned char *values,
@@ -1850,7 +1851,8 @@ int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone)
 		nand_print("otp_info_hynix_16nm : allocate memory fail\n");
 		return -78;
 	}
-	result = hynix16nm_read_otp_info_hynix(zone, buffer);
+	result = hynix16nm_read_otp_info_hynix(
+				(struct hynix16nm_otp_info_chip *)zone, buffer);
 	/* OEM still parses the buffer after a failed OTP read. */
 	if (result < 0)
 		nand_print("m1 CH %d chip %d get otp info failed!\n",
@@ -8219,5 +8221,80 @@ int recover_block_phy_page_mapping(struct page_map_recovery_zone *zone,
 			   block->number, page);
 		}
 	}
+	return 0;
+}
+
+struct hynix16nm_otp_info_controller {
+	unsigned char before_ce[1264];
+	unsigned int ce[8];
+	unsigned int rb[8];
+};
+struct hynix16nm_otp_info_chip {
+	unsigned char before_index[28];
+	unsigned int index;
+	unsigned char before_controller[240];
+	struct hynix16nm_otp_info_controller *controller;
+};
+_Static_assert(__builtin_offsetof(struct hynix16nm_otp_info_chip,
+				controller) == 272, "Hynix OTP controller offset");
+__attribute__((optimize("-fno-stack-protector")))
+int hynix16nm_read_otp_info_hynix(struct hynix16nm_otp_info_chip *chip,
+				   unsigned char *buffer)
+{
+	unsigned char command;
+	unsigned char address;
+	unsigned char data;
+
+	nand_enable_chip((struct samsung_set_chip *)chip);
+	ndfc_disable_randomize(chip->controller);
+	/* OEM indexes controller CE/RB arrays by an unchecked chip index and
+	 * performs this log before validating the destination buffer. */
+	nand_print_dbg("start get read retry param from: ce %d, rb %d...\n",
+		       chip->controller->ce[chip->index],
+		       chip->controller->rb[chip->index]);
+	if (!buffer) {
+		nand_disable_chip((struct samsung_set_chip *)chip);
+		nand_print("invalid buffer for otp info!\n");
+		return -79;
+	}
+	/* OEM ignores every command and data-transfer status. */
+	set_one_cmd((struct command_chip *)chip, -1, 1);
+	command = 0x36;
+	address = 0x38;
+	data = 0x52;
+	set_cmd_with_nand_bus(chip, &command, 0, &address, &data, 1, 1);
+	set_one_cmd((struct command_chip *)chip, 0x16, 0);
+	set_one_cmd((struct command_chip *)chip, 0x17, 0);
+	set_one_cmd((struct command_chip *)chip, 0x04, 0);
+	set_one_cmd((struct command_chip *)chip, 0x19, 0);
+	set_one_cmd((struct command_chip *)chip, 0x00, 0);
+	set_one_addr((struct command_chip *)chip, 0);
+	set_one_addr((struct command_chip *)chip, 0);
+	set_one_addr((struct command_chip *)chip, 0);
+	set_one_addr((struct command_chip *)chip, 2);
+	set_one_addr((struct command_chip *)chip, 0);
+	command = 0x30;
+	get_data_with_nand_bus_one_cmd((struct samsung_set_chip *)chip,
+					   &command, 0, buffer, 528);
+	set_one_cmd((struct command_chip *)chip, -1, 1);
+	command = 0x36;
+	address = 0x38;
+	data = 0;
+	set_cmd_with_nand_bus(chip, &command, 0, &address, &data, 1, 1);
+	set_one_cmd((struct command_chip *)chip, 0x16, 0);
+	set_one_cmd((struct command_chip *)chip, 0x00, 0);
+	set_one_addr((struct command_chip *)chip, 0);
+	set_one_addr((struct command_chip *)chip, 0);
+	set_one_addr((struct command_chip *)chip, 0);
+	set_one_addr((struct command_chip *)chip, 0);
+	set_one_addr((struct command_chip *)chip, 0);
+	set_one_cmd((struct command_chip *)chip, 0x30, 1);
+	if (buffer[0] != 8 || buffer[1] != 8) {
+		nand_print("hynix OTP RegCount value error: 0x%x, 0x%x \n",
+			   buffer[0], buffer[1]);
+		nand_disable_chip((struct samsung_set_chip *)chip);
+		return -96;
+	}
+	nand_disable_chip((struct samsung_set_chip *)chip);
 	return 0;
 }
