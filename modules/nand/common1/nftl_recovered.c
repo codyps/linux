@@ -2344,8 +2344,8 @@ __attribute__((optimize("-fno-stack-protector")))
 int nand_dbg_zone_phy_write(struct dbg_zone_write_owner *zone,
 			    unsigned short block, unsigned short page)
 {
-	unsigned char oob[16];
 	struct physic_op_param op;
+	unsigned char oob[16];
 	void *buffer = nftl_malloc(8192);
 	struct physical_block *physical;
 	int result;
