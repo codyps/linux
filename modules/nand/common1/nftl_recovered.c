@@ -2077,6 +2077,10 @@ struct used_page_stats {
 	unsigned char before_cross_talk[168];
 	unsigned int cross_talk;
 };
+struct used_page_config {
+	unsigned char before_cross_talk[28];
+	unsigned short cross_talk;
+};
 struct used_page_zone {
 	unsigned char before_geometry[8];
 	struct used_page_geometry *geometry;
@@ -2084,7 +2088,8 @@ struct used_page_zone {
 	void *data;
 	unsigned char before_stats[2920];
 	struct used_page_stats *stats;
-	unsigned char before_read[16];
+	struct used_page_config *config;
+	unsigned char before_read[8];
 	int (*read)(struct used_page_zone *, struct physic_op_param *);
 };
 struct used_page_cache {
@@ -2374,6 +2379,99 @@ struct nrc_buffers {
 	void *second;
 	void *third;
 };
+/* The nrc and used-page cache prefixes are the same stock allocation. */
+_Static_assert(sizeof(struct nrc_buffers) == sizeof(struct used_page_cache),
+	       "nrc cache prefix");
+
+__attribute__((optimize("-fno-stack-protector")))
+unsigned int get_used_page_num(struct used_page_zone *zone,
+			       struct physical_block *block,
+			       unsigned int *read_errors,
+			       struct nrc_buffers *nrc)
+{
+	struct used_page_cache *cache = (struct used_page_cache *)nrc;
+	struct physic_op_param op;
+	unsigned char local_oob[16];
+	unsigned char *data, *oob;
+	unsigned int page, first_unused, trailing_unused = 0;
+	unsigned int index, span;
+	int status;
+
+	*read_errors = 0;
+	for (page = 0; page < zone->geometry->pages; page++) {
+		if (cache && cache->valid[page] == 0) {
+			/* Stock multiplies in 32 bits, even on overflow. */
+			span = (unsigned int)(page *
+				(zone->geometry->page_bytes + 64));
+			data = cache->data + span;
+			oob = data + zone->geometry->page_bytes;
+		} else {
+			data = 0;
+			if (zone->geometry->sectors_per_page == 8)
+				data = zone->data;
+			oob = local_oob;
+		}
+		if (zone->config->cross_talk)
+			set_physic_op_par(&op, block->number, page,
+				zone->geometry->fixed_page, data, oob);
+		else
+			set_physic_op_par(&op, block->number, page, 0, 0, oob);
+		status = zone->read(zone, &op);
+		if (status && status != 10) {
+			nand_print("[NE]get_used_page_num ecc error block:%d page:%d!\n",
+				   block->number, page);
+			(*read_errors)++;
+		}
+		if (is_nouse_page(oob) == 1)
+			break;
+		if ((!status || status == 10) && data) {
+			if (nand_power_off_ecc_error(
+				(struct poweroff_ecc_zone *)zone, data, oob)) {
+				nand_print("[NE]power off ecc error 4!!\n");
+			} else {
+				/* OEM assumes cache exists whenever data is nonnull. */
+				cache->valid[page] = 1;
+				if (cache->count < page + 1)
+					cache->count = page + 1;
+			}
+		}
+	}
+	first_unused = page;
+	/* OEM still reads every remaining page, but never adds second-pass
+	 * read failures to the caller's error count. */
+	for (; page < zone->geometry->pages; page++) {
+		if (cache && cache->valid[page] == 0) {
+			span = (unsigned int)(page *
+				(zone->geometry->page_bytes + 64));
+			data = cache->data + span;
+			oob = data + zone->geometry->page_bytes;
+		} else {
+			data = 0;
+			oob = local_oob;
+		}
+		if (zone->config->cross_talk)
+			set_physic_op_par(&op, block->number, page,
+				zone->geometry->fixed_page, data, oob);
+		else
+			set_physic_op_par(&op, block->number, page, 0, 0, oob);
+		status = zone->read(zone, &op);
+		if (is_nouse_page(oob) == 1) {
+			trailing_unused++;
+			continue;
+		}
+		nand_print("[NE]sb@%d sp@%d get_used_page_num used spare data %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
+			   block->number, page, oob[0], oob[1], oob[2],
+			   oob[3], oob[4], oob[5], oob[6], oob[7],
+			   oob[8], oob[9], oob[10], oob[11],
+			   oob[12], oob[13], oob[14], oob[15]);
+		if ((!status || status == 10) && data) {
+			cache->valid[page] = 1;
+			if (cache->count < page + 1)
+				cache->count = page + 1;
+		}
+	}
+	return first_unused;
+}
 int free_nrc(struct nrc_buffers *buffers)
 {
 	if (buffers == 0)
@@ -10519,9 +10617,6 @@ struct cross_rebuild_block {
 	unsigned short erase_count;
 	unsigned int tag;
 };
-extern unsigned int get_used_page_num(struct cross_rebuild_zone *,
-				     struct cross_rebuild_block *,
-				     unsigned int *, struct nrc_buffers *);
 struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,
 	struct cross_rebuild_block *assist)
@@ -10540,7 +10635,8 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 		nand_print("[NE]cross_talk_rebuild_current_block fail 1\n");
 		return 0;
 	}
-	primary_used = get_used_page_num(zone, primary, &primary_flag, nrc);
+	primary_used = get_used_page_num((struct used_page_zone *)zone,
+		(struct physical_block *)primary, &primary_flag, nrc);
 	if (!assist) {
 		nand_print("[NE]cross_talk_rebuild_current_block!! %d,%d,%d!\n",
 			   primary->number, primary_used, primary->tag);
@@ -10557,7 +10653,8 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 		if (primary_flag)
 			first_erase += 20;
 	} else {
-		assist_used = get_used_page_num(zone, assist, &assist_flag, nrc);
+		assist_used = get_used_page_num((struct used_page_zone *)zone,
+			(struct physical_block *)assist, &assist_flag, nrc);
 		nand_print("[NE]cross_talk_rebuild_current_block!! %d,%d,%d,%d,%d,%d!\n",
 			   primary->number, primary_used, primary->tag,
 			   assist->number, assist_used, assist->tag);

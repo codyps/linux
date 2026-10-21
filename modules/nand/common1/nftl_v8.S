@@ -21929,6 +21929,7 @@ get_phy_block_addr:
 // readonly payload moved below: 	.string	"[NE]sb@%d sp@%d get_used_page_num used spare data %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_used_page_num
 	.type	get_used_page_num, %function
 get_used_page_num:
@@ -22313,6 +22314,7 @@ get_used_page_num:
 	ldp	x29, x30, [sp], 128
 	ret
 	.size	get_used_page_num, .-get_used_page_num
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC310: relocated in rooted readonly order below. */
