@@ -18127,6 +18127,7 @@ init_zone_after_first_scan:
 // readonly payload moved below: 	.string	"[ND]free block nums is %d, aec: %d, iec: %d, a_buc: %d, i_buc: %d!\n"
 	.text
 	.align	2
+	.if 0 /* C-backed second_scan_all_blocks; stock body retained as reference. */
 	.global	second_scan_all_blocks
 	.type	second_scan_all_blocks, %function
 second_scan_all_blocks:
@@ -18950,6 +18951,7 @@ second_scan_all_blocks:
 	ldp	x29, x30, [sp], 176
 	ret
 	.size	second_scan_all_blocks, .-second_scan_all_blocks
+	.endif
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	check_bit_nums

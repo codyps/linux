@@ -4661,6 +4661,311 @@ next:
 	return 0;
 }
 
+struct second_scan_smart {
+	unsigned char before_erase_max[148];
+	unsigned int erase_max;
+	unsigned int erase_min;
+	unsigned int used_last;
+	unsigned int used_first;
+};
+struct second_scan_gc {
+	unsigned char before_crc[28];
+	unsigned short crc_enabled;
+};
+struct second_scan_zone {
+	unsigned char before_geometry[8];
+	struct first_scan_geometry *geometry;
+	unsigned char before_mode[8];
+	unsigned char subtype;
+	unsigned char flags;
+	unsigned short free_count;
+	unsigned short bad_count;
+	unsigned short spare_count;
+	unsigned int logical_pages;
+	unsigned int logical_blocks;
+	unsigned char before_cached[64 - 40];
+	struct first_scan_block *cached_current;
+	unsigned char before_blocks[448 - 72];
+	struct first_scan_block *blocks;
+	unsigned char before_data[512 - 456];
+	void *data;
+	unsigned char before_current[528 - 520];
+	struct first_scan_block *current;
+	unsigned char before_map[552 - 536];
+	unsigned int *map;
+	unsigned int scan_length_bytes;
+	unsigned char before_max_erase[676 - 564];
+	unsigned int max_erase;
+	unsigned char before_smart[3440 - 680];
+	struct second_scan_smart *smart;
+	struct second_scan_gc *gc;
+	unsigned char before_read[8];
+	int (*read)(struct second_scan_zone *, struct physic_op_param *);
+};
+_Static_assert(__builtin_offsetof(struct second_scan_zone, blocks) == 448,
+	       "second-scan block-list offset");
+_Static_assert(__builtin_offsetof(struct second_scan_zone, current) == 528,
+	       "second-scan current-block offset");
+_Static_assert(__builtin_offsetof(struct second_scan_zone, map) == 552,
+	       "second-scan map offset");
+_Static_assert(__builtin_offsetof(struct second_scan_zone, smart) == 3440,
+	       "second-scan smart-info offset");
+_Static_assert(__builtin_offsetof(struct second_scan_zone, read) == 3464,
+	       "second-scan read callback offset");
+struct crc_page_zone;
+struct logic_page_map_zone;
+struct invalid_page_node;
+struct page_map_recovery_zone;
+struct current_used_zone;
+struct cross_rebuild_zone;
+struct cross_rebuild_block;
+struct invalid_node;
+extern volatile unsigned int *g_nreg_base;
+extern int crc_wrong(struct crc_page_zone *, const unsigned char *,
+		     unsigned char *);
+extern int recover_logic_page_mapping(struct logic_page_map_zone *,
+				       struct invalid_page_node *,
+				       const unsigned int *, unsigned int);
+extern int recover_phy_page_mapping(struct page_map_recovery_zone *,
+				     struct new_write_block *, unsigned int *);
+extern int recover_block_phy_page_mapping(struct page_map_recovery_zone *,
+					   struct new_write_block *,
+					   unsigned int *);
+extern int put_phy_block_to_invalid_page_list(void *, struct invalid_node *);
+extern int adjust_invaild_list(struct move_zone *);
+extern struct cross_rebuild_block *cross_talk_rebuild_current_block(
+	struct cross_rebuild_zone *, struct cross_rebuild_block *,
+	struct cross_rebuild_block *);
+extern struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
+	struct cross_rebuild_zone *, struct cross_rebuild_block *,
+	struct cross_rebuild_block *);
+extern int get_current_used_block(struct current_used_zone *,
+				   struct new_write_block *, unsigned int);
+
+__attribute__((optimize("-fno-stack-protector")))
+int second_scan_all_blocks(struct build_zone *raw_zone)
+{
+	struct second_scan_zone *zone = (struct second_scan_zone *)raw_zone;
+	struct first_scan_block *block, *first = 0, *second = 0;
+	struct first_scan_block *last_recorded = 0, *last_mapping = 0;
+	struct first_scan_block *erased = 0, *candidate = 0;
+	struct physic_op_param op;
+	unsigned char oob[16];
+	unsigned int read_page, last_used = ~0U, previous_used = ~0U;
+	unsigned int controller_mode = g_nreg_base[188];
+	int status;
+
+	if (controller_mode != 0x30001 && controller_mode != 1 &&
+	    controller_mode != 2)
+		return -1;
+	/* OEM divides by the geometry factor without checking for zero. */
+	zone->logical_blocks = zone->logical_pages /
+		((struct scan_page_geometry *)zone->geometry)->page_factor;
+	for (block = zone->blocks; block; block = block->next) {
+		previous_used = block->used_count;
+		zone->smart->used_last = block->used_count;
+	}
+	if (zone->blocks)
+		zone->smart->used_first = zone->blocks->used_count;
+	for (block = zone->blocks; block; block = block->next) {
+		read_page = zone->scan_length_bytes >> 9;
+		if (zone->scan_length_bytes & 511)
+			read_page++;
+		set_physic_op_par(&op, block->number,
+				  (unsigned short)(zone->geometry->pages - 1),
+				  (unsigned short)read_page, zone->data, oob);
+		status = zone->read(zone, &op);
+		/* OEM lets a CRC failure overwrite any NAND read status. */
+		if (zone->gc->crc_enabled &&
+		    crc_wrong((struct crc_page_zone *)zone, zone->data, oob))
+			status = -2;
+		last_used = block->used_count;
+		if (block->erase_count > zone->max_erase &&
+		    block->erase_count <= 49999) {
+			zone->max_erase = block->erase_count;
+			zone->smart->erase_max = zone->max_erase;
+		}
+		if (block->erase_count < zone->smart->erase_min)
+			zone->smart->erase_min = block->erase_count;
+		if (is_phy_mapping_page(oob) == 1 &&
+		    (status == 0 || status == 10)) {
+			last_recorded = block;
+			block->invalid_pages++;
+			recover_logic_page_mapping(
+				(struct logic_page_map_zone *)zone,
+				(struct invalid_page_node *)block,
+				zone->data, zone->geometry->pages - 1);
+			last_mapping = block;
+		} else if (is_nouse_page(oob) == 1) {
+			if (!first) {
+				first = block;
+			} else if (!second) {
+				second = block;
+				nand_print("[NI]NAND_EVENT: 2 current used block found %d,%d!\n",
+					   first->number, second->number);
+				if (!(zone->flags & 1) &&
+				    first->used_count != second->used_count) {
+					nand_print("[NE]no crosstalk:2 block used count diff %d,%d %d,%d !\n",
+						   first->number, second->number,
+						   first->used_count,
+						   second->used_count);
+					recover_phy_page_mapping(
+					    (struct page_map_recovery_zone *)zone,
+					    (struct new_write_block *)first,
+					    zone->map);
+					recover_logic_page_mapping(
+					    (struct logic_page_map_zone *)zone,
+					    (struct invalid_page_node *)first,
+					    zone->map, zone->geometry->pages - 1);
+					add_prio_gc((struct prio_gc_owner *)zone,
+						    first, 3);
+					first = second;
+					second = 0;
+				}
+			} else {
+				nand_print("[NE]NAND_EVENT: muti current used block found1 %d %d!\n",
+					   first->number, first->used_count);
+				nand_print("[NE]NAND_EVENT: muti current used block found2 %d %d!\n",
+					   second->number, second->used_count);
+				nand_print("[NE]NAND_EVENT: muti current used block found3 %d %d!\n",
+					   block->number, last_used);
+				add_prio_gc((struct prio_gc_owner *)zone, first, 3);
+				first = second;
+				second = block;
+			}
+		} else {
+			nand_print("[NE]NAND_EVENT: last page spare data %x,%x,%x,%x,%x,%x,%x %x %x %x %x %x %x %x %x %x!!\n",
+				   oob[0], oob[1], oob[2], oob[3], oob[4],
+				   oob[5], oob[6], oob[7], oob[8], oob[9],
+				   oob[10], oob[11], oob[12], oob[13], oob[14],
+				   oob[15]);
+			if (status == 0 || status == 10)
+				nand_print("[NI]zone@%d b@%d last page unkown ecc ok.\n",
+					   zone->subtype, block->number);
+			else
+				nand_print("[NE]zone@%d b@%d last page ecc error.\n",
+					   zone->subtype, block->number);
+			if ((zone->flags & 1) && previous_used == last_used) {
+				erase_block((struct erase_block_zone *)zone,
+					    (struct erase_block_info *)block,
+					    (unsigned short)(block->erase_count + 1));
+				erased = block;
+			} else {
+				last_recorded = block;
+				block->state = 170;
+				block->invalid_pages++;
+				recover_block_phy_page_mapping(
+					    (struct page_map_recovery_zone *)zone,
+					    (struct new_write_block *)block,
+					    zone->map);
+				recover_logic_page_mapping(
+					    (struct logic_page_map_zone *)zone,
+					    (struct invalid_page_node *)block,
+					    zone->map, zone->geometry->pages - 1);
+				add_prio_gc((struct prio_gc_owner *)zone, block, 3);
+			}
+		}
+	}
+	init_smart_info((struct smart_info_zone *)zone,
+			(struct smart_info_block *)last_mapping);
+	for (block = zone->blocks; block; block = block->next) {
+		if (block != first && block != second && block != erased)
+			put_phy_block_to_invalid_page_list(zone,
+					 (struct invalid_node *)block);
+	}
+	adjust_invaild_list((struct move_zone *)zone);
+	if (last_recorded && first &&
+	    last_recorded->used_count + 1 != first->used_count)
+		nand_print("[NE]something strange %d,%d!!\n",
+			   last_recorded->used_count, first->used_count);
+	zone->current = 0;
+	if (!first && !second) {
+		nand_print("[NI]all block full!!\n");
+		if (last_recorded && ((zone->flags & 1) ||
+		    last_recorded->state == 170))
+			add_prio_gc((struct prio_gc_owner *)zone,
+				    last_recorded, 3);
+	} else if (!second) {
+		candidate = first;
+		if (zone->flags & 1) {
+			nand_print_dbg("[ND]corss talk rebuild 0 %d %d!!\n",
+				       first->number, first->used_count);
+			if (last_recorded && last_recorded->state == 170)
+				add_prio_gc((struct prio_gc_owner *)zone,
+					    last_recorded, 3);
+			candidate = (struct first_scan_block *)
+				cross_talk_rebuild_current_block(
+				    (struct cross_rebuild_zone *)zone,
+				    (struct cross_rebuild_block *)first, 0);
+			if (!candidate)
+				return 1;
+		} else {
+			if (last_recorded && last_recorded->state == 170)
+				add_prio_gc((struct prio_gc_owner *)zone,
+					    last_recorded, 3);
+			if (zone->subtype)
+				candidate = (struct first_scan_block *)
+					no_cross_talk_rebuild_current_block(
+					    (struct cross_rebuild_zone *)zone,
+					    (struct cross_rebuild_block *)first, 0);
+		}
+	} else if (zone->flags & 1) {
+		candidate = (struct first_scan_block *)
+			cross_talk_rebuild_current_block(
+			    (struct cross_rebuild_zone *)zone,
+			    (struct cross_rebuild_block *)first,
+			    (struct cross_rebuild_block *)second);
+		if (!candidate)
+			return 1;
+	} else if (first->used_count == second->used_count) {
+		nand_print("[NE]1st current block:%d 1st current block uc:%d muti current used block 1st.\n",
+			   first->number, first->used_count);
+		nand_print_dbg("[ND]2nd current block:%d 2nd current block uc:%d muti current used block 2nd.\n",
+			       second->number, second->used_count);
+		candidate = (struct first_scan_block *)
+			no_cross_talk_rebuild_current_block(
+			    (struct cross_rebuild_zone *)zone,
+			    (struct cross_rebuild_block *)first,
+			    (struct cross_rebuild_block *)second);
+	} else {
+		nand_print("[NE]something is error here 7!\n");
+		/* OEM dereferences last_recorded without a null check. */
+		nand_print("[NE]p_phy_block_info_last %d %d.\n",
+			   last_recorded->number, last_recorded->used_count);
+		nand_print("[NE]1st current block:%d 1st current block uc:%d muti current used block 1st.\n",
+			   first->number, first->used_count);
+		nand_print_dbg("[ND]2nd current block:%d 2nd current block uc:%d muti current used block 2nd.\n",
+			       second->number, second->used_count);
+		recover_block_phy_page_mapping(
+			(struct page_map_recovery_zone *)zone,
+			(struct new_write_block *)first, zone->map);
+		recover_logic_page_mapping((struct logic_page_map_zone *)zone,
+			(struct invalid_page_node *)first, zone->map,
+			zone->geometry->pages - 1);
+		add_prio_gc((struct prio_gc_owner *)zone, first, 3);
+		recover_block_phy_page_mapping(
+			(struct page_map_recovery_zone *)zone,
+			(struct new_write_block *)second, zone->map);
+		recover_logic_page_mapping((struct logic_page_map_zone *)zone,
+			(struct invalid_page_node *)second, zone->map,
+			zone->geometry->pages - 1);
+		add_prio_gc((struct prio_gc_owner *)zone, second, 3);
+		/* OEM leaves candidate null and asks for a new free block. */
+	}
+	if (get_current_used_block((struct current_used_zone *)zone,
+				   (struct new_write_block *)candidate, last_used)) {
+		nand_print("[NE]get_current_used_block fail.\n");
+		return 1;
+	}
+	adjust_invaild_list((struct move_zone *)zone);
+	zone->cached_current = zone->current;
+	nand_print_dbg("[ND]free block nums is %d, aec: %d, iec: %d, a_buc: %d, i_buc: %d!\n",
+		       zone->spare_count, zone->smart->erase_max,
+		       zone->smart->erase_min, zone->smart->used_last,
+		       zone->smart->used_first);
+	return 0;
+}
+
 struct first_list_geometry {
 	unsigned char before_factor[8];
 	unsigned char factor;
