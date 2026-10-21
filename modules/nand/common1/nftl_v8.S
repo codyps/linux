@@ -25864,6 +25864,7 @@ get_block_min_erase_time_from_invalid_list:
 	ret
 	.size	get_block_min_erase_time_from_invalid_list, .-get_block_min_erase_time_from_invalid_list
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_block_max_count_from_invalid_list
 	.type	get_block_max_count_from_invalid_list, %function
 get_block_max_count_from_invalid_list:
@@ -25909,7 +25910,9 @@ get_block_max_count_from_invalid_list:
 	add	sp, sp, 48
 	ret
 	.size	get_block_max_count_from_invalid_list, .-get_block_max_count_from_invalid_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	get_block_min_count_from_invalid_list
 	.type	get_block_min_count_from_invalid_list, %function
 get_block_min_count_from_invalid_list:
@@ -25956,6 +25959,7 @@ get_block_min_count_from_invalid_list:
 	add	sp, sp, 48
 	ret
 	.size	get_block_min_count_from_invalid_list, .-get_block_min_count_from_invalid_list
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	out_phy_block_from_free_list_by_block

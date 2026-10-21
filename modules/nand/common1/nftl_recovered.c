@@ -802,7 +802,9 @@ int is_block_in_free_list(struct free_zone *zone, struct free_node *target)
 }
 
 struct invalid_node {
-	unsigned char before_next[16];
+	unsigned char before_count[8];
+	volatile unsigned int count;
+	unsigned char before_next[4];
 	struct invalid_node *next;
 	struct invalid_node *previous;
 };
@@ -822,6 +824,40 @@ int is_block_in_invalid_list(struct invalid_zone *zone,
 		node = node->next;
 	}
 	return 0;
+}
+struct invalid_node *get_block_max_count_from_invalid_list(
+	struct invalid_zone *zone)
+{
+	struct invalid_node *best = 0;
+	unsigned int maximum = 0;
+	struct invalid_node *node = zone->head.next;
+
+	/* OEM selects the later node on ties and reads the chosen count
+	 * twice. It never detects a cycle. */
+	while (node) {
+		if (node->count >= maximum) {
+			maximum = node->count;
+			best = node;
+		}
+		node = node->next;
+	}
+	return best;
+}
+struct invalid_node *get_block_min_count_from_invalid_list(
+	struct invalid_zone *zone)
+{
+	struct invalid_node *best = 0;
+	unsigned int minimum = ~0U;
+	struct invalid_node *node = zone->head.next;
+
+	while (node) {
+		if (node->count <= minimum) {
+			minimum = node->count;
+			best = node;
+		}
+		node = node->next;
+	}
+	return best;
 }
 
 struct cache_read_node {
