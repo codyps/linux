@@ -883,6 +883,41 @@ struct sector_cache_zone {
 	unsigned char before_head[528];
 	struct sector_cache_node head;
 };
+extern int nand_sector_cache_read(void *zone, unsigned int sector, void *data);
+extern int nand_sector_cache_write(void *zone, unsigned int sector, void *data);
+int __nand_sector_read(void *zone, unsigned int sector, unsigned int count,
+		       void *data)
+{
+	int result = 0;
+	unsigned int current = sector;
+	unsigned long pointer = (unsigned long)data;
+	unsigned int index = 0;
+
+	while (index < count) {
+		/* OEM ORs every result and never stops on an error. */
+		result |= nand_sector_cache_read(zone, current, (void *)pointer);
+		current++;
+		pointer += 512;
+		index++;
+	}
+	return result;
+}
+int __nand_sector_write(void *zone, unsigned int sector, unsigned int count,
+			void *data)
+{
+	int result = 0;
+	unsigned int current = sector;
+	unsigned long pointer = (unsigned long)data;
+	unsigned int index = 0;
+
+	while (index < count) {
+		result |= nand_sector_cache_write(zone, current, (void *)pointer);
+		current++;
+		pointer += 512;
+		index++;
+	}
+	return result;
+}
 struct sector_cache_node *search_from_sector_cache_write_list(
 	struct sector_cache_zone *zone, int key)
 {

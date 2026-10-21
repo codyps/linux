@@ -12992,6 +12992,7 @@ del_from_sector_cache_write_list:
 	.size	del_from_sector_cache_write_list, .-del_from_sector_cache_write_list
 #endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	__nand_sector_read
 	.type	__nand_sector_read, %function
 __nand_sector_read:
@@ -13035,7 +13036,9 @@ __nand_sector_read:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	__nand_sector_read, .-__nand_sector_read
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	__nand_sector_write
 	.type	__nand_sector_write, %function
 __nand_sector_write:
@@ -13079,6 +13082,7 @@ __nand_sector_write:
 	ldp	x29, x30, [sp], 80
 	ret
 	.size	__nand_sector_write, .-__nand_sector_write
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC142: relocated in rooted readonly order below. */
