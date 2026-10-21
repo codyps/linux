@@ -2758,6 +2758,24 @@ int samsung_readretry_init(struct samsung_init_chip *chip)
 		return -100;
 	return 0;
 }
+extern unsigned char toshiba_read_retry_mode;
+extern unsigned char toshiba_read_retry_cycle;
+extern unsigned char toshiba_read_retry_reg_cnt;
+int toshiba_readretry_init(struct samsung_init_chip *chip)
+{
+	chip->state = 0;
+	/* OEM rereads the configuration word for each byte and trusts the
+	 * nested pointer. Keep the diagnostic typo and global write order. */
+	toshiba_read_retry_mode =
+		(unsigned char)(chip->inner->flags >> 16);
+	toshiba_read_retry_cycle =
+		(unsigned char)(chip->inner->flags >> 8);
+	toshiba_read_retry_reg_cnt =
+		(unsigned char)chip->inner->flags;
+	nand_print_dbg("toshiba read retry conut: %d !\n",
+		       toshiba_read_retry_cycle);
+	return 0;
+}
 
 struct reclaim_flag_zone {
 	unsigned char before_complete[664];

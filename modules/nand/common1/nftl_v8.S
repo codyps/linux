@@ -6076,6 +6076,7 @@ toshiba_read_page_end:
 // readonly payload moved below: 	.string	"toshiba read retry conut: %d !\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	toshiba_readretry_init
 	.type	toshiba_readretry_init, %function
 toshiba_readretry_init:
@@ -6118,6 +6119,7 @@ toshiba_readretry_init:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	toshiba_readretry_init, .-toshiba_readretry_init
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	toshiba_readretry_exit
