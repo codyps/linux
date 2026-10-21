@@ -6105,6 +6105,120 @@ int erase_block(struct erase_block_zone *zone, struct erase_block_info *block,
 	}
 	return result;
 }
+struct torture_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages;
+	unsigned char before_page_bytes[4];
+	unsigned short page_bytes;
+	unsigned short fixed_page;
+};
+struct torture_zone {
+	unsigned char before_geometry[8];
+	struct torture_geometry *geometry;
+	unsigned char before_bad_count[12];
+	unsigned short bad_count;
+	unsigned char before_page_data[482];
+	void *page_data;
+	unsigned char before_callbacks[2936];
+	int (*erase)(struct torture_zone *, struct physic_op_param *);
+	int (*read)(struct torture_zone *, struct physic_op_param *);
+	int (*write)(struct torture_zone *, struct physic_op_param *);
+	unsigned char before_mark_bad[16];
+	int (*mark_bad)(struct torture_zone *, struct physic_op_param *);
+};
+extern unsigned char patterns[1];
+extern void *memset(void *, int, unsigned long);
+_Static_assert(__builtin_offsetof(struct torture_zone, page_data) == 512,
+	       "torture page-data offset");
+_Static_assert(__builtin_offsetof(struct torture_zone, erase) == 3456,
+	       "torture erase callback offset");
+_Static_assert(__builtin_offsetof(struct torture_zone, mark_bad) == 3496,
+	       "torture bad-block callback offset");
+__attribute__((optimize("-fno-stack-protector")))
+int torture_block_and_mark(struct torture_zone *zone,
+			   struct erase_block_info *block)
+{
+	struct physic_op_param op;
+	unsigned char oob[15] = {0};
+	unsigned int page;
+	int result;
+
+	nand_print("[NI]torture b@%d.\n", block->number);
+	set_physic_op_par(&op, block->number, 0,
+			  zone->geometry->fixed_page, 0, 0);
+	result = zone->erase(zone, &op);
+	if (result) {
+		nand_print("[NE]erase_block block fail %d!\n", block->number);
+		goto bad;
+	}
+	block->erase_count++;
+	/* OEM's initialized table has one pattern and tests only three pages,
+	 * regardless of the advertised geometry. Reload the writable table
+	 * around callbacks as the stock object does. */
+	memset(zone->page_data, patterns[0], zone->geometry->page_bytes);
+	memset(oob, patterns[0], 15);
+	for (page = 0; page < 3; page++) {
+		set_physic_op_par(&op, block->number, (unsigned short)page,
+				  zone->geometry->fixed_page,
+				  zone->page_data, oob);
+		result = zone->write(zone, &op);
+		if (result) {
+			nand_print("[NE]%s write b@%d p@%d err\n",
+				   __func__, block->number, page);
+			goto bad;
+		}
+	}
+	for (page = 0; page < 3; page++) {
+		memset(zone->page_data, 0, zone->geometry->page_bytes);
+		memset(oob, 0, 15);
+		set_physic_op_par(&op, block->number, (unsigned short)page,
+				  zone->geometry->fixed_page,
+				  zone->page_data, oob);
+		result = zone->read(zone, &op);
+		if (result) {
+			nand_print("[NE]%s read b@%d p@%d err\n",
+				   __func__, block->number, page);
+			goto bad;
+		}
+		result = nftl_check_pattern(zone->page_data, patterns[0],
+					    zone->geometry->page_bytes);
+		if (result) {
+			nand_print("[NE]%s b@%d p@%d patt %02x checking main data fail\n",
+				   __func__, block->number, page, patterns[0]);
+			goto bad;
+		}
+		result = nftl_check_pattern(oob, patterns[0], 15);
+		if (result) {
+			nand_print("[NE]%s b@%d p@%d patt %02x checking spare data fail\n",
+				   __func__, block->number, page, patterns[0]);
+			goto bad;
+		}
+	}
+	set_physic_op_par(&op, block->number, 0,
+			  zone->geometry->fixed_page, 0, 0);
+	result = zone->erase(zone, &op);
+	if (result) {
+		nand_print("[NE][NE]erase_block block fail %d!\n", block->number);
+		goto bad;
+	}
+	block->erase_count++;
+	block->tag = -1;
+	/* OEM ignores both free-list and marking results. */
+	put_phy_block_to_free_list((struct move_zone *)zone,
+				   (struct move_node *)block);
+	mark_free_block((struct erase_block_zone *)zone, block);
+	block->pages = zone->geometry->pages;
+	block->state = 0;
+	return 0;
+bad:
+	/* OEM ignores the bad-block callback status and returns the preceding
+	 * erase, I/O, or comparison status. */
+	zone->mark_bad(zone, &op);
+	block->pages = 0;
+	block->state = 255;
+	zone->bad_count++;
+	return result;
+}
 int nand_dbg_zone_erase(void *zone, unsigned short block,
 			unsigned short mode)
 {

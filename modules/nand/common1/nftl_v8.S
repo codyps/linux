@@ -21361,6 +21361,7 @@ nftl_check_pattern:
 // readonly payload moved below: 	.string	"[NE][NE]erase_block block fail %d!\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	torture_block_and_mark
 	.type	torture_block_and_mark, %function
 torture_block_and_mark:
@@ -21693,6 +21694,7 @@ torture_block_and_mark:
 	ldp	x29, x30, [sp], 96
 	ret
 	.size	torture_block_and_mark, .-torture_block_and_mark
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	mark_free_block
@@ -33623,6 +33625,9 @@ sandisk_toggle_mode_flag:
  */
 	.data
 	.balign	8
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	patterns
+#endif
 patterns:
 	.byte	-91
 	.balign	8
