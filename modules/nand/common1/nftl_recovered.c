@@ -2299,9 +2299,37 @@ struct nftl_list_node *get_last_nftl(struct nftl_list_node *first)
 extern unsigned char hynix20nm_lsb_mode_reg_num;
 extern unsigned char hynix20nm_lsb_mode_reg_adr[];
 extern unsigned char hynix20nm_lsb_mode_default_val[];
+extern unsigned char hynix20nm_lsb_mode_val[];
 extern int hynix20nm_vender_set_param(void *chip, unsigned char *values,
 				     unsigned char *addresses,
 				     unsigned int count);
+int hynix20nm_lsb_enable(void *chip)
+{
+	struct {
+		unsigned char values[4];
+		unsigned int index;
+	} locals;
+
+	/* OEM ignores both vendor transfer results. The shared defaults are
+	 * overwritten by the read before the LSB offsets are applied. */
+	hynix20nm_vender_get_param(chip, hynix20nm_lsb_mode_default_val,
+				   hynix20nm_lsb_mode_reg_adr,
+				   hynix20nm_lsb_mode_reg_num);
+	/* OEM trusts the mutable register count even when it exceeds the
+	 * four-byte destination and source tables. */
+	for (locals.index = 0; locals.index < hynix20nm_lsb_mode_reg_num;
+	     locals.index++) {
+		locals.values[locals.index] =
+			hynix20nm_lsb_mode_default_val[locals.index];
+		locals.values[locals.index] =
+			locals.values[locals.index] +
+			hynix20nm_lsb_mode_val[locals.index];
+	}
+	hynix20nm_vender_set_param(chip, locals.values,
+				   hynix20nm_lsb_mode_reg_adr,
+				   hynix20nm_lsb_mode_reg_num);
+	return 0;
+}
 extern unsigned char hynix26nm_lsb_mode_reg_num;
 extern unsigned char hynix26nm_lsb_mode_reg_adr[];
 extern unsigned char hynix26nm_lsb_mode_default_val[];
