@@ -1656,6 +1656,7 @@ is_panic_enable:
 // readonly payload moved below: 	.string	"[ND] panic part %s off %u size %u\n"
 	.text
 	.align	2
+#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	panic_init_part
 	.type	panic_init_part, %function
 panic_init_part:
@@ -1706,6 +1707,7 @@ panic_init_part:
 	ldp	x29, x30, [sp], 32
 	ret
 	.size	panic_init_part, .-panic_init_part
+#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.section	.rodata
 // readonly alignment moved below: 	.align	3
 /* .LC19: relocated in rooted readonly order below. */
@@ -33225,6 +33227,9 @@ panic_info:
 	.zero	40
 	.type	panic_part, %object
 	.size	panic_part, 16
+#ifdef CONFIG_TRIMUI_NFTL_RECOVERED_C
+	.global	panic_part
+#endif
 panic_part:
 	.zero	16
 	.type	nand_on_panic, %object

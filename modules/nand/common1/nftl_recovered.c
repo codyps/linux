@@ -2233,6 +2233,27 @@ void panic_mark_enable(void)
 {
 	panic_enable = 1;
 }
+struct panic_part_state {
+	const char *name;
+	unsigned int offset;
+	unsigned int size;
+};
+extern struct panic_part_state panic_part;
+int panic_init_part(const char *name, unsigned int offset, unsigned int size)
+{
+	if (!name || !size)
+		return -1;
+	/* OEM uses nonzero size as a permanent initialized marker and never
+	 * validates overlap or range against the underlying partition. */
+	if (panic_part.size)
+		return -1;
+	panic_part.name = name;
+	panic_part.offset = offset;
+	panic_part.size = size;
+	panic_mark_enable();
+	nand_print("[ND] panic part %s off %u size %u\n", name, offset, size);
+	return 0;
+}
 
 /* AND #0xff and stock UXTB both zero-extend the comparison result. */
 unsigned char is_on_panic(void)
