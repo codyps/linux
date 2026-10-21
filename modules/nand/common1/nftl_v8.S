@@ -20200,6 +20200,7 @@ do_write_error_in_build_list:
 // readonly payload moved below: 	.string	"[NE]pages_per_blk: %d, %p, %p, %p, %p\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	init_nrc
 	.type	init_nrc, %function
 init_nrc:
@@ -20359,6 +20360,7 @@ init_nrc:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	init_nrc, .-init_nrc
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	free_nrc

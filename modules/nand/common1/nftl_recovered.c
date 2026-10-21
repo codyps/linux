@@ -7468,3 +7468,63 @@ int nand_dbg_phy_read(unsigned short channel, unsigned short block,
 	nftl_free(data);
 	return result;
 }
+
+struct nrc_geometry {
+	unsigned char before_pages[20];
+	unsigned short pages_per_block;
+	unsigned char before_oob_bytes[4];
+	unsigned short oob_bytes;
+};
+struct nrc_zone {
+	unsigned char before_geometry[8];
+	struct nrc_geometry *geometry;
+};
+int init_nrc(struct nrc_zone *zone, struct nrc_buffers **output)
+{
+	struct nrc_buffers *buffers;
+	unsigned int pages;
+
+	buffers = nftl_malloc(32);
+	if (!buffers) {
+		/* OEM leaves *output untouched for this first failure only. */
+		nand_print("%s %d:fail 1\n", __func__, 1408);
+		return -1;
+	}
+	nand_memset(buffers, 0, 32);
+	pages = zone->geometry->pages_per_block;
+	/* OEM uses wrapping 32-bit arithmetic for allocation sizes. */
+	buffers->second = nftl_malloc((zone->geometry->oob_bytes + 64U) * pages);
+	if (!buffers->second) {
+		nand_print("%s %d:fail 2\n", __func__, 1417);
+		goto fail;
+	}
+	buffers->third = nftl_malloc(pages * 4U);
+	if (!buffers->third) {
+		nand_print("%s %d:fail 3\n", __func__, 1422);
+		goto fail;
+	}
+	nand_memset(buffers->third, -1, pages * 4U);
+	buffers->first = nftl_malloc(pages);
+	if (!buffers->first) {
+		nand_print("%s %d:fail 4\n", __func__, 1428);
+		goto fail;
+	}
+	nand_memset(buffers->first, 0, pages);
+	*output = buffers;
+	nand_print("[NE]pages_per_blk: %d, %p, %p, %p, %p\n",
+		   zone->geometry->pages_per_block, buffers,
+		   buffers->second, buffers->third, buffers->first);
+	return 0;
+
+fail:
+	/* The failure cleanup order differs from free_nrc. */
+	if (buffers->second)
+		nftl_free(buffers->second);
+	if (buffers->third)
+		nftl_free(buffers->third);
+	if (buffers->first)
+		nftl_free(buffers->first);
+	nftl_free(buffers);
+	*output = 0;
+	return -1;
+}
