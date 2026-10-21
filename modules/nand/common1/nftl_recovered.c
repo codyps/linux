@@ -4037,6 +4037,73 @@ int gc_one(struct gc_one_zone *zone, unsigned short priority)
 	return 8;
 }
 
+struct power_gc_geometry {
+	unsigned char before_divisor[8];
+	unsigned char divisor;
+	unsigned char before_pages[11];
+	unsigned short pages;
+};
+struct power_gc_zone {
+	unsigned char before_geometry[8];
+	struct power_gc_geometry *geometry;
+	unsigned char before_reserved[26 - 16];
+	unsigned short reserved;
+	unsigned char before_available[30 - 28];
+	unsigned short available;
+	unsigned int count_32;
+	unsigned char before_count_40[40 - 36];
+	unsigned int count_40;
+	unsigned char before_target[680 - 44];
+	unsigned short target;
+	unsigned short emergency;
+};
+static __attribute__((always_inline)) inline unsigned int
+power_gc_udiv(unsigned int value, unsigned int divisor)
+{
+	/* ARM64 UDIV returns zero for a zero divisor. C division would be
+	 * undefined; keep the OEM diagnostic's architectural result. */
+	return divisor ? value / divisor : 0;
+}
+int power_on_gc(struct build_zone *owner)
+{
+	struct power_gc_zone *zone = (struct power_gc_zone *)owner;
+	unsigned short attempts = 0;
+	unsigned short priority;
+	int result;
+
+	if (zone->available >= zone->target) {
+		nand_print_dbg("[ND]not power on gc [%d, %d, %d], [%d %d %d]!\n",
+			       zone->available, zone->target, zone->emergency,
+			       zone->reserved,
+			       power_gc_udiv(power_gc_udiv(zone->count_32,
+					 zone->geometry->divisor), zone->geometry->pages),
+			       power_gc_udiv(power_gc_udiv(zone->count_40,
+					 zone->geometry->divisor), zone->geometry->pages));
+		return 0;
+	}
+	gc_src_type = 2;
+	priority = zone->geometry->pages - 10;
+	/* OEM relies on GC to increase availability; if it never does and
+	 * never returns eight, this loop does not terminate. */
+	while (zone->available < zone->target) {
+		result = gc_one((struct gc_one_zone *)zone, priority);
+		if (result == 8)
+			break;
+		attempts++;
+	}
+	priority = zone->geometry->pages >> 3;
+	while (zone->available <= 4) {
+		nand_print_dbg("[ND]emergency power on gc %d !\n",
+			       zone->available);
+		result = gc_one((struct gc_one_zone *)zone, priority);
+		if (result == 8)
+			break;
+		attempts++;
+	}
+	nand_print_dbg("[ND]power on gc %d!\n", attempts);
+	return 0;
+}
+
 struct gc_win_chip {
 	unsigned char before_pages[20];
 	unsigned short pages_per_block;

@@ -31260,6 +31260,7 @@ static_wear_leveling:
 // readonly payload moved below: 	.string	"[ND]power on gc %d!\n"
 	.text
 	.align	2
+	#ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	power_on_gc
 	.type	power_on_gc, %function
 power_on_gc:
@@ -31388,6 +31389,7 @@ power_on_gc:
 	ldp	x29, x30, [sp], 48
 	ret
 	.size	power_on_gc, .-power_on_gc
+	#endif /* CONFIG_TRIMUI_NFTL_RECOVERED_C */
 	.align	2
 #ifndef CONFIG_TRIMUI_NFTL_RECOVERED_C
 	.global	all_time_gc
