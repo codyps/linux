@@ -4572,7 +4572,8 @@ int init_zone_after_first_scan(struct scan_zone *zone,
 }
 extern int first_scan_all_blocks(struct build_zone *);
 extern int second_scan_all_blocks(struct build_zone *);
-extern int power_on_gc(struct build_zone *);
+struct power_gc_zone;
+extern int power_on_gc(struct power_gc_zone *);
 extern int panic_backup_block(struct build_zone *);
 int build_zone_list(struct build_zone *zone)
 {
@@ -4593,7 +4594,7 @@ int build_zone_list(struct build_zone *zone)
 		return 1;
 	}
 	/* OEM still reports success if GC or panic backup fails. */
-	result = power_on_gc(zone);
+	result = power_on_gc((struct power_gc_zone *)zone);
 	print_nftl_zone(zone);
 	nand_print(nftl_ro_lc_214);
 	panic_backup_block(zone);
@@ -6076,28 +6077,23 @@ struct power_gc_zone {
 	unsigned short target;
 	unsigned short emergency;
 };
-static __attribute__((always_inline)) inline unsigned int
-power_gc_udiv(unsigned int value, unsigned int divisor)
+int power_on_gc(struct power_gc_zone *zone)
 {
-	/* ARM64 UDIV returns zero for a zero divisor. C division would be
-	 * undefined; keep the OEM diagnostic's architectural result. */
-	return divisor ? value / divisor : 0;
-}
-int power_on_gc(struct build_zone *owner)
-{
-	struct power_gc_zone *zone = (struct power_gc_zone *)owner;
 	unsigned short attempts = 0;
 	unsigned short priority;
 	int result;
 
 	if (zone->available >= zone->target) {
+		/* The OEM C divisions are undefined when either divisor is zero.
+		 * On the shipped AArch64/GCC build they are bare UDIV instructions,
+		 * which return zero. A portable fix must explicitly guard them. */
 		nand_print_dbg(nftl_ro_lc_462,
 			       zone->available, zone->target, zone->emergency,
 			       zone->reserved,
-			       power_gc_udiv(power_gc_udiv(zone->count_32,
-					 zone->geometry->divisor), zone->geometry->pages),
-			       power_gc_udiv(power_gc_udiv(zone->count_40,
-					 zone->geometry->divisor), zone->geometry->pages));
+			       zone->count_32 / zone->geometry->divisor /
+					zone->geometry->pages,
+			       zone->count_40 / zone->geometry->divisor /
+					zone->geometry->pages);
 		return 0;
 	}
 	gc_src_type = 2;
