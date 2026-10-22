@@ -1015,10 +1015,9 @@ static ssize_t store_motor_voltage(struct class *class, struct class_attribute *
 {
 	struct trimui_motor_state_view *state;
 
-	/* Keep one rooted address live across the parser call, as in stock. */
-	asm("adrp %0, trimui_motor_state\n\t"
-		     "add %0, %0, :lo12:trimui_motor_state"
-		     : "=&r"(state));
+	/* The state has a fixed link-time address. GCC may rematerialize that
+	 * address after the parser call; both uses still name the same object. */
+	state = &trimui_motor_state;
 	kstrtoint(buffer, 0, &state->voltage);
 	/* Stock passes NULL/error pointers through. TODO: check regulator_get in a separate fix. */
 	regulator_set_voltage(state->regulator, state->voltage,
