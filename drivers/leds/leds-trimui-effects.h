@@ -3,6 +3,9 @@
 #ifdef TRIMUI_LED_HOST_TEST
 #include <stdint.h>
 typedef uint32_t u32;
+#define READ_ONCE(value) (*(volatile const __typeof__(value) *)&(value))
+#define WRITE_ONCE(value, assigned) \
+	(*(volatile __typeof__(value) *)&(value) = (assigned))
 #else
 #include <linux/types.h>
 #endif
@@ -71,7 +74,10 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 			effect->duration = 8000;
 		if (type == 7 && effect->duration < 500)
 			effect->duration = 500;
-		if (type == 6 && effect->duration < 350)
+		/* Stock rereads duration for blink2 after the earlier clamp; blink3
+		 * uses its prior value. Keep the asymmetric observation order.
+		 */
+		if (type == 6 && READ_ONCE(effect->duration) < 350)
 			effect->duration = 350;
 		n = effect->duration / 16;
 		for (i = 0; i < n; i++)
@@ -83,9 +89,12 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 	} else {
 		return;
 	}
-	effect->length = n;
-	effect->index = 0;
-	effect->active_cycles = 0;
+	/* Stock publishes length before resetting the cursor and cycle count.
+	 * Keep those distinct writes observable in that order.
+	 */
+	WRITE_ONCE(effect->length, n);
+	WRITE_ONCE(effect->index, 0);
+	WRITE_ONCE(effect->active_cycles, 0);
 }
 
 static u32 step_one_frame(struct trimui_led_effect *effect)
