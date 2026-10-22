@@ -11581,14 +11581,16 @@ int get_current_used_block(struct current_used_zone *zone,
 		return 1;
 	}
 	zone->current = candidate;
-	nand_print_dbg(nftl_ro_lc_252, candidate->number,
+	/* OEM reloads the shared current pointer after publishing it. A
+	 * concurrent replacement can change the following reads and callback. */
+	nand_print_dbg(nftl_ro_lc_252, zone->current->number,
 		       zone->current_used);
 	recover_logic_page_mapping((struct logic_page_map_zone *)zone,
-			   (struct invalid_page_node *)candidate,
+			   (struct invalid_page_node *)zone->current,
 			   zone->current_map, zone->current_used);
-	if (zone->current_used < candidate->page)
+	if (zone->current_used < zone->current->page)
 		nand_print(nftl_ro_lc_253,
-			   zone->current_used, candidate->page);
+			   zone->current_used, zone->current->page);
 	if (!(zone->flags & 1))
 		return 0;
 	for (;;) {
