@@ -1258,38 +1258,43 @@ struct sector_cache_zone {
 };
 extern int nand_sector_cache_read(void *zone, unsigned int sector, void *data);
 extern int nand_sector_cache_write(void *zone, unsigned int sector, void *data);
+/* OEM's declaration order and no-stack-protector layout put the four loop
+ * locals in fixed slots even though no canary appears in either wrapper. */
+__attribute__((optimize("-fno-stack-protector")))
 int __nand_sector_read(void *zone, unsigned int sector, unsigned int count,
 		       void *data)
 {
-	int result = 0;
-	unsigned int current = sector;
-	/* A byte cursor preserves OEM's 512-byte step and direct x2 call load. */
-	unsigned char *pointer = data;
-	unsigned int index = 0;
+	int result;
+	unsigned int index, current;
+	unsigned char *pointer;
 
-	while (index < count) {
+	result = 0;
+	current = sector;
+	pointer = data;
+	for (index = 0; index < count; index++) {
 		/* OEM ORs every result and never stops on an error. */
 		result |= nand_sector_cache_read(zone, current, pointer);
 		current++;
 		pointer += 512;
-		index++;
 	}
 	return result;
 }
+__attribute__((optimize("-fno-stack-protector")))
 int __nand_sector_write(void *zone, unsigned int sector, unsigned int count,
 			void *data)
 {
-	int result = 0;
-	unsigned int current = sector;
-	/* Match the read wrapper's OEM byte cursor and call convention. */
-	unsigned char *pointer = data;
-	unsigned int index = 0;
+	int result;
+	unsigned int index, current;
+	unsigned char *pointer;
 
-	while (index < count) {
+	result = 0;
+	current = sector;
+	pointer = data;
+	for (index = 0; index < count; index++) {
+		/* OEM also discards intermediate write errors after OR-ing. */
 		result |= nand_sector_cache_write(zone, current, pointer);
 		current++;
 		pointer += 512;
-		index++;
 	}
 	return result;
 }
