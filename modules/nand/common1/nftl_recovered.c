@@ -1578,37 +1578,43 @@ struct smart_print_payload {
 	unsigned int read_reclaim_page;
 	unsigned int wl_gc_times;
 };
-void print_smart(struct smart_info_zone *zone)
+void print_smart(struct smart_info_zone *input)
 {
-	struct smart_print_payload *smart;
+	/* OEM keeps the payload at FP+0x20 and the zone at FP+0x28. */
+	struct {
+		struct smart_print_payload *smart;
+		struct smart_info_zone *zone;
+	} frame;
 
-	if (!zone->print_enabled)
+	frame.zone = input;
+
+	if (!frame.zone->print_enabled)
 		return;
-	smart = (struct smart_print_payload *)zone->smart;
-	nand_print_dbg(nftl_ro_lc_176, smart->version);
-	nand_print_dbg(nftl_ro_lc_177, smart->recv_read_sectors);
-	nand_print_dbg(nftl_ro_lc_178, smart->recv_write_sectors);
-	nand_print_dbg(nftl_ro_lc_179, smart->real_read_pages);
-	nand_print_dbg(nftl_ro_lc_180, smart->real_write_pages);
-	nand_print_dbg(nftl_ro_lc_181, smart->recv_discard_sectors);
-	nand_print_dbg(nftl_ro_lc_182, smart->real_discard_sectors);
-	nand_print_dbg(nftl_ro_lc_183, smart->read_claim_pages);
-	nand_print_dbg(nftl_ro_lc_184, smart->gc_times);
-	nand_print_dbg(nftl_ro_lc_185, smart->gc_pages);
-	nand_print_dbg(nftl_ro_lc_186, smart->wl_times);
-	nand_print_dbg(nftl_ro_lc_187, smart->wl_gc_times);
-	nand_print_dbg(nftl_ro_lc_188, smart->read_errors);
-	nand_print_dbg(nftl_ro_lc_189, smart->write_errors);
-	nand_print_dbg(nftl_ro_lc_190, smart->normal_power_cycles);
-	nand_print_dbg(nftl_ro_lc_191, smart->unusual_power_cycles);
-	nand_print_dbg(nftl_ro_lc_192, smart->max_erase_times);
-	nand_print_dbg(nftl_ro_lc_193, smart->min_erase_times);
-	nand_print_dbg(nftl_ro_lc_194, smart->max_used_count);
-	nand_print_dbg(nftl_ro_lc_195, smart->min_used_count);
-	nand_print_dbg(nftl_ro_lc_196, smart->read_reclaim_utc);
-	nand_print_dbg(nftl_ro_lc_197, smart->cross_talk_times);
-	nand_print_dbg(nftl_ro_lc_198, smart->read_reclaim_zone);
-	nand_print_dbg(nftl_ro_lc_199, smart->read_reclaim_page);
+	frame.smart = (struct smart_print_payload *)frame.zone->smart;
+	nand_print_dbg(nftl_ro_lc_176, frame.smart->version);
+	nand_print_dbg(nftl_ro_lc_177, frame.smart->recv_read_sectors);
+	nand_print_dbg(nftl_ro_lc_178, frame.smart->recv_write_sectors);
+	nand_print_dbg(nftl_ro_lc_179, frame.smart->real_read_pages);
+	nand_print_dbg(nftl_ro_lc_180, frame.smart->real_write_pages);
+	nand_print_dbg(nftl_ro_lc_181, frame.smart->recv_discard_sectors);
+	nand_print_dbg(nftl_ro_lc_182, frame.smart->real_discard_sectors);
+	nand_print_dbg(nftl_ro_lc_183, frame.smart->read_claim_pages);
+	nand_print_dbg(nftl_ro_lc_184, frame.smart->gc_times);
+	nand_print_dbg(nftl_ro_lc_185, frame.smart->gc_pages);
+	nand_print_dbg(nftl_ro_lc_186, frame.smart->wl_times);
+	nand_print_dbg(nftl_ro_lc_187, frame.smart->wl_gc_times);
+	nand_print_dbg(nftl_ro_lc_188, frame.smart->read_errors);
+	nand_print_dbg(nftl_ro_lc_189, frame.smart->write_errors);
+	nand_print_dbg(nftl_ro_lc_190, frame.smart->normal_power_cycles);
+	nand_print_dbg(nftl_ro_lc_191, frame.smart->unusual_power_cycles);
+	nand_print_dbg(nftl_ro_lc_192, frame.smart->max_erase_times);
+	nand_print_dbg(nftl_ro_lc_193, frame.smart->min_erase_times);
+	nand_print_dbg(nftl_ro_lc_194, frame.smart->max_used_count);
+	nand_print_dbg(nftl_ro_lc_195, frame.smart->min_used_count);
+	nand_print_dbg(nftl_ro_lc_196, frame.smart->read_reclaim_utc);
+	nand_print_dbg(nftl_ro_lc_197, frame.smart->cross_talk_times);
+	nand_print_dbg(nftl_ro_lc_198, frame.smart->read_reclaim_zone);
+	nand_print_dbg(nftl_ro_lc_199, frame.smart->read_reclaim_page);
 }
 struct smart_info_block {
 	unsigned short number;
