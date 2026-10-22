@@ -412,14 +412,18 @@ static ssize_t store_frame(struct class *class, struct class_attribute *attr, co
 
 static ssize_t show_frame_hex(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	int i, count = 0;
+	int i = 0, count = 0;
 	char *position = buffer;
+	u32 *pixels = (u32 *)trimui_transfer_state.rgb;
 	/* Stock advances by the cumulative length, producing sparse output.
 	 * TODO: advance by the last write and bound output in a separate fix. */
-	for (i = 0; i < (int)trimui_led_count; i++) {
+	while (i < (int)trimui_led_count) {
 		count += 7;
-		sprintf(position, "%06X ", trimui_frame[i] & 0xffffff);
+		sprintf(position, "%06X ", pixels[i] & 0xffffff);
 		position += count;
+		/* Keep the cumulative count live across the next LED-count read. */
+		asm volatile("" : "+r"(count));
+		i++;
 	}
 	strcpy(position, "\n");
 	return count + 1;
@@ -816,14 +820,18 @@ static ssize_t store_anim_frames(struct class *class, struct class_attribute *at
 
 static ssize_t show_anim_frames_hex(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	int i, count = 0;
+	int i = 0, count = 0;
 	char *position = buffer;
+	u32 *pixels = trimui_anim_frames;
 	/* Stock advances by the cumulative length, producing sparse output.
 	 * TODO: advance by the last write and bound output in a separate fix. */
-	for (i = 0; i < (int)trimui_led_count; i++) {
+	while (i < (int)trimui_led_count) {
 		count += 7;
-		sprintf(position, "%06X ", trimui_anim_frames[i] & 0xffffff);
+		sprintf(position, "%06X ", pixels[i] & 0xffffff);
 		position += count;
+		/* Keep the cumulative count live across the next LED-count read. */
+		asm volatile("" : "+r"(count));
+		i++;
 	}
 	strcpy(position, "\n");
 	return count + 1;
