@@ -6095,21 +6095,33 @@ int get_nftl_read_claim_page_no(struct read_claim_node *head)
 	return last->zone->settings->page;
 }
 
+/* Private stack slots observed at FP+40/52/56 in the stock read-claim
+ * search. The gap has no persistent layout or ABI significance. */
+struct read_claim_scan {
+	struct read_claim_node *last;
+	unsigned char gap[4];
+	int flag;
+	struct read_claim_node *node;
+};
 struct read_claim_node *get_nftl_need_read_claim(struct read_claim_node *head)
 {
-	struct read_claim_node *last =
-		(struct read_claim_node *)get_last_nftl((struct nftl_list_node *)head);
-	int flag = last->zone->settings->flag;
-	struct read_claim_node *node = head;
+	struct read_claim_scan local;
 
-	/* OEM compares the one-byte zone marker to the last node's 32-bit
-	 * setting and trusts every pointer in the initial lookup. */
-	while (node) {
-		if (node->zone->need_claim == flag)
+	local.node = head;
+	local.flag = 0;
+	local.last = (struct read_claim_node *)
+		get_last_nftl((struct nftl_list_node *)head);
+	local.flag = local.last->zone->settings->flag;
+	/* OEM redundantly resets the cursor after the final-node lookup. It
+	 * compares an unsigned one-byte marker to a 32-bit signed setting and
+	 * does not validate any pointer in the initial lookup. */
+	local.node = head;
+	while (local.node) {
+		if (local.node->zone->need_claim == local.flag)
 			break;
-		node = node->next;
+		local.node = local.node->next;
 	}
-	return node;
+	return local.node;
 }
 
 struct special_exit_chip {
