@@ -3829,20 +3829,21 @@ extern int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *chip);
 int hynix20nm_getotpparam(struct otp_chip *chip, unsigned char *value)
 {
 	unsigned int attempt = 0;
-	unsigned int row;
 	unsigned int column;
+	unsigned int row;
 	int result;
 
 	/* The OEM makes five attempts and reports the last vendor error.
-	 * Its debug message prints the zero-based attempt number. */
-	do {
+	 * Its debug message prints the zero-based attempt number. Stock tests
+	 * the loop bound before entering the first attempt. */
+	while (attempt <= 4) {
 		nand_print_dbg("_vender_get_param_otp_hynix time %d!\n",
 			       attempt);
 		result = hynix20nm_vender_get_param_otp_hynix(chip);
 		if (result == 0)
 			break;
 		attempt++;
-	} while (attempt <= 4);
+	}
 	if (result != 0) {
 		nand_print("_vender_get_param_otp_hynix error!\n");
 		return result;
