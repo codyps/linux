@@ -11560,33 +11560,9 @@ int get_current_used_block(struct current_used_zone *zone,
 
 	if (zone->current)
 		return 0;
-	if (!candidate) {
-		nand_print_dbg(nftl_ro_lc_260);
-		if (!zone->free_head) {
-			nand_print(nftl_ro_lc_261);
-			print_free_list((struct free_print_zone *)zone);
-			print_block_invalid_list((struct invalid_print_zone *)zone);
-			return 1;
-		}
-		zone->current = (struct new_write_block *)
-			out_phy_block_from_free_list((struct free_block_zone *)zone);
-		if (!zone->current)
-			return 1;
-		zone->current_used = 0;
-		zone->current->tag = previous_tag + 1;
-		if (zone->flags & 1) {
-			zone->assist = (struct new_write_block *)
-				out_phy_block_from_free_list(
-					(struct free_block_zone *)zone);
-			if (!zone->assist)
-				return 1;
-			zone->assist_used = 0;
-			zone->assist->tag = zone->current->tag + 1;
-		} else {
-			zone->assist = 0;
-		}
-		return 0;
-	}
+	/* Stock emits the existing-block recovery before the no-candidate path. */
+	if (!candidate)
+		goto allocate_new;
 	for (;;) {
 		zone->current_used = (unsigned short)
 			recover_phy_page_mapping(
@@ -11599,10 +11575,10 @@ int get_current_used_block(struct current_used_zone *zone,
 			   candidate->number);
 		candidate = current_block_ecc_error(
 			(struct ecc_rebuild_zone *)zone, candidate);
-		if (!candidate) {
-			nand_print(nftl_ro_lc_251);
-			return 1;
-		}
+		if (candidate)
+			continue;
+		nand_print(nftl_ro_lc_251);
+		return 1;
 	}
 	zone->current = candidate;
 	nand_print_dbg(nftl_ro_lc_252, candidate->number,
@@ -11683,6 +11659,31 @@ int get_current_used_block(struct current_used_zone *zone,
 			    (unsigned short)(zone->assist->erase_count + 1));
 		zone->assist = 0;
 	}
+allocate_new:
+	nand_print_dbg(nftl_ro_lc_260);
+	if (!zone->free_head) {
+		nand_print(nftl_ro_lc_261);
+		print_free_list((struct free_print_zone *)zone);
+		print_block_invalid_list((struct invalid_print_zone *)zone);
+		return 1;
+	}
+	zone->current = (struct new_write_block *)
+		out_phy_block_from_free_list((struct free_block_zone *)zone);
+	if (!zone->current)
+		return 1;
+	zone->current_used = 0;
+	zone->current->tag = previous_tag + 1;
+	if (zone->flags & 1) {
+		zone->assist = (struct new_write_block *)
+			out_phy_block_from_free_list((struct free_block_zone *)zone);
+		if (!zone->assist)
+			return 1;
+		zone->assist_used = 0;
+		zone->assist->tag = zone->current->tag + 1;
+	} else {
+		zone->assist = 0;
+	}
+	return 0;
 }
 
 __attribute__((optimize("-fno-stack-protector")))
