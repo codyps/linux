@@ -8466,6 +8466,8 @@ HYNIX_READ_PAGE_END(hynix26nm_read_page_end, hynix26nm_read_retry_cycle,
 extern int set_one_cmd(struct command_chip *chip, unsigned int command,
 			unsigned int argument);
 extern unsigned char sandisk_A19_read_retry_reg_adr_1y;
+/* Keep the OEM private result and parameter slots beside the aligned buffer. */
+__attribute__((optimize("-fno-stack-protector")))
 int sandisk_A19_exit_readretry(struct samsung_set_chip *chip)
 {
 	int result = 0;
