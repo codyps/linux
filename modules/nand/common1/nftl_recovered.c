@@ -11148,17 +11148,17 @@ _Static_assert(__builtin_offsetof(struct last_page_zone, erase) == 3496,
 /* Stock does not check any allocation, even after logging a NULL result. */
 __attribute__((optimize("-fno-stack-protector")))
 void *block_last_page_ecc_error(struct last_page_zone *zone,
-				void *raw_block)
+				struct last_page_block *block)
 {
-	struct last_page_block *block = raw_block;
 	struct physic_op_param op;
 	unsigned char oob[16];
 	void **saved;
-	unsigned int page;
-	unsigned int good = 0;
+	int page;
+	int good;
 	int status;
 
 	nand_print("[NE]do block_last_page_ecc_error!!\n");
+	good = 0;
 	saved = nftl_malloc(8192);
 	if (!saved)
 		nand_print("[NE]%s:malloc fail 1!\n", __func__);
