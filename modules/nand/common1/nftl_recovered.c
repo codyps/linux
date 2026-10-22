@@ -1608,6 +1608,11 @@ __attribute__((optimize("-fno-stack-protector")))
 int init_smart_info(struct smart_info_zone *zone, struct smart_info_block *block)
 {
 	struct physic_op_param op;
+	/* OEM may inspect these uninitialized bytes when read() leaves OOB
+	 * untouched. TODO: recover stock's stack placement: with GCC 7.4.1 this
+	 * C puts oob at incoming SP-0x38, while stock uses SP-0x18. A reader
+	 * returning 0 or 10 without filling OOB can therefore change whether
+	 * the SMART record is imported (nftl-smart-stack-1013 evidence). */
 	unsigned char oob[16];
 	struct smart_info_payload *stored;
 	int read_result;
