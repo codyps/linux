@@ -6474,7 +6474,8 @@ struct count_list *del_block_count_list(struct count_zone *zone)
 }
 
 
-extern int garbage_collect(void *zone);
+struct garbage_collect_zone;
+extern int garbage_collect(struct garbage_collect_zone *zone);
 int _nftl_nand_write_logic_page(void *zone, unsigned int page, void *data)
 {
 	/* OEM collapses every nonzero error into one, discarding its code. */
@@ -10372,9 +10373,8 @@ _Static_assert(__builtin_offsetof(struct garbage_collect_zone, request) == 688,
 	       "garbage request offset");
 _Static_assert(__builtin_offsetof(struct garbage_collect_zone, state) == 3448,
 	       "garbage state offset");
-int garbage_collect(void *input)
+int garbage_collect(struct garbage_collect_zone *zone)
 {
-	struct garbage_collect_zone *zone = input;
 	unsigned short request;
 	unsigned short invalid_pages;
 	unsigned short pages_per_block;
