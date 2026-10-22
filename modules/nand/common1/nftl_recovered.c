@@ -6487,7 +6487,9 @@ int nftl_initialize(struct init_nftl_owner *owner, int number)
 	path[0] = '/';
 	path[1] = 0;
 	compatible = nand_fdt_get_prop_string_by_path(0, path, com);
-	if (!compatible || nand_memcmp(compatible, vendor, 9))
+	if (!compatible)
+		return -1;
+	if (nand_memcmp(compatible, vendor, 9))
 		return -1;
 	nftl_version();
 	nftl_get_nand_phyinfo(phyinfo);
