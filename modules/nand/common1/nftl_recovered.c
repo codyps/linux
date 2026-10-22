@@ -2631,8 +2631,18 @@ struct exit_zone {
 	unsigned char before_c[0x258 - 0x220];
 	void *c;
 };
+struct exit_zone_slots {
+	unsigned char before_slots[8];
+	void *volatile slots[33];
+};
+_Static_assert(__builtin_offsetof(struct exit_zone_slots, slots) == 8,
+	       "logic-page slot base");
 extern void nftl_free(void *ptr);
-int free_logic_page_map(struct exit_zone *zone)
+/* Stock reloads the caller's zone pointer before each slot address. The
+ * volatile pointer and slots preserve those reads, including a possible
+ * concurrent change between the non-null probe and the free argument.
+ * The OEM also leaves every freed slot dangling. */
+int free_logic_page_map(struct exit_zone *volatile zone)
 {
 	unsigned int index;
 
@@ -2640,11 +2650,8 @@ int free_logic_page_map(struct exit_zone *zone)
 		/* OEM probes each pointer and then reads it again for the free.
 		 * The zone layout is inferred from slot offsets 72..264.
 		 * It leaves freed pointers dangling and never checks zone. */
-		void *const volatile *slot = (void *const volatile *)
-			((char *)zone + 72 + index * 8);
-
-		if (*slot)
-			nftl_free(*slot);
+		if (((struct exit_zone_slots *)zone)->slots[(unsigned long)index + 8])
+			nftl_free(((struct exit_zone_slots *)zone)->slots[(unsigned long)index + 8]);
 	}
 	return 0;
 }
