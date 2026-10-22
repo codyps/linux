@@ -787,17 +787,16 @@ unsigned int nftl_get_boot_cnt(struct nftl_boot_owner_view *input)
 
 /* C candidates for bounded OEM NFTL helpers; offsets are evidence, not types. */
 
-unsigned int get_spare_data(void *oob, unsigned int offset,
-			    unsigned int bytes)
+unsigned int get_spare_data(void *oob, unsigned char offset,
+			    unsigned char bytes)
 {
-	unsigned char offset8 = offset;
-	unsigned char bytes8 = bytes;
+	/* OEM stores both arguments as bytes on entry, discarding high bits. */
 	unsigned int index = 0;
 	unsigned int value = 0;
 
-	while (bytes8 > index) {
+	while (bytes > index) {
 		value <<= 8;
-		value |= ((unsigned char *)oob)[(unsigned int)offset8 + index];
+		value |= ((unsigned char *)oob)[(unsigned int)offset + index];
 		index++;
 	}
 	/* OEM keeps only the final four bytes for lengths above four. */
