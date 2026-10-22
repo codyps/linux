@@ -1392,6 +1392,8 @@ static int sunxi_set_led_brightness(struct led_classdev *led_cdev,
 		b = value;
 		break;
 	}
+	/* OEM has no default: an invalid type uses an uninitialized group.
+	 * Keep the fault-prone path until a separate behavior change is intended. */
 
 	/* Stock retransmits even an unchanged brightness value. */
 
@@ -1413,7 +1415,9 @@ static int sunxi_set_led_brightness(struct led_classdev *led_cdev,
 
 	sunxi_ledc_trans_data(led);
 	if (debug_mask & DEBUG_INFO2) {
-		dprintk(DEBUG_INFO2, "dump reg:\n");
+		/* Preserve the OEM diagnostic line after source reconstruction moved
+		 * this call.  The line number is visible when debug bit 4 is set. */
+		pr_warn("%s()%d - dump reg:\n", __func__, 1437);
 		led_dump_reg(led, 0, 0x30);
 	}
 
