@@ -9276,6 +9276,9 @@ int toshiba_set_readretry(struct samsung_set_chip *chip)
 	toshiba_read_retry_clock_recover((struct clock_chip *)chip);
 	return result;
 }
+/* OEM keeps values/addresses/count/result at FP+0x38/+0x30/+0x2c/+0x28.
+ * GCC's stack-protector pass reverses these private slots without a canary. */
+__attribute__((optimize("-fno-stack-protector")))
 int toshiba_exit_readretry(struct samsung_set_chip *chip)
 {
 	unsigned char *values;
