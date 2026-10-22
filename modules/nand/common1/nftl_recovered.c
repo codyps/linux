@@ -3300,6 +3300,10 @@ int nand_cache_read(struct nand_cache_read_zone *zone, int page,
 	return result;
 }
 
+/* GCC's stack-protector pass reorders these two locals even though this
+ * function has no canary. Keep the OEM's cache pointer at FP+0x20 and signed
+ * index at FP+0x2c; nftl_free callbacks can observe the caller's stack. */
+__attribute__((optimize("-fno-stack-protector")))
 int nftl_cache_exit(void *zone)
 {
 	unsigned char *cache = (unsigned char *)zone + 1072;
