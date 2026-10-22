@@ -11662,7 +11662,9 @@ int get_current_used_block(struct current_used_zone *zone,
 			zone->assist = 0;
 			continue;
 		}
-		if (zone->assist_used == zone->current_used)
+		/* OEM makes a second comparison using >=. If current_used falls
+		 * between the two reads, it returns without erasing assist. */
+		if (zone->assist_used >= zone->current_used)
 			return 0;
 		nand_print(nftl_ro_lc_259);
 		erase_block((struct erase_block_zone *)zone,
