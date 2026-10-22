@@ -2537,18 +2537,20 @@ int free_nrc(struct nrc_buffers *buffers)
 	return 0;
 }
 
-void set_spare_data(unsigned char *oob, int value, int offset, int count)
+void set_spare_data(unsigned char *oob, int value, unsigned char offset,
+		    unsigned char count)
 {
-	unsigned char offset8 = offset;
-	unsigned char count8 = count;
 	unsigned int index = 0;
 	unsigned int shift;
 
-	while (index < count8) {
-		shift = (count8 - index - 1) * 8;
+	/* OEM stores offset/count as bytes at entry, dropping higher bits. */
+	while (count > index) {
+		shift = count - index;
+		shift--;
+		shift <<= 3;
 		/* AArch64 masks variable 32-bit shift counts to five bits.
 		 * Preserve that OEM wraparound for counts above four. */
-		oob[(unsigned int)offset8 + index] =
+		oob[(unsigned int)offset + index] =
 			(unsigned char)((unsigned int)value >> (shift & 31));
 		index++;
 	}
