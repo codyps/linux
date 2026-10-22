@@ -6969,7 +6969,9 @@ int _nftl_nand_copy_page(struct copy_page_zone *zone,
 	result = ((unsigned int)write_result << 8) | read_result;
 	return result;
 }
-extern int _nftl_nand_read_logic_page(void *, unsigned int, void *);
+struct logic_read_zone;
+extern int _nftl_nand_read_logic_page(struct logic_read_zone *,
+				      unsigned int, void *);
 void nftl_ops_init(struct nftl_ops *ops)
 {
 	/* OEM never clears other slots or checks the pointer. */
@@ -9568,7 +9570,8 @@ struct logic_page_print_entry {
 /* Recovery writes the low 12 bits as an OEM bitfield assignment. */
 struct logic_page_recover_entry {
 	unsigned short page : 12;
-	unsigned short preserve : 4;
+	unsigned short read_flag : 1;
+	unsigned short preserve : 3;
 	unsigned short marker;
 };
 int recover_logic_page_mapping(struct logic_page_map_zone *zone,
@@ -9637,14 +9640,16 @@ struct logic_read_zone {
 };
 /* Stock has a stack OOB array but no canary in this body. */
 __attribute__((optimize("-fno-stack-protector")))
-int _nftl_nand_read_logic_page(void *owner, unsigned int page, void *data)
+int _nftl_nand_read_logic_page(struct logic_read_zone *zone,
+			       unsigned int page, void *data)
 {
-	struct logic_read_zone *zone = owner;
-	struct logic_page_print_entry *entry =
-		(struct logic_page_print_entry *)get_logic_page_map(
+	struct logic_page_recover_entry *entry =
+		(struct logic_page_recover_entry *)get_logic_page_map(
 			(struct logic_page_map_zone *)zone, page);
-	struct physic_op_param op;
+	/* OEM keeps op at FP+0x30 and OOB at FP+0x48. The read callback can
+	 * overrun this 16-byte OOB buffer into later private stack slots. */
 	unsigned char oob[16];
+	struct physic_op_param op;
 	int result;
 
 	if (!entry) {
@@ -9657,10 +9662,8 @@ int _nftl_nand_read_logic_page(void *owner, unsigned int page, void *data)
 	}
 	/* OEM edits the map flag before reading and leaves it changed even if
 	 * the read fails. Only bit four is replaced. */
-	((unsigned char *)entry)[1] =
-		(((unsigned char *)entry)[1] & ~0x10) |
-		((zone->read_flag & 1) << 4);
-	set_physic_op_par(&op, entry->marker, entry->code & 0xfff,
+	entry->read_flag = ((unsigned char)zone->read_flag) & 1;
+	set_physic_op_par(&op, entry->marker, entry->page,
 			zone->geometry->page_size, data, oob);
 	result = zone->read(zone, &op);
 	if (result == -2) {
