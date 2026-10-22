@@ -841,10 +841,17 @@ static ssize_t show_frames_cycles(struct class *class, struct class_attribute *a
  * Only the explicitly rooted control/counter fields are accessed. */
 struct trimui_frame_control_view { u8 unused[0x14]; int enable,cycles,fps,len; };
 struct trimui_frame_counter_view { u8 unused[0x9d0]; int index,left; };
+/* Voltage and regulator share the same stock BSS root as the frame counters. */
+struct trimui_motor_state_view {
+ u8 unused[0x9d8]; int voltage;
+ struct regulator *regulator;
+};
 extern struct trimui_frame_control_view trimui_frame_controls;
 extern struct trimui_frame_counter_view trimui_frame_counters;
+extern struct trimui_motor_state_view trimui_motor_state;
 __asm__(".local trimui_frame_controls\n.type trimui_frame_controls,%object\n.set trimui_frame_controls,trimui_led_state-8\n.size trimui_frame_controls,36\n"
         ".local trimui_frame_counters\n.type trimui_frame_counters,%object\n.set trimui_frame_counters,trimui_led_state+0x43f8\n.size trimui_frame_counters,0x9d8\n");
+__asm__(".local trimui_motor_state\n.type trimui_motor_state,%object\n.set trimui_motor_state,trimui_led_state+0x43f8\n.size trimui_motor_state,0x9e8\n");
 static ssize_t store_frames_cycles(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	struct trimui_frame_control_view *control;
@@ -937,9 +944,16 @@ static ssize_t show_motor_voltage(struct class *class, struct class_attribute *a
 
 static ssize_t store_motor_voltage(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_motor_voltage);
+	struct trimui_motor_state_view *state;
+
+	/* Keep one rooted address live across the parser call, as in stock. */
+	asm("adrp %0, trimui_motor_state\n\t"
+		     "add %0, %0, :lo12:trimui_motor_state"
+		     : "=&r"(state));
+	kstrtoint(buffer, 0, &state->voltage);
 	/* Stock passes NULL/error pointers through. TODO: check regulator_get in a separate fix. */
-	regulator_set_voltage(trimui_motor_regulator, trimui_motor_voltage, trimui_motor_voltage + 100000);
+	regulator_set_voltage(state->regulator, state->voltage,
+		state->voltage + 100000);
 	return count;
 }
 
