@@ -540,7 +540,9 @@ struct nand_rw_zone {
 	unsigned char before_inner[3440 - 660];
 	struct nand_rw_inner *inner;
 };
-extern int nand_op(int kind, void *zone, unsigned int sector,
+struct nand_op_zone;
+extern int nand_op(unsigned char kind, struct nand_op_zone *zone,
+		   unsigned int sector,
 		   unsigned int count, void *data);
 int __nand_read(void *zone, unsigned int sector, unsigned int count,
 		void *data)
@@ -10860,19 +10862,21 @@ struct nand_op_zone {
 	unsigned int capacity;
 };
 extern int nand_cache_write(void *, int, unsigned short, void *);
-int nand_op(int kind, void *input, unsigned int sector,
-	    unsigned int count, void *data)
+int nand_op(unsigned char kind, struct nand_op_zone *zone,
+	    unsigned int sector, unsigned int count, void *data)
 {
-	struct nand_op_zone *zone = input;
-	int (*operation)(void *, int, unsigned short, void *);
-	unsigned int page;
 	unsigned short offset;
 	unsigned short take;
 	unsigned short previous;
 	unsigned short packed;
-	unsigned int factor;
+	unsigned char *cursor;
+	unsigned int first_page;
+	unsigned int page;
 	int result;
+	unsigned int (*operation)(void *, unsigned int, unsigned short,
+				  unsigned char *);
 
+	result = 0;
 	if (!count)
 		return 0;
 	/* OEM's capacity addition wraps before comparison. */
@@ -10880,36 +10884,46 @@ int nand_op(int kind, void *input, unsigned int sector,
 		nand_print(nftl_ro_lc_418);
 		return 1;
 	}
-	/* OEM truncates the operation selector to one byte. */
-	operation = (unsigned char)kind == 0 ? nand_cache_read : nand_cache_write;
-	factor = zone->geometry->sectors_per_page;
+	/* The operation selector is an eight-bit OEM argument. */
+	/* The recovered cache helpers use int parameters; their AArch64 ABI is
+	 * the same as the unsigned callback type used by this stock caller. */
+	if (kind == 0)
+		operation = (typeof(operation))nand_cache_read;
+	else
+		operation = (typeof(operation))nand_cache_write;
+	/* OEM reloads geometry for each quotient, remainder, and split. A
+	 * concurrent change can make the chunks inconsistent; retain it. */
 	/* OEM performs AArch64 unsigned division even for a zero geometry. */
-	page = sector / factor;
-	offset = sector % factor;
-	take = factor - offset;
-	if (take >= count) {
+	page = sector / zone->geometry->sectors_per_page;
+	first_page = page;
+	offset = sector % zone->geometry->sectors_per_page;
+	take = zone->geometry->sectors_per_page - offset;
+	if (count <= take) {
 		take = count;
 		count = 0;
 	} else {
 		count -= take;
 	}
+	cursor = data;
 	previous = take;
 	packed = (offset << 8) | take;
-	result = operation(zone, page, packed, data);
+	result = operation(zone, first_page, packed, cursor);
 	if (!count)
 		return result;
-	while (count > factor) {
-		take = factor;
-		page++;
-		data = (unsigned char *)data + ((unsigned int)previous << 9);
-		previous = take;
-		count -= factor;
-		result |= operation(zone, page, take, data);
+	while (count > zone->geometry->sectors_per_page) {
+		take = zone->geometry->sectors_per_page;
+		first_page++;
+		cursor += previous << 9;
+		packed = take;
+		count -= zone->geometry->sectors_per_page;
+		previous = zone->geometry->sectors_per_page;
+		result |= operation(zone, first_page, packed, cursor);
 	}
 	take = count;
-	page++;
-	data = (unsigned char *)data + ((unsigned int)previous << 9);
-	result |= operation(zone, page, take, data);
+	first_page++;
+	cursor += previous << 9;
+	packed = take;
+	result |= operation(zone, first_page, packed, cursor);
 	return result;
 }
 
