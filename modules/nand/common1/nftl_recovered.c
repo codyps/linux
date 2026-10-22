@@ -10846,6 +10846,9 @@ struct hynix20nm_page_chip {
 	unsigned char before_controller[272 - 188];
 	void *controller;
 };
+/* GCC's stack-protector pass reorders private retry-state slots without
+ * emitting a canary. Keep the OEM frame while retaining its retry quirks. */
+__attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_read_page_end(struct samsung_read_request *request)
 {
 	int retry_count = 0;
