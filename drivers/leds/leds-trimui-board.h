@@ -853,14 +853,19 @@ static ssize_t store_anim_frames_hex(struct class *class, struct class_attribute
 {
 	int i, colors = (int)(count / 7);
 	int offset = trimui_frames_len * 14;
+	u32 *pixels;
+	/* Stock materializes the animation array base before indexed stores. */
+	asm("adrp %0, trimui_led_state+0x4ff0\n\t"
+	    "add %0, %0, :lo12:trimui_led_state+0x4ff0"
+	    : "=&r"(pixels));
 	if (colors > 4200)
 		colors = 4200;
 	/* Stock ignores append capacity and clears the start of the buffer,
 	 * even when sscanf writes at a later append offset. TODO: validate the
 	 * append and clear its actual destination in a separate fix. */
 	for (i = 0; i < colors; i++) {
-		trimui_anim_frames[i] = 0;
-		sscanf(buffer + 7 * i, "%X", &trimui_anim_frames[offset + i]);
+		pixels[i] = 0;
+		sscanf(buffer + 7 * i, "%X", &pixels[offset + i]);
 	}
 	trimui_frames_len += colors / 14;
 	printk("\n anim frames:%d, pixels:%d\n", trimui_frames_len, colors);
