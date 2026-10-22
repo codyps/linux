@@ -416,6 +416,7 @@ static ssize_t show_frame_hex(struct class *class, struct class_attribute *attr,
 	char *position = buffer;
 	u32 *pixels = (u32 *)trimui_transfer_state.rgb;
 	/* Stock advances by the cumulative length, producing sparse output.
+	 * At 34 LEDs the newline lands beyond a 4 KiB sysfs page.
 	 * TODO: advance by the last write and bound output in a separate fix. */
 	while (i < (int)trimui_led_count) {
 		count += 7;
@@ -824,6 +825,7 @@ static ssize_t show_anim_frames_hex(struct class *class, struct class_attribute 
 	char *position = buffer;
 	u32 *pixels = trimui_anim_frames;
 	/* Stock advances by the cumulative length, producing sparse output.
+	 * At 34 LEDs the newline lands beyond a 4 KiB sysfs page.
 	 * TODO: advance by the last write and bound output in a separate fix. */
 	while (i < (int)trimui_led_count) {
 		count += 7;
