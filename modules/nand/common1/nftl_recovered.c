@@ -2053,15 +2053,18 @@ struct cross_talk_zone {
 	unsigned char before_read[16];
 	int (*read)(struct cross_talk_zone *, struct physic_op_param *);
 };
-/* OEM's page scan has an OOB stack array but no canary prologue. */
+/* OEM's page scan has an OOB stack array but no canary prologue. The raw
+ * callback receives this pointer with a geometry-derived spare length; stock
+ * does not check that length against the 16-byte local array. */
 __attribute__((optimize("-fno-stack-protector")))
 int check_cross_talk(struct cross_talk_zone *zone,
 		     struct physical_block *block)
 {
 	void *data = zone->data;
 	unsigned int index = 0;
+	/* The stock frame puts this array at x29+0x40, after the page op. */
+	unsigned char oob[16] __attribute__((aligned(8)));
 	struct physic_op_param op;
-	unsigned char oob[16];
 	unsigned char *oobptr;
 	int result;
 
@@ -2071,14 +2074,11 @@ int check_cross_talk(struct cross_talk_zone *zone,
 		set_physic_op_par(&op, block->number, index,
 				  zone->geometry->fixed_page, data, oobptr);
 		result = zone->read(zone, &op);
-		if (result != 0)
-			continue;
-		if (oobptr[14] > 99)
-			continue;
-		if (zone->stats->max > oobptr[14])
-			continue;
-		zone->stats->max = oobptr[14];
-		break;
+		if (result == 0 && oobptr[14] <= 99 &&
+		    zone->stats->max <= oobptr[14]) {
+			zone->stats->max = oobptr[14];
+			break;
+		}
 	}
 	/* OEM reports success even if every physical read failed. */
 	return 0;
