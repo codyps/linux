@@ -11038,6 +11038,10 @@ struct new_write_block *current_block_ecc_error(struct ecc_rebuild_zone *zone,
 {
 	struct new_write_block *replacement;
 	struct physic_op_param read_op, write_op;
+	/* Stock forwards this stack buffer through the partition to raw NAND.
+	 * The raw read copies its geometry-derived spare length without checking
+	 * this 16-byte bound; preserve that potential overflow until hardware
+	 * geometry is known. The caller assumes no callback retains it. */
 	unsigned char oob[16];
 	unsigned int page, written;
 	int status;
