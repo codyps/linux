@@ -10449,6 +10449,9 @@ int init_nrc(struct nrc_zone *zone, struct nrc_buffers **output)
 	struct nrc_buffers *buffers;
 	unsigned int pages;
 
+	/* Stock zeros both private slots before the first allocation call. */
+	pages = 0;
+	buffers = 0;
 	buffers = nftl_malloc(32);
 	if (!buffers) {
 		/* OEM leaves *output untouched for this first failure only. */
