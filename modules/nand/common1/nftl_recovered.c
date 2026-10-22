@@ -4127,6 +4127,8 @@ struct hynix20nm_retry_chip {
 	unsigned char before_saved[56];
 	unsigned char saved[128];
 	unsigned int cycle;
+	unsigned char before_params[280 - 188];
+	struct hynix20nm_lsb_params *params;
 };
 /* The mutable OEM register count is unchecked against this eight-byte stack
  * buffer. Keep the overflow and frame layout for stock compatibility. */
@@ -4184,15 +4186,17 @@ int hynix20nm_set_default_param(struct otp_chip *chip)
 	return locals.result;
 }
 
-int hynix20nm_readretry_init(void *owner)
+int hynix20nm_readretry_init(struct hynix20nm_retry_chip *chip)
 {
-	struct hynix20nm_lsb_chip *configured = owner;
-	struct hynix20nm_retry_chip *chip = owner;
-	int index;
+	/* Keep the stock private return slot ahead of the signed loop index. */
+	struct {
+		int result;
+		int index;
+	} frame;
 
-	hynix20nm_read_retry_mode = configured->params->retry_spec >> 16;
-	hynix20nm_read_retry_cycle = configured->params->retry_spec >> 8;
-	hynix20nm_read_retry_reg_num = configured->params->retry_spec;
+	hynix20nm_read_retry_mode = chip->params->retry_spec >> 16;
+	hynix20nm_read_retry_cycle = chip->params->retry_spec >> 8;
+	hynix20nm_read_retry_reg_num = chip->params->retry_spec;
 	if (hynix20nm_read_retry_mode == 2) {
 		hynix20nm_read_retry_reg_adr[0] = 0xcc;
 		hynix20nm_read_retry_reg_adr[1] = 0xbf;
@@ -4219,10 +4223,12 @@ int hynix20nm_readretry_init(void *owner)
 		return -93;
 	}
 	chip->cycle = 0;
-	for (index = 0; index <= 127; index++)
-		chip->saved[index] = 0;
+	for (frame.index = 0; frame.index <= 127; frame.index++)
+		chip->saved[frame.index] = 0;
 	/* OEM permits a register count larger than its eight address bytes. */
-	return hynix20nm_init_readretry_param(owner);
+	frame.result = hynix20nm_init_readretry_param(
+			(struct hynix20nm_readretry_zone *)chip);
+	return frame.result;
 }
 
 extern unsigned char hynix26nm_read_retry_cycle;
@@ -9059,7 +9065,7 @@ int toshiba_readretry_init(struct samsung_init_chip *chip)
 }
 
 extern int micron_readretry_init(struct micron_init_chip *);
-extern int hynix20nm_readretry_init(void *);
+extern int hynix20nm_readretry_init(struct hynix20nm_retry_chip *);
 struct hynix26nm_init_chip;
 extern int hynix26nm_readretry_init(struct hynix26nm_init_chip *);
 extern int hynix20nm_read_page_end(struct samsung_read_request *);
