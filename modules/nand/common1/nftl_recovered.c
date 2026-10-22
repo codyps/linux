@@ -10354,16 +10354,16 @@ extern void ndfc_disable_ecc(void *controller);
 int hynix16nm_write_page_FF(struct hynix_ff_request *request,
 			    unsigned int mode)
 {
+	unsigned int index = 0;
+	unsigned int chunks = 0;
+	unsigned int last_length = 0;
+	int result = 0;
+	unsigned int row = 0;
+	unsigned int column = 0;
 	struct hynix_ff_chip *chip = (struct hynix_ff_chip *)
 		nci_get_from_nsi(g_nsi, request->channel);
 	struct hynix_ff_controller *controller = chip->controller;
-	struct hynix_ff_command *command = &controller->commands;
-	unsigned int chunks = 0;
-	unsigned int last_length = 0;
-	unsigned int row = 0;
-	unsigned int column = 0;
-	unsigned int index;
-	int result;
+	struct hynix_ff_command *command = &chip->controller->commands;
 
 	if (chip->index >= controller->chips || request->block >= chip->blocks) {
 		nand_print("fatal err -0, wrong input parameter, ch: %d  chip: %d/%d  block: %d/%d \n",
@@ -10373,8 +10373,8 @@ int hynix16nm_write_page_FF(struct hynix_ff_request *request,
 	}
 	nand_read_chip_status_ready(chip);
 	nand_enable_chip((struct samsung_set_chip *)chip);
-	ndfc_disable_randomize(controller);
-	ndfc_disable_ecc(controller);
+	ndfc_disable_randomize(chip->controller);
+	ndfc_disable_ecc(chip->controller);
 	ndfc_clean_cmd_seq((struct sandisk_first_command *)command);
 	if (mode == 8) {
 		chunks = 9;
@@ -10386,37 +10386,54 @@ int hynix16nm_write_page_FF(struct hynix_ff_request *request,
 	/* Unknown modes send only the final command. Every execute result is
 	 * discarded; OEM returns the final ready status without restoring ECC
 	 * or randomization on the controller. */
+	/* OEM emits separate first/last/middle command bodies and discards
+	 * each execute status by overwriting result on the next operation. */
+#define HYNIX_FF_PREPARE(opcode, pointer, length) do { \
+		command->index = 0; \
+		command->code = (opcode); \
+		command->wait = 1; \
+		command->valid = 1; \
+		command->flag2 = 1; \
+		command->flag0 = 1; \
+		command->flag1 = 1; \
+		command->data = (pointer); \
+		command->transfer_length = (length); \
+		command->data_enable = 1; \
+} while (0)
 	for (index = 0; index < chunks; index++) {
-		command->index = 0;
-		command->code = index == 0 ? 128 : 133;
-		command->wait = 1;
-		command->valid = 1;
-		command->flag2 = 1;
-		command->flag0 = 1;
-		command->flag1 = 1;
-		command->data = request->data + index * 1024;
-		command->transfer_length = index == chunks - 1 ?
-			last_length : 1024;
-		command->data_enable = 1;
 		if (index == 0) {
+			HYNIX_FF_PREPARE(128, request->data, 1024);
 			row = get_row_addr(chip->page_shift, request->block,
 					   request->page);
 			command->address_cycles = 5;
 			fill_cmd_addr(column, 2, row, 3, command->address);
-		} else {
+			result = ndfc_execute_cmd(chip->controller,
+					(struct sandisk_first_command *)command);
+		} else if (chunks - 1 == index) {
+			HYNIX_FF_PREPARE(133, request->data + index * 1024,
+					 last_length);
 			command->address_cycles = 2;
 			fill_cmd_addr(column, 2, row, 0, command->address);
+			result = ndfc_execute_cmd(chip->controller,
+					(struct sandisk_first_command *)command);
+		} else {
+			HYNIX_FF_PREPARE(133, request->data + index * 1024,
+					 1024);
+			command->address_cycles = 2;
+			fill_cmd_addr(column, 2, row, 0, command->address);
+			result = ndfc_execute_cmd(chip->controller,
+					(struct sandisk_first_command *)command);
 		}
-		ndfc_execute_cmd(controller,
-				 (struct sandisk_first_command *)command);
 		column += 1024;
 	}
+#undef HYNIX_FF_PREPARE
 	command->index = 0;
 	command->code = 16;
 	command->wait = 1;
 	command->valid = 1;
 	command->final = 1;
-	ndfc_execute_cmd(controller, (struct sandisk_first_command *)command);
+	result = ndfc_execute_cmd(chip->controller,
+				  (struct sandisk_first_command *)command);
 	result = nand_read_chip_status_ready(chip);
 	if (result)
 		nand_print("m1 write page FF wrong\n");
