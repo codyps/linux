@@ -7000,35 +7000,41 @@ struct free_block_zone;
 extern struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone);
 int panic_backup_block(struct build_zone *zone)
 {
-	int index;
-	struct physical_block *block;
-	struct panic_backup_geometry *geometry;
+	/* OEM keeps geometry at FP+0x28, block at +0x30 and index at +0x3c.
+	 * A separate-locals declaration lets GCC reuse different slots across
+	 * the allocator and printer calls. Preserve the private frame layout. */
+	struct {
+		struct panic_backup_geometry *geometry;
+		struct physical_block *block;
+		unsigned char gap[4];
+		int index;
+	} local;
 
 	if (!is_panic_enable())
 		return 0;
-	for (index = 0; index <= 2; index++) {
-		block = panic_info[index];
+	for (local.index = 0; local.index <= 2; local.index++) {
+		local.block = panic_info[local.index];
 		/* OEM returns immediately on the first existing reservation,
 		 * even if a later slot is empty. Preserve this early exit. */
-		if (block) {
+		if (local.block) {
 			nand_print(nftl_ro_lc_19,
-				   block->number);
+				   local.block->number);
 			return 0;
 		}
-		block = (struct physical_block *)
+		local.block = (struct physical_block *)
 			out_phy_block_from_free_list((struct free_block_zone *)zone);
-		if (block) {
+		if (local.block) {
 			nand_print(nftl_ro_lc_20,
-				   block->number);
-			panic_info[index] = block;
+				   local.block->number);
+			panic_info[local.index] = local.block;
 		} else {
 			nand_print(nftl_ro_lc_21);
 			return -1;
 		}
 	}
-	geometry = ((struct panic_backup_zone *)zone)->geometry;
+	local.geometry = ((struct panic_backup_zone *)zone)->geometry;
 	/* OEM stores a 32-bit page count over the fourth pointer slot. */
-	*(unsigned int *)&panic_info[3] = geometry->pages * 3;
+	*(unsigned int *)&panic_info[3] = local.geometry->pages * 3;
 	return 0;
 }
 int panic_recover_info(struct panic_header *header, struct panic_block *block)
