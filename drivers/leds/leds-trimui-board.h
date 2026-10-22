@@ -387,8 +387,15 @@ static ssize_t show_frame(struct class *class, struct class_attribute *attr, cha
 {
 	/* OEM shifts a signed int before memcpy's size_t conversion. A corrupt
 	 * led_count can wrap the shift into a negative, enormous copy length. */
-	int size = trimui_led_count << 2;
-	memcpy(buffer, trimui_frame, size);
+	u8 *source;
+	register int size asm("w19") = trimui_led_count;
+	/* Keep the observed count live until after the rooted address is formed. */
+	asm volatile("adrp %0, trimui_transfer_state\n\t"
+		     "add %0, %0, :lo12:trimui_transfer_state\n\t"
+		     "add %0, %0, #0x7cc"
+		     : "=&r"(source), "+r"(size) : : "memory");
+	size <<= 2;
+	memcpy(buffer, source, size);
 	return size;
 }
 
