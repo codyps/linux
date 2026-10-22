@@ -12204,11 +12204,11 @@ int write_phy_data_to_current_block(struct phy_write_zone *zone,
 				    unsigned int logic_page,
 				    unsigned int kind)
 {
-	struct physic_op_param op;
 	unsigned char oob[16];
-	unsigned short length;
-	unsigned short crc;
-	unsigned int retry = 0;
+	struct physic_op_param op;
+	unsigned short crc = 0;
+	unsigned short length = 0;
+	unsigned int retry;
 	int status;
 
 	nand_memset(oob, -91, 16);
@@ -12219,6 +12219,7 @@ int write_phy_data_to_current_block(struct phy_write_zone *zone,
 	crc = nand_crc16(-1, data, length);
 	oob[12] = crc >> 8;
 	oob[13] = crc;
+	retry = 0;
 	for (;;) {
 		set_physic_op_par(&op, state->block->number, state->page,
 				  zone->geometry->fixed_page, (void *)data, oob);
