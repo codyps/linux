@@ -11473,51 +11473,54 @@ _Static_assert(__builtin_offsetof(struct nftl_clean_zone, slots) == 704,
 	       "clean-zone slot offset");
 _Static_assert(sizeof(struct nftl_clean_slot) == 32,
 	       "clean-zone slot size");
+struct nftl_clean_zone_frame {
+	unsigned int tail;
+	unsigned int full;
+	unsigned int bytes;
+	unsigned int pages;
+	unsigned int index;
+};
 int nand_clean_zone_table2(struct nftl_clean_zone *zone)
 {
-	unsigned int pages;
-	unsigned int bytes;
-	unsigned int full;
-	unsigned int tail;
-	unsigned int index;
+	struct nftl_clean_zone_frame frame;
 
-	/* The stock AArch64 division returns zero for a zero divisor. */
-	pages = zone->geometry->sectors_per_page ?
-		zone->capacity / zone->geometry->sectors_per_page : 0;
-	bytes = pages << 2;
+	/* OEM executes UDIV even for a zero divisor (AArch64 yields zero).
+	 * C leaves this case undefined; non-OEM ports should guard it. */
+	frame.pages = zone->capacity / zone->geometry->sectors_per_page;
+	frame.bytes = frame.pages << 2;
 	nand_print_dbg(nftl_ro_lc_386,
-		       zone->zone_number, pages);
-	full = bytes >> 20;
+		       zone->zone_number, frame.pages);
+	frame.full = frame.bytes >> 20;
 	/* OEM trusts the map pointer array even if the computed byte count
 	 * requires more than its 27 observed pointer slots. */
-	for (index = 0; index < full; index++) {
-		nand_memset(zone->maps[index], -1, 1048576);
+	for (frame.index = 0; frame.index < frame.full; frame.index++) {
+		nand_memset(zone->maps[frame.index], -1, 1048576);
 		nand_print_dbg(nftl_ro_lc_387, 1048576);
 	}
-	tail = bytes & 1048575;
-	if (tail) {
-		nand_memset(zone->maps[index], -1, tail);
-		nand_print_dbg(nftl_ro_lc_387, tail);
+	frame.tail = frame.bytes & 1048575;
+	if (frame.tail) {
+		nand_memset(zone->maps[frame.index], -1, frame.tail);
+		nand_print_dbg(nftl_ro_lc_387, frame.tail);
 	}
 	zone->current = 0;
 	zone->current_block = 0xffff;
 	zone->next = 0;
 	zone->next_block = 0xffff;
-	for (index = 0; index < 6; index++)
-		zone->lists0[index] = 0;
-	for (index = 0; index < 6; index++)
-		zone->lists1[index] = 0;
-	for (index = 0; index < 6; index++)
-		zone->lists2[index] = 0;
+	for (frame.index = 0; frame.index < 6; frame.index++)
+		zone->lists0[frame.index] = 0;
+	for (frame.index = 0; frame.index < 6; frame.index++)
+		zone->lists1[frame.index] = 0;
+	for (frame.index = 0; frame.index < 6; frame.index++)
+		zone->lists2[frame.index] = 0;
 	zone->flag0 = 0;
 	zone->flag1 = 0;
 	zone->list_count = 0;
-	for (index = 0; index < 10; index++) {
-		zone->slots[index].index = index;
-		zone->slots[index].state = 0;
-		zone->slots[index].first = 0;
-		zone->slots[index].second = 0;
-		zone->slots[index].third = 0;
+	for (frame.index = 0; frame.index < 10; frame.index++) {
+		zone->slots[frame.index].index = frame.index;
+		zone->slots[frame.index].state = 0;
+		zone->slots[frame.index].first = 0;
+		zone->slots[frame.index].second = 0;
+		zone->slots[frame.index].third = 0;
 	}
 	zone->slots[10].index = 255;
 	zone->list_state = 0;
