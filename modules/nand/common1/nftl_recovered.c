@@ -1294,8 +1294,10 @@ int __nand_sector_write(void *zone, unsigned int sector, unsigned int count,
 	return result;
 }
 struct sector_cache_node *search_from_sector_cache_write_list(
-	struct sector_cache_zone *zone, int key)
+	struct sector_cache_zone *zone, volatile unsigned int key)
 {
+	/* The by-value volatile key retains OEM's per-iteration stack reload;
+	 * callers pass the full unsigned sector without a conversion temporary. */
 	struct sector_cache_node *node = &zone->head;
 	node = node->next;
 	while (node) {
@@ -1309,6 +1311,9 @@ struct sector_read_hit {
 	unsigned char before_data[8];
 	void *data;
 };
+/* The OEM read wrapper uses the no-stack-protector local slot order, with
+ * no canary to remove; preserve it without changing its call behavior. */
+__attribute__((optimize("-fno-stack-protector")))
 int nand_sector_cache_read(void *zone, unsigned int sector, void *data)
 {
 	unsigned int bytes = 512;
@@ -5314,15 +5319,22 @@ int nftl_sector_cache_init(void *zone)
 	return 0;
 }
 
+/* The two zero stores below are redundant for results, but the OEM emits
+ * both before deriving the cache pointer and then overwrites bytes with 512. */
+__attribute__((optimize("-fno-stack-protector")))
 int nand_sector_cache_write(void *zone, unsigned int sector, void *data)
 {
-	struct sector_owner *cache =
-		(struct sector_owner *)((unsigned char *)zone + 2880);
-	struct sector_node *node = (struct sector_node *)
-		search_from_sector_cache_write_list(
-			(struct sector_cache_zone *)cache, sector);
-	unsigned short bytes = 512;
 	int result;
+	unsigned short bytes;
+	struct sector_owner *cache;
+	struct sector_node *node;
+
+	result = 0;
+	bytes = 0;
+	cache = (struct sector_owner *)((unsigned char *)zone + 2880);
+	bytes = 512;
+	node = (struct sector_node *)search_from_sector_cache_write_list(
+		(struct sector_cache_zone *)cache, sector);
 
 	if (node) {
 		del_from_sector_cache_write_list(cache, node);
