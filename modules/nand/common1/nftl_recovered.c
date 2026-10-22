@@ -1156,40 +1156,48 @@ struct cache_read_empty_zone {
 	struct cache_read_empty_node nodes[30];
 	struct cache_read_empty_node head;
 };
+/* OEM stores the walk node/index at FP+0x20/+0x2e. Keep the original
+ * misspelled symbol and unchecked node_count while restoring that frame. */
+__attribute__((optimize("-fno-stack-protector")))
 struct cache_read_empty_node *get_empty_cahce_node(
 	struct cache_read_empty_zone *zone)
 {
-	struct cache_read_empty_node *node = 0;
-	unsigned short index;
+	struct {
+		struct cache_read_empty_node *node;
+		unsigned char untouched[6];
+		unsigned short index;
+	} local;
 
-	for (index = 0; index < zone->node_count; index++) {
+	local.node = 0;
+
+	for (local.index = 0; local.index < zone->node_count; local.index++) {
 		/* OEM trusts node_count, even beyond the 30 in-place nodes. */
-		if (zone->nodes[index].state == 255)
-			return &zone->nodes[index];
+		if (zone->nodes[local.index].state == 255)
+			return &zone->nodes[local.index];
 	}
 	/* OEM branches into separate state-2 and state-0 walks. Neither walk
 	 * falls back to the other state or detects a list cycle. */
 	if (zone->second_count > 9) {
-		node = &zone->head;
-		node = node->next;
-		while (node) {
-			if (node->state == 2)
+		local.node = &zone->head;
+		local.node = local.node->next;
+		while (local.node) {
+			if (local.node->state == 2)
 				return (struct cache_read_empty_node *)
 					del_from_cache_read_list(
 					(struct cache_read_delete_owner *)zone,
-					(struct cache_read_delete_node *)node);
-			node = node->next;
+					(struct cache_read_delete_node *)local.node);
+			local.node = local.node->next;
 		}
 	} else {
-		node = &zone->head;
-		node = node->next;
-		while (node) {
-			if (node->state == 0)
+		local.node = &zone->head;
+		local.node = local.node->next;
+		while (local.node) {
+			if (local.node->state == 0)
 				return (struct cache_read_empty_node *)
 					del_from_cache_read_list(
 					(struct cache_read_delete_owner *)zone,
-					(struct cache_read_delete_node *)node);
-			node = node->next;
+					(struct cache_read_delete_node *)local.node);
+			local.node = local.node->next;
 		}
 	}
 	return 0;
