@@ -10026,18 +10026,23 @@ extern int physic_info_get_one_copy(unsigned int block, unsigned int offset,
 int hynix16nm_get_special_info(unsigned char *buffer, void *destination,
 			      unsigned int length, unsigned int copy_index)
 {
-	unsigned int offset;
 	unsigned int scratch;
+	unsigned int offset;
 	unsigned int block;
 	unsigned int index;
 	unsigned char checksum;
-	int result = -1;
+	int offset_result;
+	int result;
 
 	nand_print_dbg(nftl_ro_lc_107);
-	if (physic_info_get_offset(&offset)) {
+	offset_result = physic_info_get_offset(&offset);
+	if (offset_result) {
 		nand_print(nftl_ro_lc_108);
 		return 1;
 	}
+	/* OEM only initializes the search failure result after the offset
+	 * lookup succeeds; the failed lookup returns one directly. */
+	result = -1;
 	for (block = 4; block <= 50; block++) {
 		nand_print_dbg(nftl_ro_lc_109, block);
 		/* OEM ignores a failed copy helper and judges only the header in
