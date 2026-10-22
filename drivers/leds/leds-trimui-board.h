@@ -841,7 +841,13 @@ static ssize_t store_frames_cycles(struct class *class, struct class_attribute *
 {
 	kstrtoint(buffer, 0, (int *)&trimui_frames_cycles);
 	trimui_frames_enable = 0;
-	trimui_frame_index = trimui_cycles_left = 0;
+	/* The stock callback issues two ordered 32-bit resets here.  Keep the
+	 * intermediate state visible to the frame worker, including after an
+	 * invalid number: the OEM callback ignores kstrtoint()'s error.
+	 * TODO: reject invalid input and synchronize these fields in a separate
+	 * behavior-changing fix. */
+	WRITE_ONCE(trimui_frame_index, 0);
+	WRITE_ONCE(trimui_cycles_left, 0);
 	return count;
 }
 
