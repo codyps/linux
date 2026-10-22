@@ -10810,45 +10810,62 @@ extern int ndfc_execute_cmd(void *, struct sandisk_first_command *);
 int sandisk_A19_check_bad_block_first_burn(
 	struct sandisk_first_request *request)
 {
-	struct sandisk_first_chip *chip = (struct sandisk_first_chip *)
+	/* Keep the OEM's 0x28..0x4f private frame in source order. */
+	struct {
+		unsigned int before_result; /* Unused OEM FP+0x28 slot. */
+		int result;
+		struct sandisk_first_command *commands;
+		struct sandisk_first_controller *controller;
+		struct sandisk_first_chip *chip;
+		int column;
+		unsigned int row;
+	} frame;
+
+	/* OEM initializes the row and column slots, then discards the command
+	 * status by replacing it with the final ready result. */
+	frame.row = 0;
+	frame.column = 0;
+	frame.chip = (struct sandisk_first_chip *)
 		nci_get_from_nsi(g_nsi, request->channel);
-	struct sandisk_first_controller *controller = chip->controller;
-	struct sandisk_first_command *commands = &controller->commands;
-	unsigned int row;
-	int result;
+	frame.controller = frame.chip->controller;
+	frame.commands = &frame.chip->controller->commands;
 
 	/* OEM trusts g_nsi, chip and controller pointers without NULL checks. */
-	if (chip->index >= controller->chips || request->block >= chip->blocks) {
+	if (frame.chip->index >= frame.controller->chips ||
+	    request->block >= frame.chip->blocks) {
 		nand_print(nftl_ro_lc_104,
-			   controller->channel, chip->index, controller->chips,
-			   request->block, chip->blocks);
+			   frame.controller->channel, frame.chip->index,
+			   frame.controller->chips,
+			   request->block, frame.chip->blocks);
 		return -10;
 	}
-	ndfc_disable_randomize(controller);
-	nand_read_chip_status_ready(chip);
-	nand_enable_chip((struct samsung_set_chip *)chip);
-	ndfc_clean_cmd_seq(commands);
-	commands->first_index = 0;
-	commands->first_code = 0xa2;
-	commands->first_wait = 1;
-	commands->first_valid = 1;
-	commands->first_count = 0;
-	commands->second_code = 0x80;
-	commands->second_wait = 1;
-	commands->second_valid = 1;
-	commands->second_count = 0;
-	row = get_row_addr(chip->page_shift, request->block, request->page);
-	commands->address_cycles = 5;
-	fill_cmd_addr(0, 2, row, 3, commands->address);
-	commands->third_code = 0x10;
-	commands->third_wait = 1;
-	commands->third_valid = 1;
-	commands->third_count = 1;
+	ndfc_disable_randomize(frame.chip->controller);
+	nand_read_chip_status_ready(frame.chip);
+	nand_enable_chip((struct samsung_set_chip *)frame.chip);
+	ndfc_clean_cmd_seq(frame.commands);
+	frame.commands->first_index = 0;
+	frame.commands->first_code = 0xa2;
+	frame.commands->first_wait = 1;
+	frame.commands->first_valid = 1;
+	frame.commands->first_count = 0;
+	frame.commands->second_code = 0x80;
+	frame.commands->second_wait = 1;
+	frame.commands->second_valid = 1;
+	frame.commands->second_count = 0;
+	frame.row = get_row_addr(frame.chip->page_shift, request->block,
+			 request->page);
+	frame.commands->address_cycles = 5;
+	fill_cmd_addr(frame.column, 2, frame.row, 3, frame.commands->address);
+	frame.commands->third_code = 0x10;
+	frame.commands->third_wait = 1;
+	frame.commands->third_valid = 1;
+	frame.commands->third_count = 1;
 	/* OEM overwrites the command result with the second ready status. */
-	result = ndfc_execute_cmd(controller, commands);
-	result = nand_read_chip_status_ready(chip);
-	nand_disable_chip((struct samsung_set_chip *)chip);
-	return result;
+	frame.result = ndfc_execute_cmd(frame.chip->controller,
+					frame.commands);
+	frame.result = nand_read_chip_status_ready(frame.chip);
+	nand_disable_chip((struct samsung_set_chip *)frame.chip);
+	return frame.result;
 }
 
 extern int page_read(unsigned short, unsigned short, unsigned short,
