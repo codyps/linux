@@ -2,6 +2,14 @@
 /* Verified stock-behavior NFTL helpers, compiled when selected by Kconfig.
  * Structure labels are inferred from observed offsets. */
 
+/* Reuse the instruction-rooted OEM readonly pool. Separate C string literals
+ * would duplicate these payloads and move later readonly and BSS addresses. */
+extern const char nftl_ro_lc_94[];
+extern const char nftl_ro_lc_95[];
+extern const char nftl_ro_lc_47[];
+extern const char nftl_ro_lc_96[];
+extern const char nftl_ro_lc_97[];
+
 int nftl_check_pattern(const unsigned char *buffer, unsigned char pattern,
 		       int length)
 {
@@ -8186,7 +8194,7 @@ int sandisk_read_page_end(struct samsung_read_request *request)
 				if (is_nouse_page(request->data) == 1) {
 					result = -2;
 					nand_print_dbg(
-						"retry spare all 0xff! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+						nftl_ro_lc_47,
 						((struct samsung_read_controller *)chip->controller)->channel,
 						((struct samsung_read_chip_id *)chip)->chip,
 						request->block, request->page,
@@ -8355,7 +8363,7 @@ int sandisk_A19_read_page_end(struct samsung_read_request *request)
 	state.result = generic_read_page_end_not_retry(request);
 
 	if (state.result == -2) {
-		nand_print_dbg("sandisk_A19 retry!\n");
+		nand_print_dbg(nftl_ro_lc_94);
 		/* Keep four separately expanded loops: the OEM rereads the retry-cycle
 		 * bound and mutable mode at their own call boundaries. */
 	#define A19_PHASE(phase) do { \
@@ -8364,7 +8372,7 @@ int sandisk_A19_read_page_end(struct samsung_read_request *request)
 				state.result = sandisk_A19_set_readretry(state.chip, \
 						      (unsigned short)request->page); \
 				if (state.result) { \
-					nand_print_dbg("sandisk_A19 set readretry error\n"); \
+					nand_print_dbg(nftl_ro_lc_95); \
 					continue; \
 				} \
 				if (phase == 1) \
@@ -8403,14 +8411,14 @@ int sandisk_A19_read_page_end(struct samsung_read_request *request)
 				/* OEM checks spare data even after a read error. */ \
 				if (is_nouse_page(request->data) == 1) { \
 					state.result = -2; \
-					A19_REPORT("retry spare all 0xff! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"); \
+					A19_REPORT(nftl_ro_lc_47); \
 					continue; \
 				} \
 				if (state.result == 10 || state.result == 0) { \
 					if (state.result == 0) \
-						A19_REPORT("sandisk_A19 ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"); \
+						A19_REPORT(nftl_ro_lc_96); \
 					else \
-						A19_REPORT("sandisk_A19 ReadRetry ok with ecc limit! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"); \
+						A19_REPORT(nftl_ro_lc_97); \
 					state.result = 10; \
 					goto done; \
 				} \
@@ -10663,7 +10671,7 @@ int hynix20nm_read_page_end(struct samsung_read_request *request)
 			if (is_nouse_page(request->data) == 1) {
 				result = -2;
 				nand_print_dbg(
-					"retry spare all 0xff! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+				nftl_ro_lc_47,
 					((struct samsung_read_controller *)chip->controller)->channel,
 					((struct samsung_read_chip_id *)chip)->chip,
 					request->block, request->page, chip->retry);

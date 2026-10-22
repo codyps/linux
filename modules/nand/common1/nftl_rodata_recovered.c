@@ -1202,4 +1202,21 @@ __asm__(".global nand_crc16_table\n"
 		".size " #alias ", 0")
 NFTL_RO_VIEW(hynix26nm_para0_recovered, 18136);
 NFTL_RO_VIEW(hynix26nm_para1_recovered, 18192);
+/* Five Sandisk retry diagnostics used by the maintainable C implementation.
+ * Their offsets are rooted in the stock Image's ADRP/ADD call sites. */
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_94) == 18800,
+	       "Sandisk retry diagnostic offset");
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_95) == 18824,
+	       "Sandisk set-error diagnostic offset");
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_47) == 18864,
+	       "Sandisk spare diagnostic offset");
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_96) == 18952,
+	       "Sandisk success diagnostic offset");
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_97) == 19040,
+	       "Sandisk ECC-limit diagnostic offset");
+NFTL_RO_VIEW(nftl_ro_lc_94, 18800);
+NFTL_RO_VIEW(nftl_ro_lc_95, 18824);
+NFTL_RO_VIEW(nftl_ro_lc_47, 18864);
+NFTL_RO_VIEW(nftl_ro_lc_96, 18952);
+NFTL_RO_VIEW(nftl_ro_lc_97, 19040);
 #undef NFTL_RO_VIEW
