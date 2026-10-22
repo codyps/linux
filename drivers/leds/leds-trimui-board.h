@@ -329,10 +329,10 @@ static ssize_t show_frame(struct class *class, struct class_attribute *attr, cha
 
 static ssize_t store_frame(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	/* Stock compares count with a buffer address minus one, not its size.
+	/* Stock compares count with the buffer address, not its size.
 	 * TODO: use sizeof(frame) in a separate corrective patch. */
 	unsigned long length = count;
-	if (count > (unsigned long)trimui_frame - 1)
+	if (count >= (unsigned long)trimui_frame)
 		length = (int)(trimui_led_count << 2);
 	memcpy(trimui_frame, buffer, length);
 	return count;
