@@ -2248,10 +2248,12 @@ int get_used_page_num_no_crosstalk(struct used_page_zone *zone,
 		nand_print(nftl_ro_lc_312,
 			   block->number, good, first_unused);
 		zone->stats->cross_talk++;
+		/* OEM wraps the product at 32 bits, then widens before adding the
+		 * page size. Keep that order for oversized or corrupt cache counts. */
 		for (page = 0; page < cache->count; page++) {
 			if (cache->valid[page])
 				cache->data[
-					(unsigned int)(page *
+					(unsigned long)(unsigned int)(page *
 					(zone->geometry->page_bytes + 64)) +
 					zone->geometry->page_bytes + 14] =
 					zone->stats->cross_talk;
