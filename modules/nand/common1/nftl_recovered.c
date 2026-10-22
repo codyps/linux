@@ -8412,13 +8412,15 @@ int sandisk_read_page_end(struct samsung_read_request *request)
 extern int hynix26nm_set_readretry(void *);
 /* Both Hynix generations use this OEM retry state machine. In particular,
  * a setter failure causes an immediate reset call and then a second reset
- * call after the loop. The reset results never replace the failing status. */
+ * call after the loop. The reset results never replace the failing status.
+ * Keep the OEM frame slots by disabling GCC's stack-protector slot shuffle. */
 #define HYNIX_READ_PAGE_END(name, cycle_var, setter, opening, success) \
+__attribute__((optimize("-fno-stack-protector"))) \
 int name(struct samsung_read_request *request) \
 { \
 	struct samsung_set_chip *chip; \
-	int result = 0; \
 	int retry = 0; \
+	int result = 0; \
 	chip = (struct samsung_set_chip *)nci_get_from_nsi(g_nsi, \
 						      request->channel); \
 	result = generic_read_page_end_not_retry(request); \
