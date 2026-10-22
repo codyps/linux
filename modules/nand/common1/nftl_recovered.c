@@ -4,11 +4,7 @@
 
 /* Reuse the instruction-rooted OEM readonly pool. Separate C string literals
  * would duplicate these payloads and move later readonly and BSS addresses. */
-extern const char nftl_ro_lc_94[];
-extern const char nftl_ro_lc_95[];
-extern const char nftl_ro_lc_47[];
-extern const char nftl_ro_lc_96[];
-extern const char nftl_ro_lc_97[];
+#include "nftl_ro_aliases.h"
 
 int nftl_check_pattern(const unsigned char *buffer, unsigned char pattern,
 		       int length)
@@ -102,7 +98,7 @@ int micron_intel_set_feature(void *chip, unsigned char address,
 	nand_set_feature(chip, &address, set_values);
 	nand_get_feature(chip, &address, read_values);
 	if (read_values[0] != set_values[0]) {
-		nand_print("set feature(addr %d) p0: %d readretry Configuration failed!\n",
+		nand_print(nftl_ro_lc_69,
 			   original_address, value);
 		return -72;
 	}
@@ -119,7 +115,7 @@ int samsung_vender_set_param(struct samsung_set_chip *chip,
 					 addresses, values, 1, count);
 	/* OEM reads four diagnostic bytes even when count is smaller or the
 	 * bus command failed. */
-	nand_print_dbg("rr value %x %x %x %x!\n", values[0], values[1],
+	nand_print_dbg(nftl_ro_lc_35, values[0], values[1],
 		       values[2], values[3]);
 	return result;
 }
@@ -134,7 +130,7 @@ int samsung_set_readretry(struct samsung_set_chip *chip)
 	result = samsung_vender_set_param(chip, samsung_p1[chip->retry].bytes,
 					   samsung_read_retry_addr, 4);
 	if (result)
-		nand_print("samsung set readretry error ! %x \n", chip->retry);
+		nand_print(nftl_ro_lc_36, chip->retry);
 	nand_disable_chip(chip);
 	return result;
 }
@@ -146,11 +142,11 @@ void get_nftl_version(char *major, char *minor, char *build,
 {
 	/* OEM assumes every caller buffer is large enough and ignores all
 	 * copy results. These lengths include the terminating NUL bytes. */
-	nand_memcpy(major, "5", 2);
-	nand_memcpy(minor, "0", 2);
-	nand_memcpy(build, "000", 4);
-	nand_memcpy(date, "2020.12.24", 11);
-	nand_memcpy(time, "09:50", 6);
+	nand_memcpy(major, nftl_ro_lc_14, 2);
+	nand_memcpy(minor, nftl_ro_lc_13, 2);
+	nand_memcpy(build, nftl_ro_lc_12, 4);
+	nand_memcpy(date, nftl_ro_lc_11, 11);
+	nand_memcpy(time, nftl_ro_lc_10, 6);
 }
 
 extern int get_data_with_nand_bus_one_cmd(struct samsung_set_chip *,
@@ -247,7 +243,7 @@ int hynix26nm_vender_set_param(void *chip, unsigned char *values,
 	nand_disable_chip(chip);
 	/* OEM reads four diagnostic value bytes even when count is smaller
 	 * or the caller provided fewer than four bytes. */
-	nand_print_dbg("rr value %x %x %x %x!\n", values[0],
+	nand_print_dbg(nftl_ro_lc_35, values[0],
 		       values[1], values[2], values[3]);
 	return result;
 }
@@ -556,7 +552,7 @@ int __nand_read(void *zone, unsigned int sector, unsigned int count,
 	struct nand_rw_inner *source;
 
 	if (owner->debug_level == 3)
-		nand_print_dbg("[ND]read sector:0x%x,len:0x%x\n", sector, count);
+		nand_print_dbg(nftl_ro_lc_415, sector, count);
 	/* OEM fetches the inner pointer twice, destination before source.
 	 * It updates the counter before the operation, even on failure. */
 	destination = *slot;
@@ -574,7 +570,7 @@ int __nand_write(void *zone, unsigned int sector, unsigned int count,
 	struct nand_rw_inner *source;
 
 	if (owner->debug_level == 3)
-		nand_print_dbg("[ND]write sector:0x%x,len:0x%x\n", sector, count);
+		nand_print_dbg(nftl_ro_lc_416, sector, count);
 	destination = *slot;
 	source = *slot;
 	destination->write_count = source->write_count + count;
@@ -715,7 +711,7 @@ extern int fill_no_use_page_to_current_block(void *object, int count);
 
 int generic_special_exit(void)
 {
-	nand_print_dbg(" generic special exit \n");
+	nand_print_dbg(nftl_ro_lc_106);
 	return 0;
 }
 
@@ -888,7 +884,7 @@ int write_data_to_page(void *zone, unsigned int marker,
 {
 	if (write_logic_data_to_current_block(zone,
 			(unsigned char *)zone + 528, marker, page, data)) {
-		nand_print("[NE]write logic data to current block error\n");
+		nand_print(nftl_ro_lc_161);
 		return 1;
 	}
 	/* OEM writes the second plane only when bit zero of byte 25 is set.
@@ -896,7 +892,7 @@ int write_data_to_page(void *zone, unsigned int marker,
 	if ((((struct write_page_zone *)zone)->flags & 1) &&
 	    write_logic_data_to_current_block(zone,
 			(unsigned char *)zone + 592, marker, page, data)) {
-		nand_print("[NE]write logic data to current block error\n");
+		nand_print(nftl_ro_lc_161);
 		return 1;
 	}
 	return 0;
@@ -1080,13 +1076,13 @@ void print_block_count_list(struct block_count_zone *zone)
 
 	if (zone->debug_level == 0)
 		return;
-	nand_print_dbg("[ND]block_used_count list: \n");
+	nand_print_dbg(nftl_ro_lc_406);
 	node = node->next;
 	/* OEM reads count and next after the preceding print calls, so
 	 * callbacks can change what the next iteration observes. */
 	while (node) {
-		nand_print_dbg("[ND]block NO: %d ", node->block);
-		nand_print_dbg("[ND]block_used_count: %d \n", node->count);
+		nand_print_dbg(nftl_ro_lc_407, node->block);
+		nand_print_dbg(nftl_ro_lc_408, node->count);
 		node = node->next;
 	}
 }
@@ -1332,7 +1328,7 @@ int nand_sector_cache_read(void *zone, unsigned int sector, void *data)
 	result = __nand_read(zone, sector, 1, data);
 	/* OEM converts every nonzero error to one and prints a fixed string. */
 	if (result) {
-		nand_print("[NE]nand_sector_cache_read 1!\n");
+		nand_print(nftl_ro_lc_142);
 		return 1;
 	}
 	return result;
@@ -1398,20 +1394,20 @@ int nand_write_data_page(void *zone, unsigned int marker,
 	if (current_block_at_last_page((struct current_zone *)zone,
 				       (struct current_page *)((char *)zone + 528)) == 1) {
 		if (do_after_write((struct do_after_zone *)zone)) {
-			nand_print("[NE]do after write error1!\n");
+			nand_print(nftl_ro_lc_152);
 			return 1;
 		}
 	}
 	if (do_before_write(zone)) {
-		nand_print("[NE]do_before_write error!\n");
+		nand_print(nftl_ro_lc_153);
 		return 1;
 	}
 	if (write_data_to_page(zone, marker, page, data)) {
-		nand_print("[NE]write data to page error!\n");
+		nand_print(nftl_ro_lc_154);
 		return 1;
 	}
 	if (do_after_write((struct do_after_zone *)zone)) {
-		nand_print("[NE]do after write error2!\n");
+		nand_print(nftl_ro_lc_155);
 		return 1;
 	}
 	return 0;
@@ -1475,7 +1471,7 @@ int new_block_init_for_write(struct new_write_zone *zone,
 	block->tag = tag;
 	if (local.result) {
 		zone->mark_bad(zone, &local.op);
-		nand_print("[NE]new_block_init_for_write erase error!\n");
+		nand_print(nftl_ro_lc_174);
 		return 1;
 	}
 	return 0;
@@ -1567,30 +1563,30 @@ void print_smart(struct smart_info_zone *zone)
 	if (!zone->print_enabled)
 		return;
 	smart = (struct smart_print_payload *)zone->smart;
-	nand_print_dbg("[ND]smart->version:%x;\n", smart->version);
-	nand_print_dbg("[ND]smart->total_recv_read_sectors:%lld;\n", smart->recv_read_sectors);
-	nand_print_dbg("[ND]smart->total_recv_write_sectors:%lld;\n", smart->recv_write_sectors);
-	nand_print_dbg("[ND]smart->total_real_read_pages:%lld;\n", smart->real_read_pages);
-	nand_print_dbg("[ND]smart->total_real_write_pages:%lld;\n", smart->real_write_pages);
-	nand_print_dbg("[ND]smart->total_recv_discard_sectors:%lld;\n", smart->recv_discard_sectors);
-	nand_print_dbg("[ND]smart->total_real_discard_sectors:%lld;\n", smart->real_discard_sectors);
-	nand_print_dbg("[ND]smart->total_recv_read_claim_pages:%d;\n", smart->read_claim_pages);
-	nand_print_dbg("[ND]smart->total_gc_times:%d;\n", smart->gc_times);
-	nand_print_dbg("[ND]smart->total_gc_pages:%d;\n", smart->gc_pages);
-	nand_print_dbg("[ND]smart->total_wl_times:%d;\n", smart->wl_times);
-	nand_print_dbg("[ND]smart->total_wl_gc_times:%d;\n", smart->wl_gc_times);
-	nand_print_dbg("[ND]smart->total_real_read_error_pages:%d;\n", smart->read_errors);
-	nand_print_dbg("[ND]smart->total_real_write_error_pages:%d;\n", smart->write_errors);
-	nand_print_dbg("[ND]smart->total_normal_power_cycles:%x;\n", smart->normal_power_cycles);
-	nand_print_dbg("[ND]smart->total_unusual_power_cycles:%x;\n", smart->unusual_power_cycles);
-	nand_print_dbg("[ND]smart->max_block_erase_times:%d;\n", smart->max_erase_times);
-	nand_print_dbg("[ND]smart->min_block_erase_times:%d;\n", smart->min_erase_times);
-	nand_print_dbg("[ND]smart->max_block_used_counter:%d;\n", smart->max_used_count);
-	nand_print_dbg("[ND]smart->min_block_used_counter:%d;\n", smart->min_used_count);
-	nand_print_dbg("[ND]smart->read_reclaim_utc:%d;\n", smart->read_reclaim_utc);
-	nand_print_dbg("[ND]smart->cross_talk_times:%d;\n", smart->cross_talk_times);
-	nand_print_dbg("[ND]smart->read_reclaim_zone_no:%d;\n", smart->read_reclaim_zone);
-	nand_print_dbg("[ND]smart->read_reclaim_page_no:%d;\n", smart->read_reclaim_page);
+	nand_print_dbg(nftl_ro_lc_176, smart->version);
+	nand_print_dbg(nftl_ro_lc_177, smart->recv_read_sectors);
+	nand_print_dbg(nftl_ro_lc_178, smart->recv_write_sectors);
+	nand_print_dbg(nftl_ro_lc_179, smart->real_read_pages);
+	nand_print_dbg(nftl_ro_lc_180, smart->real_write_pages);
+	nand_print_dbg(nftl_ro_lc_181, smart->recv_discard_sectors);
+	nand_print_dbg(nftl_ro_lc_182, smart->real_discard_sectors);
+	nand_print_dbg(nftl_ro_lc_183, smart->read_claim_pages);
+	nand_print_dbg(nftl_ro_lc_184, smart->gc_times);
+	nand_print_dbg(nftl_ro_lc_185, smart->gc_pages);
+	nand_print_dbg(nftl_ro_lc_186, smart->wl_times);
+	nand_print_dbg(nftl_ro_lc_187, smart->wl_gc_times);
+	nand_print_dbg(nftl_ro_lc_188, smart->read_errors);
+	nand_print_dbg(nftl_ro_lc_189, smart->write_errors);
+	nand_print_dbg(nftl_ro_lc_190, smart->normal_power_cycles);
+	nand_print_dbg(nftl_ro_lc_191, smart->unusual_power_cycles);
+	nand_print_dbg(nftl_ro_lc_192, smart->max_erase_times);
+	nand_print_dbg(nftl_ro_lc_193, smart->min_erase_times);
+	nand_print_dbg(nftl_ro_lc_194, smart->max_used_count);
+	nand_print_dbg(nftl_ro_lc_195, smart->min_used_count);
+	nand_print_dbg(nftl_ro_lc_196, smart->read_reclaim_utc);
+	nand_print_dbg(nftl_ro_lc_197, smart->cross_talk_times);
+	nand_print_dbg(nftl_ro_lc_198, smart->read_reclaim_zone);
+	nand_print_dbg(nftl_ro_lc_199, smart->read_reclaim_page);
 }
 struct smart_info_block {
 	unsigned short number;
@@ -1649,7 +1645,7 @@ int do_write_error_in_build_list(struct write_error_zone *zone,
 	failed->page = 0;
 	failed->erase_count++;
 	if (result) {
-		nand_print("[NE]NAND EVENT:do_write_error erase error1!\n");
+		nand_print(nftl_ro_lc_277);
 		zone->mark_bad(zone, &op);
 		return 1;
 	}
@@ -1658,7 +1654,7 @@ int do_write_error_in_build_list(struct write_error_zone *zone,
 				    (unsigned short)index);
 		/* Stock logs a failed copy and continues with the next page. */
 		if (result)
-			nand_print("[NE]NAND EVENT:do_write_error erase error2!\n");
+			nand_print(nftl_ro_lc_278);
 	}
 	set_physic_op_par(&op, source->number, 0,
 			   zone->geometry->page_bytes, 0, 0);
@@ -1846,7 +1842,7 @@ int hynix16nm_vender_set_param(struct hynix16nm_retry_zone *zone,
 		set_one_cmd((struct command_chip *)zone, confirm, 0);
 	}
 	nand_disable_chip((struct samsung_set_chip *)zone);
-	nand_print_dbg("rr value %x %x %x %x!\n", values[0],
+	nand_print_dbg(nftl_ro_lc_35, values[0],
 		       values[1], values[2], values[3]);
 	return result;
 }
@@ -1873,11 +1869,11 @@ int hynix16nm_set_default_param(void *zone_ptr)
 					   locals.values,
 					   hynix16nm_read_retry_reg_adr,
 					   hynix16nm_read_retry_reg_num);
-	nand_print_dbg("set retry default value: ");
+	nand_print_dbg(nftl_ro_lc_56);
 	for (locals.index = 0; locals.index < hynix16nm_read_retry_reg_num;
 	     locals.index++)
-		nand_print_dbg(" %x", locals.values[locals.index]);
-	nand_print_dbg("\n");
+		nand_print_dbg(nftl_ro_lc_57, locals.values[locals.index]);
+	nand_print_dbg(nftl_ro_lc_45);
 	return locals.result;
 }
 
@@ -1920,21 +1916,21 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 	result = hynix16nm_major_check_byte(mode, 0, 4,
 					  primary, secondary, 8);
 	if (result < 0) {
-		nand_print("_get_read_retry_parameters, get rr count failed!\n");
+		nand_print(nftl_ro_lc_116);
 		return result;
 	}
-	nand_print_dbg("rr cnt: %d\n", *mode);
+	nand_print_dbg(nftl_ro_lc_117, *mode);
 	for (copy = 0; copy <= 7; copy++)
 		primary[copy] = buffer[copy + 8];
 	result = hynix16nm_major_check_byte(cycle, 0, 4,
 					  primary, secondary, 8);
 	if (result < 0) {
-		nand_print("_get_read_retry_parameters, get rr reg count failed!\n");
+		nand_print(nftl_ro_lc_118);
 		return result;
 	}
-	nand_print_dbg("rr reg cnt: %d\n", *cycle);
+	nand_print_dbg(nftl_ro_lc_119, *cycle);
 	if (*mode != 8 || *cycle != 4) {
-		nand_print("read retry value from otp error: rr_cnt %d rr_reg_cnt %d!\n",
+		nand_print(nftl_ro_lc_120,
 			   *mode, *cycle);
 		return -81;
 	}
@@ -1948,7 +1944,7 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 		result = hynix16nm_major_check_byte(values + index, 1, 4,
 						  primary, secondary, 8);
 		if (result < 0) {
-			nand_print("_get_read_retry_parameters, get the %d-th byte of rr table failed!\n",
+			nand_print(nftl_ro_lc_121,
 				   index);
 			error = result;
 			break;
@@ -1958,10 +1954,10 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 	 * the remaining output bytes untouched. Keep this stale-data exposure. */
 	for (index = 0; index < 32; index++) {
 		if ((index & 7) == 0 && index != 0)
-			nand_print_dbg("\n");
-		nand_print_dbg("%02x ", values[index]);
+			nand_print_dbg(nftl_ro_lc_45);
+		nand_print_dbg(nftl_ro_lc_122, values[index]);
 	}
-	nand_print_dbg("\n");
+	nand_print_dbg(nftl_ro_lc_45);
 	return error;
 }
 int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone)
@@ -1972,19 +1968,19 @@ int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone)
 	unsigned char mode;
 
 	if (!buffer) {
-		nand_print("otp_info_hynix_16nm : allocate memory fail\n");
+		nand_print(nftl_ro_lc_125);
 		return -78;
 	}
 	result = hynix16nm_read_otp_info_hynix(
 				(struct hynix16nm_otp_info_chip *)zone, buffer);
 	/* OEM still parses the buffer after a failed OTP read. */
 	if (result < 0)
-		nand_print("m1 CH %d chip %d get otp info failed!\n",
+		nand_print(nftl_ro_lc_126,
 			   zone->controller->channel, zone->chip);
 	result = hynix16nm_get_read_retry_cfg(&mode, &cycle, zone->values,
 					       buffer);
 	if (result < 0)
-		nand_print("m1 CH %d chip %d get read retry cfg from otp info failed!\n",
+		nand_print(nftl_ro_lc_127,
 			   zone->controller->channel, zone->chip);
 	nand_free_temp_buf(buffer);
 	return result;
@@ -2001,7 +1997,7 @@ int hynix16nm_get_otp_param(struct hynix16nm_otp_zone *zone,
 	/* OEM retries forever when OTP parsing never returns zero; keep the
 	 * unbounded loop for stock behavior. */
 	while (complete == 0) {
-		nand_print_dbg("_vender_get_param_otp_hynix time %d!\n",
+		nand_print_dbg(nftl_ro_lc_54,
 			       attempt);
 		result = hynix16nm_get_rr_value_otp_hynix(zone);
 		if (result == 0)
@@ -2072,7 +2068,7 @@ int sandisk_activation_seq(struct samsung_set_chip *chip)
 					 data, 1, 9);
 	nand_disable_chip(chip);
 	if (result)
-		nand_print("sandisk activation seq fail 0x%x\n", result);
+		nand_print(nftl_ro_lc_136, result);
 	return result;
 }
 struct cross_talk_geometry {
@@ -2204,7 +2200,7 @@ int get_used_page_num_no_crosstalk(struct used_page_zone *zone,
 				  zone->geometry->fixed_page, data, oob);
 		status = zone->read(zone, &op);
 		if (status != 0 && status != 10) {
-			nand_print("[NE]gupnnc ecc err b:%d p:%d!\n",
+			nand_print(nftl_ro_lc_310,
 				   block->number, page);
 			if (first_unused == -1)
 				first_unused = page;
@@ -2222,7 +2218,7 @@ int get_used_page_num_no_crosstalk(struct used_page_zone *zone,
 		}
 		if (nand_power_off_ecc_error(
 				(struct poweroff_ecc_zone *)zone, data, oob)) {
-			nand_print("[NE]gupnnc power off ecc err!!\n");
+			nand_print(nftl_ro_lc_311);
 			continue;
 		}
 		good++;
@@ -2237,7 +2233,7 @@ int get_used_page_num_no_crosstalk(struct used_page_zone *zone,
 	if (first_unused == -1)
 		first_unused = zone->geometry->pages;
 	else if (good != (unsigned int)first_unused) {
-		nand_print("[NE]cross talk block:%d total_good_num %d good_page_num: %d!\n",
+		nand_print(nftl_ro_lc_312,
 			   block->number, good, first_unused);
 		zone->stats->cross_talk++;
 		for (page = 0; page < cache->count; page++) {
@@ -2280,11 +2276,11 @@ int sandisk_A19_readretry_init(struct sandisk_a19_init_chip *chip)
 	    sandisk_A19_read_retry_mode != 51 &&
 	    sandisk_A19_read_retry_mode != 52 &&
 	    sandisk_A19_read_retry_mode != 53) {
-		nand_print("sandisk_A19 retry mode err : %d !\n",
+		nand_print(nftl_ro_lc_98,
 			   sandisk_A19_read_retry_mode);
 		return -99;
 	}
-	nand_print_dbg("sandisk A19 read retry conut: %d !\n",
+	nand_print_dbg(nftl_ro_lc_99,
 		       sandisk_A19_read_retry_cycle);
 	return 0;
 }
@@ -2304,7 +2300,7 @@ int sandisk_readretry_init(struct sandisk_a19_init_chip *chip)
 	    sandisk_read_retry_mode != 49 &&
 	    sandisk_read_retry_mode != 50)
 		return -99;
-	nand_print_dbg("sandisk read retry conut: %d !\n",
+	nand_print_dbg(nftl_ro_lc_137,
 		       sandisk_read_retry_cycle);
 	return 0;
 }
@@ -2354,7 +2350,7 @@ int nand_dbg_phy_write(unsigned short chip, unsigned short block,
 	/* OEM logs allocation failure but still passes NULL to nand_memset and
 	 * page_write. Preserve that behavior for the pinned build. */
 	if (!buffer)
-		nand_print("[NE]%s:malloc 8192 fail!\n", __func__);
+		nand_print(nftl_ro_lc_385, __func__);
 	nand_memset(buffer, -91, 4096);
 	oob[0] = 0xff;
 	oob[1] = 0xff;
@@ -2395,7 +2391,7 @@ int nand_dbg_zone_phy_write(struct dbg_zone_write_owner *zone,
 	/* OEM logs allocation failure, then passes NULL to nand_memset and
 	 * the write callback. Preserve the fault-prone diagnostic path. */
 	if (!buffer)
-		nand_print("[NE]%s:malloc 8192 fail!\n", __func__);
+		nand_print(nftl_ro_lc_385, __func__);
 	physical = (struct physical_block *)
 		get_phy_block_addr((struct nftl_phy_outer *)zone, block);
 	nand_memset(buffer, -91, 4096);
@@ -2479,7 +2475,7 @@ unsigned int get_used_page_num(struct used_page_zone *zone,
 			set_physic_op_par(&op, block->number, page, 0, 0, oob);
 		status = zone->read(zone, &op);
 		if (status && status != 10) {
-			nand_print("[NE]get_used_page_num ecc error block:%d page:%d!\n",
+			nand_print(nftl_ro_lc_307,
 				   block->number, page);
 			(*read_errors)++;
 		}
@@ -2488,7 +2484,7 @@ unsigned int get_used_page_num(struct used_page_zone *zone,
 		if ((!status || status == 10) && data) {
 			if (nand_power_off_ecc_error(
 				(struct poweroff_ecc_zone *)zone, data, oob)) {
-				nand_print("[NE]power off ecc error 4!!\n");
+				nand_print(nftl_ro_lc_308);
 			} else {
 				/* OEM assumes cache exists whenever data is nonnull. */
 				cache->valid[page] = 1;
@@ -2520,7 +2516,7 @@ unsigned int get_used_page_num(struct used_page_zone *zone,
 			trailing_unused++;
 			continue;
 		}
-		nand_print("[NE]sb@%d sp@%d get_used_page_num used spare data %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
+		nand_print(nftl_ro_lc_309,
 			   block->number, page, oob[0], oob[1], oob[2],
 			   oob[3], oob[4], oob[5], oob[6], oob[7],
 			   oob[8], oob[9], oob[10], oob[11],
@@ -2603,8 +2599,8 @@ int set_nftl_read_claim_flag(struct read_claim_node *head, int flag, int page)
 
 static void nftl_version(void)
 {
-	nand_print("sunxi nftl version %s.%s.%s  %s-%s\n",
-		   "5", "0", "000", "2020.12.24", "09:50");
+	nand_print(nftl_ro_lc_15,
+		   nftl_ro_lc_14, nftl_ro_lc_13, nftl_ro_lc_12, nftl_ro_lc_11, nftl_ro_lc_10);
 }
 
 struct discard_zone {
@@ -2620,7 +2616,7 @@ int __nand_discard(struct discard_zone *zone, unsigned int sector,
 
 	if (zone->debug_level == 3)
 		/* Preserve OEM's misspelled diagnostic. */
-		nand_print_dbg("[ND]dicard sector:0x%x,len:0x%x\n",
+		nand_print_dbg(nftl_ro_lc_417,
 			       sector, length);
 	result = nand_discard(zone, sector, length);
 	return result;
@@ -2736,7 +2732,7 @@ int hynix26nm_get_default_param(struct hynix_default_chip *chip)
 	/* OEM ignores the helper result and may print uninitialized bytes
 	 * before resetting the device to defaults. */
 	hynix26nm_getdefaultparam(chip, values);
-	nand_print_dbg("hynix26nm_get_default_param: ch: %d, chip: %d, value: 0x%x 0x%x 0x%x 0x%x \n",
+	nand_print_dbg(nftl_ro_lc_89,
 		       chip->channel->number, chip->chip,
 		       values[0], values[1], values[2], values[3]);
 	hynix26nm_setdefaultparam(chip);
@@ -2774,7 +2770,7 @@ struct nftl_retry_chip {
 
 int hynix16nm_readretry_exit(struct nftl_retry_chip *chip)
 {
-	nand_print_dbg("hynix16nm_readretry_exit. \n");
+	nand_print_dbg(nftl_ro_lc_130);
 	hynix16nm_set_default_param(chip);
 	chip->retry_count = 0;
 	return 0;
@@ -2782,7 +2778,7 @@ int hynix16nm_readretry_exit(struct nftl_retry_chip *chip)
 
 int hynix20nm_readretry_exit(struct nftl_retry_chip *chip)
 {
-	nand_print_dbg("hynix20nm_readretry_exit. \n");
+	nand_print_dbg(nftl_ro_lc_65);
 	hynix20nm_set_default_param((struct otp_chip *)chip);
 	chip->retry_count = 0;
 	return 0;
@@ -2790,7 +2786,7 @@ int hynix20nm_readretry_exit(struct nftl_retry_chip *chip)
 
 int hynix26nm_readretry_exit(struct nftl_retry_chip *chip)
 {
-	nand_print_dbg("hynix26nm_readretry_exit. \n");
+	nand_print_dbg(nftl_ro_lc_90);
 	hynix26nm_setdefaultparam(chip);
 	chip->retry_count = 0;
 	return 0;
@@ -2800,7 +2796,7 @@ void *nftl_malloc(unsigned int size)
 {
 	/* OEM warns above 1.5 MiB but still attempts the allocation. */
 	if (size > 0x180000)
-		nand_print("[NE]malloc size too large %d!\n", size);
+		nand_print(nftl_ro_lc_9, size);
 	return nand_malloc(size);
 }
 
@@ -2933,13 +2929,13 @@ int phy_block_from_invalid_page_incr(struct invalid_page_zone *zone,
 	if (!node->next && !node->previous) {
 		node->invalid_pages++;
 		if (node->invalid_pages > zone->geometry->pages_per_block)
-			nand_print_dbg("[ND]invalid_page_count more than pages per blk 0 %d %d!!\n",
+			nand_print_dbg(nftl_ro_lc_411,
 				       node->number, node->invalid_pages);
 		return 0;
 	}
 	node->invalid_pages++;
 	if (node->invalid_pages > zone->geometry->pages_per_block)
-		nand_print_dbg("[ND]invalid_page_count more than pages per blk 1!!\n");
+		nand_print_dbg(nftl_ro_lc_412);
 	previous = node->previous;
 	if (previous == &zone->head)
 		return 0;
@@ -3118,14 +3114,14 @@ int nftl_cache_init(void *owner)
 		entry->allocation = nftl_malloc(zone->geometry->allocation_size);
 		if (!entry->allocation) {
 			/* OEM leaks all earlier allocations on this failure. */
-			nand_print("[NE]%s:malloc fail for cache_node!\n", __func__);
+			nand_print(nftl_ro_lc_413, __func__);
 			return 1;
 		}
 	}
 	cache->page_buffer = nftl_malloc(zone->geometry->allocation_size);
 	if (!cache->page_buffer) {
 		/* OEM leaves the node allocations live on this failure. */
-		nand_print("[NE]%s:malloc fail for cache_page_buf!\n", __func__);
+		nand_print(nftl_ro_lc_414, __func__);
 		return 1;
 	}
 	return 0;
@@ -3176,7 +3172,7 @@ int nand_cache_read(void *raw_zone, int page, unsigned short sector_range,
 	int result = 0;
 
 	if (!destination) {
-		nand_print("[NI]nand_cache_read error buf is  NULL!\n");
+		nand_print(nftl_ro_lc_419);
 		return 0;
 	}
 	offset = ((sector_range >> 8) & 0xff) << 9;
@@ -3236,7 +3232,7 @@ int nand_cache_read(void *raw_zone, int page, unsigned short sector_range,
 	node = (struct cache_init_entry *)get_empty_cahce_node(
 			(struct cache_read_empty_zone *)cache);
 	if (!node) {
-		nand_print("[NE]error1 node %d,%d,%d!\n", cache->field1,
+		nand_print(nftl_ro_lc_420, cache->field1,
 			   cache->field0, cache->field2);
 		return 1;
 	}
@@ -3512,7 +3508,7 @@ int hynix16nm_readretry_init(struct hynix16nm_init_chip *chip)
 		hynix16nm_read_retry_reg_adr[3] = 59;
 		chip->retry = 0;
 	} else {
-		nand_print("NFC_ReadRetryInit, unknown read retry mode 0x%x\n",
+		nand_print(nftl_ro_lc_64,
 			   hynix16nm_read_retry_mode);
 		return -75;
 	}
@@ -3657,7 +3653,7 @@ int write_data_to_nand(void *zone)
 	/* OEM logs allocation failure, then still dereferences the null
 	 * buffer in nand_memset and continues. Keep this broken path. */
 	if (!buffer)
-		nand_print("[NE][NE]%s:malloc 512 fail!\n", __func__);
+		nand_print(nftl_ro_lc_392, __func__);
 	nand_memset(buffer, -86, 512);
 	/* OEM diagnostic overwrites all 38,912 sectors with 0xaa. Its fixed
 	 * bound does not consult the zone capacity; never invoke casually. */
@@ -3675,44 +3671,44 @@ static void _DumpHexData(const unsigned char *data, int length)
 	/* OEM inserts a newline after each sixteenth byte and another at the
 	 * end, even when length is zero or the final row is exactly full. */
 	while (index < length) {
-		nand_print("%.2x ", *current++);
+		nand_print(nftl_ro_lc_394, *current++);
 		if (index % 16 == 15)
-			nand_print("\n");
+			nand_print(nftl_ro_lc_45);
 		index++;
 	}
-	nand_print("\n");
+	nand_print(nftl_ro_lc_45);
 }
 void dump_buf(const unsigned char *data, unsigned int length)
 {
 	int index = 0;
 
-	nand_print("\n");
+	nand_print(nftl_ro_lc_45);
 	index = 0;
 	/* OEM emits both a line terminator at each 16-byte boundary and a
 	 * final terminator, so a full final row gets two newlines. */
 	while (index < length) {
 		if ((index & 15) == 0)
-			nand_print("%08x: ", index);
-		nand_print("%02x ", data[index]);
+			nand_print(nftl_ro_lc_200, index);
+		nand_print(nftl_ro_lc_122, data[index]);
 		if (((index + 1) & 15) == 0)
-			nand_print("\n");
+			nand_print(nftl_ro_lc_45);
 		index++;
 	}
-	nand_print("\n");
+	nand_print(nftl_ro_lc_45);
 }
 int nand_check_table(void *zone)
 {
 	void *block = zone;
 
 	__nand_flush_write_cache(block, 1000);
-	nand_print_dbg("[ND]==========================\n");
+	nand_print_dbg(nftl_ro_lc_393);
 	print_nftl_zone(block);
-	nand_print_dbg("[ND]==========================\n");
+	nand_print_dbg(nftl_ro_lc_393);
 	nand_clean_zone_table(block);
-	nand_print_dbg("[ND]==========================\n");
+	nand_print_dbg(nftl_ro_lc_393);
 	nand_find_zone_table(block);
 	write_data_to_nand(block);
-	nand_print_dbg("[ND]==========================\n");
+	nand_print_dbg(nftl_ro_lc_393);
 	/* OEM ignores every call's error and returns success. */
 	return 0;
 }
@@ -3774,7 +3770,7 @@ int hynix16nm_init_readretry_param(void *owner)
 	copy_buffer = nand_get_temp_buf(32768);
 	if (!copy_buffer) {
 		nand_free_temp_buf(page_buffer);
-		nand_print("[PHY_GetDefaultParam]:readbuf malloc fail\n");
+		nand_print(nftl_ro_lc_59);
 		return -76;
 	}
 	result = hynix16nm_get_special_info(copy_buffer, page_buffer, 32,
@@ -3782,23 +3778,23 @@ int hynix16nm_init_readretry_param(void *owner)
 	if (!result) {
 		/* Stock prints the zero-initialized scratch word as the chip
 		 * number here, rather than the zone's chip field. */
-		nand_print_dbg("ch %d, chip %d Read Retry value Table from uboot\n",
+		nand_print_dbg(nftl_ro_lc_128,
 			       zone->controller->channel, unused_status[0]);
 		for (index = 0; index <= 31; index++) {
-			nand_print_dbg("0x%x ", page_buffer[index]);
+			nand_print_dbg(nftl_ro_lc_61, page_buffer[index]);
 			if ((index & 7) == 7)
-				nand_print_dbg("\n");
+				nand_print_dbg(nftl_ro_lc_45);
 		}
 		hynix16nm_save_otp_value((struct otp_chip *)zone, page_buffer);
 		hynix16nm_set_default_param(zone);
 	} else {
-		nand_print_dbg("[PHY_DBG] ch %d, can't get right otp value from nand otp blocks, then use otp command\n",
+		nand_print_dbg(nftl_ro_lc_62,
 			       zone->controller->channel);
 		/* OEM ignores both fallback and default-program results. */
 		hynix16nm_get_otp_param((struct hynix16nm_otp_zone *)zone,
 					otp_values);
 		hynix16nm_set_default_param(zone);
-		nand_print_dbg("[PHY_DBG] repair ch %d chip %d otp value end\n",
+		nand_print_dbg(nftl_ro_lc_129,
 			       zone->controller->channel, unused_status[0]);
 	}
 	nand_free_temp_buf(copy_buffer);
@@ -3828,36 +3824,36 @@ int hynix20nm_init_readretry_param(void *owner)
 	 * resulting allocation can hold the 64-byte table. */
 	page_buffer = nand_get_temp_buf(zone->params->page_count << 9);
 	if (!page_buffer) {
-		nand_print_dbg("hynix20nm get default param error !\n");
+		nand_print_dbg(nftl_ro_lc_58);
 		return -94;
 	}
 	copy_buffer = nand_get_temp_buf(32768);
 	if (!copy_buffer) {
 		nand_free_temp_buf(page_buffer);
-		nand_print("[PHY_GetDefaultParam]:readbuf malloc fail\n");
+		nand_print(nftl_ro_lc_59);
 		return -76;
 	}
 	result = hynix16nm_get_special_info(copy_buffer, page_buffer, 64,
 					   zone->chip);
 	if (result == 0) {
-		nand_print_dbg("ch %d, chip %d Read Retry value Table from uboot:\n",
+		nand_print_dbg(nftl_ro_lc_60,
 			       zone->controller->channel, zone->chip);
 		for (index = 0; index <= 63; index++) {
-			nand_print_dbg("0x%x ", page_buffer[index]);
+			nand_print_dbg(nftl_ro_lc_61, page_buffer[index]);
 			if ((index & 7) == 7)
-				nand_print_dbg("\n");
+				nand_print_dbg(nftl_ro_lc_45);
 		}
 		hynix20nm_saveotpvalue((struct otp_chip *)zone, page_buffer);
 		result = hynix20nm_set_default_param((struct otp_chip *)zone);
 	} else {
-		nand_print_dbg("[PHY_DBG] ch %d, can't get right otp value from nand otp blocks, then use otp command\n",
+		nand_print_dbg(nftl_ro_lc_62,
 			       zone->controller->channel);
 		result = hynix20nm_getotpparam((struct otp_chip *)zone,
 						otp_values);
 		if (result == 0) {
 			/* OEM ignores the default-program result on this fallback. */
 			hynix20nm_set_default_param((struct otp_chip *)zone);
-			nand_print_dbg("[PHY_DBG] repair ch %d otp value end\n",
+			nand_print_dbg(nftl_ro_lc_63,
 				       zone->controller->channel);
 		}
 	}
@@ -3879,7 +3875,7 @@ int hynix20nm_getotpparam(struct otp_chip *chip, unsigned char *value)
 	 * Its debug message prints the zero-based attempt number. Stock tests
 	 * the loop bound before entering the first attempt. */
 	while (attempt <= 4) {
-		nand_print_dbg("_vender_get_param_otp_hynix time %d!\n",
+		nand_print_dbg(nftl_ro_lc_54,
 			       attempt);
 		result = hynix20nm_vender_get_param_otp_hynix(chip);
 		if (result == 0)
@@ -3887,7 +3883,7 @@ int hynix20nm_getotpparam(struct otp_chip *chip, unsigned char *value)
 		attempt++;
 	}
 	if (result != 0) {
-		nand_print("_vender_get_param_otp_hynix error!\n");
+		nand_print(nftl_ro_lc_55);
 		return result;
 	}
 	for (row = 0; row <= 7; row++)
@@ -3950,7 +3946,7 @@ int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *owner)
 	command = 48;
 	get_data_with_nand_bus_one_cmd(chip, &command, 0, buffer, 2);
 	if (buffer[0] != 8 || buffer[1] != 8) {
-		nand_print("hynix OTP RegCount value error: 0x%x, 0x%x \n",
+		nand_print(nftl_ro_lc_51,
 			   buffer[0], buffer[1]);
 		result = -96;
 	}
@@ -3971,12 +3967,12 @@ int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *owner)
 			}
 		}
 		if (!invalid_copy) {
-			nand_print_dbg("otp copy %d is ok!\n", copy);
+			nand_print_dbg(nftl_ro_lc_52, copy);
 			break;
 		}
 	}
 	if (invalid_copy) {
-		nand_print_dbg("otp copy failed!\n");
+		nand_print_dbg(nftl_ro_lc_53);
 		/* OEM overwrites a previous -96 register-count error here. */
 		result = -95;
 	}
@@ -4016,11 +4012,11 @@ int hynix20nm_set_readretry(struct hynix20nm_retry_chip *chip)
 	locals.result = hynix20nm_vender_set_param(
 		chip, locals.values, hynix20nm_read_retry_reg_adr,
 		hynix20nm_read_retry_reg_num);
-	nand_print_dbg("retry para:");
+	nand_print_dbg(nftl_ro_lc_43);
 	for (locals.index = 0; locals.index < hynix20nm_read_retry_reg_num;
 	     locals.index++)
-		nand_print_dbg(" %x ", locals.values[locals.index]);
-	nand_print_dbg("\n");
+		nand_print_dbg(nftl_ro_lc_44, locals.values[locals.index]);
+	nand_print_dbg(nftl_ro_lc_45);
 	return locals.result;
 }
 /* Stock omits a canary although its unchecked count can overrun the buffer. */
@@ -4043,11 +4039,11 @@ int hynix20nm_set_default_param(struct otp_chip *chip)
 	locals.result = hynix20nm_vender_set_param(chip, locals.values,
 					hynix20nm_read_retry_reg_adr,
 					hynix20nm_read_retry_reg_num);
-	nand_print_dbg("set retry default value: ");
+	nand_print_dbg(nftl_ro_lc_56);
 	for (locals.index = 0; hynix20nm_read_retry_reg_num > locals.index;
 	     locals.index++)
-		nand_print_dbg(" %x", locals.values[locals.index]);
-	nand_print_dbg("\n");
+		nand_print_dbg(nftl_ro_lc_57, locals.values[locals.index]);
+	nand_print_dbg(nftl_ro_lc_45);
 	return locals.result;
 }
 
@@ -4081,7 +4077,7 @@ int hynix20nm_readretry_init(void *owner)
 	} else {
 		/* Stock already changed all three global retry selectors before
 		 * rejecting this mode, leaving the address table untouched. */
-		nand_print("NFC_ReadRetryInit, unknown read retry mode 0x%x\n",
+		nand_print(nftl_ro_lc_64,
 			   hynix20nm_read_retry_mode);
 		return -93;
 	}
@@ -4138,11 +4134,11 @@ int hynix26nm_set_readretry(void *owner)
 	locals.result = hynix26nm_vender_set_param(
 		chip, locals.values, hynix26nm_read_retry_reg_adr,
 		hynix26nm_read_retry_reg_num);
-	nand_print_dbg("hynix26nm retry param:");
+	nand_print_dbg(nftl_ro_lc_85);
 	for (locals.index = 0; locals.index < hynix26nm_read_retry_reg_num;
 	     locals.index++)
-		nand_print_dbg(" %x ", locals.values[locals.index]);
-	nand_print_dbg("\n");
+		nand_print_dbg(nftl_ro_lc_44, locals.values[locals.index]);
+	nand_print_dbg(nftl_ro_lc_45);
 	return locals.result;
 }
 
@@ -4167,11 +4163,11 @@ int hynix26nm_setdefaultparam(void *chip)
 	locals.result = hynix26nm_vender_set_param(chip, locals.values,
 					   hynix26nm_read_retry_reg_adr,
 					   hynix26nm_read_retry_reg_num);
-	nand_print_dbg("set retry default value: ");
+	nand_print_dbg(nftl_ro_lc_56);
 	for (locals.index = 0; locals.index < hynix26nm_read_retry_reg_num;
 	     locals.index++)
-		nand_print_dbg(" %x", locals.values[locals.index]);
-	nand_print_dbg("\n");
+		nand_print_dbg(nftl_ro_lc_57, locals.values[locals.index]);
+	nand_print_dbg(nftl_ro_lc_45);
 	return locals.result;
 }
 
@@ -4220,7 +4216,7 @@ void print_all_nftl_blk(void)
 	struct nftl_cap_node *node = (struct nftl_cap_node *)&nftl_blk_head;
 	/* OEM follows the list without checking cycles or pointer validity. */
 	while (node->next) {
-		nand_print_dbg("[ND]cap: 0x%08x.\n", node->next->capacity);
+		nand_print_dbg(nftl_ro_lc_7, node->next->capacity);
 		node = node->next;
 	}
 }
@@ -4298,7 +4294,7 @@ int nftl_discard(unsigned int sector, unsigned int count)
 		sector -= node->capacity;
 		node = node->next;
 		if (!node) {
-			nand_print("[NE]parameter error %d,%d !\n", sector, count);
+			nand_print(nftl_ro_lc_8, sector, count);
 			return 1;
 		}
 	}
@@ -4318,7 +4314,7 @@ int name(unsigned int sector, unsigned int count, void *data) \
 		sector -= node->capacity; \
 		node = node->next; \
 		if (!node) { \
-			nand_print("[NE]parameter error %d,%d !\n", sector, count); \
+			nand_print(nftl_ro_lc_8, sector, count); \
 			return 1; \
 		} \
 	} \
@@ -4347,15 +4343,15 @@ int nand_find_zone_table(void *zone)
 	 * initialization; it always reports success. Retain that behavior. */
 	clean_block_list(current);
 	nand_clean_zone_table2(current);
-	nand_print_dbg("[ND]build_zone_list start\n");
+	nand_print_dbg(nftl_ro_lc_388);
 	build_zone_list(current);
-	nand_print_dbg("[ND]nftl_cache_init start\n");
+	nand_print_dbg(nftl_ro_lc_389);
 	nftl_cache_init(current);
-	nand_print_dbg("[ND]=================================2=======================================\n");
+	nand_print_dbg(nftl_ro_lc_390);
 	print_block_invalid_list(current);
 	print_free_list(current);
-	nand_print_dbg("[ND]=================================2=======================================\n");
-	nand_print_dbg("[ND]nand_find_zone_table end\n");
+	nand_print_dbg(nftl_ro_lc_390);
+	nand_print_dbg(nftl_ro_lc_391);
 	return 0;
 }
 
@@ -4403,10 +4399,10 @@ int init_zone_after_first_scan(struct scan_zone *zone,
 	 * Keep the unchecked OEM path for stock-compatible code generation. */
 	needed_blocks = zone->logical_pages / zone->geometry->page_factor;
 	needed_blocks /= zone->geometry->pages_per_block;
-	nand_print_dbg("[ND]before second %d %d.\n",
+	nand_print_dbg(nftl_ro_lc_230,
 		       available_blocks, needed_blocks);
 	if (available_blocks <= needed_blocks) {
-		nand_print("[NE]only have blocks:%u,logic cap need blocks:%u this zone not enough data block!!\n",
+		nand_print(nftl_ro_lc_231,
 			   available_blocks, needed_blocks);
 		return 1;
 	}
@@ -4418,7 +4414,7 @@ int init_zone_after_first_scan(struct scan_zone *zone,
 	/* The OEM subtracts in 32 bits, so a zero minimum wraps to UINT_MAX. */
 	if (available_blocks - needed_blocks <
 	    (unsigned int)zone->reserve_geometry->min_free_blocks - 1) {
-		nand_print("[NE]this zone not enough free block %d , %d!!\n",
+		nand_print(nftl_ro_lc_232,
 			   available_blocks, needed_blocks);
 		return 1;
 	}
@@ -4445,24 +4441,24 @@ int build_zone_list(struct build_zone *zone)
 {
 	int result;
 
-	nand_print_dbg("[ND]first\n");
+	nand_print_dbg(nftl_ro_lc_211);
 	if (first_scan_all_blocks(zone))
 		return 1;
 	result = init_zone_after_first_scan((struct scan_zone *)zone,
 					    zone->block_count);
 	if (result) {
-		nand_print("[NE]init_zone_after_first_scan error\n");
+		nand_print(nftl_ro_lc_212);
 		return 1;
 	}
 	result = second_scan_all_blocks(zone);
 	if (result) {
-		nand_print("[NE]second_scan_all_blocks error\n");
+		nand_print(nftl_ro_lc_213);
 		return 1;
 	}
 	/* OEM still reports success if GC or panic backup fails. */
 	result = power_on_gc(zone);
 	print_nftl_zone(zone);
-	nand_print("[NI]nftl ok!\n");
+	nand_print(nftl_ro_lc_214);
 	panic_backup_block(zone);
 	return 0;
 }
@@ -4553,12 +4549,12 @@ int first_scan_all_blocks(struct build_zone *raw_zone)
 	compatible = nand_fdt_get_prop_string_by_path(0, path, mod);
 	if (!compatible || nand_memcmp(compatible, vendor, 3))
 		return -1;
-	nand_print_dbg("[ND]fsab\n");
+	nand_print_dbg(nftl_ro_lc_215);
 	zone->free_count = 0;
 	while (block->number < zone->geometry->blocks) {
 		set_physic_op_par(&op, block->number, 0, 0, 0, oob);
 		if (zone->is_good(zone, &op) != 1) {
-			nand_print("[NI]nftl bad block: %d\n", block->number);
+			nand_print(nftl_ro_lc_229, block->number);
 			block->state = 255;
 			block->erase_count = 0;
 			zone->bad_count++;
@@ -4568,7 +4564,7 @@ int first_scan_all_blocks(struct build_zone *raw_zone)
 		zone->last_read = block;
 		used = get_block_used_count_from_oob(oob);
 		if (is_ftl_end_flag_page(oob) == 1) {
-			nand_print("[NI]ftl end block! %d!\n", block->number);
+			nand_print(nftl_ro_lc_216, block->number);
 			return 0;
 		}
 		if (is_panic_data_page(oob) == 1) {
@@ -4591,7 +4587,7 @@ int first_scan_all_blocks(struct build_zone *raw_zone)
 		    (status == 0 || status == 10))
 			goto counted;
 		if (is_ftl_start_flag_page(oob) == 1) {
-			nand_print("[NI]start page , do nothing\n");
+			nand_print(nftl_ro_lc_218);
 			goto next;
 		}
 		if (is_fill_page(oob) == 1) {
@@ -4602,19 +4598,19 @@ int first_scan_all_blocks(struct build_zone *raw_zone)
 			block->invalid_pages = zone->geometry->pages;
 			put_phy_block_to_free_list((struct move_zone *)zone,
 						    (struct move_node *)block);
-			nand_print_dbg("[ND]fill block %d\n", block->number);
+			nand_print_dbg(nftl_ro_lc_219, block->number);
 			goto next;
 		}
 		/* OEM prints all 16 spare bytes, then increments the last valid
 		 * erase count even when this block has no trustworthy OOB. */
-		nand_print("[NI]b@%d p@0 unknow spare data:%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x.\n",
+		nand_print(nftl_ro_lc_220,
 			   block->number, oob[0], oob[1], oob[2], oob[3],
 			   oob[4], oob[5], oob[6], oob[7], oob[8], oob[9],
 			   oob[10], oob[11], oob[12], oob[13], oob[14], oob[15]);
 		block->erase_count = (unsigned short)(last_erase + 1);
 		if (status == 0 || status == 10) {
 			if (oob[0] != 255) {
-				nand_print("[NE]nftl bad block: %d\n",
+				nand_print(nftl_ro_lc_221,
 					   block->number);
 				block->state = 255;
 				zone->bad_count++;
@@ -4625,7 +4621,7 @@ int first_scan_all_blocks(struct build_zone *raw_zone)
 			}
 			goto next;
 		}
-		nand_print("[NE]nftl b@%d p@0 ecc error\n", block->number);
+		nand_print(nftl_ro_lc_222, block->number);
 		/* OEM puts the last-page index in the plane field and reads page
 		 * zero. Preserve this apparent parameter mix-up. */
 		set_physic_op_par(&op, block->number,
@@ -4634,20 +4630,20 @@ int first_scan_all_blocks(struct build_zone *raw_zone)
 		status = zone->read(zone, &op);
 		if (status == 0 || status == 10) {
 			if (is_phy_mapping_page(oob) == 1) {
-				nand_print("[NE]b@%d last page ok !\n",
+				nand_print(nftl_ro_lc_223,
 					   block->number);
 				used = get_block_used_count_from_oob(oob);
 				goto counted_last;
 			}
 			if (is_nouse_page(oob) == 1) {
-				nand_print("[NE]last page blank ! %d!\n",
+				nand_print(nftl_ro_lc_225,
 					   block->number);
 				if (erase_block((struct erase_block_zone *)zone,
 				    (struct erase_block_info *)block,
 				    (unsigned short)(block->erase_count + 1)) == 0)
 					zone->free_count++;
 			} else {
-				nand_print("[NE]last page unkown ! %d!\n",
+				nand_print(nftl_ro_lc_226,
 					   block->number);
 				if (erase_block((struct erase_block_zone *)zone,
 				    (struct erase_block_info *)block,
@@ -4656,9 +4652,9 @@ int first_scan_all_blocks(struct build_zone *raw_zone)
 			}
 			goto next;
 		}
-		nand_print("[NE]b@%d first page last page ecc error\n",
+		nand_print(nftl_ro_lc_227,
 			   block->number);
-		nand_print("[NE]b@%d last page spare data %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n",
+		nand_print(nftl_ro_lc_228,
 			   block->number, oob[0], oob[1], oob[2], oob[3],
 			   oob[4], oob[5], oob[6], oob[7], oob[8], oob[9],
 			   oob[10], oob[11], oob[12], oob[13], oob[14], oob[15]);
@@ -4679,7 +4675,7 @@ counted:
 				     (struct block_count_node *)block);
 		if (status == 10 && zone->gc->claim) {
 			add_prio_gc((struct prio_gc_owner *)zone, block, 1);
-			nand_print_dbg("[ND]READ_RECLAIM!\n");
+			nand_print_dbg(nftl_ro_lc_217);
 		}
 		goto next;
 counted_last:
@@ -4695,7 +4691,7 @@ counted_last:
 				     (struct block_count_node *)block);
 		if (status == 10 && zone->gc->claim) {
 			add_prio_gc((struct prio_gc_owner *)zone, block, 1);
-			nand_print("[NI]READ_RECLAIM!\n");
+			nand_print(nftl_ro_lc_224);
 		}
 next:
 		block++;
@@ -4843,11 +4839,11 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 				first = block;
 			} else if (!second) {
 				second = block;
-				nand_print("[NI]NAND_EVENT: 2 current used block found %d,%d!\n",
+				nand_print(nftl_ro_lc_233,
 					   first->number, second->number);
 				if (!(zone->flags & 1) &&
 				    first->used_count != second->used_count) {
-					nand_print("[NE]no crosstalk:2 block used count diff %d,%d %d,%d !\n",
+					nand_print(nftl_ro_lc_234,
 						   first->number, second->number,
 						   first->used_count,
 						   second->used_count);
@@ -4865,27 +4861,27 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 					second = 0;
 				}
 			} else {
-				nand_print("[NE]NAND_EVENT: muti current used block found1 %d %d!\n",
+				nand_print(nftl_ro_lc_235,
 					   first->number, first->used_count);
-				nand_print("[NE]NAND_EVENT: muti current used block found2 %d %d!\n",
+				nand_print(nftl_ro_lc_236,
 					   second->number, second->used_count);
-				nand_print("[NE]NAND_EVENT: muti current used block found3 %d %d!\n",
+				nand_print(nftl_ro_lc_237,
 					   block->number, last_used);
 				add_prio_gc((struct prio_gc_owner *)zone, first, 3);
 				first = second;
 				second = block;
 			}
 		} else {
-			nand_print("[NE]NAND_EVENT: last page spare data %x,%x,%x,%x,%x,%x,%x %x %x %x %x %x %x %x %x %x!!\n",
+			nand_print(nftl_ro_lc_238,
 				   oob[0], oob[1], oob[2], oob[3], oob[4],
 				   oob[5], oob[6], oob[7], oob[8], oob[9],
 				   oob[10], oob[11], oob[12], oob[13], oob[14],
 				   oob[15]);
 			if (status == 0 || status == 10)
-				nand_print("[NI]zone@%d b@%d last page unkown ecc ok.\n",
+				nand_print(nftl_ro_lc_239,
 					   zone->subtype, block->number);
 			else
-				nand_print("[NE]zone@%d b@%d last page ecc error.\n",
+				nand_print(nftl_ro_lc_240,
 					   zone->subtype, block->number);
 			if ((zone->flags & 1) && previous_used == last_used) {
 				erase_block((struct erase_block_zone *)zone,
@@ -4918,11 +4914,11 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 	adjust_invaild_list((struct move_zone *)zone);
 	if (last_recorded && first &&
 	    last_recorded->used_count + 1 != first->used_count)
-		nand_print("[NE]something strange %d,%d!!\n",
+		nand_print(nftl_ro_lc_241,
 			   last_recorded->used_count, first->used_count);
 	zone->current = 0;
 	if (!first && !second) {
-		nand_print("[NI]all block full!!\n");
+		nand_print(nftl_ro_lc_242);
 		if (last_recorded && ((zone->flags & 1) ||
 		    last_recorded->state == 170))
 			add_prio_gc((struct prio_gc_owner *)zone,
@@ -4930,7 +4926,7 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 	} else if (!second) {
 		candidate = first;
 		if (zone->flags & 1) {
-			nand_print_dbg("[ND]corss talk rebuild 0 %d %d!!\n",
+			nand_print_dbg(nftl_ro_lc_243,
 				       first->number, first->used_count);
 			if (last_recorded && last_recorded->state == 170)
 				add_prio_gc((struct prio_gc_owner *)zone,
@@ -4960,9 +4956,9 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 		if (!candidate)
 			return 1;
 	} else if (first->used_count == second->used_count) {
-		nand_print("[NE]1st current block:%d 1st current block uc:%d muti current used block 1st.\n",
+		nand_print(nftl_ro_lc_244,
 			   first->number, first->used_count);
-		nand_print_dbg("[ND]2nd current block:%d 2nd current block uc:%d muti current used block 2nd.\n",
+		nand_print_dbg(nftl_ro_lc_245,
 			       second->number, second->used_count);
 		candidate = (struct first_scan_block *)
 			no_cross_talk_rebuild_current_block(
@@ -4970,13 +4966,13 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 			    (struct cross_rebuild_block *)first,
 			    (struct cross_rebuild_block *)second);
 	} else {
-		nand_print("[NE]something is error here 7!\n");
+		nand_print(nftl_ro_lc_246);
 		/* OEM dereferences last_recorded without a null check. */
-		nand_print("[NE]p_phy_block_info_last %d %d.\n",
+		nand_print(nftl_ro_lc_247,
 			   last_recorded->number, last_recorded->used_count);
-		nand_print("[NE]1st current block:%d 1st current block uc:%d muti current used block 1st.\n",
+		nand_print(nftl_ro_lc_244,
 			   first->number, first->used_count);
-		nand_print_dbg("[ND]2nd current block:%d 2nd current block uc:%d muti current used block 2nd.\n",
+		nand_print_dbg(nftl_ro_lc_245,
 			       second->number, second->used_count);
 		recover_block_phy_page_mapping(
 			(struct page_map_recovery_zone *)zone,
@@ -4996,12 +4992,12 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 	}
 	if (get_current_used_block((struct current_used_zone *)zone,
 				   (struct new_write_block *)candidate, last_used)) {
-		nand_print("[NE]get_current_used_block fail.\n");
+		nand_print(nftl_ro_lc_248);
 		return 1;
 	}
 	adjust_invaild_list((struct move_zone *)zone);
 	zone->cached_current = zone->current;
-	nand_print_dbg("[ND]free block nums is %d, aec: %d, iec: %d, a_buc: %d, i_buc: %d!\n",
+	nand_print_dbg(nftl_ro_lc_249,
 		       zone->spare_count, zone->smart->erase_max,
 		       zone->smart->erase_min, zone->smart->used_last,
 		       zone->smart->used_first);
@@ -5070,7 +5066,7 @@ int build_zone_list_first(struct first_list_zone *zone, unsigned int number)
 	unsigned int page;
 	int result;
 
-	nand_print_dbg("[ND]build_zone_list_first.\n");
+	nand_print_dbg(nftl_ro_lc_209);
 	/* OEM performs two unguarded divisions, including when either divisor
 	 * is zero. Keep this crash behavior until stock compatibility ends. */
 	if (zone->logical_pages)
@@ -5122,7 +5118,7 @@ int build_zone_list_first(struct first_list_zone *zone, unsigned int number)
 		block++;
 	}
 	if (zone->count <= 1) {
-		nand_print("[NE]no block %d\n", zone->count);
+		nand_print(nftl_ro_lc_210, zone->count);
 		return 1;
 	}
 	zone->count--;
@@ -5281,7 +5277,7 @@ int nftl_sector_cache_init(void *zone)
 	if (!buffer) {
 		/* OEM leaves the count and allocation fields changed on failure,
 		 * and never clears a preexisting list or frees an old buffer. */
-		nand_print("[NE]%s:malloc fail for cache_buf!\n", __func__);
+		nand_print(nftl_ro_lc_141, __func__);
 		return 1;
 	}
 	cache->head.next = 0;
@@ -5324,14 +5320,14 @@ int nand_sector_cache_write(void *zone, unsigned int sector, void *data)
 		/* On write failure the evicted node stays unlinked and its data
 		 * is lost; retain this stock ordering and return convention. */
 		if (result) {
-			nand_print("[NE]nand_sector_cache_write 1!\n");
+			nand_print(nftl_ro_lc_143);
 			return 1;
 		}
 	} else {
 		node = get_empty_sector_cahce_node(
 			(struct empty_sector_pool *)cache);
 		if (!node) {
-			nand_print("[NE]nand_sector_cache_write 2!\n");
+			nand_print(nftl_ro_lc_144);
 			return 1;
 		}
 	}
@@ -5363,7 +5359,7 @@ int __nand_flush_sector_write_cache(void *zone, unsigned int limit)
 			break;
 	}
 	if (result)
-		nand_print("[NE]nand_flush_write_cache write error\n");
+		nand_print(nftl_ro_lc_145);
 	return result;
 }
 
@@ -5397,9 +5393,9 @@ int __nand_flush_write_cache(void *zone, unsigned int limit)
 			break;
 	}
 	if (result)
-		nand_print("[NE]nand_flush_write_cache write error\n");
+		nand_print(nftl_ro_lc_145);
 	if (flushed && ((struct write_flush_zone *)zone)->debug_level)
-		nand_print_dbg("[ND]flush cache %d %d!\n",
+		nand_print_dbg(nftl_ro_lc_429,
 			       ((struct write_flush_zone *)zone)->id, flushed);
 	return result;
 }
@@ -5471,7 +5467,7 @@ int flush_write_cache_to_nand(void *owner, int ignored_count)
 
 	(void)ignored_count;
 	if (!cache->write_head) {
-		nand_print("[NE]flush write cache to nand no cache!\n");
+		nand_print(nftl_ro_lc_426);
 		return 0;
 	}
 	node = (struct flush_cache_node *)del_from_cache_write_list(
@@ -5489,14 +5485,14 @@ int flush_write_cache_to_nand(void *owner, int ignored_count)
 		nand_memcpy(data + offset, cache->page_buffer + offset,
 			    (unsigned int)zone->geometry->page_bytes - offset);
 		if (status == 10)
-			nand_print("[NE]ECC_LIMIT happened 10! page:%d cache: %d!\n",
+			nand_print(nftl_ro_lc_427,
 				   node->page, cache->write_count);
 	}
 	node->state = 0;
 	node->sectors = zone->geometry->sectors_per_page;
 	status = zone->write(zone, node->page, data);
 	if (status)
-		nand_print("[NE]flush write cache to nand error!\n");
+		nand_print(nftl_ro_lc_428);
 	/* Only the low byte of nand_memcmp's signed result is retained. */
 	signature_match = nand_memcmp(zone->geometry, signature0, 8);
 	if (signature_match)
@@ -5505,7 +5501,7 @@ int flush_write_cache_to_nand(void *owner, int ignored_count)
 	    nand_phy_get_page_type(zone->pages - 1) == 2) {
 		status = zone->write(zone, node->page, data);
 		if (status)
-			nand_print("[NE]flush write cache to nand error!\n");
+			nand_print(nftl_ro_lc_428);
 	}
 	add_to_cache_read_list_tail((struct cache_read_add_zone *)cache,
 				    (struct cache_read_delete_node *)node, 2);
@@ -5646,10 +5642,10 @@ int micron_readretry_init(void *owner)
 		micron_p1_recovered = micron_p1_4_recovered;
 		micron_read_retry_cycle = 18;
 	} else {
-		nand_print("micron read retry cannot support!\n");
+		nand_print(nftl_ro_lc_72);
 		return -71;
 	}
-	nand_print_dbg("micron read retry conut: %d !\n",
+	nand_print_dbg(nftl_ro_lc_73,
 		       micron_read_retry_cycle);
 	return 0;
 }
@@ -5666,7 +5662,7 @@ extern void (*df_read_page_end)(void);
 int generic_special_init(void)
 {
 	df_read_page_end = (void (*)(void))generic_read_page_end_not_retry;
-	nand_print_dbg(" generic special init \n");
+	nand_print_dbg(nftl_ro_lc_105);
 	return 0;
 }
 
@@ -5700,7 +5696,7 @@ int panic_init_part(const char *name, unsigned int offset, unsigned int size)
 	panic_part.offset = offset;
 	panic_part.size = size;
 	panic_mark_enable();
-	nand_print("[ND] panic part %s off %u size %u\n", name, offset, size);
+	nand_print(nftl_ro_lc_18, name, offset, size);
 	return 0;
 }
 
@@ -5774,12 +5770,12 @@ int panic_write(struct panic_write_owner *owner, unsigned int sector,
 	/* OEM divides without checking factor or pages for zero. */
 	pages = (geometry->factor + count - 1) / geometry->factor;
 	blocks = (geometry->pages + pages - 1) / geometry->pages;
-	nand_print("[ND] write panic data : logic addr: %d, sectors %d, pages %d, blocks %d\n",
+	nand_print(nftl_ro_lc_22,
 		   sector, count, pages, blocks);
 	/* OEM subtracts three from an unsigned remaining count. A value below
 	 * three wraps, allowing an out-of-bounds block pointer later. */
 	if (info->remaining - 3 < pages) {
-		nand_print("[NE] too much data for panic-write, %d sectors left over\n",
+		nand_print(nftl_ro_lc_23,
 		   (info->remaining - 3) * geometry->factor);
 		return -1;
 	}
@@ -5800,7 +5796,7 @@ int panic_write(struct panic_write_owner *owner, unsigned int sector,
 			block->used_pages = (unsigned short)(block->used_pages + 1);
 			block->erase_count = 0;
 		}
-		nand_print("[ND] write panic data block: %d page %d !\n",
+		nand_print(nftl_ro_lc_24,
 			   block->number, info->page);
 		oob[0] = 0xff;
 		oob[1] = 0xaa;
@@ -5829,7 +5825,7 @@ int panic_write(struct panic_write_owner *owner, unsigned int sector,
 	for (dummy = 0; dummy < 3; dummy++) {
 		if (!info->page || info->page >= geometry->pages)
 			break;
-		nand_print("[ND] write dummy data block: %d page %d !\n",
+		nand_print(nftl_ro_lc_25,
 			   block->number, info->page);
 		set_physic_op_par(&op, block->number,
 				  (unsigned short)info->page,
@@ -5889,14 +5885,14 @@ int gc_one(struct gc_one_zone *zone, unsigned short priority)
 		if (result == 8)
 			return 8;
 		if (result == 0) {
-			nand_print_dbg("[ND]gc_one ok! from: %d [%d %d %d] @%s %d\n",
+			nand_print_dbg(nftl_ro_lc_459,
 				       gc_src_type, zone->first_stat, zone->second_stat,
 				       zone->third_stat, nand_get_cur_task_name(),
 				       nand_get_cur_task_pid());
 			return 0;
 		}
 		/* OEM collapses every nonzero, non-eight result to one. */
-		nand_print("[NE][NE]gc_one error!\n");
+		nand_print(nftl_ro_lc_460);
 		return 1;
 	}
 	return 8;
@@ -5937,7 +5933,7 @@ int power_on_gc(struct build_zone *owner)
 	int result;
 
 	if (zone->available >= zone->target) {
-		nand_print_dbg("[ND]not power on gc [%d, %d, %d], [%d %d %d]!\n",
+		nand_print_dbg(nftl_ro_lc_462,
 			       zone->available, zone->target, zone->emergency,
 			       zone->reserved,
 			       power_gc_udiv(power_gc_udiv(zone->count_32,
@@ -5958,14 +5954,14 @@ int power_on_gc(struct build_zone *owner)
 	}
 	priority = zone->geometry->pages >> 3;
 	while (zone->available <= 4) {
-		nand_print_dbg("[ND]emergency power on gc %d !\n",
+		nand_print_dbg(nftl_ro_lc_463,
 			       zone->available);
 		result = gc_one((struct gc_one_zone *)zone, priority);
 		if (result == 8)
 			break;
 		attempts++;
 	}
-	nand_print_dbg("[ND]power on gc %d!\n", attempts);
+	nand_print_dbg(nftl_ro_lc_464, attempts);
 	return 0;
 }
 
@@ -5999,7 +5995,7 @@ int gc_win_block(struct gc_win_zone *zone, unsigned short blocks)
 		result = gc_one((struct gc_one_zone *)zone, 1);
 		if (result) {
 			if (result == 1)
-				nand_print_dbg("[ND][NE] gc_win_block gc_one error \n");
+				nand_print_dbg(nftl_ro_lc_461);
 			return result;
 		}
 	}
@@ -6064,12 +6060,12 @@ int shutdown_on_gc(struct shutdown_gc_zone *zone)
 
 	gc_src_type = 4;
 	/* Preserve the malformed trailing percent in the OEM diagnostic. */
-	nand_print_dbg("[ND]%s %p %d %d %d %\n", __func__, current,
+	nand_print_dbg(nftl_ro_lc_465, __func__, current,
 		       zone->enabled, zone->first, zone->second, zone->third);
 	while (zone->first <= zone->third) {
 		current = zone->current;
 		if (!current) {
-			nand_print("[NI]shutdown_on_gc end! [%d %d %d]\n",
+			nand_print(nftl_ro_lc_466,
 				   zone->first, zone->second, zone->third);
 			break;
 		}
@@ -6078,7 +6074,7 @@ int shutdown_on_gc(struct shutdown_gc_zone *zone)
 		 * success. Both behaviors are retained. */
 		if (zone->enabled) {
 			gc_one((struct gc_one_zone *)zone, 0);
-			nand_print_dbg("[ND]shutdown_on_gc one ok! [%d %d %d]\n",
+			nand_print_dbg(nftl_ro_lc_467,
 				       zone->first, zone->second, zone->third);
 		}
 	}
@@ -6196,14 +6192,14 @@ int sandisk_A19_special_exit(void)
 			chip->setting = 0;
 			result = sandisk_toggle_vendor_specific_setting(chip);
 			if (result) {
-				nand_print("%s sandisk toggle vendor specific setting failed!\n",
+				nand_print(nftl_ro_lc_102,
 					   __func__);
 				return result;
 			}
 		}
 		chip = chip->next;
 	}
-	nand_print_dbg(" sandisk_A19_special_exit \n");
+	nand_print_dbg(nftl_ro_lc_103);
 	return 0;
 }
 
@@ -6317,7 +6313,7 @@ int _nftl_nand_write_logic_page(void *zone, unsigned int page, void *data)
 {
 	/* OEM collapses every nonzero error into one, discarding its code. */
 	if (nand_write_logic_page_no_gc(zone, page, data) != 0) {
-		nand_print("[NE]error nand_write_logic_page_no_gc page_no:%u\n",
+		nand_print(nftl_ro_lc_146,
 			   page);
 		return 1;
 	}
@@ -6454,7 +6450,7 @@ int nftl_initialize(void *raw_owner, unsigned short number)
 	cfg = nftl_malloc(36);
 	owner->config = cfg;
 	if (!cfg) {
-		nand_print("[NE]%s:malloc fail for nftl_cfg\n", __func__);
+		nand_print(nftl_ro_lc_16, __func__);
 		return 1;
 	}
 	params = part->device->params;
@@ -6507,7 +6503,7 @@ int nftl_initialize(void *raw_owner, unsigned short number)
 	owner->zone->geometry->max_erase_times = params->max_erase_times;
 	owner->zone->geometry->secondary_erase_times =
 		params->erased_block_limit;
-	nand_print_dbg("[ND]max_erase_times = %i\n",
+	nand_print_dbg(nftl_ro_lc_17,
 		       owner->zone->geometry->max_erase_times);
 	owner->capacity = nftl_get_zone_cap((struct nftl_zone_cap_view *)owner->zone);
 	owner->read = (void (*)(void))_nand_read;
@@ -6597,7 +6593,7 @@ int nftl_start(struct init_nftl_owner *owner, struct init_nftl_config *config,
 	zone = nftl_malloc(3528);
 	*output = (struct init_nftl_zone *)zone;
 	if (!zone) {
-		nand_print("[NE]%s: malloc fail for zone\n", __func__);
+		nand_print(nftl_ro_lc_474, __func__);
 		return -2;
 	}
 	/* OEM reuses the zone on retry, leaking its previous geometry and
@@ -6610,7 +6606,7 @@ int nftl_start(struct init_nftl_owner *owner, struct init_nftl_config *config,
 		geometry = nftl_malloc(40);
 		zone->geometry = geometry;
 		if (!geometry) {
-			nand_print("[NE]%s: malloc fail for nand_chip\n", __func__);
+			nand_print(nftl_ro_lc_475, __func__);
 			return -2;
 		}
 		nand_memset(geometry, 0, 8);
@@ -6630,7 +6626,7 @@ int nftl_start(struct init_nftl_owner *owner, struct init_nftl_config *config,
 		blocks = nftl_malloc((unsigned int)((total + 1) << 6));
 		geometry->block_array = blocks;
 		if (!blocks) {
-			nand_print("[NE]%s: malloc fail for nand_block_info\n",
+			nand_print(nftl_ro_lc_476,
 				   __func__);
 			return -2;
 		}
@@ -6651,17 +6647,17 @@ int nftl_start(struct init_nftl_owner *owner, struct init_nftl_config *config,
 		zone->backup_blocks = (unsigned short)
 			((unsigned short)total - (unsigned short)reserved);
 		if (zone->backup_blocks < config->limit_a) {
-			nand_print("[NE]not enough blocks %d!\n",
+			nand_print(nftl_ro_lc_477,
 				   zone->backup_blocks);
 			return -2;
 		}
-		nand_print_dbg("[ND]nftl start:%d,%d\n", total,
+		nand_print_dbg(nftl_ro_lc_478, total,
 			       zone->backup_blocks);
 		result = zone_param_init(zone, 0,
 			(total - zone->backup_blocks) * area,
 			zone->backup_blocks * area);
 		if (result) {
-			nand_print("[NE]zone_param_init fail!\n");
+			nand_print(nftl_ro_lc_479);
 			return result;
 		}
 		/* The stock frame loads stack argument nine, the NFTL number;
@@ -6674,7 +6670,7 @@ int nftl_start(struct init_nftl_owner *owner, struct init_nftl_config *config,
 			result = build_zone_list_first(
 				(struct first_list_zone *)zone, total);
 			if (result) {
-				nand_print("[NE]build_zone_list_first fail!\n");
+				nand_print(nftl_ro_lc_480);
 				return result;
 			}
 		}
@@ -6684,10 +6680,10 @@ int nftl_start(struct init_nftl_owner *owner, struct init_nftl_config *config,
 			nftl_cache_init(zone);
 			return 0;
 		}
-		nand_print("[NE]build_zone_list fail!\n");
+		nand_print(nftl_ro_lc_481);
 		if (attempts > 1)
 			return result;
-		nand_print("[NI]try again\n");
+		nand_print(nftl_ro_lc_482);
 	}
 }
 extern int panic_recover_data(void *block);
@@ -6696,20 +6692,20 @@ struct nftl_build_node *nftl_add(struct nftl_build_node *node)
 	struct nftl_add_block *block = nftl_malloc(136);
 
 	if (!block) {
-		nand_print("[NE]%s:malloc fail for nftl_blk\n", __func__);
+		nand_print(nftl_ro_lc_4, __func__);
 		return 0;
 	}
 	block->partition = build_nand_partition(node);
 	if (nftl_initialize(block, node->number)) {
 		/* OEM leaks the allocated block on initialization failure. */
-		nand_print("[NE]nftl_initialize failed\n");
+		nand_print(nftl_ro_lc_5);
 		return 0;
 	}
 	add_nftl_blk_list((struct nftl_chain *)&nftl_blk_head,
 			  (struct nftl_chain *)block);
 	/* OEM ignores panic recovery failure after publishing the new block. */
 	panic_recover_data(block);
-	nand_print_dbg("[ND]nftl_add ok\n");
+	nand_print_dbg(nftl_ro_lc_6);
 	return (struct nftl_build_node *)block;
 }
 int nftl_build_all(struct nftl_build_owner *owner)
@@ -6720,7 +6716,7 @@ int nftl_build_all(struct nftl_build_owner *owner)
 	while (node) {
 		if (!nftl_add(node)) {
 			/* OEM discards the underlying add failure. */
-			nand_print("[NE]nftl_build_all error!\n");
+			nand_print(nftl_ro_lc_3);
 			return 1;
 		}
 		node = node->next;
@@ -6736,7 +6732,7 @@ int nftl_build_one(struct nftl_build_owner *owner, int number)
 	while (node) {
 		if (node->number == number && !nftl_add(node)) {
 			/* OEM discards the underlying add failure. */
-			nand_print("[NE]nftl_build_all error!\n");
+			nand_print(nftl_ro_lc_3);
 			return 1;
 		}
 		node = node->next;
@@ -6843,7 +6839,7 @@ int put_phy_block_to_invalid_page_list(void *zone,
 	block->previous = 0;
 	result = add_block_invalid_list(zone, block);
 	if (result != 0)
-		nand_print_dbg("[ND]add invalid_list error !\n");
+		nand_print_dbg(nftl_ro_lc_410);
 	return result;
 }
 
@@ -6880,18 +6876,18 @@ int panic_backup_block(struct build_zone *zone)
 		/* OEM returns immediately on the first existing reservation,
 		 * even if a later slot is empty. Preserve this early exit. */
 		if (block) {
-			nand_print("[ND] reserved panic block before %d!\n",
+			nand_print(nftl_ro_lc_19,
 				   block->number);
 			return 0;
 		}
 		block = (struct physical_block *)
 			out_phy_block_from_free_list((struct free_block_zone *)zone);
 		if (block) {
-			nand_print("[NE] reserved panic block %d!\n",
+			nand_print(nftl_ro_lc_20,
 				   block->number);
 			panic_info[index] = block;
 		} else {
-			nand_print("[NE] no reserved panic block!!! quit!\n");
+			nand_print(nftl_ro_lc_21);
 			return -1;
 		}
 	}
@@ -6906,11 +6902,11 @@ int panic_recover_info(struct panic_header *header, struct panic_block *block)
 	unsigned int index = ((unsigned char *)header + 4)[0];
 
 	if (index <= 2) {
-		nand_print("[ND] find panic block : %d\n", block->block);
+		nand_print(nftl_ro_lc_26, block->block);
 		panic_info[index] = block;
 		return 0;
 	}
-	nand_print("[NE] invalid panic block index %d\n", index);
+	nand_print(nftl_ro_lc_27, index);
 	return -1;
 }
 
@@ -6973,13 +6969,13 @@ int panic_recover_data(void *owner)
 	unsigned int sectors;
 
 	if (!state->blocks[0]) {
-		nand_print("[ND] not find panic data, no need to recovery!\n");
+		nand_print(nftl_ro_lc_28);
 		return 0;
 	}
-	nand_print("[ND] recovery panic data start!\n");
+	nand_print(nftl_ro_lc_29);
 	data = nand_malloc(geometry->page_bytes);
 	if (!data) {
-		nand_print("[NE] %s(%d): malloc failed\n", __func__, 308);
+		nand_print(nftl_ro_lc_30, __func__, 308);
 		return -1;
 	}
 	nand_memset(data, 0, geometry->page_bytes);
@@ -6994,21 +6990,21 @@ int panic_recover_data(void *owner)
 			/* OEM ignores the page-read result entirely. */
 			zone->read(zone, &op);
 			if (is_panic_dummy_page(oob)) {
-				nand_print("[ND] ignore blk %d page %d as dummy page\n",
+				nand_print(nftl_ro_lc_31,
 					   block->number, state->page_index);
 			} else if (!is_panic_data_page(oob)) {
 				if (!state->block_index && !state->page_index) {
-					nand_print("[ND] exit recovery panic block\n",
+					nand_print(nftl_ro_lc_32,
 						   block->number, state->page_index);
 					goto done;
 				}
-				nand_print("[ND] invalid blk %d page %d, finish recovery\n",
+				nand_print(nftl_ro_lc_33,
 					   block->number, state->page_index);
 				goto erase;
 			} else {
 				logic_page = get_spare_data(oob, 7, 4);
 				sectors = get_spare_data(oob, 11, 4);
-				nand_print("[ND] move blk %d page %d to logic addr %d\n",
+				nand_print(nftl_ro_lc_34,
 					   block->number, state->page_index, logic_page);
 				/* OEM discards the replay write result. */
 				nftl_write(logic_page, sectors, data);
@@ -7043,7 +7039,7 @@ int toshiba_vender_pre_condition(void *chip)
 	result = set_cmd_with_nand_bus(chip, toshiba_read_retry_start_cmd,
 				       0, 0, 0, 0, 2);
 	if (result != 0) {
-		nand_print("toshiba vender_pre_condition error!\n");
+		nand_print(nftl_ro_lc_78);
 		return result;
 	}
 	return 0;
@@ -7145,12 +7141,12 @@ int erase_block(struct erase_block_zone *zone, struct erase_block_info *block,
 		int result;
 	} local;
 
-	nand_print("[NI]erase_block block %d!\n", block->number);
+	nand_print(nftl_ro_lc_299, block->number);
 	set_physic_op_par(&local.op, block->number, 0, zone->geometry->fixed_page,
 			  0, 0);
 	local.result = zone->erase(zone, &local.op);
 	if (local.result) {
-		nand_print("[NE]erase_block block fail %d!\n",
+		nand_print(nftl_ro_lc_300,
 			   block->number);
 		/* OEM ignores the bad-block callback result and returns the
 		 * original erase status after updating the metadata. */
@@ -7207,12 +7203,12 @@ int torture_block_and_mark(struct torture_zone *zone,
 	unsigned int page;
 	int result;
 
-	nand_print("[NI]torture b@%d.\n", block->number);
+	nand_print(nftl_ro_lc_301, block->number);
 	set_physic_op_par(&op, block->number, 0,
 			  zone->geometry->fixed_page, 0, 0);
 	result = zone->erase(zone, &op);
 	if (result) {
-		nand_print("[NE]erase_block block fail %d!\n", block->number);
+		nand_print(nftl_ro_lc_300, block->number);
 		goto bad;
 	}
 	block->erase_count++;
@@ -7227,7 +7223,7 @@ int torture_block_and_mark(struct torture_zone *zone,
 				  zone->page_data, oob);
 		result = zone->write(zone, &op);
 		if (result) {
-			nand_print("[NE]%s write b@%d p@%d err\n",
+			nand_print(nftl_ro_lc_302,
 				   __func__, block->number, page);
 			goto bad;
 		}
@@ -7240,20 +7236,20 @@ int torture_block_and_mark(struct torture_zone *zone,
 				  zone->page_data, oob);
 		result = zone->read(zone, &op);
 		if (result) {
-			nand_print("[NE]%s read b@%d p@%d err\n",
+			nand_print(nftl_ro_lc_303,
 				   __func__, block->number, page);
 			goto bad;
 		}
 		result = nftl_check_pattern(zone->page_data, patterns[0],
 					    zone->geometry->page_bytes);
 		if (result) {
-			nand_print("[NE]%s b@%d p@%d patt %02x checking main data fail\n",
+			nand_print(nftl_ro_lc_304,
 				   __func__, block->number, page, patterns[0]);
 			goto bad;
 		}
 		result = nftl_check_pattern(oob, patterns[0], 15);
 		if (result) {
-			nand_print("[NE]%s b@%d p@%d patt %02x checking spare data fail\n",
+			nand_print(nftl_ro_lc_305,
 				   __func__, block->number, page, patterns[0]);
 			goto bad;
 		}
@@ -7262,7 +7258,7 @@ int torture_block_and_mark(struct torture_zone *zone,
 			  zone->geometry->fixed_page, 0, 0);
 	result = zone->erase(zone, &op);
 	if (result) {
-		nand_print("[NE][NE]erase_block block fail %d!\n", block->number);
+		nand_print(nftl_ro_lc_306, block->number);
 		goto bad;
 	}
 	block->erase_count++;
@@ -7313,64 +7309,64 @@ void print_nftl_zone(void *zone)
 
 	if (!DIAG_U32(p, 656))
 		return;
-	nand_print_dbg("[ND]nand3.x \n");
-	nand_print_dbg("[ND]zone->nand_chip->blk_per_chip: %d \n", DIAG_U16(DIAG_PTR(p, 8), 24));
-	nand_print_dbg("[ND]zone->nand_chip->bytes_per_page: %d \n", DIAG_U16(DIAG_PTR(p, 8), 26));
-	nand_print_dbg("[ND]zone->nand_chip->pages_per_blk: %d \n", DIAG_U16(DIAG_PTR(p, 8), 20));
-	nand_print_dbg("[ND]zone->nand_chip->max_erase_times: %d \n", DIAG_U16(DIAG_PTR(p, 8), 16));
-	nand_print_dbg("[ND]zone->nand_chip->support_read_reclaim: %d \n", DIAG_U16(DIAG_PTR(p, 8), 30));
-	nand_print_dbg("[ND]zone->test: %d \n", DIAG_U32(p, 656));
-	nand_print_dbg("[ND]zone->zone_no: %d \n", DIAG_U8(p, 24));
-	nand_print_dbg("[ND]zone->zone_attr: %d \n", DIAG_U8(p, 25));
-	nand_print_dbg("[ND]zone->blocks: %d \n", DIAG_U16(p, 26));
-	nand_print_dbg("[ND]zone->bad_block: %d \n", DIAG_U16(p, 28));
-	nand_print_dbg("[ND]zone->logic_cap_in_sects: %d \n", DIAG_U32(p, 32));
-	nand_print_dbg("[ND]zone->backup_cap_in_sects: %d \n", DIAG_U32(p, 40));
-	nand_print_dbg("[ND]zone->free_block_num: %d \n", DIAG_U16(p, 30));
-	nand_print_dbg("[ND]zone->gc_strategy.start_gc_free_blocks: %d \n", DIAG_U16(p, 680));
-	nand_print_dbg("[ND]zone->gc_strategy.stop_gc_free_blocks: %d \n", DIAG_U16(p, 682));
-	nand_print_dbg("[ND]zone->gc_strategy.gc_page: %d \n", DIAG_U16(p, 688));
-	nand_print_dbg("[ND]zone->gc_strategy.process: %d \n", DIAG_U16(p, 684));
-	nand_print_dbg("[ND]zone->prio_gc.prio_type : %d \n", DIAG_U16(p, 698));
-	nand_print_dbg("[ND]zone->zone_start_phy_block->phy_block.Block_NO: %d \n", DIAG_U16(DIAG_PTR(p, 48), 0));
-	nand_print_dbg("[ND]zone->zone_end_phy_block->phy_block.Block_NO: %d \n", DIAG_U16(DIAG_PTR(p, 56), 0));
+	nand_print_dbg(nftl_ro_lc_329);
+	nand_print_dbg(nftl_ro_lc_330, DIAG_U16(DIAG_PTR(p, 8), 24));
+	nand_print_dbg(nftl_ro_lc_331, DIAG_U16(DIAG_PTR(p, 8), 26));
+	nand_print_dbg(nftl_ro_lc_332, DIAG_U16(DIAG_PTR(p, 8), 20));
+	nand_print_dbg(nftl_ro_lc_333, DIAG_U16(DIAG_PTR(p, 8), 16));
+	nand_print_dbg(nftl_ro_lc_334, DIAG_U16(DIAG_PTR(p, 8), 30));
+	nand_print_dbg(nftl_ro_lc_335, DIAG_U32(p, 656));
+	nand_print_dbg(nftl_ro_lc_336, DIAG_U8(p, 24));
+	nand_print_dbg(nftl_ro_lc_337, DIAG_U8(p, 25));
+	nand_print_dbg(nftl_ro_lc_338, DIAG_U16(p, 26));
+	nand_print_dbg(nftl_ro_lc_339, DIAG_U16(p, 28));
+	nand_print_dbg(nftl_ro_lc_340, DIAG_U32(p, 32));
+	nand_print_dbg(nftl_ro_lc_341, DIAG_U32(p, 40));
+	nand_print_dbg(nftl_ro_lc_342, DIAG_U16(p, 30));
+	nand_print_dbg(nftl_ro_lc_343, DIAG_U16(p, 680));
+	nand_print_dbg(nftl_ro_lc_344, DIAG_U16(p, 682));
+	nand_print_dbg(nftl_ro_lc_345, DIAG_U16(p, 688));
+	nand_print_dbg(nftl_ro_lc_346, DIAG_U16(p, 684));
+	nand_print_dbg(nftl_ro_lc_347, DIAG_U16(p, 698));
+	nand_print_dbg(nftl_ro_lc_348, DIAG_U16(DIAG_PTR(p, 48), 0));
+	nand_print_dbg(nftl_ro_lc_349, DIAG_U16(DIAG_PTR(p, 56), 0));
 	__builtin_memcpy(&snapshot, p + 464, 48);
-	nand_print_dbg("[ND]zone->zone_phy_page_map_for_gc: %x \n", snapshot);
+	nand_print_dbg(nftl_ro_lc_350, snapshot);
 	__builtin_memcpy(&snapshot, p + 536, 48);
-	nand_print_dbg("[ND]zone->current_block.user_info: %x \n", snapshot);
-	nand_print_dbg("[ND]zone->current_block.block_info: %x \n", DIAG_PTR(p, 528));
-	nand_print_dbg("[ND]zone->current_block.block_info->phy_block.Block_NO: %d \n", DIAG_U16(DIAG_PTR(p, 528), 0));
-	nand_print_dbg("[ND]zone->current_block.page_used: %d \n", DIAG_U16(p, 584));
-	nand_print_dbg("[ND]zone->current_block.block_info->block_used_count: %d \n", DIAG_U32(DIAG_PTR(p, 528), 8));
-	nand_print_dbg("[ND]zone->recv_free_block: %d %d!!\n", DIAG_U16(DIAG_PTR(p, 64), 0), DIAG_U16(DIAG_PTR(p, 64), 6));
+	nand_print_dbg(nftl_ro_lc_351, snapshot);
+	nand_print_dbg(nftl_ro_lc_352, DIAG_PTR(p, 528));
+	nand_print_dbg(nftl_ro_lc_353, DIAG_U16(DIAG_PTR(p, 528), 0));
+	nand_print_dbg(nftl_ro_lc_354, DIAG_U16(p, 584));
+	nand_print_dbg(nftl_ro_lc_355, DIAG_U32(DIAG_PTR(p, 528), 8));
+	nand_print_dbg(nftl_ro_lc_356, DIAG_U16(DIAG_PTR(p, 64), 0), DIAG_U16(DIAG_PTR(p, 64), 6));
 	if (DIAG_U8(p, 25) & 1) {
 		__builtin_memcpy(&snapshot, p + 600, 48);
-		nand_print_dbg("[ND]zone->assist_block.user_info: %x \n", snapshot);
-		nand_print_dbg("[ND]zone->assist_block.block_info: %x \n", DIAG_PTR(p, 592));
-		nand_print_dbg("[ND]zone->assist_block.block_info->phy_block.Block_NO: %d \n", DIAG_U16(DIAG_PTR(p, 592), 0));
-		nand_print_dbg("[ND]zone->assist_block.page_used: %d \n", DIAG_U16(p, 648));
-		nand_print_dbg("[ND]zone->assist_block.block_info->block_used_count: %d \n", DIAG_U32(DIAG_PTR(p, 592), 8));
+		nand_print_dbg(nftl_ro_lc_357, snapshot);
+		nand_print_dbg(nftl_ro_lc_358, DIAG_PTR(p, 592));
+		nand_print_dbg(nftl_ro_lc_359, DIAG_U16(DIAG_PTR(p, 592), 0));
+		nand_print_dbg(nftl_ro_lc_360, DIAG_U16(p, 648));
+		nand_print_dbg(nftl_ro_lc_361, DIAG_U32(DIAG_PTR(p, 592), 8));
 	}
-	nand_print_dbg("[ND]zone->read_reclaim_complete: %x \n", DIAG_U32(p, 660));
-	nand_print_dbg("[ND]zone->temp_page_buf: %x \n", DIAG_PTR(p, 512));
-	nand_print_dbg("[ND]zone->max_erase_num: %d \n", DIAG_U32(p, 676));
-	nand_print_dbg("[ND]zone->cache.cache_totals: %x \n", DIAG_U16(p, 1072));
-	nand_print_dbg("[ND]zone->wl_gc_count: %d \n", DIAG_U32(p, 668));
-	nand_print_dbg("[ND]zone->wl_gc_page_num: %d \n", DIAG_U32(p, 672));
-	nand_print_dbg("[ND]zone->cfg->nftl_dont_use_cache: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 0));
-	nand_print_dbg("[ND]zone->cfg->nftl_use_cache_sort: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 2));
-	nand_print_dbg("[ND]zone->cfg->nftl_support_gc_read_reclaim: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 4));
-	nand_print_dbg("[ND]zone->cfg->nftl_support_wear_leveling: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 6));
-	nand_print_dbg("[ND]zone->cfg->nftl_need_erase: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 10));
-	nand_print_dbg("[ND]zone->cfg->nftl_min_free_block_num: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 12));
-	nand_print_dbg("[ND]zone->cfg->nftl_gc_threshold_free_block_num: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 14));
-	nand_print_dbg("[ND]zone->cfg->nftl_min_free_block: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 16));
-	nand_print_dbg("[ND]zone->cfg->nftl_gc_threshold_ratio_numerator: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 18));
-	nand_print_dbg("[ND]zone->cfg->nftl_gc_threshold_ratio_denominator: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 20));
-	nand_print_dbg("[ND]zone->cfg->nftl_max_cache_num: %d \n", DIAG_U16(DIAG_PTR(p, 3448), 22));
-	nand_print_dbg("[ND]zone->cfg->nftl_max_cache_write_num: %d \n", DIAG_U16(DIAG_PTR(p, 3448), 24));
-	nand_print_dbg("[ND]zone->cfg->nftl_cross_talk: %x \n", DIAG_U16(DIAG_PTR(p, 3448), 26));
-	nand_print_dbg("[ND]zone->cfg->nftl_read_claim_interval: %d \n", DIAG_U32(DIAG_PTR(p, 3448), 32));
+	nand_print_dbg(nftl_ro_lc_362, DIAG_U32(p, 660));
+	nand_print_dbg(nftl_ro_lc_363, DIAG_PTR(p, 512));
+	nand_print_dbg(nftl_ro_lc_364, DIAG_U32(p, 676));
+	nand_print_dbg(nftl_ro_lc_365, DIAG_U16(p, 1072));
+	nand_print_dbg(nftl_ro_lc_366, DIAG_U32(p, 668));
+	nand_print_dbg(nftl_ro_lc_367, DIAG_U32(p, 672));
+	nand_print_dbg(nftl_ro_lc_368, DIAG_U16(DIAG_PTR(p, 3448), 0));
+	nand_print_dbg(nftl_ro_lc_369, DIAG_U16(DIAG_PTR(p, 3448), 2));
+	nand_print_dbg(nftl_ro_lc_370, DIAG_U16(DIAG_PTR(p, 3448), 4));
+	nand_print_dbg(nftl_ro_lc_371, DIAG_U16(DIAG_PTR(p, 3448), 6));
+	nand_print_dbg(nftl_ro_lc_372, DIAG_U16(DIAG_PTR(p, 3448), 10));
+	nand_print_dbg(nftl_ro_lc_373, DIAG_U16(DIAG_PTR(p, 3448), 12));
+	nand_print_dbg(nftl_ro_lc_374, DIAG_U16(DIAG_PTR(p, 3448), 14));
+	nand_print_dbg(nftl_ro_lc_375, DIAG_U16(DIAG_PTR(p, 3448), 16));
+	nand_print_dbg(nftl_ro_lc_376, DIAG_U16(DIAG_PTR(p, 3448), 18));
+	nand_print_dbg(nftl_ro_lc_377, DIAG_U16(DIAG_PTR(p, 3448), 20));
+	nand_print_dbg(nftl_ro_lc_378, DIAG_U16(DIAG_PTR(p, 3448), 22));
+	nand_print_dbg(nftl_ro_lc_379, DIAG_U16(DIAG_PTR(p, 3448), 24));
+	nand_print_dbg(nftl_ro_lc_380, DIAG_U16(DIAG_PTR(p, 3448), 26));
+	nand_print_dbg(nftl_ro_lc_381, DIAG_U32(DIAG_PTR(p, 3448), 32));
 	print_smart((struct smart_info_zone *)zone);
 }
 #undef DIAG_U8
@@ -7400,13 +7396,13 @@ int zone_param_init(void *zone, unsigned short first_block,
 	buffer = nftl_malloc(INIT_U16(chip, 26));
 	INIT_PTR(p, 512) = buffer;
 	if (!buffer) {
-		nand_print("[NE]%s:malloc fail for temp_page_buf\n", __func__);
+		nand_print(nftl_ro_lc_202, __func__);
 		return -2;
 	}
 	buffer = nftl_malloc(INIT_U16(chip, 26));
 	INIT_PTR(p, 520) = buffer;
 	if (!buffer) {
-		nand_print("[NE]%s:malloc fail for logic_page_buf\n", __func__);
+		nand_print(nftl_ro_lc_203, __func__);
 		return -2;
 	}
 	INIT_U32(p, 32) = sectors;
@@ -7421,7 +7417,7 @@ int zone_param_init(void *zone, unsigned short first_block,
 	/* Stock performs an unchecked division by the chip's sector factor. */
 	if (malloc_logic_page_map((struct logic_page_map_zone *)zone,
 				  sectors / INIT_U8(chip, 8))) {
-		nand_print("[NE]zone_param_init error2\n");
+		nand_print(nftl_ro_lc_204);
 		return -2;
 	}
 	map_bytes = (unsigned int)INIT_U16(chip, 20) << 2;
@@ -7432,7 +7428,7 @@ int zone_param_init(void *zone, unsigned short first_block,
 	buffer = nftl_malloc(allocation_bytes);
 	INIT_PTR(p, 536) = buffer;
 	if (!buffer) {
-		nand_print("[NE]%s:malloc fail for current_block.user_info.buf\n",
+		nand_print(nftl_ro_lc_205,
 			   __func__);
 		return -2;
 	}
@@ -7445,7 +7441,7 @@ int zone_param_init(void *zone, unsigned short first_block,
 	buffer = nftl_malloc(allocation_bytes);
 	INIT_PTR(p, 600) = buffer;
 	if (!buffer) {
-		nand_print("[NE]%s:malloc fail for assist_block.user_info.buf\n",
+		nand_print(nftl_ro_lc_206,
 			   __func__);
 		return -2;
 	}
@@ -7458,7 +7454,7 @@ int zone_param_init(void *zone, unsigned short first_block,
 	buffer = nftl_malloc(allocation_bytes);
 	INIT_PTR(p, 464) = buffer;
 	if (!buffer) {
-		nand_print("[NE]%s:malloc fail for zone_phy_page_map_for_gc.buf\n",
+		nand_print(nftl_ro_lc_207,
 			   __func__);
 		return -2;
 	}
@@ -7605,11 +7601,11 @@ int check_static_wear_leveling(struct wear_zone *owner)
 		zone->threshold = blocks / 5;
 	if ((unsigned int)(max_erase - min_erase) < zone->threshold)
 		return 1;
-	nand_print_dbg("[ND]swl: static WL need to do(%d : %d)\n",
+	nand_print_dbg(nftl_ro_lc_452,
 		       max_erase, min_erase);
-	nand_print_dbg("[ND]swl: min_ec_blk_no = %d,\n", minimum->before_erase[0]
+	nand_print_dbg(nftl_ro_lc_453, minimum->before_erase[0]
 		       | minimum->before_erase[1] << 8);
-	nand_print_dbg("[ND]swl: zone->blocks = %d)\n", zone->blocks);
+	nand_print_dbg(nftl_ro_lc_454, zone->blocks);
 	zone->selected = minimum;
 	return 0;
 }
@@ -7644,12 +7640,12 @@ int done_static_wear_leveling(struct wear_zone *owner)
 	}
 	if (!is_block_in_invalid_list((struct invalid_zone *)owner,
 				(struct invalid_node *)zone->selected)) {
-		nand_print_dbg("[ND]swl: the block(%d) for static WL is not in invalid_list\n",
+		nand_print_dbg(nftl_ro_lc_455,
 			       zone->selected->number);
 		zone->selected = 0;
 		return 2;
 	}
-	nand_print_dbg("[ND]swl: done_static_wear_leveling(min_ec) block:%d, erase_count:%d\n",
+	nand_print_dbg(nftl_ro_lc_456,
 		       zone->selected->number, zone->selected->erase_count);
 	zone->active = 1;
 	zone->stats->count++;
@@ -7660,7 +7656,7 @@ int done_static_wear_leveling(struct wear_zone *owner)
 	if (result) {
 		/* OEM reports the block number as the failure value and leaves
 		 * active set; preserve both bugs for stock behavior. */
-		nand_print("[NE]swl: garbage_collect_first fail:%d\n",
+		nand_print(nftl_ro_lc_457,
 			   zone->selected->number);
 		zone->selected = 0;
 		return 1;
@@ -7668,7 +7664,7 @@ int done_static_wear_leveling(struct wear_zone *owner)
 	zone->active = 0;
 	if (!is_block_in_free_list((struct free_zone *)owner,
 				(struct free_node *)zone->selected))
-		nand_print("[NE]swl: last->check fail:%d\n",
+		nand_print(nftl_ro_lc_458,
 			   zone->selected->number);
 	zone->selected = 0;
 	return 0;
@@ -7818,7 +7814,7 @@ int adjust_free_list(struct adjust_free_zone *zone)
 
 	/* OEM logs a missing block but dereferences it immediately afterward. */
 	if (!block)
-		nand_print("[NE]adjust free list fail!!\n");
+		nand_print(nftl_ro_lc_327);
 	erase_block((struct erase_block_zone *)zone,
 		    (struct erase_block_info *)block,
 		    (unsigned short)(block->erase_time + 1));
@@ -7827,7 +7823,7 @@ int adjust_free_list(struct adjust_free_zone *zone)
 		(struct nftl_free_erase_node *)block);
 	zone->current = block;
 	/* The second removal may also return null, which OEM dereferences. */
-	nand_print("[NI]adjust free list : %d %d!!\n",
+	nand_print(nftl_ro_lc_328,
 		   block->number, block->erase_time);
 	return 0;
 }
@@ -7851,14 +7847,14 @@ void print_free_list(struct free_print_zone *zone)
 	struct free_print_node *node = &zone->head;
 
 	if (zone->debug_level) {
-		nand_print_dbg("[ND]free list: \n");
+		nand_print_dbg(nftl_ro_lc_400);
 		node = node->next;
 		/* OEM prints every node without checking cycles or link validity. */
 		while (node) {
-			nand_print_dbg("[ND]block NO:%4d; erase:%3d; ",
+			nand_print_dbg(nftl_ro_lc_401,
 				       node->number, node->erase_time);
-			nand_print_dbg("[ND]count:%4d; ", node->count);
-			nand_print_dbg("[ND]info:0x%x\n", node->info);
+			nand_print_dbg(nftl_ro_lc_402, node->count);
+			nand_print_dbg(nftl_ro_lc_403, node->info);
 			node = node->next;
 	}
 	}
@@ -7884,15 +7880,15 @@ void print_block_invalid_list(struct invalid_print_zone *zone)
 	struct invalid_print_node *node = &zone->head;
 
 	if (zone->debug_level) {
-		nand_print_dbg("[ND]invalid_page_count list: \n");
+		nand_print_dbg(nftl_ro_lc_404);
 		node = node->next;
 		/* OEM trusts every forward link and can loop on a cycle. */
 		while (node) {
-			nand_print_dbg("[ND]block NO:%4d; erase:%3d; ",
+			nand_print_dbg(nftl_ro_lc_401,
 				       node->number, node->erase_time);
-			nand_print_dbg("[ND]count:%4d; invalid:%3d;",
+			nand_print_dbg(nftl_ro_lc_405,
 				       node->count, node->invalid);
-			nand_print_dbg("[ND]info:0x%x\n", node->info);
+			nand_print_dbg(nftl_ro_lc_403, node->info);
 			node = node->next;
 		}
 	}
@@ -8011,7 +8007,7 @@ int samsung_read_page_end(struct samsung_read_request *request)
 						      request->channel);
 	result = generic_read_page_end_not_retry(request);
 	if (result == -2) {
-		nand_print_dbg("samsung retry!\n");
+		nand_print_dbg(nftl_ro_lc_37);
 		retry = 1;
 		while (samsung_read_retry_cycle > retry) {
 			chip->retry = retry;
@@ -8022,7 +8018,7 @@ int samsung_read_page_end(struct samsung_read_request *request)
 				if (result == 10 || result == 0) {
 					result = 10;
 					nand_print_dbg(
-						"samsung ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+						nftl_ro_lc_38,
 						((struct samsung_read_controller *)chip->controller)->channel,
 						((struct samsung_read_chip_id *)chip)->chip,
 						request->block, request->page,
@@ -8089,7 +8085,7 @@ int micron_read_page_end(struct samsung_read_request *request)
 						      request->channel);
 	result = generic_read_page_end_not_retry(request);
 	if (result == -2) {
-		nand_print_dbg("micron retry!\n");
+		nand_print_dbg(nftl_ro_lc_70);
 		retry = 0;
 		while (micron_read_retry_cycle > retry) {
 			chip->retry = retry;
@@ -8100,7 +8096,7 @@ int micron_read_page_end(struct samsung_read_request *request)
 				if (result == 10 || result == 0) {
 					result = 10;
 					nand_print_dbg(
-						"micron ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+						nftl_ro_lc_71,
 						((struct samsung_read_controller *)chip->controller)->channel,
 						((struct samsung_read_chip_id *)chip)->chip,
 						request->block, request->page,
@@ -8135,7 +8131,7 @@ int toshiba_read_page_end(struct samsung_read_request *request)
 						      request->channel);
 	result = generic_read_page_end_not_retry(request);
 	if (result == -2) {
-		nand_print_dbg("toshiba retry!\n");
+		nand_print_dbg(nftl_ro_lc_79);
 		toshiba_retry_flag_recovered = 1;
 		retry = 0;
 		while (toshiba_read_retry_cycle > retry) {
@@ -8147,7 +8143,7 @@ int toshiba_read_page_end(struct samsung_read_request *request)
 				if (result == 10 || result == 0) {
 					result = 10;
 					nand_print_dbg(
-						"toshiba ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+						nftl_ro_lc_80,
 						((struct samsung_read_controller *)chip->controller)->channel,
 						((struct samsung_read_chip_id *)chip)->chip,
 						request->block, request->page,
@@ -8179,7 +8175,7 @@ int sandisk_read_page_end(struct samsung_read_request *request)
 						      request->channel);
 	result = generic_read_page_end_not_retry(request);
 	if (result == -2) {
-		nand_print_dbg("sandisk retry!\n");
+		nand_print_dbg(nftl_ro_lc_134);
 		retry = 0;
 		while (sandisk_read_retry_cycle > retry) {
 			chip->retry = retry;
@@ -8202,7 +8198,7 @@ int sandisk_read_page_end(struct samsung_read_request *request)
 				} else if (result == 10 || result == 0) {
 					result = 10;
 					nand_print_dbg(
-						"sandisk ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+						nftl_ro_lc_135,
 						((struct samsung_read_controller *)chip->controller)->channel,
 						((struct samsung_read_chip_id *)chip)->chip,
 						request->block, request->page,
@@ -8265,11 +8261,11 @@ int name(struct samsung_read_request *request) \
 	return result; \
 }
 HYNIX_READ_PAGE_END(hynix16nm_read_page_end, hynix16nm_read_retry_cycle,
-		    hynix16nm_set_readretry, "m1 retry!\n",
-		    "m1 ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n")
+		    hynix16nm_set_readretry, nftl_ro_lc_110,
+		    nftl_ro_lc_111)
 HYNIX_READ_PAGE_END(hynix26nm_read_page_end, hynix26nm_read_retry_cycle,
-		    hynix26nm_set_readretry, "m0 retry!\n",
-		    "hynix26nm ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n")
+		    hynix26nm_set_readretry, nftl_ro_lc_86,
+		    nftl_ro_lc_87)
 #undef HYNIX_READ_PAGE_END
 
 extern int set_one_cmd(struct command_chip *chip, unsigned int command,
@@ -8506,7 +8502,7 @@ int put_phy_block_to_free_list(struct move_zone *zone,
     if (result == 0)
         ((struct free_block_zone *)zone)->count++;
     else
-        nand_print_dbg("[ND]free_list error !\n");
+        nand_print_dbg(nftl_ro_lc_409);
     return result;
 }
 
@@ -8620,12 +8616,12 @@ int do_prio_gc(void *owner)
 		return 0;
 	}
 	if (!block) {
-		nand_print_dbg("[ND]no block to prio gc\n");
+		nand_print_dbg(nftl_ro_lc_447);
 		goto clear;
 	}
 	if (!is_block_in_invalid_list((struct invalid_zone *)zone,
 				      (struct invalid_node *)block)) {
-		nand_print_dbg("[ND]no need gc:%d, type:%d\n",
+		nand_print_dbg(nftl_ro_lc_448,
 			       block->number, node->priority);
 		goto clear;
 	}
@@ -8637,13 +8633,13 @@ int do_prio_gc(void *owner)
 	}
 	result = garbage_collect_first((struct gc_one_zone *)zone, block, -1);
 	if (result) {
-		nand_print("[NE]do_prio_gc garbage_collect_first fail:%d, type:%d\n",
+		nand_print(nftl_ro_lc_449,
 			   block->number, node->priority);
 		goto clear_error;
 	}
 	if (!is_block_in_free_list((struct free_zone *)zone,
 				   (struct free_node *)block)) {
-		nand_print_dbg("[ND]prio gc fail1:%d, type:%d\n",
+		nand_print_dbg(nftl_ro_lc_450,
 			       block->number, node->priority);
 		goto clear;
 	}
@@ -8652,7 +8648,7 @@ int do_prio_gc(void *owner)
 			(struct nftl_free_erase_owner *)zone,
 			(struct nftl_free_erase_node *)block);
 	if (!removed) {
-		nand_print_dbg("[ND]prio gc fail2:%d, type:%d\n",
+		nand_print_dbg(nftl_ro_lc_451,
 			       block->number, node->priority);
 		goto clear;
 	}
@@ -8744,7 +8740,7 @@ int samsung_readretry_init(struct samsung_init_chip *chip)
 	samsung_read_retry_mode = (unsigned char)(chip->inner->flags >> 16);
 	samsung_read_retry_cycle = 15;
 	/* Preserve OEM typo and fixed cycle count. */
-	nand_print_dbg("samsung read retry conut: %d !\n",
+	nand_print_dbg(nftl_ro_lc_39,
 		       samsung_read_retry_cycle);
 	/* OEM rejects other modes after mutating global state. */
 	if (samsung_read_retry_mode != 32)
@@ -8765,7 +8761,7 @@ int toshiba_readretry_init(struct samsung_init_chip *chip)
 		(unsigned char)(chip->inner->flags >> 8);
 	toshiba_read_retry_reg_cnt =
 		(unsigned char)chip->inner->flags;
-	nand_print_dbg("toshiba read retry conut: %d !\n",
+	nand_print_dbg(nftl_ro_lc_81,
 		       toshiba_read_retry_cycle);
 	return 0;
 }
@@ -8827,42 +8823,42 @@ int name(void) \
 
 SPECIAL_INIT_TWO(samsung_special_init, samsung_readretry_init,
 	samsung_read_page_end, samsung_read_retry_mode, samsung_read_retry_cycle,
-	" samsung_special_init samsung_read_retry_mode:%d samsung_read_retry_cycle :%d \n",
-	" samsung_special_init error samsung_read_retry_mode:%d samsung_read_retry_cycle :%d \n")
+	nftl_ro_lc_40,
+	nftl_ro_lc_41)
 SPECIAL_INIT_TWO(micron_special_init, micron_readretry_init,
 	micron_read_page_end, micron_read_retry_mode, micron_read_retry_cycle,
-	" micron_special_init micron_read_retry_mode:%d micron_read_retry_cycle:%d \n",
-	" micron_special_init error micron_read_retry_mode:%d micron_read_retry_cycle:%d \n")
+	nftl_ro_lc_74,
+	nftl_ro_lc_75)
 SPECIAL_INIT_THREE(toshiba_special_init, toshiba_readretry_init,
 	toshiba_read_page_end, toshiba_read_retry_mode, toshiba_read_retry_cycle,
 	toshiba_read_retry_reg_cnt,
-	" toshiba_special_init toshiba_read_retry_mode :%d toshiba_read_retry_cycle :%d toshiba_read_retry_reg_cnt :%d \n",
-	" toshiba_special_init error toshiba_read_retry_mode :%d toshiba_read_retry_cycle :%d toshiba_read_retry_reg_cnt :%d \n")
+	nftl_ro_lc_82,
+	nftl_ro_lc_83)
 SPECIAL_INIT_THREE(hynix16nm_special_init, hynix16nm_readretry_init,
 	hynix16nm_read_page_end, hynix16nm_read_retry_mode,
 	hynix16nm_read_retry_cycle, hynix16nm_read_retry_reg_num,
-	" hynix16nm_special_init hynix16nm_read_retry_mode: %d hynix16nm_read_retry_cycle:%d hynix16nm_read_retry_reg_num:%d\n",
-	" hynix16nm_special_init error hynix16nm_read_retry_mode: %d hynix16nm_read_retry_cycle:%d hynix16nm_read_retry_reg_num:%d\n")
+	nftl_ro_lc_131,
+	nftl_ro_lc_132)
 SPECIAL_INIT_THREE(hynix20nm_special_init, hynix20nm_readretry_init,
 	hynix20nm_read_page_end, hynix20nm_read_retry_mode,
 	hynix20nm_read_retry_cycle, hynix20nm_read_retry_reg_num,
-	" hynix20nm_special_init hynix20nm_read_retry_mode: %d hynix20nm_read_retry_cycle:%d hynix20nm_read_retry_reg_num:%d\n",
-	" hynix20nm_special_init error hynix20nm_read_retry_mode: %d hynix20nm_read_retry_cycle:%d hynix20nm_read_retry_reg_num:%d\n")
+	nftl_ro_lc_66,
+	nftl_ro_lc_67)
 SPECIAL_INIT_THREE(hynix26nm_special_init, hynix26nm_readretry_init,
 	hynix26nm_read_page_end, hynix26nm_read_retry_mode,
 	hynix26nm_read_retry_cycle, hynix26nm_read_retry_reg_num,
-	" hynix26nm_special_init hynix26nm_read_retry_mode: %d hynix26nm_read_retry_cycle:%d hynix26nm_read_retry_reg_num:%d\n",
-	" hynix26nm_special_init error hynix26nm_read_retry_mode: %d hynix26nm_read_retry_cycle:%d hynix26nm_read_retry_reg_num:%d\n")
+	nftl_ro_lc_91,
+	nftl_ro_lc_92)
 SPECIAL_INIT_THREE(sandisk_special_init, sandisk_readretry_init,
 	sandisk_read_page_end, sandisk_read_retry_mode,
 	sandisk_read_retry_cycle, sandisk_read_retry_reg_cnt,
-	" sandisk_special_init sandisk_read_retry_mode:%d sandisk_read_retry_cycle :%d sandisk_read_retry_reg_cnt %d \n",
-	" sandisk_special_init error sandisk_read_retry_mode:%d sandisk_read_retry_cycle :%d sandisk_read_retry_reg_cnt %d \n")
+	nftl_ro_lc_138,
+	nftl_ro_lc_139)
 SPECIAL_INIT_THREE(sandisk_A19_special_init, sandisk_A19_readretry_init,
 	sandisk_A19_read_page_end, sandisk_A19_read_retry_mode,
 	sandisk_A19_read_retry_cycle, sandisk_A19_read_retry_reg_cnt,
-	" sandisk_A19_special_init sandisk_A19_read_retry_mode:%d sandisk_A19_read_retry_cycle :%d sandisk_A19_read_retry_reg_cnt %d \n",
-	" sandisk_A19_special_init error sandisk_A19_read_retry_mode:%d sandisk_A19_read_retry_cycle :%d sandisk_A19_read_retry_reg_cnt %d \n")
+	nftl_ro_lc_100,
+	nftl_ro_lc_101)
 
 extern unsigned int sandisk_toggle_mode_flag;
 extern unsigned char sandisk_read_retry_disable_cmd_19[];
@@ -8989,7 +8985,7 @@ int toshiba_vender_set_param(struct samsung_set_chip *chip,
 	/* OEM unconditionally inspects four bytes, including when count is zero;
 	 * the mode-16 exit caller uses that zero count. The NAND error results
 	 * are ORed together, so callers cannot recover the individual failure. */
-	nand_print_dbg("toshiba rr value 3 %x %x %x %x!\n",
+	nand_print_dbg(nftl_ro_lc_77,
 		       values[0], values[1], values[2], values[3]);
 	return result;
 }
@@ -9161,7 +9157,7 @@ int malloc_logic_page_map(struct logic_page_map_zone *zone,
 			if (!zone->maps[index]) {
 				/* OEM passes the index as the sole argument to a
 				 * format expecting a string and an integer. */
-				nand_print("[NE]%s:malloc fail for logic_page_map %d\n",
+				nand_print(nftl_ro_lc_471,
 					   index);
 				return -2;
 			}
@@ -9173,7 +9169,7 @@ int malloc_logic_page_map(struct logic_page_map_zone *zone,
 			bytes = remaining_pages << 2;
 			zone->maps[index] = nftl_malloc(bytes);
 			if (!zone->maps[index]) {
-				nand_print("[NE]%s: malloc fail for logic_page_map %d\n",
+				nand_print(nftl_ro_lc_472,
 					   index);
 				return -2;
 			}
@@ -9185,7 +9181,7 @@ int malloc_logic_page_map(struct logic_page_map_zone *zone,
 	/* The OEM leaves prior allocations in place on either failure path,
 	 * and retains at most 25 chunks before reporting the remainder. */
 	if (remaining_pages) {
-		nand_print("[NE]zone_param_init malloc_logic_page_map error %d\n",
+		nand_print(nftl_ro_lc_473,
 			   remaining_pages);
 		return -2;
 	}
@@ -9220,7 +9216,7 @@ static int crc_wrong(struct crc_page_zone *zone, const unsigned char *data,
 	actual = nand_crc16(-1, data, length);
 	stored = (short)((short)oob[13] | (short)(oob[12] << 8));
 	if (actual != stored) {
-		nand_print("[NE]exception case wb %04x %04x, len: %d\n",
+		nand_print(nftl_ro_lc_201,
 			   actual, stored, length);
 		return 1;
 	}
@@ -9242,22 +9238,22 @@ int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 	/* OEM probes OOB before the unchecked zone/geometry pointer, then
 	 * uses CRC only when the geometry flag is set. Keep this fault order. */
 	if (oob[0] != 0xff) {
-		nand_print("[NE]exception case bad block\n");
+		nand_print(nftl_ro_lc_395);
 		error = 1;
 	} else if (zone->geometry->crc_enabled) {
 		if (crc_wrong((struct crc_page_zone *)zone, data, oob)) {
-			nand_print("[NE]exception case wbc\n");
+			nand_print(nftl_ro_lc_396);
 			error = 1;
 		}
 	} else if (oob[11] != 0xa5 || oob[15] != 0xa5) {
-		nand_print("[NE]exception case gd\n");
+		nand_print(nftl_ro_lc_397);
 		error = 1;
 	}
 	if (error == 1) {
 		/* OEM prints its original source line and dumps 16 bytes of OOB;
 		 * preserve that diagnostic even if the source line moves. */
-		nand_print("[NE]%s %d, flag = %d\n", __func__, 3046, error);
-		nand_print("[NE]OOB :");
+		nand_print(nftl_ro_lc_398, __func__, 3046, error);
+		nand_print(nftl_ro_lc_399);
 		_DumpHexData(oob, 16);
 	}
 	return error;
@@ -9271,7 +9267,7 @@ unsigned int *get_logic_page_map(struct logic_page_map_zone *zone,
 	unsigned int *result;
 
 	if (page >= zone->total_pages) {
-		nand_print("[NE]%s:logic_page:0x%x >= total_pages:0x%x\n",
+		nand_print(nftl_ro_lc_470,
 			   __func__, page, zone->total_pages);
 		result = 0;
 		return result;
@@ -9307,7 +9303,7 @@ int recover_logic_page_mapping(struct logic_page_map_zone *zone,
 				(struct logic_page_print_entry *)
 				get_logic_page_map(zone, page);
 			if (!entry) {
-				nand_print("[NI]logic_page_map is NULL\n");
+				nand_print(nftl_ro_lc_273);
 				current->invalid_pages++;
 				continue;
 			}
@@ -9325,7 +9321,7 @@ int recover_logic_page_mapping(struct logic_page_map_zone *zone,
 					previous->invalid_pages++;
 				if (previous->invalid_pages >
 				    ((struct page_geometry *)zone->geometry)->pages_per_block)
-					nand_print("[NE]invalid_page_count more than pages_per_blk :%d\n",
+					nand_print(nftl_ro_lc_274,
 						   previous->number);
 			}
 			/* OEM replaces only the low 12 bits of the map code. */
@@ -9333,12 +9329,12 @@ int recover_logic_page_mapping(struct logic_page_map_zone *zone,
 			entry->marker = current->number;
 		} else {
 			if (page != 0xffffffff)
-				nand_print("[NE]invalid_page data block:%d page:%d,logic_page 0x%x!!\n",
+				nand_print(nftl_ro_lc_275,
 					   current->number, index, page);
 			current->invalid_pages++;
 			if (current->invalid_pages >
 			    ((struct page_geometry *)zone->geometry)->pages_per_block)
-				nand_print("[NE]build invalid_page_count more than pages_per_blk!!\n");
+				nand_print(nftl_ro_lc_276);
 		}
 	}
 	return 0;
@@ -9370,7 +9366,7 @@ int _nftl_nand_read_logic_page(void *owner, unsigned int page, void *data)
 	int result;
 
 	if (!entry) {
-		nand_print_dbg("[ND]logic_page_map_temp NULL!!\n");
+		nand_print_dbg(nftl_ro_lc_147);
 		return 1;
 	}
 	if (entry->marker == 0xffff) {
@@ -9389,7 +9385,7 @@ int _nftl_nand_read_logic_page(void *owner, unsigned int page, void *data)
 		void *physical = get_phy_block_addr(
 			(struct nftl_phy_outer *)zone, entry->marker);
 		add_prio_gc((struct prio_gc_owner *)zone, physical, 1);
-		nand_print("[NE]read a page: %d READ_RECLAIM!\n", page);
+		nand_print(nftl_ro_lc_148, page);
 	}
 	/* OEM performs priority GC after every nonempty read and ignores its
 	 * result, including when the read itself has already failed. */
@@ -9409,9 +9405,9 @@ int print_logic_page_map(struct logic_page_map_zone *zone, unsigned int ignored)
 		entry = (struct logic_page_print_entry *)
 			get_logic_page_map(zone, index);
 		if (!entry)
-			nand_print("[NI]page_map NULL!!\n");
+			nand_print(nftl_ro_lc_431);
 		else if (entry->marker != 0xffff)
-			nand_print_dbg("[ND]%4d:<%4d %3d><%d>\n", index,
+			nand_print_dbg(nftl_ro_lc_432, index,
 				       entry->marker, entry->code & 0xfff,
 				       (((unsigned char *)entry)[1] >> 4) & 1);
 		index++;
@@ -9438,7 +9434,7 @@ int get_cold_logic_page(void *zone, int page, unsigned int pages)
 		entry = (struct cold_map_entry *)get_logic_page_map(
 			(struct logic_page_map_zone *)zone, current);
 		if (!entry) {
-			nand_print("[NI]page_map NULL!!\n");
+			nand_print(nftl_ro_lc_431);
 		} else if (entry->marker != 0xffff &&
 			   entry->cold !=
 			   ((struct cold_logic_zone *)zone)->flag) {
@@ -9536,7 +9532,7 @@ int check_invalid_page_right(struct page_map_write_zone *zone,
 				get_logic_page_map((struct logic_page_map_zone *)zone,
 						   logic_page);
 			if (!location) {
-				nand_print_dbg("[ND]logic_page_map_temp NULL!!\n");
+				nand_print_dbg(nftl_ro_lc_147);
 				invalid++;
 			} else if (location->block != *(unsigned short *)block ||
 			   location->page != page) {
@@ -9550,7 +9546,7 @@ int check_invalid_page_right(struct page_map_write_zone *zone,
 	if (block->used_pages != invalid) {
 		/* OEM misspells "invalid"; its "used_page" field is the input
 		 * page count, while the second bracket is block->used_pages. */
-		nand_print("[NE]invaild_page num error:[%d] [%d]  used_page:[%d]!!\n",
+		nand_print(nftl_ro_lc_175,
 			   invalid, block->used_pages, page_count);
 		return 1;
 	}
@@ -9568,7 +9564,7 @@ int write_phy_page_map_to_current_block(struct page_map_write_zone *zone,
 					(struct phy_write_state *)current,
 					current->data, 0, 0xaaaaffff);
 	if (result) {
-		nand_print("[NE]write_phy_data_to_current_block error1\n");
+		nand_print(nftl_ro_lc_166);
 		return result;
 	}
 	current->page++;
@@ -9616,7 +9612,7 @@ int do_before_write(void *owner)
 			block->tag--;
 		if (get_new_current_block((struct get_new_zone *)zone,
 				(struct get_new_current_entry *)zone->current)) {
-			nand_print("[NE]get_new_current_block error3!\n");
+			nand_print(nftl_ro_lc_156);
 			return 1;
 		}
 	}
@@ -9633,7 +9629,7 @@ int do_before_write(void *owner)
 				block->tag--;
 			if (get_new_current_block((struct get_new_zone *)zone,
 				(struct get_new_current_entry *)zone->page_map)) {
-				nand_print("[NE]get_new_current_block error4!\n");
+				nand_print(nftl_ro_lc_157);
 				return 1;
 			}
 		}
@@ -9647,7 +9643,7 @@ int do_after_write(struct do_after_zone *zone)
 		if (write_phy_page_map_to_current_block(
 				(struct page_map_write_zone *)zone,
 				(struct page_map_write_current *)zone->current)) {
-			nand_print("[NE]write_phy_page_map_to_current_block error!\n");
+			nand_print(nftl_ro_lc_158);
 			return 1;
 		}
 		if (zone->flags & 1) {
@@ -9655,17 +9651,17 @@ int do_after_write(struct do_after_zone *zone)
 			if (write_phy_page_map_to_current_block(
 					(struct page_map_write_zone *)zone,
 					(struct page_map_write_current *)zone->page_map))
-				nand_print("[NE]write_phy_page_map_to_current_block error!\n");
+				nand_print(nftl_ro_lc_158);
 		}
 		if (get_new_current_block((struct get_new_zone *)zone,
 				(struct get_new_current_entry *)zone->current)) {
-			nand_print("[NE]get_new_current_block error1!\n");
+			nand_print(nftl_ro_lc_159);
 			return 1;
 		}
 		if (zone->flags & 1) {
 			if (get_new_current_block((struct get_new_zone *)zone,
 				    (struct get_new_current_entry *)zone->page_map)) {
-				nand_print("[NE]get_new_current_block error2!\n");
+				nand_print(nftl_ro_lc_160);
 				return 1;
 			}
 		}
@@ -9682,7 +9678,7 @@ int fill_no_use_data_to_page(void *owner)
 		if (write_phy_page_map_to_current_block(
 				(struct page_map_write_zone *)zone,
 				(struct page_map_write_current *)zone->current)) {
-			nand_print("[NE]write_phy_page_map_to_current_block error!\n");
+			nand_print(nftl_ro_lc_158);
 			return 1;
 		}
 		if (zone->flags & 1) {
@@ -9690,17 +9686,17 @@ int fill_no_use_data_to_page(void *owner)
 			if (write_phy_page_map_to_current_block(
 					(struct page_map_write_zone *)zone,
 					(struct page_map_write_current *)zone->page_map))
-				nand_print("[NE]write_phy_page_map_to_current_block error!\n");
+				nand_print(nftl_ro_lc_158);
 		}
 		if (get_new_current_block((struct get_new_zone *)zone,
 				(struct get_new_current_entry *)zone->current)) {
-			nand_print("[NE]get_new_current_block error1!\n");
+			nand_print(nftl_ro_lc_159);
 			return 1;
 		}
 		if (zone->flags & 1) {
 			if (get_new_current_block((struct get_new_zone *)zone,
 					(struct get_new_current_entry *)zone->page_map)) {
-				nand_print("[NE]get_new_current_block error2!\n");
+				nand_print(nftl_ro_lc_160);
 				return 1;
 			}
 		}
@@ -9714,12 +9710,12 @@ int fill_no_use_data_to_page(void *owner)
 	if (write_phy_page_map_to_current_block(
 			(struct page_map_write_zone *)zone,
 			(struct page_map_write_current *)zone->current))
-		nand_print("[NE]write_phy_page_map_to_current_block error!\n");
+		nand_print(nftl_ro_lc_158);
 	if (zone->flags & 1) {
 		if (write_phy_page_map_to_current_block(
 				(struct page_map_write_zone *)zone,
 				(struct page_map_write_current *)zone->page_map))
-			nand_print("[NE]write_phy_page_map_to_current_block error!\n");
+			nand_print(nftl_ro_lc_158);
 	}
 	return 8;
 }
@@ -9737,13 +9733,13 @@ int hynix16nm_get_special_info(unsigned char *buffer, void *destination,
 	unsigned char checksum;
 	int result = -1;
 
-	nand_print_dbg("get_hynix_special_info start!!\n");
+	nand_print_dbg(nftl_ro_lc_107);
 	if (physic_info_get_offset(&offset)) {
-		nand_print("hynix_special_info:can't find uboot head\n");
+		nand_print(nftl_ro_lc_108);
 		return 1;
 	}
 	for (block = 4; block <= 50; block++) {
-		nand_print_dbg("physic info start_block %d\n", block);
+		nand_print_dbg(nftl_ro_lc_109, block);
 		/* OEM ignores a failed copy helper and judges only the header in
 		 * the shared buffer, which may still hold earlier contents. */
 		if (buffer[8192 + 1536] != 0xa5)
@@ -9807,7 +9803,7 @@ int get_new_current_block(struct get_new_zone *zone,
 				(struct nftl_free_erase_owner *)zone,
 				zone->geometry->erase_limit);
 		if (current->block)
-			nand_print_dbg("[ND]swl: new_cur_blk->alloc ok(max_ec): block_no = %d; ec = %d; \n",
+			nand_print_dbg(nftl_ro_lc_172,
 				       current->block->number,
 				       current->block->erase_count);
 	} else {
@@ -9815,7 +9811,7 @@ int get_new_current_block(struct get_new_zone *zone,
 			out_phy_block_from_free_list((struct free_block_zone *)zone);
 	}
 	if (!current->block) {
-		nand_print("[NE]no free block!!!!\n");
+		nand_print(nftl_ro_lc_173);
 		return 1;
 	}
 	current->page = 0;
@@ -9862,7 +9858,7 @@ int nand_discard(struct discard_zone *input, unsigned int sector,
 
 	/* OEM's 32-bit addition wraps, allowing an out-of-range request through. */
 	if (sector + count > zone->sector_count) {
-		nand_print("[NE]nand_discard paramter error!\n");
+		nand_print(nftl_ro_lc_430);
 		return 1;
 	}
 	zone->smart->recv_discard_sectors += count;
@@ -9970,7 +9966,7 @@ int is_no_use_device(struct no_use_zone *zone, unsigned int expected_size)
 			if (is_ftl_start_flag_page(oob) == 1 &&
 			    (read_result == 0 || read_result == 10)) {
 				if (get_spare_data(oob, 3, 4) != expected_size) {
-					nand_print("[NE]mtd size changed !\n");
+					nand_print(nftl_ro_lc_208);
 					return 1;
 				}
 				zone->blocks = (struct no_use_block *)
@@ -10046,7 +10042,7 @@ int garbage_collect(void *input)
 	}
 	if (!zone->frequency) {
 		if (!zone->candidate) {
-			nand_print("[NE]garbage_collect phy_block null\n");
+			nand_print(nftl_ro_lc_433);
 			return 1;
 		}
 		invalid_pages = zone->candidate->invalid_pages;
@@ -10058,7 +10054,7 @@ int garbage_collect(void *input)
 		else if (invalid_pages >= pages_per_block >> 3)
 			zone->request = 16;
 		else {
-			nand_print_dbg("[ND]garbage too frequency! %d:%d\n",
+			nand_print_dbg(nftl_ro_lc_434,
 				       zone->free_blocks, invalid_pages);
 			zone->request = 0xffff;
 		}
@@ -10072,7 +10068,7 @@ int garbage_collect(void *input)
 		return 0;
 	}
 	if (garbage_collect_first((struct gc_one_zone *)zone, 0, request)) {
-		nand_print("[NE]garbage_collect_first wrong fbn:%d\n",
+		nand_print(nftl_ro_lc_435,
 			   zone->free_blocks);
 		return 1;
 	}
@@ -10156,7 +10152,7 @@ int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 				(struct invalid_node *)requested);
 	}
 	if (!block) {
-		nand_print("[NI]garbage_collect_first none!!\n");
+		nand_print(nftl_ro_lc_436);
 		return 8;
 	}
 	zone->stats->runs++;
@@ -10164,24 +10160,24 @@ int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 			  zone->geometry->fixed_page, zone->data, oob);
 	status = zone->read(zone, &op);
 	if (is_phy_mapping_page(oob) != 1) {
-		nand_print_dbg("[ND]garbage_collect_first wrong!!\n");
-		nand_print_dbg("[ND]garbage_collect_first cannot find PHY_MAPPING_PAGE%d %d %d %d!!\n",
+		nand_print_dbg(nftl_ro_lc_437);
+		nand_print_dbg(nftl_ro_lc_438,
 			       block->number, zone->geometry->pages - 1, 0,
 			       zone->geometry->fixed_page);
 		/* Stock supplies only fifteen values for sixteen %x conversions.
 		 * The final diagnostic word comes from its uninitialized frame. */
-		nand_print_dbg("[ND]garbage_collect_first cannot find PHY_MAPPING_PAGE%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x.\n",
+		nand_print_dbg(nftl_ro_lc_439,
 			       oob[1], oob[2], oob[3], oob[4], oob[5],
 			       oob[6], oob[7], oob[8], oob[9], oob[10],
 			       oob[11], oob[12], oob[13], oob[14], oob[15]);
-		nand_print_dbg("[ND][NE]garbage_collect_first rebuild %d,%d!!\n",
+		nand_print_dbg(nftl_ro_lc_440,
 			       zone->mode, block->number);
 		recover_block_phy_page_mapping(
 			(struct page_map_recovery_zone *)zone,
 			(struct new_write_block *)block, zone->map.pages);
 		bad = 1;
 	} else if (status && status != 10) {
-		nand_print_dbg("[ND]garbage_collect_first PHY_MAPPING_PAGEecc err block:%d !!\n",
+		nand_print_dbg(nftl_ro_lc_441,
 			       block->number);
 		recover_block_phy_page_mapping(
 			(struct page_map_recovery_zone *)zone,
@@ -10195,7 +10191,7 @@ int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 					  (struct page_map_write_block *)block,
 					  zone->geometry->pages);
 	if (status) {
-		nand_print("[NE]garbage_collect_first invaild_page num error!!\n");
+		nand_print(nftl_ro_lc_442);
 		bad = 1;
 	}
 	if (bad)
@@ -10220,9 +10216,9 @@ int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 		observed = get_logic_page_from_oob(oob);
 		if (status == 0 || status == 10) {
 			if (observed != logic) {
-				nand_print_dbg("[ND]garbage_collect_first read a logic page error%d %d %d %d spare data:\n",
+				nand_print_dbg(nftl_ro_lc_443,
 					       block->number, page, observed, logic);
-				nand_print("%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
+				nand_print(nftl_ro_lc_444,
 					   oob[0], oob[1], oob[2], oob[3],
 					   oob[4], oob[5], oob[6], oob[7],
 					   oob[8], oob[9], oob[10], oob[11],
@@ -10234,7 +10230,7 @@ int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 				block->invalid_pages++;
 			} else if (nand_write_logic_page_no_gc(zone, logic,
 						      zone->logic_buffer)) {
-				nand_print("[NE]nand_write_logic_page_no_gc gc fail!!\n");
+				nand_print(nftl_ro_lc_445);
 				return 1;
 			}
 		} else {
@@ -10249,7 +10245,7 @@ int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 	if (page == (unsigned int)zone->geometry->pages - 1)
 		zone->active = 0;
 	if (bad && page == (unsigned int)zone->geometry->pages - 1) {
-		nand_print("[NE]erase ecc error block\n");
+		nand_print(nftl_ro_lc_446);
 		erase_block((struct erase_block_zone *)zone,
 			    (struct erase_block_info *)block,
 			    (unsigned short)(block->erase_count + 1));
@@ -10374,7 +10370,7 @@ int hynix16nm_write_page_FF(struct hynix_ff_request *request,
 	struct hynix_ff_command *command = &chip->controller->commands;
 
 	if (chip->index >= controller->chips || request->block >= chip->blocks) {
-		nand_print("fatal err -0, wrong input parameter, ch: %d  chip: %d/%d  block: %d/%d \n",
+		nand_print(nftl_ro_lc_104,
 			   controller->channel, chip->index, controller->chips,
 			   request->block, chip->blocks);
 		return -108;
@@ -10444,7 +10440,7 @@ int hynix16nm_write_page_FF(struct hynix_ff_request *request,
 				  (struct sandisk_first_command *)command);
 	result = nand_read_chip_status_ready(chip);
 	if (result)
-		nand_print("m1 write page FF wrong\n");
+		nand_print(nftl_ro_lc_112);
 	nand_disable_chip((struct samsung_set_chip *)chip);
 	return result;
 }
@@ -10472,7 +10468,7 @@ int sandisk_A19_check_bad_block_first_burn(
 
 	/* OEM trusts g_nsi, chip and controller pointers without NULL checks. */
 	if (chip->index >= controller->chips || request->block >= chip->blocks) {
-		nand_print("fatal err -0, wrong input parameter, ch: %d  chip: %d/%d  block: %d/%d \n",
+		nand_print(nftl_ro_lc_104,
 			   controller->channel, chip->index, controller->chips,
 			   request->block, chip->blocks);
 		return -10;
@@ -10518,14 +10514,14 @@ int nand_dbg_phy_read(unsigned short channel, unsigned short block,
 	/* OEM logs failed allocation but continues into page_read and then
 	 * dereferences the NULL data pointer while formatting diagnostics. */
 	if (!data)
-		nand_print("[NE]%s:malloc 4096 fail!\n", __func__);
+		nand_print(nftl_ro_lc_382, __func__);
 	result = page_read(channel, block, page, 8, data, oob);
-	nand_print_dbg("[ND]spare: %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x",
+	nand_print_dbg(nftl_ro_lc_383,
 		       oob[0], oob[1], oob[2], oob[3],
 		       oob[4], oob[5], oob[6], oob[7],
 		       oob[8], oob[9], oob[10], oob[11],
 		       oob[12], oob[13], oob[14], oob[15]);
-	nand_print_dbg("[ND]buf:%x %x %x %x %x %x %x %x %x %x %x.\n",
+	nand_print_dbg(nftl_ro_lc_384,
 		       data[0], data[1], data[2], data[3],
 		       data[4], data[5], data[6], data[7],
 		       data[8], data[9], data[10]);
@@ -10554,7 +10550,7 @@ int init_nrc(struct nrc_zone *zone, struct nrc_buffers **output)
 	buffers = nftl_malloc(32);
 	if (!buffers) {
 		/* OEM leaves *output untouched for this first failure only. */
-		nand_print("%s %d:fail 1\n", __func__, 1408);
+		nand_print(nftl_ro_lc_279, __func__, 1408);
 		return -1;
 	}
 	nand_memset(buffers, 0, 32);
@@ -10562,23 +10558,23 @@ int init_nrc(struct nrc_zone *zone, struct nrc_buffers **output)
 	/* OEM uses wrapping 32-bit arithmetic for allocation sizes. */
 	buffers->second = nftl_malloc((zone->geometry->oob_bytes + 64U) * pages);
 	if (!buffers->second) {
-		nand_print("%s %d:fail 2\n", __func__, 1417);
+		nand_print(nftl_ro_lc_280, __func__, 1417);
 		goto fail;
 	}
 	buffers->third = nftl_malloc(pages * 4U);
 	if (!buffers->third) {
-		nand_print("%s %d:fail 3\n", __func__, 1422);
+		nand_print(nftl_ro_lc_281, __func__, 1422);
 		goto fail;
 	}
 	nand_memset(buffers->third, -1, pages * 4U);
 	buffers->first = nftl_malloc(pages);
 	if (!buffers->first) {
-		nand_print("%s %d:fail 4\n", __func__, 1428);
+		nand_print(nftl_ro_lc_282, __func__, 1428);
 		goto fail;
 	}
 	nand_memset(buffers->first, 0, pages);
 	*output = buffers;
-	nand_print("[NE]pages_per_blk: %d, %p, %p, %p, %p\n",
+	nand_print(nftl_ro_lc_283,
 		   zone->geometry->pages_per_block, buffers,
 		   buffers->second, buffers->third, buffers->first);
 	return 0;
@@ -10613,18 +10609,18 @@ int nand_dbg_zone_phy_read(struct nand_dbg_zone_read *zone,
 	/* OEM logs allocation failure but continues with a NULL data pointer;
 	 * the later byte diagnostics can fault on that path. */
 	if (!data)
-		nand_print("[NE]%s:malloc 4096 fail!\n", __func__);
+		nand_print(nftl_ro_lc_382, __func__);
 	physical = get_phy_block_addr((struct nftl_phy_outer *)zone, block);
 	/* OEM passes the caller's page as the plane argument and fixes the
 	 * physical page argument at eight. Preserve the swapped semantics. */
 	set_physic_op_par(&op, *(unsigned short *)physical, page, 8, data, oob);
 	result = zone->read(zone, &op);
-	nand_print_dbg("[ND]spare: %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x",
+	nand_print_dbg(nftl_ro_lc_383,
 		       oob[0], oob[1], oob[2], oob[3],
 		       oob[4], oob[5], oob[6], oob[7],
 		       oob[8], oob[9], oob[10], oob[11],
 		       oob[12], oob[13], oob[14], oob[15]);
-	nand_print_dbg("[ND]buf:%x %x %x %x %x %x %x %x %x %x %x.\n",
+	nand_print_dbg(nftl_ro_lc_384,
 		       data[0], data[1], data[2], data[3],
 		       data[4], data[5], data[6], data[7],
 		       data[8], data[9], data[10]);
@@ -10648,7 +10644,7 @@ int hynix20nm_read_page_end(struct samsung_read_request *request)
 		nci_get_from_nsi(g_nsi, request->channel);
 	result = generic_read_page_end_not_retry(request);
 	if (result == -2) {
-		nand_print_dbg("hynix20nm retry!\n");
+		nand_print_dbg(nftl_ro_lc_46);
 		/* OEM clears the already-zero count here too. */
 		retry_count = 0;
 		while (hynix20nm_read_retry_cycle > retry_count) {
@@ -10677,11 +10673,11 @@ int hynix20nm_read_page_end(struct samsung_read_request *request)
 					request->block, request->page, chip->retry);
 			} else if (result == 10 || result == 0) {
 				result = 10;
-				nand_print_dbg("sdata:0x%x %x %x %x ",
+				nand_print_dbg(nftl_ro_lc_48,
 					       request->data[1], request->data[2],
 					       request->data[3], request->data[4]);
 				nand_print_dbg(
-					"hynix20nm ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n",
+					nftl_ro_lc_49,
 					((struct samsung_read_controller *)chip->controller)->channel,
 					((struct samsung_read_chip_id *)chip)->chip,
 					request->block, request->page, chip->retry);
@@ -10744,7 +10740,7 @@ int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
 		total_invalid += node->invalid_pages;
 	}
 	written = nand_snprint(buffer, size,
-			       "%d %d %d %d %d %d/%d %d/%d\n",
+			       nftl_ro_lc_468,
 			       zone->free_blocks, zone->low_threshold,
 			       zone->high_threshold, zone->smart->gc_times,
 			       zone->smart->gc_pages, high_count, total_count,
@@ -10753,7 +10749,7 @@ int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
 		if (!node || !node->invalid_pages)
 			break;
 		written += nand_snprint(buffer + (long)written, size - written,
-					"%08d:%04d ", node->block,
+					nftl_ro_lc_469, node->block,
 					node->invalid_pages);
 		printed++;
 		if ((printed & 7) == 0)
@@ -10793,7 +10789,7 @@ int nand_op(int kind, void *input, unsigned int sector,
 		return 0;
 	/* OEM's capacity addition wraps before comparison. */
 	if (sector + count > zone->capacity) {
-		nand_print("[NE]paramter error. beyond reality capacity\n");
+		nand_print(nftl_ro_lc_418);
 		return 1;
 	}
 	/* OEM truncates the operation selector to one byte. */
@@ -10838,7 +10834,7 @@ int hynix16nm_major_check_byte(unsigned char *value, unsigned int mode,
 	unsigned char result = 0;
 
 	if ((length >> 1) > level) {
-		nand_print("_major_check_byte, wrong input para, level %d, len %d\n",
+		nand_print(nftl_ro_lc_113,
 			   level, length);
 		*value = 0xff;
 		return -107;
@@ -10882,9 +10878,9 @@ int hynix16nm_major_check_byte(unsigned char *value, unsigned int mode,
 		if (accepted)
 			valid++;
 		else {
-			nand_print("%d:  '1'-'0' : %d - %d\n",
+			nand_print(nftl_ro_lc_114,
 				   bit, ones, zeros);
-			nand_print("get bit %d failed!\n", bit);
+			nand_print(nftl_ro_lc_115, bit);
 		}
 	}
 	if (valid == 8) {
@@ -10986,7 +10982,7 @@ int hynix26nm_readretry_init(struct hynix26nm_init_chip *chip)
 		hynix26nm_read_retry_reg_adr[3] = 0xaf;
 		table = hynix26nm_para1_recovered;
 	} else {
-		nand_print("NFC_ReadRetryInit, unknown read retry mode 0x%x\n",
+		nand_print(nftl_ro_lc_64,
 			   hynix26nm_read_retry_mode);
 		return -54;
 	}
@@ -11070,19 +11066,19 @@ int nand_clean_zone_table2(struct nftl_clean_zone *zone)
 	pages = zone->geometry->sectors_per_page ?
 		zone->capacity / zone->geometry->sectors_per_page : 0;
 	bytes = pages << 2;
-	nand_print_dbg("[ND]zoneNO:%d total_pages: %d\n",
+	nand_print_dbg(nftl_ro_lc_386,
 		       zone->zone_number, pages);
 	full = bytes >> 20;
 	/* OEM trusts the map pointer array even if the computed byte count
 	 * requires more than its 27 observed pointer slots. */
 	for (index = 0; index < full; index++) {
 		nand_memset(zone->maps[index], -1, 1048576);
-		nand_print_dbg("[ND]nand_memset bytes: %d\n", 1048576);
+		nand_print_dbg(nftl_ro_lc_387, 1048576);
 	}
 	tail = bytes & 1048575;
 	if (tail) {
 		nand_memset(zone->maps[index], -1, tail);
-		nand_print_dbg("[ND]nand_memset bytes: %d\n", tail);
+		nand_print_dbg(nftl_ro_lc_387, tail);
 	}
 	zone->current = 0;
 	zone->current_block = 0xffff;
@@ -11154,17 +11150,17 @@ retry:
 	replacement = (struct new_write_block *)
 		out_phy_block_from_free_list((struct free_block_zone *)zone);
 	if (!replacement) {
-		nand_print("[NE]current_block_ecc_error no free block!!!\n");
+		nand_print(nftl_ro_lc_313);
 		return 0;
 	}
 	replacement->tag = old->tag;
 	if (new_block_init_for_write((struct new_write_zone *)zone,
 				     replacement, replacement->tag)) {
 		/* OEM leaks the failed replacement and retries forever. */
-		nand_print("[NE]something is error here 16!\n");
+		nand_print(nftl_ro_lc_259);
 		goto retry;
 	}
-	nand_print("[NE]do current_block_ecc_error %d!!\n", old->number);
+	nand_print(nftl_ro_lc_314, old->number);
 	written = 0;
 	for (page = 0; page < zone->geometry->pages; page++) {
 		set_physic_op_par(&read_op, old->number, page,
@@ -11175,10 +11171,10 @@ retry:
 				if (nand_power_off_ecc_error(
 						(struct poweroff_ecc_zone *)zone,
 						zone->data, oob)) {
-					nand_print("[NE]power off ecc error 2.\n");
+					nand_print(nftl_ro_lc_315);
 					continue;
 				}
-				nand_print("[NE]current_block_ecc ok page %d %d!!\n",
+				nand_print(nftl_ro_lc_316,
 					   page, status);
 				set_physic_op_par(&write_op, replacement->number,
 						  written,
@@ -11188,14 +11184,14 @@ retry:
 				zone->write(zone, &write_op);
 				written++;
 			} else {
-				nand_print("[NE]current_block_ecc_error page %d!!\n",
+				nand_print(nftl_ro_lc_317,
 					   page);
 			}
 		} else if (is_ftl_special_data(oob) == 1) {
-			nand_print("[NE]current_block_ecc_error invalid page data %d!!\n",
+			nand_print(nftl_ro_lc_318,
 				   page);
 		} else if (is_nouse_page(oob) != 1) {
-			nand_print("[NE]current_block_ecc_error unkown page data %d!!\n",
+			nand_print(nftl_ro_lc_319,
 				   page);
 		}
 	}
@@ -11209,7 +11205,7 @@ retry:
 		erase_block((struct erase_block_zone *)zone,
 			    (struct erase_block_info *)old,
 			    (unsigned short)(old->erase_count + 1));
-	nand_print_dbg("[ND]do current_block_ecc_error end %d %d!!\n",
+	nand_print_dbg(nftl_ro_lc_320,
 		       page, written);
 	return replacement;
 }
@@ -11256,18 +11252,18 @@ void *block_last_page_ecc_error(struct last_page_zone *zone,
 	int good;
 	int status;
 
-	nand_print("[NE]do block_last_page_ecc_error!!\n");
+	nand_print(nftl_ro_lc_321);
 	good = 0;
 	saved = nftl_malloc(8192);
 	if (!saved)
-		nand_print("[NE]%s:malloc fail 1!\n", __func__);
+		nand_print(nftl_ro_lc_322, __func__);
 	for (page = 0; page < zone->geometry->pages; page++) {
 		/* Stock computes the slot before malloc, then reloads it for
 		 * the unchecked failure path. Keep the slot across the call. */
 		register void **slot = &saved[page];
 		*slot = nftl_malloc(zone->geometry->page_bytes);
 		if (!saved[page])
-			nand_print("[NE]%s:malloc fail 2!\n", __func__);
+			nand_print(nftl_ro_lc_323, __func__);
 	}
 	for (page = 0; page < zone->geometry->pages; page++) {
 		set_physic_op_par(&op, block->number, page,
@@ -11287,9 +11283,9 @@ void *block_last_page_ecc_error(struct last_page_zone *zone,
 					    zone->geometry->page_bytes);
 				good++;
 			}
-			nand_print("[NE]current_block_ecc_error invalid page data!!\n");
+			nand_print(nftl_ro_lc_324);
 		} else {
-			nand_print("[NE]current_block_ecc_error unkown page data!!\n");
+			nand_print(nftl_ro_lc_325);
 		}
 	}
 	set_physic_op_par(&op, block->number, page,
@@ -11300,7 +11296,7 @@ void *block_last_page_ecc_error(struct last_page_zone *zone,
 		block = (struct last_page_block *)out_phy_block_from_free_list(
 			(struct free_block_zone *)zone);
 		if (!block) {
-			nand_print("[NE]current_block_ecc_error no free block!!!\n");
+			nand_print(nftl_ro_lc_313);
 			goto cleanup;
 		}
 		set_physic_op_par(&op, block->number, page,
@@ -11318,7 +11314,7 @@ cleanup:
 	for (page = 0; page < zone->geometry->pages; page++)
 		nftl_free(saved[page]);
 	nftl_free(saved);
-	nand_print("[NE]do block_last_page_ecc_error end!!\n");
+	nand_print(nftl_ro_lc_326);
 	return block;
 }
 
@@ -11366,7 +11362,7 @@ int recover_phy_page_mapping(struct page_map_recovery_zone *zone,
 		status = zone->read(zone, &op);
 		if (is_nouse_page(oob) == 1 &&
 		    (status == 0 || status == 10)) {
-			nand_print("[NE]sb@%d sp@%d recover_phy_page_mapping no used page\n",
+			nand_print(nftl_ro_lc_262,
 				   block->number, page);
 			break;
 		}
@@ -11375,32 +11371,32 @@ int recover_phy_page_mapping(struct page_map_recovery_zone *zone,
 				if (nand_power_off_ecc_error(
 						(struct poweroff_ecc_zone *)zone,
 						zone->data, oob)) {
-					nand_print("[NE]sb@%d sp@%d power off ecc error1.\n",
+					nand_print(nftl_ro_lc_263,
 						   block->number, page);
 					status = -2;
 				} else {
 					map[page] = get_logic_page_from_oob(oob);
 					if (map[page] >= zone->capacity) {
-						nand_print("[NE]invalid logic_page block:%d page:%d,logic_page 0x%x.\n",
+						nand_print(nftl_ro_lc_264,
 							   block->number, page, map[page]);
 						map[page] = -1;
 					}
 				}
 			}
 		} else if (is_ftl_special_data(oob) == 1) {
-			nand_print("[NE]rppm invalid page %d!!\n", page);
+			nand_print(nftl_ro_lc_265, page);
 		} else if (is_power_down_info_page(oob) == 1) {
 			if (status == 0 || status == 10) {
 				map[page] = get_special_data_from_oob(oob);
-				nand_print("[NI]power_down page %d!!\n", page);
+				nand_print(nftl_ro_lc_266, page);
 			}
 		} else {
 			/* Stock diagnostic contains the original typo. */
-			nand_print("[NE]recover_phy_page_mapping unkown page data %d!!\n",
+			nand_print(nftl_ro_lc_267,
 				   page);
 		}
 		if (status != 0 && status != 10) {
-			nand_print("[NE]recover_phy_page_mapping ecc error block:%d;page:%d.\n",
+			nand_print(nftl_ro_lc_268,
 				   block->number, page);
 			return 65535;
 		}
@@ -11453,9 +11449,9 @@ int get_current_used_block(struct current_used_zone *zone,
 	if (zone->current)
 		return 0;
 	if (!candidate) {
-		nand_print_dbg("[ND]get a new free block\n");
+		nand_print_dbg(nftl_ro_lc_260);
 		if (!zone->free_head) {
-			nand_print("[NE]no free block to use!\n");
+			nand_print(nftl_ro_lc_261);
 			print_free_list((struct free_print_zone *)zone);
 			print_block_invalid_list((struct invalid_print_zone *)zone);
 			return 1;
@@ -11487,23 +11483,23 @@ int get_current_used_block(struct current_used_zone *zone,
 		if (zone->current_used != 0xffff)
 			break;
 		had_primary_ecc = 1;
-		nand_print("[NE]current_block ecc error %d!\n",
+		nand_print(nftl_ro_lc_250,
 			   candidate->number);
 		candidate = current_block_ecc_error(
 			(struct ecc_rebuild_zone *)zone, candidate);
 		if (!candidate) {
-			nand_print("[NE]error! no free block!\n");
+			nand_print(nftl_ro_lc_251);
 			return 1;
 		}
 	}
 	zone->current = candidate;
-	nand_print_dbg("[ND]recover %d %d\n", candidate->number,
+	nand_print_dbg(nftl_ro_lc_252, candidate->number,
 		       zone->current_used);
 	recover_logic_page_mapping((struct logic_page_map_zone *)zone,
 			   (struct invalid_page_node *)candidate,
 			   zone->current_map, zone->current_used);
 	if (zone->current_used < candidate->page)
-		nand_print("[NE]page used:%d invalid page count:%d error\n",
+		nand_print(nftl_ro_lc_253,
 			   zone->current_used, candidate->page);
 	if (!(zone->flags & 1))
 		return 0;
@@ -11520,7 +11516,7 @@ int get_current_used_block(struct current_used_zone *zone,
 			if (new_block_init_for_write(
 				    (struct new_write_zone *)zone,
 				    zone->assist, tag)) {
-				nand_print("[NE]new_block_init_for_write error here!\n");
+				nand_print(nftl_ro_lc_254);
 				zone->assist = 0;
 				continue;
 			}
@@ -11529,7 +11525,7 @@ int get_current_used_block(struct current_used_zone *zone,
 				if (zone->copy_page(zone, zone->current,
 						    zone->assist, zone->data,
 						    page))
-					nand_print("[NE]something is error here 10!\n");
+					nand_print(nftl_ro_lc_255);
 			}
 		}
 		zone->assist_used = (unsigned short)
@@ -11537,7 +11533,7 @@ int get_current_used_block(struct current_used_zone *zone,
 				(struct page_map_recovery_zone *)zone,
 				zone->assist, zone->assist_map);
 		if (zone->assist_used == 0xffff) {
-			nand_print("[NE]something is error here 11!\n");
+			nand_print(nftl_ro_lc_256);
 			erase_block((struct erase_block_zone *)zone,
 				    (struct erase_block_info *)zone->assist,
 				    (unsigned short)(zone->assist->erase_count + 1));
@@ -11549,10 +11545,10 @@ int get_current_used_block(struct current_used_zone *zone,
 				   (struct invalid_page_node *)zone->assist,
 				   zone->assist_map, zone->assist_used);
 		if (zone->assist_used > zone->current_used) {
-			nand_print("[NE]assist block page used:%d current block page used:%d something is error here 12.\n",
+			nand_print(nftl_ro_lc_257,
 				   zone->assist_used, zone->current_used);
 			if (!had_primary_ecc) {
-				nand_print("[NE]assist block page used:%d current block page used:%d something is error here 17.\n",
+				nand_print(nftl_ro_lc_258,
 					   zone->assist_used, zone->current_used);
 				return 0;
 			}
@@ -11569,7 +11565,7 @@ int get_current_used_block(struct current_used_zone *zone,
 		}
 		if (zone->assist_used == zone->current_used)
 			return 0;
-		nand_print("[NE]something is error here 16!\n");
+		nand_print(nftl_ro_lc_259);
 		erase_block((struct erase_block_zone *)zone,
 			    (struct erase_block_info *)zone->assist,
 			    (unsigned short)(zone->assist->erase_count + 1));
@@ -11603,10 +11599,10 @@ int recover_block_phy_page_mapping(struct page_map_recovery_zone *zone,
 			status = zone->read(zone, &op);
 			if (status >= 0)
 				break;
-			nand_print("[NE]ret:%d read fail %d %d,read one more time!!\n",
+			nand_print(nftl_ro_lc_269,
 				   status, block->number, page);
 			if (attempt == 1)
-				nand_print("[NE]ret:%d read fail %d %d,%d times,don't read more!!\n",
+				nand_print(nftl_ro_lc_270,
 					   status, block->number, page, attempt);
 		}
 		if (is_ftl_logic_page_data(oob) == 1) {
@@ -11615,17 +11611,17 @@ int recover_block_phy_page_mapping(struct page_map_recovery_zone *zone,
 			if (nand_power_off_ecc_error(
 						(struct poweroff_ecc_zone *)zone,
 						zone->data, oob)) {
-				nand_print("[NE]power off ecc error 3!!\n");
+				nand_print(nftl_ro_lc_271);
 				continue;
 			}
 			map[page] = get_logic_page_from_oob(oob);
 			if (map[page] >= zone->capacity) {
-				nand_print("[NE]invalid logic_page block:%d page:%d,logic_page 0x%x.\n",
+				nand_print(nftl_ro_lc_264,
 					   block->number, page, map[page]);
 				map[page] = -1;
 			}
 		} else if (is_nouse_page(oob) != 1) {
-			nand_print("[NE]recover sb@%d sp@%d phy page mapping error.\n",
+			nand_print(nftl_ro_lc_272,
 			   block->number, page);
 		}
 	}
@@ -11657,12 +11653,12 @@ int hynix16nm_read_otp_info_hynix(struct hynix16nm_otp_info_chip *chip,
 	ndfc_disable_randomize(chip->controller);
 	/* OEM indexes controller CE/RB arrays by an unchecked chip index and
 	 * performs this log before validating the destination buffer. */
-	nand_print_dbg("start get read retry param from: ce %d, rb %d...\n",
+	nand_print_dbg(nftl_ro_lc_123,
 		       chip->controller->ce[chip->index],
 		       chip->controller->rb[chip->index]);
 	if (!buffer) {
 		nand_disable_chip((struct samsung_set_chip *)chip);
-		nand_print("invalid buffer for otp info!\n");
+		nand_print(nftl_ro_lc_124);
 		return -79;
 	}
 	/* OEM ignores every command and data-transfer status. */
@@ -11698,7 +11694,7 @@ int hynix16nm_read_otp_info_hynix(struct hynix16nm_otp_info_chip *chip,
 	set_one_addr((struct command_chip *)chip, 0);
 	set_one_cmd((struct command_chip *)chip, 0x30, 1);
 	if (buffer[0] != 8 || buffer[1] != 8) {
-		nand_print("hynix OTP RegCount value error: 0x%x, 0x%x \n",
+		nand_print(nftl_ro_lc_51,
 			   buffer[0], buffer[1]);
 		nand_disable_chip((struct samsung_set_chip *)chip);
 		return -96;
@@ -11777,14 +11773,14 @@ int write_phy_data_to_current_block(struct phy_write_zone *zone,
 					     state->block->erase_count);
 		} else if (kind == 192) {
 			if (state->page == (unsigned int)zone->geometry->pages - 1)
-				nand_print_dbg("[ND]last block can not used to logic page %d!!\n",
+				nand_print_dbg(nftl_ro_lc_162,
 					       state->block->number);
 			set_oob_logic_page(zone, oob, logic_page,
 					   state->block->tag,
 					   state->block->erase_count);
 		} else if (kind == 0xaa113333) {
 			if (state->page == (unsigned int)zone->geometry->pages - 1)
-				nand_print_dbg("[ND]last block can not used to power down page %d!!\n",
+				nand_print_dbg(nftl_ro_lc_163,
 					       state->block->number);
 			set_oob_special_page(zone, oob, kind,
 					     state->block->tag,
@@ -11794,10 +11790,10 @@ int write_phy_data_to_current_block(struct phy_write_zone *zone,
 		status = zone->write(zone, &op);
 		if (!status || retry > 1)
 			return 0;
-		nand_print_dbg("[ND]write_phy_data_to_current_block write error %d!\n",
+		nand_print_dbg(nftl_ro_lc_164,
 			       op.block);
 		if (do_write_error(zone, state)) {
-			nand_print("[NE]do_write_error error\n");
+			nand_print(nftl_ro_lc_165);
 			return 1;
 		}
 		/* OEM retries twice, then reports success even if the third
@@ -11852,7 +11848,7 @@ int write_logic_data_to_current_block(void *raw_zone, void *raw_current,
 			get_logic_page_map((struct logic_page_map_zone *)zone,
 					   logic_page);
 		if (!location) {
-			nand_print_dbg("[ND]logic_page_map NULL!!\n");
+			nand_print_dbg(nftl_ro_lc_167);
 			return 1;
 		}
 		if (location->block != 0xffff) {
@@ -11863,7 +11859,7 @@ int write_logic_data_to_current_block(void *raw_zone, void *raw_current,
 				old_block->used_pages++;
 				if (old_block->used_pages >
 				    zone->geometry->pages_per_block)
-					nand_print_dbg("[ND]invalid_page_count more than pages_per_blk at write logic data to current block:%d!!\n",
+					nand_print_dbg(nftl_ro_lc_168,
 						       current->page);
 			} else {
 				moved = 1;
@@ -11874,7 +11870,7 @@ int write_logic_data_to_current_block(void *raw_zone, void *raw_current,
 			(struct phy_write_state *)current,
 			data, logic_page, 192);
 		if (result) {
-			nand_print("[NE]write_phy_data_to_current_block error2\n");
+			nand_print(nftl_ro_lc_169);
 			return result;
 		}
 		location->block = current->block->number;
@@ -11888,7 +11884,7 @@ int write_logic_data_to_current_block(void *raw_zone, void *raw_current,
 			get_logic_page_map((struct logic_page_map_zone *)zone,
 					   logic_page);
 		if (!location) {
-			nand_print_dbg("[ND]logic_page_map NULL!!\n");
+			nand_print_dbg(nftl_ro_lc_167);
 			return 1;
 		}
 		if (location->block != 0xffff) {
@@ -11900,7 +11896,7 @@ int write_logic_data_to_current_block(void *raw_zone, void *raw_current,
 				old_block->used_pages++;
 				if (old_block->used_pages >
 				    zone->geometry->pages_per_block)
-					nand_print("[NE]invalid_page_count more than pages_per_blk at write logic data to current block:%d!!\n",
+					nand_print(nftl_ro_lc_170,
 						   current->page);
 			} else {
 				moved = 1;
@@ -11916,7 +11912,7 @@ int write_logic_data_to_current_block(void *raw_zone, void *raw_current,
 			(struct phy_write_state *)current,
 			data, logic_page, marker);
 		if (result) {
-			nand_print("[NE]write phy data to current block error2\n");
+			nand_print(nftl_ro_lc_171);
 			return result;
 		}
 		current->page++;
@@ -11982,7 +11978,7 @@ retry:
 	replacement = (struct do_write_block *)out_phy_block_from_free_list(
 		(struct free_block_zone *)zone);
 	if (!replacement) {
-		nand_print("[NE]no free block\n");
+		nand_print(nftl_ro_lc_149);
 		return 1;
 	}
 	set_physic_op_par(&op, replacement->number, 0,
@@ -11993,11 +11989,11 @@ retry:
 	replacement->erase_count++;
 	if (status) {
 		zone->mark_bad(zone, &op);
-		nand_print("[NE]do_write_error erase error sb:%d!\n",
+		nand_print(nftl_ro_lc_150,
 			   replacement->number);
 		if (zone->free_count > (unsigned short)(zone->retry_word >> 2))
 			goto retry;
-		nand_print("[NE]no free block\n");
+		nand_print(nftl_ro_lc_149);
 		return 1;
 	}
 	old = state->block;
@@ -12011,7 +12007,7 @@ retry:
 		status = zone->copy(zone, old, replacement, zone->data,
 				    (unsigned short)page);
 		if (status) {
-			nand_print("[NE]do_write_error sb@%d nftl_nand_copy_page error!\n",
+			nand_print(nftl_ro_lc_151,
 				   replacement->number);
 			set_physic_op_par(&op, replacement->number, 0,
 					  zone->geometry->fixed_page, 0, 0);
@@ -12085,19 +12081,19 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 
 	if (init_nrc((struct nrc_zone *)zone, &nrc)) {
 		free_nrc(nrc);
-		nand_print("[NE]cross_talk_rebuild_current_block fail 1\n");
+		nand_print(nftl_ro_lc_284);
 		return 0;
 	}
 	primary_used = get_used_page_num((struct used_page_zone *)zone,
 		(struct physical_block *)primary, &primary_flag, nrc);
 	if (!assist) {
-		nand_print("[NE]cross_talk_rebuild_current_block!! %d,%d,%d!\n",
+		nand_print(nftl_ro_lc_285,
 			   primary->number, primary_used, primary->tag);
 		source = primary;
 		first_erase = primary->erase_count;
 		if (!*(unsigned int *)nrc) {
 			free_nrc(nrc);
-			nand_print("[NE]cross_talk_rebuild_current_block fail 2\n");
+			nand_print(nftl_ro_lc_286);
 			erase_block((struct erase_block_zone *)zone,
 				    (struct erase_block_info *)primary,
 				    primary->erase_count + 1);
@@ -12108,12 +12104,12 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	} else {
 		assist_used = get_used_page_num((struct used_page_zone *)zone,
 			(struct physical_block *)assist, &assist_flag, nrc);
-		nand_print("[NE]cross_talk_rebuild_current_block!! %d,%d,%d,%d,%d,%d!\n",
+		nand_print(nftl_ro_lc_287,
 			   primary->number, primary_used, primary->tag,
 			   assist->number, assist_used, assist->tag);
 		if (!*(unsigned int *)nrc) {
 			free_nrc(nrc);
-			nand_print("[NE]cross_talk_rebuild_current_block fail 3\n");
+			nand_print(nftl_ro_lc_288);
 			erase_block((struct erase_block_zone *)zone,
 				    (struct erase_block_info *)primary,
 				    primary->erase_count + 1);
@@ -12134,14 +12130,14 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 			second_erase += 20;
 		}
 		if (assist_used > primary_used) {
-			nand_print("[NE]corss talk rebuild 1 %d %d %d!\n",
+			nand_print(nftl_ro_lc_289,
 				   primary_used, assist_used, *(unsigned int *)nrc);
 			erase_block((struct erase_block_zone *)zone,
 				    (struct erase_block_info *)primary,
 				    (unsigned short)first_erase + 1);
 			source = assist;
 		} else {
-			nand_print("[NE]corss talk rebuild 2 %d %d %d!\n",
+			nand_print(nftl_ro_lc_290,
 				   primary_used, assist_used, *(unsigned int *)nrc);
 			/* On equal counts OEM takes the primary erase count but
 			 * erases the assist block. Preserve this mismatch. */
@@ -12155,7 +12151,7 @@ retry:
 	replacement = (struct cross_rebuild_block *)
 		out_phy_block_from_free_list((struct free_block_zone *)zone);
 	if (!replacement) {
-		nand_print("[NE]get free block fail!\n");
+		nand_print(nftl_ro_lc_291);
 		/* OEM leaks nrc on this exit. */
 		return 0;
 	}
@@ -12163,7 +12159,7 @@ retry:
 	if (new_block_init_for_write((struct new_write_zone *)zone,
 				     (struct new_write_block *)replacement,
 				     replacement->tag)) {
-		nand_print("[NE]something is error here 14!\n");
+		nand_print(nftl_ro_lc_292);
 		/* OEM does not return the failed block to the free list. */
 		goto retry;
 	}
@@ -12184,7 +12180,7 @@ retry:
 			zone->write(zone, &op);
 			compact++;
 		} else {
-			nand_print("[NE]page lost %d %d\n", page,
+			nand_print(nftl_ro_lc_293, page,
 				   *(unsigned int *)nrc);
 		}
 	}
@@ -12213,20 +12209,20 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 	if (init_nrc((struct nrc_zone *)zone, &primary_nrc)) {
 		free_nrc(primary_nrc);
 		/* OEM uses the cross-talk error string on this path. */
-		nand_print("[NE]cross_talk_rebuild_current_block fail 1\n");
+		nand_print(nftl_ro_lc_284);
 		return 0;
 	}
 	primary_used = get_used_page_num_no_crosstalk(
 		(struct used_page_zone *)zone, (struct physical_block *)primary,
 		&first_good, (struct used_page_cache *)primary_nrc);
 	if (!assist) {
-		nand_print("[NI]nctrcb1 %d,%d,%d!\n",
+		nand_print(nftl_ro_lc_294,
 			   primary->number, primary_used, primary->tag);
 		source = primary;
 		selected = primary_nrc;
 		if (!*(unsigned int *)selected) {
 			free_nrc(primary_nrc);
-			nand_print("[NE]no_cross_talk_rebuild_current_block fail 2\n");
+			nand_print(nftl_ro_lc_295);
 			erase_block((struct erase_block_zone *)zone,
 				    (struct erase_block_info *)primary,
 				    primary->erase_count + 1);
@@ -12237,19 +12233,19 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 	if (init_nrc((struct nrc_zone *)zone, &assist_nrc)) {
 		free_nrc(primary_nrc);
 		free_nrc(assist_nrc);
-		nand_print("[NE]cross_talk_rebuild_current_block fail 3\n");
+		nand_print(nftl_ro_lc_288);
 		return 0;
 	}
 	assist_used = get_used_page_num_no_crosstalk(
 		(struct used_page_zone *)zone, (struct physical_block *)assist,
 		&second_good, (struct used_page_cache *)assist_nrc);
-	nand_print("[NI]nctrcb2 %d,%d,%d,%d,%d,%d!\n",
+	nand_print(nftl_ro_lc_296,
 		   primary->number, primary_used, primary->tag,
 		   assist->number, assist_used, assist->tag);
 	if (!*(unsigned int *)assist_nrc) {
 		free_nrc(primary_nrc);
 		free_nrc(assist_nrc);
-		nand_print("[NE]no_cross_talk_rebuild_current_block fail 4\n");
+		nand_print(nftl_ro_lc_297);
 		erase_block((struct erase_block_zone *)zone,
 			    (struct erase_block_info *)primary,
 			    primary->erase_count + 1);
@@ -12262,20 +12258,20 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 		source = assist;
 		old = primary;
 		selected = assist_nrc;
-		nand_print("[NE]corss talk rebuild 1 %d %d %d!\n",
+		nand_print(nftl_ro_lc_289,
 			   primary_used, assist_used, *(unsigned int *)selected);
 	} else {
 		source = primary;
 		old = assist;
 		selected = primary_nrc;
-		nand_print("[NE]corss talk rebuild 2 %d %d %d!\n",
+		nand_print(nftl_ro_lc_290,
 			   primary_used, assist_used, *(unsigned int *)selected);
 	}
 	set_physic_op_par(&op, old->number, 0,
 			  zone->geometry->fixed_page, 0, 0);
 	status = zone->erase(zone, &op);
 	if (status) {
-		nand_print("[NE]no_cross_talk_rebuild_current_block erase block fail %d!\n",
+		nand_print(nftl_ro_lc_298,
 			   old->number);
 		zone->mark_bad(zone, &op);
 		/* OEM marks the selected source, not the block whose erase
@@ -12294,14 +12290,14 @@ acquire_dual:
 	replacement = (struct cross_rebuild_block *)
 		out_phy_block_from_free_list((struct free_block_zone *)zone);
 	if (!replacement) {
-		nand_print("[NE]get free block fail!\n");
+		nand_print(nftl_ro_lc_291);
 		/* OEM leaks both NRC allocations on this exit. */
 		return 0;
 	}
 	if (new_block_init_for_write((struct new_write_zone *)zone,
 				     (struct new_write_block *)replacement,
 				     replacement->tag)) {
-		nand_print("[NE]something is error here 14!\n");
+		nand_print(nftl_ro_lc_292);
 		goto acquire_dual;
 	}
 	replacement->tag = source->tag;
@@ -12310,21 +12306,21 @@ acquire_single:
 	replacement = (struct cross_rebuild_block *)
 		out_phy_block_from_free_list((struct free_block_zone *)zone);
 	if (!replacement) {
-		nand_print("[NE]get free block fail!\n");
+		nand_print(nftl_ro_lc_291);
 		return 0;
 	}
 	replacement->tag = source->tag;
 	if (new_block_init_for_write((struct new_write_zone *)zone,
 				     (struct new_write_block *)replacement,
 				     replacement->tag)) {
-		nand_print("[NE]something is error here 14!\n");
+		nand_print(nftl_ro_lc_292);
 		goto acquire_single;
 	}
 replay:
 	compact = 0;
 	for (page = 0; page < *(unsigned int *)selected; page++) {
 		if (!((unsigned char *)selected->first)[page]) {
-			nand_print("[NE]page lost %d %d\n", page,
+			nand_print(nftl_ro_lc_293, page,
 				   *(unsigned int *)selected);
 			continue;
 		}
@@ -12410,7 +12406,7 @@ int nand_cache_write(void *raw_zone, int page,
 				(struct cache_read_delete_node *)node);
 		status = zone->write(zone, page, source);
 		if (status) {
-			nand_print("[NE]error1 bitmap %x!\n", bitmap);
+			nand_print(nftl_ro_lc_421, bitmap);
 			return 1;
 		}
 		return 0;
@@ -12436,7 +12432,7 @@ int nand_cache_write(void *raw_zone, int page,
 					    (unsigned int)zone->geometry->page_bytes - existing);
 				node->field1 = zone->geometry->sectors_per_page;
 				if (status == 10)
-					nand_print("[NE]ECC_LIMIT happened 12! page:%d!\n",
+					nand_print(nftl_ro_lc_422,
 						   page);
 			}
 		}
@@ -12465,20 +12461,20 @@ int nand_cache_write(void *raw_zone, int page,
 					     (struct cache_list_node *)node);
 		if (cache->field1 >= zone->configuration->write_limit &&
 		    flush_write_cache_to_nand(zone, 0)) {
-			nand_print("[NE]error1 flush write cache to nand\n");
+			nand_print(nftl_ro_lc_423);
 			return 1;
 		}
 		return 0;
 	}
 	if (cache->field1 >= zone->configuration->write_limit &&
 	    flush_write_cache_to_nand(zone, 0)) {
-		nand_print("[NE]error2 flush write cache to nand\n");
+		nand_print(nftl_ro_lc_424);
 		return 1;
 	}
 	node = (struct cache_init_entry *)get_empty_cahce_node(
 		(struct cache_read_empty_zone *)cache);
 	if (!node) {
-		nand_print("[NE]error1 node %d,%d,%d!\n",
+		nand_print(nftl_ro_lc_420,
 			   cache->field1, cache->field0, cache->field2);
 		return 1;
 	}
@@ -12490,7 +12486,7 @@ int nand_cache_write(void *raw_zone, int page,
 	} else {
 		status = zone->read(zone, page, buffer);
 		if (status == 10)
-			nand_print("[NI]ECC_LIMIT happened 11! page:%d!\n",
+			nand_print(nftl_ro_lc_425,
 				   page);
 		node->field0 = 0;
 		node->field1 = zone->geometry->sectors_per_page;
