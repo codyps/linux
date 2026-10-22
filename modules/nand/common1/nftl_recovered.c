@@ -5452,12 +5452,16 @@ struct write_flush_zone {
 	struct write_flush_list cache;
 };
 extern int flush_write_cache_to_nand(void *zone, int count);
+/* GCC otherwise moves the private loop state to different frame slots.
+ * Keep the OEM stack layout and its zero-limit underflow behavior. */
+__attribute__((optimize("-fno-stack-protector")))
 int __nand_flush_write_cache(void *zone, unsigned int limit)
 {
+	int result;
 	unsigned int flushed = 0;
 	struct write_flush_list *cache =
 		&((struct write_flush_zone *)zone)->cache;
-	int result = 0;
+	result = 0;
 
 	while (cache->head) {
 		flushed++;
