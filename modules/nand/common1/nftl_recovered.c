@@ -3866,8 +3866,8 @@ int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *owner)
 	unsigned char command;
 	unsigned char complement[64];
 	unsigned char *buffer;
-	unsigned int copy;
 	unsigned int index;
+	unsigned int copy;
 	int invalid_copy = 0;
 	int result = 0;
 
