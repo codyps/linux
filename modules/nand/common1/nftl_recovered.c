@@ -223,6 +223,9 @@ int hynix20nm_vender_set_param(void *chip, unsigned char *values,
 	return result;
 }
 
+/* Preserve the OEM result/index slots at FP+0x38/+0x3c as in the 16nm
+ * programmer; callbacks can observe the otherwise reordered frame. */
+__attribute__((optimize("-fno-stack-protector")))
 int hynix26nm_vender_set_param(void *chip, unsigned char *values,
 			      unsigned char *addresses, unsigned int count)
 {
