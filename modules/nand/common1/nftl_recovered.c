@@ -4095,10 +4095,10 @@ __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_set_default_param(struct otp_chip *chip)
 {
 	struct {
-		unsigned char values[8];
 		int result;
 		unsigned int index;
 	} locals;
+	unsigned char values[8];
 
 	locals.result = 0;
 	/* The OEM trusts the mutable register count. Past eight bytes it
@@ -4106,14 +4106,14 @@ int hynix20nm_set_default_param(struct otp_chip *chip)
 	 * Keep the OEM's count-first comparison in both loops. */
 	for (locals.index = 0; hynix20nm_read_retry_reg_num > locals.index;
 	     locals.index++)
-		locals.values[locals.index] = chip->saved[locals.index];
-	locals.result = hynix20nm_vender_set_param(chip, locals.values,
+		values[locals.index] = chip->saved[locals.index];
+	locals.result = hynix20nm_vender_set_param(chip, values,
 					hynix20nm_read_retry_reg_adr,
 					hynix20nm_read_retry_reg_num);
 	nand_print_dbg(nftl_ro_lc_56);
 	for (locals.index = 0; hynix20nm_read_retry_reg_num > locals.index;
 	     locals.index++)
-		nand_print_dbg(nftl_ro_lc_57, locals.values[locals.index]);
+		nand_print_dbg(nftl_ro_lc_57, values[locals.index]);
 	nand_print_dbg(nftl_ro_lc_45);
 	return locals.result;
 }
