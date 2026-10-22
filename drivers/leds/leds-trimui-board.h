@@ -322,6 +322,8 @@ static ssize_t store_max_scale_f1f2(struct class *class, struct class_attribute 
 
 static ssize_t show_frame(struct class *class, struct class_attribute *attr, char *buffer)
 {
+	/* OEM shifts a signed int before memcpy's size_t conversion. A corrupt
+	 * led_count can wrap the shift into a negative, enormous copy length. */
 	int size = trimui_led_count << 2;
 	memcpy(buffer, trimui_frame, size);
 	return size;
