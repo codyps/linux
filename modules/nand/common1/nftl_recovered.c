@@ -6068,24 +6068,31 @@ struct gc_win_zone {
 	unsigned char before_current[336];
 	struct gc_win_node *current;
 };
+/* The OEM's signed progress can overflow after count - 1 wraps. Preserve
+ * its two's-complement wrap rather than allowing C overflow optimization. */
+__attribute__((optimize("-fwrapv")))
 int gc_win_block(struct gc_win_zone *zone, unsigned short blocks)
 {
-	unsigned int progress = 0;
-	int limit = (int)((unsigned int)blocks * zone->chip->pages_per_block);
-	int result;
+	struct {
+		int result;
+		int limit;
+		int progress;
+	} locals;
 
 	/* OEM uses a signed comparison on wrapped 32-bit progress and silently
 	 * succeeds if the current node is absent. */
-	while ((int)progress < limit) {
+	locals.progress = 0;
+	locals.limit = (int)((unsigned int)blocks * zone->chip->pages_per_block);
+	while ((int)locals.progress < locals.limit) {
 		if (!zone->current)
 			return 0;
-		progress += zone->current->count;
-		progress--;
-		result = gc_one((struct gc_one_zone *)zone, 1);
-		if (result) {
-			if (result == 1)
+		locals.progress = zone->current->count + locals.progress;
+		locals.progress--;
+		locals.result = gc_one((struct gc_one_zone *)zone, 1);
+		if (locals.result) {
+			if (locals.result == 1)
 				nand_print_dbg(nftl_ro_lc_461);
-			return result;
+			return locals.result;
 		}
 	}
 	return 0;
