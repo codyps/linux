@@ -6437,7 +6437,8 @@ extern int nftl_start(struct init_nftl_owner *, struct init_nftl_config *,
 		      unsigned int, unsigned char);
 
 __attribute__((optimize("-fno-stack-protector")))
-int nftl_initialize(void *raw_owner, unsigned short number)
+/* OEM forwards all 32 partition-number bits to nftl_start. */
+int nftl_initialize(void *raw_owner, int number)
 {
 	struct init_nftl_owner *owner = raw_owner;
 	struct init_partition *part = owner->partition;
