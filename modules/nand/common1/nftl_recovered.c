@@ -11051,20 +11051,19 @@ struct new_write_block *current_block_ecc_error(struct ecc_rebuild_zone *zone,
 	unsigned int page, written;
 	int status;
 
-	for (;;) {
-		replacement = (struct new_write_block *)
-			out_phy_block_from_free_list((struct free_block_zone *)zone);
-		if (!replacement) {
-			nand_print("[NE]current_block_ecc_error no free block!!!\n");
-			return 0;
-		}
-		replacement->tag = old->tag;
-		if (!new_block_init_for_write((struct new_write_zone *)zone,
-					      replacement, replacement->tag))
-			break;
-		/* OEM retries without returning the failed replacement to the
-		 * free list; keep this leak and its unbounded retry loop. */
+retry:
+	replacement = (struct new_write_block *)
+		out_phy_block_from_free_list((struct free_block_zone *)zone);
+	if (!replacement) {
+		nand_print("[NE]current_block_ecc_error no free block!!!\n");
+		return 0;
+	}
+	replacement->tag = old->tag;
+	if (new_block_init_for_write((struct new_write_zone *)zone,
+				     replacement, replacement->tag)) {
+		/* OEM leaks the failed replacement and retries forever. */
 		nand_print("[NE]something is error here 16!\n");
+		goto retry;
 	}
 	nand_print("[NE]do current_block_ecc_error %d!!\n", old->number);
 	written = 0;
