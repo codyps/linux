@@ -1833,16 +1833,21 @@ extern int hynix16nm_vender_set_param(struct hynix16nm_retry_zone *zone,
 				      unsigned char *values,
 				      unsigned char *addresses,
 				      unsigned int count);
+/* The stock frame puts the temporary values at FP+0x20 and the loop index at
+ * FP+0x2c. GCC's stack-protector layout would move both, so an unchecked
+ * register count would corrupt different stack bytes. */
+__attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_set_readretry(struct hynix16nm_retry_zone *zone)
 {
 	int result = 0;
 	unsigned int index;
-	unsigned char values[4];
+	unsigned char values[8];
 
 	if (zone->retry > hynix16nm_read_retry_cycle)
 		return -74;
-	/* OEM trusts the register count although this stack array has four
-	 * bytes; a larger count overwrites adjacent stack storage. */
+	/* OEM trusts the register count. Counts beyond the inferred eight-byte
+	 * array write through frame padding and then into the index at +0x2c.
+	 * Keep that bug and its stack placement for stock behavior. */
 	for (index = 0; index < hynix16nm_read_retry_reg_num; index++)
 		values[index] = zone->values[(zone->retry << 2) + index];
 	result = hynix16nm_vender_set_param(zone, values,
