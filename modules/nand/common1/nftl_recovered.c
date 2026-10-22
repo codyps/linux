@@ -1604,17 +1604,27 @@ struct smart_info_block {
 };
 extern void *nand_memset(void *destination, int value, unsigned int size);
 extern void print_smart(struct smart_info_zone *zone);
+/* The OEM uses these private stack slots in init_smart_info. Keep the OOB
+ * bytes uninitialized: its marker check can consume them when read() returns
+ * without filling spare data. A fixed implementation should initialize OOB
+ * or reject such reads, but that would change stock behavior. */
+struct smart_info_init_frame {
+	unsigned char preceding[24];
+	struct smart_info_payload *stored;
+	unsigned char before_op[8];
+	struct physic_op_param op;
+	unsigned char oob[16];
+};
+_Static_assert(__builtin_offsetof(struct smart_info_init_frame, stored) == 24,
+	       "SMART stored pointer slot");
+_Static_assert(__builtin_offsetof(struct smart_info_init_frame, op) == 40,
+	       "SMART operation slot");
+_Static_assert(__builtin_offsetof(struct smart_info_init_frame, oob) == 64,
+	       "SMART OOB slot");
 __attribute__((optimize("-fno-stack-protector")))
 int init_smart_info(struct smart_info_zone *zone, struct smart_info_block *block)
 {
-	struct physic_op_param op;
-	/* OEM may inspect these uninitialized bytes when read() leaves OOB
-	 * untouched. TODO: recover stock's stack placement: with GCC 7.4.1 this
-	 * C puts oob at incoming SP-0x38, while stock uses SP-0x18. A reader
-	 * returning 0 or 10 without filling OOB can therefore change whether
-	 * the SMART record is imported (nftl-smart-stack-1013 evidence). */
-	unsigned char oob[16];
-	struct smart_info_payload *stored;
+	struct smart_info_init_frame frame;
 	int read_result;
 
 	nand_memset(zone->smart, 0, 320);
@@ -1622,16 +1632,16 @@ int init_smart_info(struct smart_info_zone *zone, struct smart_info_block *block
 	zone->smart->init_count++;
 	if (!block)
 		return 0;
-	set_physic_op_par(&op, block->number,
+	set_physic_op_par(&frame.op, block->number,
 			   (unsigned short)(zone->geometry->pages - 1),
-			   zone->geometry->page_bytes, zone->data, oob);
-	read_result = zone->read(zone, &op);
+			   zone->geometry->page_bytes, zone->data, frame.oob);
+	read_result = zone->read(zone, &frame.op);
 	/* OEM probes the OOB marker even when the page read failed. */
-	if (is_phy_mapping_page(oob) == 1 &&
+	if (is_phy_mapping_page(frame.oob) == 1 &&
 	    (read_result == 0 || read_result == 10)) {
-		stored = (struct smart_info_payload *)(zone->data + zone->offset);
-		if (stored->magic == 0xaaaaaa01U) {
-			nand_memcpy(zone->smart, stored, 320);
+		frame.stored = (struct smart_info_payload *)(zone->data + zone->offset);
+		if (frame.stored->magic == 0xaaaaaa01U) {
+			nand_memcpy(zone->smart, frame.stored, 320);
 			zone->smart->init_count++;
 			if (zone->smart->field_164 == ~0U)
 				zone->smart->field_164 = 0;
