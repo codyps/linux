@@ -11912,11 +11912,15 @@ int recover_block_phy_page_mapping(struct page_map_recovery_zone *zone,
 				   struct new_write_block *block,
 				   unsigned int *map)
 {
+	/* OEM places op at FP+0x48 and the 20-byte OOB buffer at FP+0x60.
+	 * The read callback's spare write is unchecked and can hit later locals. */
+	unsigned char oob[20];
 	struct physic_op_param op;
-	unsigned char oob[16];
 	int page;
-	int status = 0;
-	int attempt;
+	int status;
+	/* This initial store is dead: the retry loop sets attempt to zero
+	 * again. Retain it to match OEM stack writes and fault timing. */
+	int attempt = 0;
 
 	/* OEM trusts the byte count independently of page count and map size. */
 	nand_memset(map, -1, zone->map_bytes);
