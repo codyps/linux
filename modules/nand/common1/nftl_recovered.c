@@ -1989,12 +1989,14 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 	nand_print_dbg(nftl_ro_lc_45);
 	return error;
 }
+/* Match OEM frame slots for the private mode, cycle and temporary buffer. */
+__attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone)
 {
 	int result = 0;
 	void *buffer = nand_get_temp_buf(528);
-	unsigned char cycle;
 	unsigned char mode;
+	unsigned char cycle;
 
 	if (!buffer) {
 		nand_print(nftl_ro_lc_125);
