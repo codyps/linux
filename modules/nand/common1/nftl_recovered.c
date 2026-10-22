@@ -11150,8 +11150,10 @@ __attribute__((optimize("-fno-stack-protector")))
 void *block_last_page_ecc_error(struct last_page_zone *zone,
 				struct last_page_block *block)
 {
+	/* Stock passes the 16-byte spare area at FP+0x48. Raw NAND's
+	 * geometry-sized spare copy can overrun it; retain that OEM bound. */
+	unsigned char oob[16] __attribute__((aligned(8)));
 	struct physic_op_param op;
-	unsigned char oob[16];
 	void **saved;
 	int page;
 	int good;
