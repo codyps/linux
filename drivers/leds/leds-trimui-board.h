@@ -9,6 +9,22 @@ extern int trimui_axp2202_get_bat_cap(void);
 extern int trimui_set_speaker_enable(int enable);
 extern int trimui_speaker_mute;
 
+/* The four names follow the debugfs operation tables in stock .rodata.
+ * Keep their byte order as one object; the paired no_reorder attributes on
+ * those tables prevent GCC from moving this object ahead of them.
+ */
+static const struct {
+	char motor[19];
+	char speaker[18];
+	char enable[21];
+	char resume[23];
+} trimui_name_cluster __attribute__((no_reorder)) = {
+	.motor = "init_motor_voltage",
+	.speaker = "init_speaker_mute",
+	.enable = "led_regulator_enable",
+	.resume = "sunxi_led_resume_noirq",
+};
+
 /* Preserve the recovered relative BSS layout, including overflow victims.
  * Stock state starts at ffffff8008bf47d0; effects are F2,F1,R,L,M in memory.
  * TODO: split and bound these buffers in a separate corrective change.
@@ -986,15 +1002,13 @@ static int trimui_board_init(void)
 	}
 	result = class_register(&trimui_motor_class);
 	if (result < 0) {
-		static const char motor_name[] = "init_motor_voltage";
-		printk(KERN_ERR "%s()%d - class_register err\n", motor_name, 3158);
+		printk(KERN_ERR "%s()%d - class_register err\n", trimui_name_cluster.motor, 3158);
 		class_unregister(&trimui_motor_class);
 	}
 	trimui_motor_regulator = regulator_get(NULL, "axp2202-bldo3");
 	result = class_register(&trimui_speaker_class);
 	if (result < 0) {
-		static const char speaker_name[] = "init_speaker_mute";
-		printk(KERN_ERR "%s()%d - class_register err\n", speaker_name, 3218);
+		printk(KERN_ERR "%s()%d - class_register err\n", trimui_name_cluster.speaker, 3218);
 		class_unregister(&trimui_speaker_class);
 	}
 	return 0;

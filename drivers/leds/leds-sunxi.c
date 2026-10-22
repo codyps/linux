@@ -469,7 +469,7 @@ static ssize_t reset_ns_read(struct file *filp, char __user *buf,
 	return simple_read_from_buffer(buf, count, offp, buffer, r);
 }
 
-static const struct file_operations reset_ns_fops = {
+static const struct file_operations reset_ns_fops __attribute__((no_reorder)) = {
 	.owner = THIS_MODULE,
 	.write = reset_ns_write,
 	.read  = reset_ns_read,
@@ -529,7 +529,7 @@ static ssize_t t1h_ns_read(struct file *filp, char __user *buf,
 	return simple_read_from_buffer(buf, count, offp, buffer, r);
 }
 
-static const struct file_operations t1h_ns_fops = {
+static const struct file_operations t1h_ns_fops __attribute__((no_reorder)) = {
 	.owner = THIS_MODULE,
 	.write = t1h_ns_write,
 	.read  = t1h_ns_read,
@@ -588,7 +588,7 @@ static ssize_t t1l_ns_read(struct file *filp, char __user *buf,
 	return simple_read_from_buffer(buf, count, offp, buffer, r);
 }
 
-static const struct file_operations t1l_ns_fops = {
+static const struct file_operations t1l_ns_fops __attribute__((no_reorder)) = {
 	.owner = THIS_MODULE,
 	.write = t1l_ns_write,
 	.read  = t1l_ns_read,
@@ -647,7 +647,7 @@ static ssize_t t0h_ns_read(struct file *filp, char __user *buf,
 	return simple_read_from_buffer(buf, count, offp, buffer, r);
 }
 
-static const struct file_operations t0h_ns_fops = {
+static const struct file_operations t0h_ns_fops __attribute__((no_reorder)) = {
 	.owner = THIS_MODULE,
 	.write = t0h_ns_write,
 	.read  = t0h_ns_read,
@@ -706,7 +706,7 @@ static ssize_t t0l_ns_read(struct file *filp, char __user *buf,
 	return simple_read_from_buffer(buf, count, offp, buffer, r);
 }
 
-static const struct file_operations t0l_ns_fops = {
+static const struct file_operations t0l_ns_fops __attribute__((no_reorder)) = {
 	.owner = THIS_MODULE,
 	.write = t0l_ns_write,
 	.read  = t0l_ns_read,
@@ -765,7 +765,7 @@ static ssize_t wait_time0_ns_read(struct file *filp, char __user *buf,
 	return simple_read_from_buffer(buf, count, offp, buffer, r);
 }
 
-static const struct file_operations wait_time0_ns_fops = {
+static const struct file_operations wait_time0_ns_fops __attribute__((no_reorder)) = {
 	.owner = THIS_MODULE,
 	.write = wait_time0_ns_write,
 	.read  = wait_time0_ns_read,
@@ -825,7 +825,7 @@ static ssize_t wait_time1_ns_read(struct file *filp, char __user *buf,
 	return simple_read_from_buffer(buf, count, offp, buffer, r);
 }
 
-static const struct file_operations wait_time1_ns_fops = {
+static const struct file_operations wait_time1_ns_fops __attribute__((no_reorder)) = {
 	.owner = THIS_MODULE,
 	.write = wait_time1_ns_write,
 	.read  = wait_time1_ns_read,
@@ -889,7 +889,7 @@ static ssize_t wait_data_time_ns_read(struct file *filp, char __user *buf,
 	return simple_read_from_buffer(buf, count, offp, buffer, r);
 }
 
-static const struct file_operations wait_data_time_ns_fops = {
+static const struct file_operations wait_data_time_ns_fops __attribute__((no_reorder)) = {
 	.owner = THIS_MODULE,
 	.write = wait_data_time_ns_write,
 	.read  = wait_data_time_ns_read,
@@ -940,7 +940,7 @@ static int data_open(struct inode *inode, struct file *file)
 	return single_open(file, data_show, inode->i_private);
 }
 
-static const struct file_operations data_fops = {
+static const struct file_operations data_fops __attribute__((no_reorder)) = {
 	.owner = THIS_MODULE,
 	.open  = data_open,
 	.read = seq_read,
@@ -986,7 +986,7 @@ static ssize_t output_mode_read(struct file *filp, char __user *buf,
 	return simple_read_from_buffer(buf, count, offp, buffer, r);
 }
 
-static const struct file_operations output_mode_fops = {
+static const struct file_operations output_mode_fops __attribute__((no_reorder)) = {
 	.owner = THIS_MODULE,
 	.write = output_mode_write,
 	.read  = output_mode_read,
@@ -1008,7 +1008,7 @@ static ssize_t hwversion_read(struct file *filp, char __user *buf,
 	return simple_read_from_buffer(buf, count, offp, buffer, r);
 }
 
-static const struct file_operations hwversion_fops = {
+static const struct file_operations hwversion_fops __attribute__((no_reorder)) = {
 	.owner = THIS_MODULE,
 	.read  = hwversion_read,
 };
@@ -1894,7 +1894,7 @@ static int led_regulator_enable(struct sunxi_led *led)
 		return 0;
 
 	if (regulator_enable(led->regulator) != 0) {
-		SUNXI_LED_STOCK_ERR(3434, "enable regulator %s failed!\n", led->regulator_id);
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_name_cluster.enable, 3434, "enable regulator %s failed!\n", led->regulator_id);
 		return -1;
 	}
 	return 0;
@@ -1946,7 +1946,7 @@ static int sunxi_led_resume_noirq(struct device *dev)
 	led_select_gpio_state(led->pctrl, PINCTRL_STATE_DEFAULT);
 	sunxi_clk_enable(led);
 
-	SUNXI_LED_STOCK_LOG(3483, DEBUG_SUSPEND, "finish\n");
+	SUNXI_LED_NAMED_STOCK_LOG(trimui_name_cluster.resume, 3483, DEBUG_SUSPEND, "finish\n");
 	/* Stock continues after GPIO, regulator, pinctrl and clock failures; TODO: unwind those errors. */
 	return 0;
 }
