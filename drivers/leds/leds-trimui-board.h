@@ -177,29 +177,57 @@ static int trimui_ledc_run_thread(void *unused)
 	unsigned int battery_ticks = 0;
 	u32 rgb;
 	trimui_scale_m = 14;
-	trimui_effect_enable = 1;
-#define INITIAL_EFFECT(e, color) do { (e).type = 2; (e).duration = 2000; \
-	(e).cycles = 5; (e).target_rgb = (color); } while (0)
-	INITIAL_EFFECT(trimui_effect_m, 0xffffff);
-	INITIAL_EFFECT(trimui_effect_r, 0xffffff);
-	INITIAL_EFFECT(trimui_effect_l, 0xffffff);
-	INITIAL_EFFECT(trimui_effect_f2, 0x00ff33);
-	INITIAL_EFFECT(trimui_effect_f1, 0x00ff33);
-#undef INITIAL_EFFECT
-#define START_EFFECT(e) do { gen_effect(&(e), 2, (e).target_rgb, (e).target_rgb); } while (0)
-	START_EFFECT(trimui_effect_l);
-	START_EFFECT(trimui_effect_r);
-	START_EFFECT(trimui_effect_f1);
-	START_EFFECT(trimui_effect_f2);
-	START_EFFECT(trimui_effect_m);
-#undef START_EFFECT
-#define RESET_EFFECT(e) do { (e).index = 0; (e).active_cycles = (e).cycles; } while (0)
-	RESET_EFFECT(trimui_effect_l);
-	RESET_EFFECT(trimui_effect_r);
-	RESET_EFFECT(trimui_effect_f1);
-	RESET_EFFECT(trimui_effect_f2);
-	RESET_EFFECT(trimui_effect_m);
-#undef RESET_EFFECT
+	/* Stock publishes this control as a separate 32-bit store before the
+	 * adjacent first effect type.  A plain store lets GCC merge the two.
+	 */
+	WRITE_ONCE(trimui_effect_enable, 1);
+	/* Stock exposes all five cycle counts before any effect shape.  Sysfs
+	 * readers can observe these intermediate values during startup.
+	 */
+#define INITIAL_CYCLES(e) WRITE_ONCE((e).cycles, 5)
+	INITIAL_CYCLES(trimui_effect_m);
+	INITIAL_CYCLES(trimui_effect_r);
+	INITIAL_CYCLES(trimui_effect_l);
+	INITIAL_CYCLES(trimui_effect_f2);
+	INITIAL_CYCLES(trimui_effect_f1);
+#undef INITIAL_CYCLES
+	/* Stock commits type/duration together as one little-endian 64-bit
+	 * store.  Keep that width and the M,R,L,F2,F1 publication sequence.
+	 */
+#define INITIAL_SHAPE(e) WRITE_ONCE(*(u64 *)&(e).type, ((u64)2000 << 32) | 2)
+	INITIAL_SHAPE(trimui_effect_m);
+	INITIAL_SHAPE(trimui_effect_r);
+	INITIAL_SHAPE(trimui_effect_l);
+	WRITE_ONCE(trimui_effect_m.target_rgb, 0xffffff);
+	WRITE_ONCE(trimui_effect_r.target_rgb, 0xffffff);
+	WRITE_ONCE(trimui_effect_l.target_rgb, 0xffffff);
+	INITIAL_SHAPE(trimui_effect_f2);
+	WRITE_ONCE(trimui_effect_f2.target_rgb, 0x00ff33);
+	INITIAL_SHAPE(trimui_effect_f1);
+	WRITE_ONCE(trimui_effect_f1.target_rgb, 0x00ff33);
+#undef INITIAL_SHAPE
+	/* The OEM generator receives these fixed boot colors.  It does not
+	 * reread target_rgb between initialization and each call.
+	 */
+	gen_effect(&trimui_effect_l, 2, 0xffffff, 0xffffff);
+	gen_effect(&trimui_effect_r, 2, 0xffffff, 0xffffff);
+	gen_effect(&trimui_effect_f1, 2, 0x00ff33, 0x00ff33);
+	gen_effect(&trimui_effect_f2, 2, 0x00ff33, 0x00ff33);
+	gen_effect(&trimui_effect_m, 2, 0xffffff, 0xffffff);
+	/* Keep the OEM's odd reset order.  A concurrent control read can see
+	 * these partially reset effects; do not collapse this into a loop.
+	 */
+	WRITE_ONCE(trimui_effect_r.index, 0);
+	WRITE_ONCE(trimui_effect_l.active_cycles, READ_ONCE(trimui_effect_l.cycles));
+	WRITE_ONCE(trimui_effect_r.active_cycles, READ_ONCE(trimui_effect_r.cycles));
+	WRITE_ONCE(trimui_effect_f1.active_cycles, READ_ONCE(trimui_effect_f1.cycles));
+	WRITE_ONCE(trimui_effect_f2.active_cycles, READ_ONCE(trimui_effect_f2.cycles));
+	rgb = READ_ONCE(trimui_effect_m.cycles);
+	WRITE_ONCE(trimui_effect_l.index, 0);
+	WRITE_ONCE(trimui_effect_m.index, 0);
+	WRITE_ONCE(trimui_effect_f2.index, 0);
+	WRITE_ONCE(trimui_effect_f1.index, 0);
+	WRITE_ONCE(trimui_effect_m.active_cycles, rgb);
 	while (!kthread_should_stop()) {
 		if (trimui_effect_enable) {
 			if (is_effect_actived(&trimui_effect_l)) {
@@ -235,10 +263,19 @@ static int trimui_ledc_run_thread(void *unused)
 				}
 			}
 			if (trimui_mask_m) memcpy(trimui_frame, trimui_anim_frames + offset, 8 * sizeof(u32));
-			if (trimui_mask_lr) memcpy(trimui_frame + 10, trimui_anim_frames + offset + 10, 4 * sizeof(u32));
+			if (trimui_mask_lr) {
+				/* Stock transfers each LED pair before reading the next.
+				 * The two-copy sequence can observe an intervening frame edit.
+				 */
+				memcpy(trimui_frame + 10, trimui_anim_frames + offset + 10, 2 * sizeof(u32));
+				barrier();
+				memcpy(trimui_frame + 12, trimui_anim_frames + offset + 12, 2 * sizeof(u32));
+			}
 			if (trimui_mask_f) {
-				trimui_frame[9] = trimui_anim_frames[offset + 9];
-				trimui_frame[8] = trimui_anim_frames[offset + 8];
+				u32 f1 = READ_ONCE(trimui_anim_frames[offset + 9]);
+				u32 f2 = READ_ONCE(trimui_anim_frames[offset + 8]);
+				WRITE_ONCE(trimui_frame[8], f2);
+				WRITE_ONCE(trimui_frame[9], f1);
 			}
 		}
 		commit_static_frame();
