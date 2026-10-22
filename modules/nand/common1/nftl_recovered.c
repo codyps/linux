@@ -8223,11 +8223,14 @@ struct samsung_read_chip_id {
 	unsigned char before_id[28];
 	unsigned int chip;
 };
+/* The four vendor page-end paths keep chip/result/retry in OEM private slots
+ * FP+0x20/+0x28/+0x2c. Callback failures can observe these frame bytes. */
+__attribute__((optimize("-fno-stack-protector")))
 int samsung_read_page_end(struct samsung_read_request *request)
 {
 	struct samsung_set_chip *chip;
-	int result;
 	int retry;
+	int result;
 
 	retry = 0;
 	result = 0;
@@ -8301,11 +8304,12 @@ done:
 	nand_disable_chip(chip);
 	return result;
 }
+__attribute__((optimize("-fno-stack-protector")))
 int micron_read_page_end(struct samsung_read_request *request)
 {
 	struct samsung_set_chip *chip;
-	int result;
 	int retry;
+	int result;
 
 	retry = 0;
 	result = 0;
@@ -8347,11 +8351,12 @@ extern unsigned int toshiba_retry_flag_recovered;
 extern unsigned char toshiba_read_retry_cycle;
 extern int toshiba_set_readretry(struct samsung_set_chip *);
 extern int toshiba_exit_readretry(struct samsung_set_chip *);
+__attribute__((optimize("-fno-stack-protector")))
 int toshiba_read_page_end(struct samsung_read_request *request)
 {
 	struct samsung_set_chip *chip;
-	int result;
 	int retry;
+	int result;
 
 	retry = 0;
 	result = 0;
@@ -8393,11 +8398,12 @@ int toshiba_read_page_end(struct samsung_read_request *request)
 extern int sandisk_set_readretry(struct samsung_set_chip *, unsigned short);
 extern int sandisk_end_one_read_retry(struct samsung_set_chip *);
 extern int sandisk_exit_readretry(struct samsung_set_chip *);
+__attribute__((optimize("-fno-stack-protector")))
 int sandisk_read_page_end(struct samsung_read_request *request)
 {
 	struct samsung_set_chip *chip;
-	int result = 0;
 	int retry = 0;
+	int result = 0;
 
 	chip = (struct samsung_set_chip *)nci_get_from_nsi(g_nsi,
 						      request->channel);
