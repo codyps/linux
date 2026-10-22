@@ -9501,6 +9501,10 @@ struct cold_map_entry {
 	unsigned char upper:3;
 	unsigned short marker;
 };
+/* Stock uses the no-stack-protector slot order for current and entry. Its
+ * extra UXTB before masking the low cold bit is retained as a documented
+ * instruction-level difference: it cannot affect the stored low bit. */
+__attribute__((optimize("-fno-stack-protector")))
 int get_cold_logic_page(void *zone, int page, unsigned int pages)
 {
 	unsigned int current = (unsigned int)page;
