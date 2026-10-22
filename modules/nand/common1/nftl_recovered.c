@@ -2035,9 +2035,7 @@ int sandisk_vender_set_param(void *chip, unsigned char *data,
 	return result;
 }
 extern unsigned char sandisk_acti_start_addr[9];
-static const unsigned char sandisk_activation_commands[9] = {
-	0x53, 0x53, 0x53, 0x53, 0x53, 0x53, 0x53, 0x53, 0x53
-};
+extern const unsigned char sandisk_activation_commands[9];
 /* OEM activation has no stack-canary prologue despite its local command data. */
 __attribute__((optimize("-fno-stack-protector")))
 int sandisk_activation_seq(struct samsung_set_chip *chip)
@@ -4533,6 +4531,9 @@ extern int torture_block_and_mark(struct torture_zone *,
 				   struct erase_block_info *);
 extern int add_prio_gc(struct prio_gc_owner *, void *, unsigned short);
 
+extern const char nftl_vendor_sunxi[5];
+extern const char nftl_vendor_allwinner[9];
+
 __attribute__((optimize("-fno-stack-protector")))
 int first_scan_all_blocks(struct build_zone *raw_zone)
 {
@@ -4541,11 +4542,12 @@ int first_scan_all_blocks(struct build_zone *raw_zone)
 	struct physic_op_param op;
 	unsigned char oob[16];
 	const char path[2] = {'/', 0};
-	const char vendor[5] = {'s', 'u', 'n', 'x', 'i'};
+	char vendor[5];
 	char *compatible;
 	unsigned int last_erase = 0, used;
 	int status;
 
+	__builtin_memcpy(vendor, nftl_vendor_sunxi, sizeof(vendor));
 	compatible = nand_fdt_get_prop_string_by_path(0, path, mod);
 	if (!compatible || nand_memcmp(compatible, vendor, 3))
 		return -1;
@@ -6435,11 +6437,12 @@ int nftl_initialize(void *raw_owner, unsigned short number)
 	struct init_nand_parameters *params;
 	struct init_nftl_config *cfg;
 	const char path[2] = {'/', 0};
-	const char vendor[9] = {'a', 'l', 'l', 'w', 'i', 'n', 'n', 'e', 'r'};
+	char vendor[9];
 	char *compatible;
 	unsigned int setting, revision;
 	int result;
 
+	__builtin_memcpy(vendor, nftl_vendor_allwinner, sizeof(vendor));
 	compatible = nand_fdt_get_prop_string_by_path(0, path, com);
 	if (!compatible || nand_memcmp(compatible, vendor, 9))
 		return -1;

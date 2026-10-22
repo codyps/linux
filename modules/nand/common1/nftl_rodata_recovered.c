@@ -1200,6 +1200,10 @@ __asm__(".global nand_crc16_table\n"
 	__asm__(".global " #alias "\n" \
 		".set " #alias ", .Lnftl_readonly_storage+" #offset "\n" \
 		".size " #alias ", 0")
+/* Stock constant-pool templates copied to stack by the recovered C. */
+NFTL_RO_VIEW(nftl_vendor_sunxi, 1912);
+NFTL_RO_VIEW(nftl_vendor_allwinner, 216);
+NFTL_RO_VIEW(sandisk_activation_commands, 20672);
 NFTL_RO_VIEW(hynix26nm_para0_recovered, 18136);
 NFTL_RO_VIEW(hynix26nm_para1_recovered, 18192);
 /* Five Sandisk retry diagnostics used by the maintainable C implementation.
