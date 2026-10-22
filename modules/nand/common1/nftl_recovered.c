@@ -3928,46 +3928,59 @@ struct hynix20nm_readretry_zone {
 };
 extern int hynix20nm_getotpparam(struct otp_chip *, unsigned char *);
 __attribute__((optimize("-fno-stack-protector")))
-int hynix20nm_init_readretry_param(void *owner)
+int hynix20nm_init_readretry_param(struct hynix20nm_readretry_zone *zone)
 {
-	struct hynix20nm_readretry_zone *zone = owner;
-	unsigned char otp_values[64];
-	unsigned char *page_buffer;
-	unsigned char *copy_buffer;
-	unsigned int index;
-	int result = 0;
+	/* OEM keeps the special-info result apart from its final return value.
+	 * The four-byte gap after the OTP table is present in the stock frame. */
+	struct {
+		unsigned char otp_values[64];
+		unsigned int unused_after_otp;
+		int special_result;
+		unsigned char *copy_buffer;
+		unsigned char *page_buffer;
+		int result;
+		unsigned int index;
+	} frame;
+
+	frame.index = 0;
+	frame.page_buffer = 0;
+	frame.copy_buffer = 0;
+	frame.result = 0;
+	frame.special_result = 0;
 
 	/* Stock shifts the count in 32 bits and never checks whether the
 	 * resulting allocation can hold the 64-byte table. */
-	page_buffer = nand_get_temp_buf(zone->params->page_count << 9);
-	if (!page_buffer) {
+	frame.page_buffer = nand_get_temp_buf(zone->params->page_count << 9);
+	if (!frame.page_buffer) {
 		nand_print_dbg(nftl_ro_lc_58);
 		return -94;
 	}
-	copy_buffer = nand_get_temp_buf(32768);
-	if (!copy_buffer) {
-		nand_free_temp_buf(page_buffer);
+	frame.copy_buffer = nand_get_temp_buf(32768);
+	if (!frame.copy_buffer) {
+		nand_free_temp_buf(frame.page_buffer);
 		nand_print(nftl_ro_lc_59);
 		return -76;
 	}
-	result = hynix16nm_get_special_info(copy_buffer, page_buffer, 64,
-					   zone->chip);
-	if (result == 0) {
+	frame.special_result = 0;
+	frame.special_result = hynix16nm_get_special_info(frame.copy_buffer,
+						frame.page_buffer, 64, zone->chip);
+	if (frame.special_result == 0) {
 		nand_print_dbg(nftl_ro_lc_60,
 			       zone->controller->channel, zone->chip);
-		for (index = 0; index <= 63; index++) {
-			nand_print_dbg(nftl_ro_lc_61, page_buffer[index]);
-			if ((index & 7) == 7)
+		for (frame.index = 0; frame.index <= 63; frame.index++) {
+			nand_print_dbg(nftl_ro_lc_61, frame.page_buffer[frame.index]);
+			if ((frame.index & 7) == 7)
 				nand_print_dbg(nftl_ro_lc_45);
 		}
-		hynix20nm_saveotpvalue((struct otp_chip *)zone, page_buffer);
-		result = hynix20nm_set_default_param((struct otp_chip *)zone);
+		hynix20nm_saveotpvalue((struct otp_chip *)zone,
+					 frame.page_buffer);
+		frame.result = hynix20nm_set_default_param((struct otp_chip *)zone);
 	} else {
 		nand_print_dbg(nftl_ro_lc_62,
 			       zone->controller->channel);
-		result = hynix20nm_getotpparam((struct otp_chip *)zone,
-						otp_values);
-		if (result == 0) {
+		frame.result = hynix20nm_getotpparam((struct otp_chip *)zone,
+						frame.otp_values);
+		if (frame.result == 0) {
 			/* OEM ignores the default-program result on this fallback. */
 			hynix20nm_set_default_param((struct otp_chip *)zone);
 			nand_print_dbg(nftl_ro_lc_63,
@@ -3976,8 +3989,8 @@ int hynix20nm_init_readretry_param(void *owner)
 	}
 	/* OEM frees only the page buffer here. The 32 KiB copy buffer leaks
 	 * on every normal completion; retain that behavior for equivalence. */
-	nand_free_temp_buf(page_buffer);
-	return result;
+	nand_free_temp_buf(frame.page_buffer);
+	return frame.result;
 }
 
 extern int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *chip);
