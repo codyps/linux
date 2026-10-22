@@ -1856,6 +1856,9 @@ int hynix16nm_set_readretry(struct hynix16nm_retry_zone *zone)
 	return result;
 }
 
+/* OEM keeps result at FP+0x38 and index at +0x3c. Stack-protector's
+ * reordered slots would expose different scratch state to NAND callbacks. */
+__attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_vender_set_param(struct hynix16nm_retry_zone *zone,
 			      unsigned char *values,
 			      unsigned char *addresses, unsigned int count)
