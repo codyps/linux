@@ -3697,6 +3697,9 @@ int is_current_blcok(struct diag_current_zone *zone, void *block)
 extern int nand_clean_zone_table(void *zone);
 extern int nand_find_zone_table(void *zone);
 extern void *nand_memset(void *destination, int value, unsigned int size);
+/* No canary is emitted here, but GCC's stack-protector pass still moves the
+ * OEM's private buffer and sector slots. Keep their stock placement. */
+__attribute__((optimize("-fno-stack-protector")))
 int write_data_to_nand(void *zone)
 {
 	int sector;
@@ -5407,6 +5410,9 @@ int nand_sector_cache_write(void *zone, unsigned int sector, void *data)
 	return 0;
 }
 
+/* Restore the OEM's node and bookkeeping slots without changing its
+ * unchecked list walk or wrapping zero limit. */
+__attribute__((optimize("-fno-stack-protector")))
 int __nand_flush_sector_write_cache(void *zone, unsigned int limit)
 {
 	struct sector_owner *cache =
@@ -9651,6 +9657,9 @@ int get_cold_logic_page(void *zone, int page, unsigned int pages)
 extern int nand_cache_read(struct nand_cache_read_zone *zone, int page,
 			   unsigned short mode,
 			   void *buffer);
+/* Keep the OEM's private read/claim slots; the byte truncation and ignored
+ * callback results below are intentional stock behavior. */
+__attribute__((optimize("-fno-stack-protector")))
 int read_reclaim(struct read_claim_node *head,
 		 struct read_claim_node *selected, void *buffer)
 {
