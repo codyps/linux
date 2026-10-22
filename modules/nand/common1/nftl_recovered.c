@@ -4236,9 +4236,8 @@ extern unsigned char hynix26nm_read_retry_reg_num;
 extern unsigned char hynix26nm_read_retry_reg_adr[];
 extern signed short hynix26nm_read_retry_val[];
 __attribute__((optimize("-fno-stack-protector")))
-int hynix26nm_set_readretry(void *owner)
+int hynix26nm_set_readretry(struct hynix20nm_retry_chip *chip)
 {
-	struct hynix20nm_retry_chip *chip = owner;
 	struct {
 		unsigned char values[8];
 		unsigned short padding;
@@ -8510,7 +8509,7 @@ int sandisk_read_page_end(struct samsung_read_request *request)
 	return result;
 }
 
-extern int hynix26nm_set_readretry(void *);
+extern int hynix26nm_set_readretry(struct hynix20nm_retry_chip *);
 /* Both Hynix generations use this OEM retry state machine. In particular,
  * a setter failure causes an immediate reset call and then a second reset
  * call after the loop. The reset results never replace the failing status.
