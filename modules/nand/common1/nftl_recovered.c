@@ -3220,13 +3220,13 @@ int nftl_cache_exit(void *zone)
 	int index;
 
 	for (index = 0; index < *(unsigned short *)cache; index++) {
-		struct nftl_cache_entry_view *entry =
-			(struct nftl_cache_entry_view *)(cache + index * 56);
 		/* OEM calls nftl_free even for null entries and re-reads the
-		 * count after each call. It never clears an allocation slot. */
-		nftl_free(entry->allocation);
+		 * count after each call. It never clears an allocation slot.
+		 * This view starts at the cache header; its allocation at +24
+		 * matches entries[0].allocation after the eight-byte header. */
+		nftl_free(((struct nftl_cache_entry_view *)cache)[index].allocation);
 	}
-	nftl_free(*(void **)(cache + 1800));
+	nftl_free(((struct cache_init_data *)cache)->page_buffer);
 	return 0;
 }
 
