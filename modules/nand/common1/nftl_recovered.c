@@ -3180,25 +3180,29 @@ _Static_assert(__builtin_offsetof(struct nand_cache_read_zone, stats) == 3440,
 	       "NAND read statistics offset");
 _Static_assert(__builtin_offsetof(struct nand_cache_read_zone, read) == 3512,
 	       "NAND read callback offset");
-int nand_cache_read(void *raw_zone, int page, unsigned short sector_range,
+int nand_cache_read(struct nand_cache_read_zone *zone, int page,
+		    unsigned short sector_range,
 		    void *destination)
 {
-	struct nand_cache_read_zone *zone = raw_zone;
-	struct cache_init_data *cache = &zone->cache;
+	struct cache_init_data *cache;
 	struct cache_init_entry *node;
 	unsigned char *buffer;
 	unsigned int offset;
 	unsigned int length;
 	unsigned short written_start;
 	unsigned short written_length;
-	int result = 0;
+	int result;
 
 	if (!destination) {
 		nand_print(nftl_ro_lc_419);
 		return 0;
 	}
-	offset = ((sector_range >> 8) & 0xff) << 9;
-	length = (sector_range & 0xff) << 9;
+	result = 0;
+	offset = (unsigned short)(sector_range >> 8);
+	length = sector_range & 0xff;
+	offset <<= 9;
+	length <<= 9;
+	cache = &zone->cache;
 	if (zone->configuration->count) {
 		buffer = cache->entries[0].allocation;
 		result = zone->read(zone, page, buffer);
@@ -3237,18 +3241,19 @@ int nand_cache_read(void *raw_zone, int page, unsigned short sector_range,
 	node = (struct cache_init_entry *)search_from_cache_read_list(
 			(struct cache_read_zone *)cache, page);
 	if (node) {
-		int move_to_tail = node->status == 0;
-
-		if (move_to_tail)
+		if (node->status == 0) {
 			del_from_cache_read_list(
 				(struct cache_read_delete_owner *)cache,
 				(struct cache_read_delete_node *)node);
-		buffer = node->allocation;
-		nand_memcpy(destination, buffer + offset, length);
-		if (move_to_tail)
+			buffer = node->allocation;
+			nand_memcpy(destination, buffer + offset, length);
 			add_to_cache_read_list_tail(
 				(struct cache_read_add_zone *)cache,
 				(struct cache_read_delete_node *)node, 0);
+		} else {
+			buffer = node->allocation;
+			nand_memcpy(destination, buffer + offset, length);
+		}
 		return 0;
 	}
 	node = (struct cache_init_entry *)get_empty_cahce_node(
@@ -9537,7 +9542,8 @@ int get_cold_logic_page(void *zone, int page, unsigned int pages)
 	}
 	return -1;
 }
-extern int nand_cache_read(void *zone, int page, unsigned short mode,
+extern int nand_cache_read(struct nand_cache_read_zone *zone, int page,
+			   unsigned short mode,
 			   void *buffer);
 int read_reclaim(struct read_claim_node *head,
 		 struct read_claim_node *selected, void *buffer)
@@ -9556,7 +9562,8 @@ int read_reclaim(struct read_claim_node *head,
 	} else {
 		/* OEM discards cache-read and flag-set errors, and follows every
 		 * private pointer without validation. */
-		nand_cache_read(selected->zone, cold_page,
+		nand_cache_read((struct nand_cache_read_zone *)selected->zone,
+			cold_page,
 			((struct reclaim_page_zone *)selected->zone)->cache->mode,
 			buffer);
 		set_nftl_read_claim_flag(head,
