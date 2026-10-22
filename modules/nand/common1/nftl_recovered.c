@@ -11555,7 +11555,9 @@ int get_current_used_block(struct current_used_zone *zone,
 			   struct new_write_block *candidate,
 			   unsigned int previous_tag)
 {
+	struct new_write_block *assist;
 	unsigned int page, tag;
+	unsigned short copy_limit;
 	int had_primary_ecc = 0;
 
 	if (zone->current)
@@ -11601,16 +11603,21 @@ int get_current_used_block(struct current_used_zone *zone,
 			if (!zone->assist)
 				return 1;
 			zone->assist_used = 0;
+			/* OEM reads the shared assist pointer before current->tag. */
+			assist = zone->assist;
 			tag = zone->current->tag + 1;
-			zone->assist->tag = tag;
+			assist->tag = tag;
+			/* OEM reloads the published tag for initialization. */
 			if (new_block_init_for_write(
 				    (struct new_write_zone *)zone,
-				    zone->assist, tag)) {
+				    zone->assist, zone->assist->tag)) {
 				nand_print(nftl_ro_lc_254);
 				zone->assist = 0;
 				continue;
 			}
-			for (page = 0; page < zone->current_used; page++) {
+			/* OEM snapshots the copy bound before invoking copy_page. */
+			copy_limit = zone->current_used;
+			for (page = 0; page < copy_limit; page++) {
 				/* OEM logs a copy failure but still advances to the next page. */
 				if (zone->copy_page(zone, zone->current,
 						    zone->assist, zone->data,
@@ -11630,7 +11637,9 @@ int get_current_used_block(struct current_used_zone *zone,
 			zone->assist = 0;
 			continue;
 		}
-		zone->assist->tag = zone->current->tag + 1;
+		/* Keep the OEM destination read ahead of the source-tag read. */
+		assist = zone->assist;
+		assist->tag = zone->current->tag + 1;
 		recover_logic_page_mapping((struct logic_page_map_zone *)zone,
 				   (struct invalid_page_node *)zone->assist,
 				   zone->assist_map, zone->assist_used);
@@ -11681,7 +11690,9 @@ allocate_new:
 		if (!zone->assist)
 			return 1;
 		zone->assist_used = 0;
-		zone->assist->tag = zone->current->tag + 1;
+		/* OEM reads assist before the current block's tag. */
+		assist = zone->assist;
+		assist->tag = zone->current->tag + 1;
 	} else {
 		zone->assist = 0;
 	}
