@@ -837,25 +837,6 @@ static ssize_t show_frames_cycles(struct class *class, struct class_attribute *a
 	return sprintf(buffer, "%d\n", trimui_frames_cycles);
 }
 
-static ssize_t store_frames_cycles(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
-{
-	kstrtoint(buffer, 0, (int *)&trimui_frames_cycles);
-	trimui_frames_enable = 0;
-	/* The stock callback issues two ordered 32-bit resets here.  Keep the
-	 * intermediate state visible to the frame worker, including after an
-	 * invalid number: the OEM callback ignores kstrtoint()'s error.
-	 * TODO: reject invalid input and synchronize these fields in a separate
-	 * behavior-changing fix. */
-	WRITE_ONCE(trimui_frame_index, 0);
-	WRITE_ONCE(trimui_cycles_left, 0);
-	return count;
-}
-
-static ssize_t show_frames_enable(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_frames_enable);
-}
-
 /* Compatible address views, not independent allocations or recovered types.
  * Only the explicitly rooted control/counter fields are accessed. */
 struct trimui_frame_control_view { u8 unused[0x14]; int enable,cycles,fps,len; };
@@ -864,6 +845,39 @@ extern struct trimui_frame_control_view trimui_frame_controls;
 extern struct trimui_frame_counter_view trimui_frame_counters;
 __asm__(".local trimui_frame_controls\n.type trimui_frame_controls,%object\n.set trimui_frame_controls,trimui_led_state-8\n.size trimui_frame_controls,36\n"
         ".local trimui_frame_counters\n.type trimui_frame_counters,%object\n.set trimui_frame_counters,trimui_led_state+0x43f8\n.size trimui_frame_counters,0x9d8\n");
+static ssize_t store_frames_cycles(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+{
+	struct trimui_frame_control_view *control;
+	struct trimui_frame_counter_view *counter;
+	size_t result;
+
+	/* These compatible aliases recover stock's two BSS address roots and
+	 * keep the count in a callee-saved register across the parser call. */
+	asm("adrp %0, trimui_frame_controls\n\t"
+	    "add %0, %0, :lo12:trimui_frame_controls\n\t"
+	    "mov %1, %2"
+	    : "=&r"(control), "=r"(result) : "r"(count));
+	/* OEM ignores parse errors and clears enable regardless.  TODO: reject
+	 * invalid input only in a separate behavior-changing fix. */
+	kstrtoint(buffer, 0, &control->cycles);
+	/* Materialize the counter root before clearing enable as stock does.
+	 * The memory clobber keeps these observable operations ordered. */
+	asm volatile("adrp %0, trimui_frame_counters\n\t"
+		     "add %0, %0, :lo12:trimui_frame_counters"
+		     : "=&r"(counter) : : "memory");
+	control->enable = 0;
+	/* Stock issues two separate 32-bit resets.  A frame worker can observe
+	 * the intermediate state; TODO: synchronize only in a separate fix. */
+	WRITE_ONCE(counter->index, 0);
+	WRITE_ONCE(counter->left, 0);
+	return result;
+}
+
+static ssize_t show_frames_enable(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_frames_enable);
+}
+
 static ssize_t store_frames_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
  struct trimui_frame_control_view *control;
