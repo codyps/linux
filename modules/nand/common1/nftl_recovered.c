@@ -6438,19 +6438,19 @@ extern int nftl_start(struct init_nftl_owner *, struct init_nftl_config *,
 
 __attribute__((optimize("-fno-stack-protector")))
 /* OEM forwards all 32 partition-number bits to nftl_start. */
-int nftl_initialize(void *raw_owner, int number)
+int nftl_initialize(struct init_nftl_owner *owner, int number)
 {
-	struct init_nftl_owner *owner = raw_owner;
 	struct init_partition *part = owner->partition;
-	struct init_nand_parameters *params;
-	struct init_nftl_config *cfg;
-	const char path[2] = {'/', 0};
-	char vendor[9];
-	char *compatible;
-	unsigned int setting, revision;
+	/* Stock reserves these slots but initializes only the bytes it reads.
+	 * Their remaining bytes must not be treated as terminated strings. */
+	char vendor[12];
+	char path[8];
+	char *compatible = 0;
 	int result;
 
-	__builtin_memcpy(vendor, nftl_vendor_allwinner, sizeof(vendor));
+	__builtin_memcpy(vendor, nftl_vendor_allwinner, 9);
+	path[0] = '/';
+	path[1] = 0;
 	compatible = nand_fdt_get_prop_string_by_path(0, path, com);
 	if (!compatible || nand_memcmp(compatible, vendor, 9))
 		return -1;
@@ -6458,62 +6458,67 @@ int nftl_initialize(void *raw_owner, int number)
 	nftl_get_nand_phyinfo(phyinfo);
 	if (part->pages <= 15)
 		return -1;
-	cfg = nftl_malloc(36);
-	owner->config = cfg;
-	if (!cfg) {
+	owner->config = nftl_malloc(36);
+	if (!owner->config) {
 		nand_print(nftl_ro_lc_16, nftl_ro_func_5346);
 		return 1;
 	}
-	params = part->device->params;
-	cfg->mode = 0;
-	cfg->first = cfg->second = cfg->third = 1;
-	cfg->fourth = cfg->fifth = 0;
-	cfg->limit_a = params->limit_a;
-	cfg->eighth = 8;
-	cfg->limit_b = params->limit_b;
-	cfg->ninth = 2;
-	cfg->tenth = 3;
-	cfg->revision = 0x0013c680;
-	setting = params->retry_setting;
-	if (setting == 0) {
-		cfg->erase_limit = 30;
-		cfg->interval = 3;
-	} else if (setting == 255) {
-		cfg->mode = 1;
-		cfg->erase_limit = 50;
-		cfg->interval = 40;
-	} else if (setting > 10) {
+	/* OEM reloads both shared pointers for each field access. These reads
+	 * can race with another writer; add synchronization only in a separate
+	 * non-stock fix. */
+	owner->config->mode = 0;
+	owner->config->first = 1;
+	owner->config->second = 1;
+	owner->config->third = 1;
+	owner->config->fourth = 0;
+	owner->config->fifth = 0;
+	owner->config->limit_a = part->device->params->limit_a;
+	owner->config->limit_b = part->device->params->limit_b;
+	owner->config->eighth = 8;
+	owner->config->ninth = 2;
+	owner->config->tenth = 3;
+	owner->config->revision = 0x0013c680;
+	if (part->device->params->retry_setting == 0) {
+		owner->config->erase_limit = 30;
+		owner->config->interval = 3;
+	} else if (part->device->params->retry_setting == 255) {
+		owner->config->mode = 1;
+		owner->config->erase_limit = 50;
+		owner->config->interval = 40;
+	} else if (part->device->params->retry_setting > 10) {
 		/* Stock changes the caller's NAND settings in place. */
-		params->retry_setting = 10;
-		cfg->erase_limit = 30;
-		cfg->interval = 3;
+		part->device->params->retry_setting = 10;
+		owner->config->erase_limit = 30;
+		owner->config->interval = 3;
 	} else {
-		cfg->erase_limit = (unsigned short)(setting * 50);
-		cfg->interval = (unsigned short)(setting * 40);
+		owner->config->erase_limit = (unsigned short)(
+			part->device->params->retry_setting * 50);
+		owner->config->interval = (unsigned short)(
+			part->device->params->retry_setting * 40);
 	}
-	cfg->device_mode = part->device->mode;
-	if (cfg->device_mode)
-		cfg->interval = 3;
+	owner->config->device_mode = part->device->mode;
+	if (owner->config->device_mode)
+		owner->config->interval = 3;
 	else
-		cfg->interval = 1;
-	if (cfg->erase_limit > 30)
-		cfg->erase_limit = 30;
+		owner->config->interval = 1;
+	if (owner->config->erase_limit > 30)
+		owner->config->erase_limit = 30;
 	/* OEM overwrites all interval decisions above unconditionally. */
-	cfg->interval = 1;
-	revision = params->format_revision;
-	if (revision > 0x1517f && revision <= 0x76b2b8)
-		cfg->revision = revision;
-	cfg->boot_crc = 1;
+	owner->config->interval = 1;
+	if (part->device->params->format_revision > 0x1517f &&
+	    part->device->params->format_revision <= 0x76b2b8)
+		owner->config->revision = part->device->params->format_revision;
+	owner->config->boot_crc = 1;
 	if (!nftl_support_boot_check_crc_from_dts())
-		cfg->boot_crc = 0;
-	result = nftl_start(owner, cfg, &owner->zone, part->read, part->write,
+		owner->config->boot_crc = 0;
+	result = nftl_start(owner, owner->config, &owner->zone, part->read, part->write,
 			    part->capacity, part->small, part->pages,
 			    part, number, 0);
 	if (result)
 		return result;
-	owner->zone->geometry->max_erase_times = params->max_erase_times;
+	owner->zone->geometry->max_erase_times = part->device->params->max_erase_times;
 	owner->zone->geometry->secondary_erase_times =
-		params->erased_block_limit;
+		part->device->params->erased_block_limit;
 	nand_print_dbg(nftl_ro_lc_17,
 		       owner->zone->geometry->max_erase_times);
 	owner->capacity = nftl_get_zone_cap((struct nftl_zone_cap_view *)owner->zone);
@@ -6707,7 +6712,7 @@ struct nftl_build_node *nftl_add(struct nftl_build_node *node)
 		return 0;
 	}
 	block->partition = build_nand_partition(node);
-	if (nftl_initialize(block, node->number)) {
+	if (nftl_initialize((struct init_nftl_owner *)block, node->number)) {
 		/* OEM leaks the allocated block on initialization failure. */
 		nand_print(nftl_ro_lc_5);
 		return 0;
