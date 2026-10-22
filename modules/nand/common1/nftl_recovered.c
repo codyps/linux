@@ -3896,16 +3896,23 @@ extern int set_one_addr(struct command_chip *, unsigned int);
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *owner)
 {
-	struct samsung_set_chip *chip = (struct samsung_set_chip *)owner;
-	unsigned char addresses[2] = {0, 0};
-	unsigned char values[2] = {0, 0};
-	unsigned char command;
-	unsigned char complement[64];
 	unsigned char *buffer;
+	/* These eight-byte slots reproduce the OEM stack layout. Only the
+	 * command byte and the first two address/value bytes are initialized. */
+	unsigned char command[8];
+	unsigned char complement[64];
+	unsigned char addresses[8];
+	unsigned char values[8];
 	unsigned int index;
 	unsigned int copy;
-	int invalid_copy = 0;
-	int result = 0;
+	int invalid_copy;
+	int result;
+
+	result = 0;
+	addresses[0] = 0;
+	addresses[1] = 0;
+	values[0] = 0;
+	values[1] = 0;
 
 	if (hynix20nm_read_retry_mode == 2) {
 		addresses[0] = 0xff;
@@ -3922,33 +3929,33 @@ int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *owner)
 	}
 	/* OEM never checks allocation or any NAND command/read result. */
 	buffer = nand_get_temp_buf(1024);
-	nand_enable_chip(chip);
-	ndfc_disable_randomize(chip->controller);
-	set_one_cmd((struct command_chip *)chip, -1, 1);
-	command = 54;
-	set_cmd_with_nand_bus(chip, &command, 0,
+	nand_enable_chip((struct samsung_set_chip *)owner);
+	ndfc_disable_randomize(((struct samsung_set_chip *)owner)->controller);
+	set_one_cmd((struct command_chip *)owner, -1, 1);
+	command[0] = 54;
+	set_cmd_with_nand_bus((struct samsung_set_chip *)owner, command, 0,
 				  &addresses[0], &values[0], 1, 1);
-	set_cmd_with_nand_bus(chip, 0, 0,
+	set_cmd_with_nand_bus((struct samsung_set_chip *)owner, 0, 0,
 				  &addresses[1], &values[1], 1, 1);
-	set_one_cmd((struct command_chip *)chip, 22, 0);
-	set_one_cmd((struct command_chip *)chip, 23, 0);
-	set_one_cmd((struct command_chip *)chip, 4, 0);
-	set_one_cmd((struct command_chip *)chip, 25, 0);
-	set_one_cmd((struct command_chip *)chip, 0, 0);
-	set_one_addr((struct command_chip *)chip, 0);
-	set_one_addr((struct command_chip *)chip, 0);
-	set_one_addr((struct command_chip *)chip, 0);
-	set_one_addr((struct command_chip *)chip, 2);
-	set_one_addr((struct command_chip *)chip, 0);
+	set_one_cmd((struct command_chip *)owner, 22, 0);
+	set_one_cmd((struct command_chip *)owner, 23, 0);
+	set_one_cmd((struct command_chip *)owner, 4, 0);
+	set_one_cmd((struct command_chip *)owner, 25, 0);
+	set_one_cmd((struct command_chip *)owner, 0, 0);
+	set_one_addr((struct command_chip *)owner, 0);
+	set_one_addr((struct command_chip *)owner, 0);
+	set_one_addr((struct command_chip *)owner, 0);
+	set_one_addr((struct command_chip *)owner, 2);
+	set_one_addr((struct command_chip *)owner, 0);
 	/* Stock reuses the setup-command byte for the read command. */
-	command = 48;
-	get_data_with_nand_bus_one_cmd(chip, &command, 0, buffer, 2);
+	command[0] = 48;
+	get_data_with_nand_bus_one_cmd((struct samsung_set_chip *)owner, command, 0, buffer, 2);
 	if (buffer[0] != 8 || buffer[1] != 8) {
 		nand_print(nftl_ro_lc_51,
 			   buffer[0], buffer[1]);
 		result = -96;
 	}
-	get_data_with_nand_bus_one_cmd(chip, 0, 0, buffer, 1024);
+	get_data_with_nand_bus_one_cmd((struct samsung_set_chip *)owner, 0, 0, buffer, 1024);
 	/* OEM overwrites saved bytes before validating each copy. A bad copy
 	 * therefore leaves a partial update until a later good copy replaces it. */
 	for (copy = 0; copy <= 7; copy++) {
@@ -3974,9 +3981,9 @@ int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *owner)
 		/* OEM overwrites a previous -96 register-count error here. */
 		result = -95;
 	}
-	set_one_cmd((struct command_chip *)chip, -1, 1);
-	set_one_cmd((struct command_chip *)chip, 56, 1);
-	nand_disable_chip(chip);
+	set_one_cmd((struct command_chip *)owner, -1, 1);
+	set_one_cmd((struct command_chip *)owner, 56, 1);
+	nand_disable_chip((struct samsung_set_chip *)owner);
 	nand_free_temp_buf(buffer);
 	return result;
 }
