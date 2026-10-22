@@ -2019,26 +2019,33 @@ int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone)
 int hynix16nm_get_otp_param(struct hynix16nm_otp_zone *zone,
 			    unsigned char *values)
 {
-	unsigned int attempt = 0;
-	unsigned int complete = 0;
-	int result;
-	unsigned int group;
-	unsigned int index;
+	/* Keep the five OEM scalar slots together in their original frame order.
+	 * The retry loop remains unbounded when the OTP helper keeps failing. */
+	struct {
+		int result;
+		unsigned int complete;
+		unsigned int attempt;
+		unsigned int index;
+		unsigned int group;
+	} local;
+
+	local.attempt = 0;
+	local.complete = 0;
 
 	/* OEM retries forever when OTP parsing never returns zero; keep the
 	 * unbounded loop for stock behavior. */
-	while (complete == 0) {
+	while (local.complete == 0) {
 		nand_print_dbg(nftl_ro_lc_54,
-			       attempt);
-		result = hynix16nm_get_rr_value_otp_hynix(zone);
-		if (result == 0)
-			complete = 1;
-		attempt++;
+			       local.attempt);
+		local.result = hynix16nm_get_rr_value_otp_hynix(zone);
+		if (local.result == 0)
+			local.complete = 1;
+		local.attempt++;
 	}
-	for (group = 0; group <= 7; group++) {
-		for (index = 0; index <= 3; index++)
-			values[(group << 2) + index] =
-				zone->values[(group << 2) + index];
+	for (local.group = 0; local.group <= 7; local.group++) {
+		for (local.index = 0; local.index <= 3; local.index++)
+			values[(local.group << 2) + local.index] =
+				zone->values[(local.group << 2) + local.index];
 	}
 	return 0;
 }
