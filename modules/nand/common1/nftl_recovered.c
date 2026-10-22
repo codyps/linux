@@ -9146,14 +9146,15 @@ int sandisk_end_one_read_retry(struct samsung_set_chip *chip)
 extern unsigned char sandisk_read_retry_reg_adr_19[];
 extern unsigned char sandisk_read_retry_reg_adr_24[];
 extern unsigned char sandisk_read_retry_reg_adr_1y[];
-/* The four-byte value array has no canary in the stock object. */
+/* The four-byte value array has no canary in the stock object. Initialize
+ * result first: OEM clears FP+0x3c before the four bytes at FP+0x28. */
 __attribute__((optimize("-fno-stack-protector")))
 int sandisk_exit_readretry(struct samsung_set_chip *chip)
 {
+	int result = 0;
 	unsigned char values[4] = {0, 0, 0, 0};
 	unsigned char *addresses;
 	int count;
-	int result = 0;
 
 	nand_enable_chip(chip);
 	ndfc_disable_randomize(chip->controller);
