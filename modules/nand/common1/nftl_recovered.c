@@ -9565,6 +9565,12 @@ struct logic_page_print_entry {
 	unsigned short code;
 	unsigned short marker;
 };
+/* Recovery writes the low 12 bits as an OEM bitfield assignment. */
+struct logic_page_recover_entry {
+	unsigned short page : 12;
+	unsigned short preserve : 4;
+	unsigned short marker;
+};
 int recover_logic_page_mapping(struct logic_page_map_zone *zone,
 			       struct invalid_page_node *current,
 			       const unsigned int *pages, unsigned int count)
@@ -9575,8 +9581,8 @@ int recover_logic_page_mapping(struct logic_page_map_zone *zone,
 		unsigned int page = pages[index];
 
 		if (page < zone->total_pages) {
-			struct logic_page_print_entry *entry =
-				(struct logic_page_print_entry *)
+			struct logic_page_recover_entry *entry =
+				(struct logic_page_recover_entry *)
 				get_logic_page_map(zone, page);
 			if (!entry) {
 				nand_print(nftl_ro_lc_273);
@@ -9601,7 +9607,7 @@ int recover_logic_page_mapping(struct logic_page_map_zone *zone,
 						   previous->number);
 			}
 			/* OEM replaces only the low 12 bits of the map code. */
-			entry->code = (entry->code & 0xf000) | (index & 0xfff);
+			entry->page = (unsigned short)index;
 			entry->marker = current->number;
 		} else {
 			if (page != 0xffffffff)
