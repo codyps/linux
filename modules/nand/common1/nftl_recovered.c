@@ -7372,85 +7372,164 @@ int nand_dbg_zone_erase(void *zone, unsigned short block,
 	return result;
 }
 
-/* Diagnostic field names come from OEM formats; offsets are recovered from
- * the stock loads. Retain its unchecked nested pointer dereferences. */
-#define DIAG_U8(base, off) (*(const unsigned char *)((const char *)(base) + (off)))
-#define DIAG_U16(base, off) (*(const unsigned short *)((const char *)(base) + (off)))
-#define DIAG_U32(base, off) (*(const unsigned int *)((const char *)(base) + (off)))
-#define DIAG_PTR(base, off) (*(void * const *)((const char *)(base) + (off)))
+/* The offsets and widths in these diagnostic views are recovered from the
+ * stock instructions.  Only fields read by print_nftl_zone are declared;
+ * the intervening bytes belong to other private NFTL state. */
+struct zone_diag_chip {
+	unsigned char unknown_0[16];
+	unsigned short blocks_per_chip;
+	unsigned char unknown_18[2];
+	unsigned short pages_per_block;
+	unsigned char unknown_22[2];
+	unsigned short spare_bytes;
+	unsigned short page_bytes;
+	unsigned char unknown_28[2];
+	unsigned short total_blocks;
+};
+struct zone_diag_block {
+	unsigned short number;
+	unsigned char unknown_2[4];
+	unsigned short second_number;
+	unsigned int erase_count;
+};
+struct zone_diag_counters {
+	unsigned short field[14];
+	unsigned char unknown_28[4];
+	unsigned int total;
+};
 struct zone_diag_blob { unsigned char bytes[48]; };
+struct zone_diag_view {
+	unsigned char unknown_0[8];
+	const struct zone_diag_chip *chip;
+	unsigned char unknown_16[8];
+	unsigned char block_flag;
+	unsigned char current_block_flag;
+	unsigned short logic_blocks;
+	unsigned short free_blocks;
+	unsigned short bad_blocks;
+	unsigned int sectors;
+	unsigned char unknown_36[4];
+	unsigned int backup_sectors;
+	unsigned char unknown_44[4];
+	const struct zone_diag_block *first_block;
+	const struct zone_diag_block *last_block;
+	const struct zone_diag_block *gc_block;
+	unsigned char unknown_72[392];
+	struct zone_diag_blob zone_phy_page_map_for_gc;
+	void *logic_page_map;
+	unsigned char unknown_520[8];
+	const struct zone_diag_block *current_block;
+	struct zone_diag_blob current_block_user_info;
+	unsigned short current_block_page;
+	unsigned char unknown_586[6];
+	const struct zone_diag_block *assist_block;
+	struct zone_diag_blob assist_block_user_info;
+	unsigned short assist_block_page;
+	unsigned char unknown_650[6];
+	unsigned int initialized;
+	unsigned int block_count;
+	unsigned char unknown_664[4];
+	unsigned int first_sector;
+	unsigned int last_sector;
+	unsigned int reclaim_count;
+	unsigned short free_count;
+	unsigned short bad_count;
+	unsigned short gc_count;
+	unsigned char unknown_686[2];
+	unsigned short reserved_count;
+	unsigned char unknown_690[8];
+	unsigned short full_count;
+	unsigned char unknown_700[372];
+	unsigned short smart_count;
+	unsigned char unknown_1074[2374];
+	const struct zone_diag_counters *counters;
+};
+/* These anchors also document the ABI consumed by the diagnostic code. */
+#define DIAG_OFFSET_ASSERT(field, offset) \
+	typedef char zone_diag_##field##_offset[ \
+		__builtin_offsetof(struct zone_diag_view, field) == (offset) ? 1 : -1]
+DIAG_OFFSET_ASSERT(chip, 8);
+DIAG_OFFSET_ASSERT(zone_phy_page_map_for_gc, 464);
+DIAG_OFFSET_ASSERT(logic_page_map, 512);
+DIAG_OFFSET_ASSERT(current_block_user_info, 536);
+DIAG_OFFSET_ASSERT(assist_block_user_info, 600);
+DIAG_OFFSET_ASSERT(initialized, 656);
+DIAG_OFFSET_ASSERT(smart_count, 1072);
+DIAG_OFFSET_ASSERT(counters, 3448);
+#undef DIAG_OFFSET_ASSERT
+/* OEM bugs: these pointers are dereferenced without null checks; the 48-byte
+ * blobs are passed to a %x formatter by address, not decoded as integers. */
+#define DIAG_ZONE ((const struct zone_diag_view *)zone)
 __attribute__((optimize("-fno-stack-protector")))
 void print_nftl_zone(void *zone)
 {
-	const unsigned char *p = zone;
-	struct zone_diag_blob snapshot;
-
-	if (!DIAG_U32(p, 656))
+	if (!DIAG_ZONE->initialized)
 		return;
 	nand_print_dbg(nftl_ro_lc_329);
-	nand_print_dbg(nftl_ro_lc_330, DIAG_U16(DIAG_PTR(p, 8), 24));
-	nand_print_dbg(nftl_ro_lc_331, DIAG_U16(DIAG_PTR(p, 8), 26));
-	nand_print_dbg(nftl_ro_lc_332, DIAG_U16(DIAG_PTR(p, 8), 20));
-	nand_print_dbg(nftl_ro_lc_333, DIAG_U16(DIAG_PTR(p, 8), 16));
-	nand_print_dbg(nftl_ro_lc_334, DIAG_U16(DIAG_PTR(p, 8), 30));
-	nand_print_dbg(nftl_ro_lc_335, DIAG_U32(p, 656));
-	nand_print_dbg(nftl_ro_lc_336, DIAG_U8(p, 24));
-	nand_print_dbg(nftl_ro_lc_337, DIAG_U8(p, 25));
-	nand_print_dbg(nftl_ro_lc_338, DIAG_U16(p, 26));
-	nand_print_dbg(nftl_ro_lc_339, DIAG_U16(p, 28));
-	nand_print_dbg(nftl_ro_lc_340, DIAG_U32(p, 32));
-	nand_print_dbg(nftl_ro_lc_341, DIAG_U32(p, 40));
-	nand_print_dbg(nftl_ro_lc_342, DIAG_U16(p, 30));
-	nand_print_dbg(nftl_ro_lc_343, DIAG_U16(p, 680));
-	nand_print_dbg(nftl_ro_lc_344, DIAG_U16(p, 682));
-	nand_print_dbg(nftl_ro_lc_345, DIAG_U16(p, 688));
-	nand_print_dbg(nftl_ro_lc_346, DIAG_U16(p, 684));
-	nand_print_dbg(nftl_ro_lc_347, DIAG_U16(p, 698));
-	nand_print_dbg(nftl_ro_lc_348, DIAG_U16(DIAG_PTR(p, 48), 0));
-	nand_print_dbg(nftl_ro_lc_349, DIAG_U16(DIAG_PTR(p, 56), 0));
-	__builtin_memcpy(&snapshot, p + 464, 48);
-	nand_print_dbg(nftl_ro_lc_350, snapshot);
-	__builtin_memcpy(&snapshot, p + 536, 48);
-	nand_print_dbg(nftl_ro_lc_351, snapshot);
-	nand_print_dbg(nftl_ro_lc_352, DIAG_PTR(p, 528));
-	nand_print_dbg(nftl_ro_lc_353, DIAG_U16(DIAG_PTR(p, 528), 0));
-	nand_print_dbg(nftl_ro_lc_354, DIAG_U16(p, 584));
-	nand_print_dbg(nftl_ro_lc_355, DIAG_U32(DIAG_PTR(p, 528), 8));
-	nand_print_dbg(nftl_ro_lc_356, DIAG_U16(DIAG_PTR(p, 64), 0), DIAG_U16(DIAG_PTR(p, 64), 6));
-	if (DIAG_U8(p, 25) & 1) {
-		__builtin_memcpy(&snapshot, p + 600, 48);
-		nand_print_dbg(nftl_ro_lc_357, snapshot);
-		nand_print_dbg(nftl_ro_lc_358, DIAG_PTR(p, 592));
-		nand_print_dbg(nftl_ro_lc_359, DIAG_U16(DIAG_PTR(p, 592), 0));
-		nand_print_dbg(nftl_ro_lc_360, DIAG_U16(p, 648));
-		nand_print_dbg(nftl_ro_lc_361, DIAG_U32(DIAG_PTR(p, 592), 8));
+	nand_print_dbg(nftl_ro_lc_330, DIAG_ZONE->chip->spare_bytes);
+	nand_print_dbg(nftl_ro_lc_331, DIAG_ZONE->chip->page_bytes);
+	nand_print_dbg(nftl_ro_lc_332, DIAG_ZONE->chip->pages_per_block);
+	nand_print_dbg(nftl_ro_lc_333, DIAG_ZONE->chip->blocks_per_chip);
+	nand_print_dbg(nftl_ro_lc_334, DIAG_ZONE->chip->total_blocks);
+	nand_print_dbg(nftl_ro_lc_335, DIAG_ZONE->initialized);
+	nand_print_dbg(nftl_ro_lc_336, DIAG_ZONE->block_flag);
+	nand_print_dbg(nftl_ro_lc_337, DIAG_ZONE->current_block_flag);
+	nand_print_dbg(nftl_ro_lc_338, DIAG_ZONE->logic_blocks);
+	nand_print_dbg(nftl_ro_lc_339, DIAG_ZONE->free_blocks);
+	nand_print_dbg(nftl_ro_lc_340, DIAG_ZONE->sectors);
+	nand_print_dbg(nftl_ro_lc_341, DIAG_ZONE->backup_sectors);
+	nand_print_dbg(nftl_ro_lc_342, DIAG_ZONE->bad_blocks);
+	nand_print_dbg(nftl_ro_lc_343, DIAG_ZONE->free_count);
+	nand_print_dbg(nftl_ro_lc_344, DIAG_ZONE->bad_count);
+	nand_print_dbg(nftl_ro_lc_345, DIAG_ZONE->reserved_count);
+	nand_print_dbg(nftl_ro_lc_346, DIAG_ZONE->gc_count);
+	nand_print_dbg(nftl_ro_lc_347, DIAG_ZONE->full_count);
+	nand_print_dbg(nftl_ro_lc_348, DIAG_ZONE->first_block->number);
+	nand_print_dbg(nftl_ro_lc_349, DIAG_ZONE->last_block->number);
+	/* Stock computes the address from the following map pointer field. */
+	nand_print_dbg(nftl_ro_lc_350,
+		*(const struct zone_diag_blob *)
+		((const char *)&DIAG_ZONE->logic_page_map - sizeof(struct zone_diag_blob)));
+	nand_print_dbg(nftl_ro_lc_351,
+		*(const struct zone_diag_blob *)
+		((const char *)&DIAG_ZONE->logic_page_map + 24));
+	nand_print_dbg(nftl_ro_lc_352, DIAG_ZONE->current_block);
+	nand_print_dbg(nftl_ro_lc_353, DIAG_ZONE->current_block->number);
+	nand_print_dbg(nftl_ro_lc_354, DIAG_ZONE->current_block_page);
+	nand_print_dbg(nftl_ro_lc_355, DIAG_ZONE->current_block->erase_count);
+	nand_print_dbg(nftl_ro_lc_356, DIAG_ZONE->gc_block->number, DIAG_ZONE->gc_block->second_number);
+	if (DIAG_ZONE->current_block_flag & 1) {
+		nand_print_dbg(nftl_ro_lc_357,
+			*(const struct zone_diag_blob *)
+			((const char *)&DIAG_ZONE->logic_page_map + 88));
+		nand_print_dbg(nftl_ro_lc_358, DIAG_ZONE->assist_block);
+		nand_print_dbg(nftl_ro_lc_359, DIAG_ZONE->assist_block->number);
+		nand_print_dbg(nftl_ro_lc_360, DIAG_ZONE->assist_block_page);
+		nand_print_dbg(nftl_ro_lc_361, DIAG_ZONE->assist_block->erase_count);
 	}
-	nand_print_dbg(nftl_ro_lc_362, DIAG_U32(p, 660));
-	nand_print_dbg(nftl_ro_lc_363, DIAG_PTR(p, 512));
-	nand_print_dbg(nftl_ro_lc_364, DIAG_U32(p, 676));
-	nand_print_dbg(nftl_ro_lc_365, DIAG_U16(p, 1072));
-	nand_print_dbg(nftl_ro_lc_366, DIAG_U32(p, 668));
-	nand_print_dbg(nftl_ro_lc_367, DIAG_U32(p, 672));
-	nand_print_dbg(nftl_ro_lc_368, DIAG_U16(DIAG_PTR(p, 3448), 0));
-	nand_print_dbg(nftl_ro_lc_369, DIAG_U16(DIAG_PTR(p, 3448), 2));
-	nand_print_dbg(nftl_ro_lc_370, DIAG_U16(DIAG_PTR(p, 3448), 4));
-	nand_print_dbg(nftl_ro_lc_371, DIAG_U16(DIAG_PTR(p, 3448), 6));
-	nand_print_dbg(nftl_ro_lc_372, DIAG_U16(DIAG_PTR(p, 3448), 10));
-	nand_print_dbg(nftl_ro_lc_373, DIAG_U16(DIAG_PTR(p, 3448), 12));
-	nand_print_dbg(nftl_ro_lc_374, DIAG_U16(DIAG_PTR(p, 3448), 14));
-	nand_print_dbg(nftl_ro_lc_375, DIAG_U16(DIAG_PTR(p, 3448), 16));
-	nand_print_dbg(nftl_ro_lc_376, DIAG_U16(DIAG_PTR(p, 3448), 18));
-	nand_print_dbg(nftl_ro_lc_377, DIAG_U16(DIAG_PTR(p, 3448), 20));
-	nand_print_dbg(nftl_ro_lc_378, DIAG_U16(DIAG_PTR(p, 3448), 22));
-	nand_print_dbg(nftl_ro_lc_379, DIAG_U16(DIAG_PTR(p, 3448), 24));
-	nand_print_dbg(nftl_ro_lc_380, DIAG_U16(DIAG_PTR(p, 3448), 26));
-	nand_print_dbg(nftl_ro_lc_381, DIAG_U32(DIAG_PTR(p, 3448), 32));
+	nand_print_dbg(nftl_ro_lc_362, DIAG_ZONE->block_count);
+	nand_print_dbg(nftl_ro_lc_363, DIAG_ZONE->logic_page_map);
+	nand_print_dbg(nftl_ro_lc_364, DIAG_ZONE->reclaim_count);
+	nand_print_dbg(nftl_ro_lc_365, DIAG_ZONE->smart_count);
+	nand_print_dbg(nftl_ro_lc_366, DIAG_ZONE->first_sector);
+	nand_print_dbg(nftl_ro_lc_367, DIAG_ZONE->last_sector);
+	nand_print_dbg(nftl_ro_lc_368, DIAG_ZONE->counters->field[0]);
+	nand_print_dbg(nftl_ro_lc_369, DIAG_ZONE->counters->field[1]);
+	nand_print_dbg(nftl_ro_lc_370, DIAG_ZONE->counters->field[2]);
+	nand_print_dbg(nftl_ro_lc_371, DIAG_ZONE->counters->field[3]);
+	nand_print_dbg(nftl_ro_lc_372, DIAG_ZONE->counters->field[5]);
+	nand_print_dbg(nftl_ro_lc_373, DIAG_ZONE->counters->field[6]);
+	nand_print_dbg(nftl_ro_lc_374, DIAG_ZONE->counters->field[7]);
+	nand_print_dbg(nftl_ro_lc_375, DIAG_ZONE->counters->field[8]);
+	nand_print_dbg(nftl_ro_lc_376, DIAG_ZONE->counters->field[9]);
+	nand_print_dbg(nftl_ro_lc_377, DIAG_ZONE->counters->field[10]);
+	nand_print_dbg(nftl_ro_lc_378, DIAG_ZONE->counters->field[11]);
+	nand_print_dbg(nftl_ro_lc_379, DIAG_ZONE->counters->field[12]);
+	nand_print_dbg(nftl_ro_lc_380, DIAG_ZONE->counters->field[13]);
+	nand_print_dbg(nftl_ro_lc_381, DIAG_ZONE->counters->total);
 	print_smart((struct smart_info_zone *)zone);
 }
-#undef DIAG_U8
-#undef DIAG_U16
-#undef DIAG_U32
-#undef DIAG_PTR
+#undef DIAG_ZONE
 
 /* The OEM's private zone layout is not public. These typed accessors keep
  * each recovered offset visible until the full declaration is established. */
