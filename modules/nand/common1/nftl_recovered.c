@@ -1151,24 +1151,38 @@ struct cache_read_empty_zone {
 struct cache_read_empty_node *get_empty_cahce_node(
 	struct cache_read_empty_zone *zone)
 {
-	struct cache_read_empty_node *node;
+	struct cache_read_empty_node *node = 0;
 	unsigned short index;
-	unsigned short desired_state;
 
 	for (index = 0; index < zone->node_count; index++) {
 		/* OEM trusts node_count, even beyond the 30 in-place nodes. */
 		if (zone->nodes[index].state == 255)
 			return &zone->nodes[index];
 	}
-	/* OEM's count threshold selects only one state; it does not fall back
-	 * to the other list state and does not detect a list cycle. */
-	desired_state = zone->second_count > 9 ? 2 : 0;
-	for (node = zone->head.next; node; node = node->next) {
-		if (node->state == desired_state)
-			return (struct cache_read_empty_node *)
-				del_from_cache_read_list(
+	/* OEM branches into separate state-2 and state-0 walks. Neither walk
+	 * falls back to the other state or detects a list cycle. */
+	if (zone->second_count > 9) {
+		node = &zone->head;
+		node = node->next;
+		while (node) {
+			if (node->state == 2)
+				return (struct cache_read_empty_node *)
+					del_from_cache_read_list(
 					(struct cache_read_delete_owner *)zone,
 					(struct cache_read_delete_node *)node);
+			node = node->next;
+		}
+	} else {
+		node = &zone->head;
+		node = node->next;
+		while (node) {
+			if (node->state == 0)
+				return (struct cache_read_empty_node *)
+					del_from_cache_read_list(
+					(struct cache_read_delete_owner *)zone,
+					(struct cache_read_delete_node *)node);
+			node = node->next;
+		}
 	}
 	return 0;
 }
