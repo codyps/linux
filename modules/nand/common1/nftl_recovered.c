@@ -9247,6 +9247,9 @@ int toshiba_vender_set_param(struct samsung_set_chip *chip,
 		       values[0], values[1], values[2], values[3]);
 	return result;
 }
+/* Stock keeps values/addresses/count/result at FP+0x38/+0x30/+0x2c/+0x28,
+ * matching its exit path; the normal stack-protector layout reverses them. */
+__attribute__((optimize("-fno-stack-protector")))
 int toshiba_set_readretry(struct samsung_set_chip *chip)
 {
 	unsigned char *values;
