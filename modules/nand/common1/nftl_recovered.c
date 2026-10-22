@@ -7089,25 +7089,40 @@ __attribute__((optimize("-fno-stack-protector")))
 int mark_free_block(struct erase_block_zone *owner,
 		    struct erase_block_info *block)
 {
-	struct mark_free_zone *zone = (struct mark_free_zone *)owner;
+	/* A cast expression keeps the OEM's fresh owner-field reads without
+	 * introducing a separate stack-resident view pointer at -O0. */
+#define MARK_ZONE ((struct mark_free_zone *)owner)
 	struct physic_op_param op;
 	unsigned char oob[16];
-	unsigned int index;
 
 	nand_memset(oob, -91, 16);
-	for (index = 0; index < 4; index++) {
-		unsigned short page = index < 2 ? index :
-			zone->geometry->pages - (4 - index);
+	/* OEM rereads geometry, block metadata and callback pointers for each
+	 * of four independent writes. A helper may change them between calls.
+	 * Page counts below two wrap; helper/write errors are ignored. */
+	set_physic_op_par(&op, block->number, 0, MARK_ZONE->geometry->fixed_page,
+			   MARK_ZONE->page_data, oob);
+	set_oob_special_page(MARK_ZONE, oob, 0x55555555,
+			     block->tag, block->erase_count);
+	MARK_ZONE->write(MARK_ZONE, &op);
 
-		set_physic_op_par(&op, block->number, page,
-				   zone->geometry->fixed_page,
-				   zone->page_data, oob);
-		set_oob_special_page(zone, oob, 0x55555555,
-				     block->tag, block->erase_count);
-		/* OEM wraps page counts below two for the last slots, ignores
-		 * helper/write failures, and reports success if no mark persists. */
-		zone->write(zone, &op);
-	}
+	set_physic_op_par(&op, block->number, 1, MARK_ZONE->geometry->fixed_page,
+			   MARK_ZONE->page_data, oob);
+	set_oob_special_page(MARK_ZONE, oob, 0x55555555,
+			     block->tag, block->erase_count);
+	MARK_ZONE->write(MARK_ZONE, &op);
+
+	set_physic_op_par(&op, block->number, MARK_ZONE->geometry->pages - 2,
+			   MARK_ZONE->geometry->fixed_page, MARK_ZONE->page_data, oob);
+	set_oob_special_page(MARK_ZONE, oob, 0x55555555,
+			     block->tag, block->erase_count);
+	MARK_ZONE->write(MARK_ZONE, &op);
+
+	set_physic_op_par(&op, block->number, MARK_ZONE->geometry->pages - 1,
+			   MARK_ZONE->geometry->fixed_page, MARK_ZONE->page_data, oob);
+	set_oob_special_page(MARK_ZONE, oob, 0x55555555,
+			     block->tag, block->erase_count);
+	MARK_ZONE->write(MARK_ZONE, &op);
+#undef MARK_ZONE
 	return 0;
 }
 extern int mark_free_block(struct erase_block_zone *, struct erase_block_info *);
