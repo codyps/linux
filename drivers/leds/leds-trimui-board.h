@@ -82,6 +82,16 @@ static unsigned int * const trimui_scale_by_led[32] = {
 #define trimui_suspended trimui_led_state.suspended
 #define trimui_wire_frame trimui_led_state.wire_frame
 #define trimui_anim_frames trimui_led_state.anim_frames
+/* Stock forms one address below the left effect, then retains the left
+ * pointer across both paired setters' parser calls. This is a view only. */
+struct trimui_effect_pair_view {
+	u8 before_left[0xb88];
+	struct trimui_led_effect left;
+};
+extern struct trimui_effect_pair_view trimui_effect_pair;
+asm(".local trimui_effect_pair\n.type trimui_effect_pair,%object\n"
+    ".set trimui_effect_pair,trimui_led_state+0x21f8\n"
+    ".size trimui_effect_pair,0x1aa8\n");
 /* Compatible views of rooted stock fields; no independent allocation.
  * Original C declarations are unknown. The config alias inherits the
  * four-byte ELF extent of its scalar root, not the full C view below. */
@@ -480,8 +490,18 @@ static ssize_t store_duration_f2(struct class *class, struct class_attribute *at
 
 static ssize_t store_duration(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_l.duration);
-	trimui_effect_r.duration = trimui_effect_l.duration;
+	struct trimui_effect_pair_view *pair;
+	struct trimui_led_effect *left;
+
+	asm("adrp %0, trimui_effect_pair\n\t"
+	    "add %0, %0, :lo12:trimui_effect_pair"
+	    : "=&r"(pair));
+	left = &pair->left;
+
+	/* OEM copies the stale value to the right on parse failure too.
+	 * TODO: reject invalid input only in a separate behavior change. */
+	kstrtoint(buffer, 0, &left->duration);
+	trimui_effect_r.duration = left->duration;
 	return count;
 }
 
@@ -547,8 +567,18 @@ static ssize_t store_cycles_f2(struct class *class, struct class_attribute *attr
 
 static ssize_t store_cycles(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_l.cycles);
-	trimui_effect_r.cycles = trimui_effect_l.cycles;
+	struct trimui_effect_pair_view *pair;
+	struct trimui_led_effect *left;
+
+	asm("adrp %0, trimui_effect_pair\n\t"
+	    "add %0, %0, :lo12:trimui_effect_pair"
+	    : "=&r"(pair));
+	left = &pair->left;
+
+	/* OEM copies the stale value to the right on parse failure too.
+	 * TODO: reject invalid input only in a separate behavior change. */
+	kstrtoint(buffer, 0, &left->cycles);
+	trimui_effect_r.cycles = left->cycles;
 	return count;
 }
 
