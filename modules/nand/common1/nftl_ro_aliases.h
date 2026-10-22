@@ -475,4 +475,24 @@ extern const char nftl_ro_lc_65[];
 extern const char nftl_ro_lc_66[];
 extern const char nftl_ro_lc_67[];
 
+extern const char nftl_ro_func_5346[]; /* nftl_initialize */
+extern const char nftl_ro_func_5194[]; /* nftl_add */
+extern const char nftl_ro_func_7098[]; /* zone_param_init */
+extern const char nftl_ro_func_7312[]; /* init_nrc */
+extern const char nftl_ro_func_7402[]; /* torture_block_and_mark */
+extern const char nftl_ro_func_7526[]; /* block_last_page_ecc_error */
+extern const char nftl_ro_func_7558[]; /* nand_dbg_phy_read */
+extern const char nftl_ro_func_7569[]; /* nand_dbg_zone_phy_read */
+extern const char nftl_ro_func_7580[]; /* nand_dbg_zone_phy_write */
+extern const char nftl_ro_func_7589[]; /* nand_dbg_phy_write */
+extern const char nftl_ro_func_7642[]; /* write_data_to_nand */
+extern const char nftl_ro_function_7666[]; /* nand_power_off_ecc_error */
+extern const char nftl_ro_func_6755[]; /* nftl_sector_cache_init */
+extern const char nftl_ro_func_8479[]; /* get_logic_page_map */
+extern const char nftl_ro_func_7884[]; /* nftl_cache_init */
+extern const char nftl_ro_func_8536[]; /* nftl_start */
+extern const char nftl_ro_func_8331[]; /* shutdown_on_gc */
+extern const char nftl_ro_func_5524[]; /* panic_recover_data */
+extern const char nftl_ro_func_6409[]; /* sandisk_A19_special_exit */
+
 #endif /* NFTL_RO_ALIASES_H */

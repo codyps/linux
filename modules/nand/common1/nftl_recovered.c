@@ -2350,7 +2350,7 @@ int nand_dbg_phy_write(unsigned short chip, unsigned short block,
 	/* OEM logs allocation failure but still passes NULL to nand_memset and
 	 * page_write. Preserve that behavior for the pinned build. */
 	if (!buffer)
-		nand_print(nftl_ro_lc_385, __func__);
+		nand_print(nftl_ro_lc_385, nftl_ro_func_7589);
 	nand_memset(buffer, -91, 4096);
 	oob[0] = 0xff;
 	oob[1] = 0xff;
@@ -2391,7 +2391,7 @@ int nand_dbg_zone_phy_write(struct dbg_zone_write_owner *zone,
 	/* OEM logs allocation failure, then passes NULL to nand_memset and
 	 * the write callback. Preserve the fault-prone diagnostic path. */
 	if (!buffer)
-		nand_print(nftl_ro_lc_385, __func__);
+		nand_print(nftl_ro_lc_385, nftl_ro_func_7580);
 	physical = (struct physical_block *)
 		get_phy_block_addr((struct nftl_phy_outer *)zone, block);
 	nand_memset(buffer, -91, 4096);
@@ -3114,14 +3114,14 @@ int nftl_cache_init(void *owner)
 		entry->allocation = nftl_malloc(zone->geometry->allocation_size);
 		if (!entry->allocation) {
 			/* OEM leaks all earlier allocations on this failure. */
-			nand_print(nftl_ro_lc_413, __func__);
+			nand_print(nftl_ro_lc_413, nftl_ro_func_7884);
 			return 1;
 		}
 	}
 	cache->page_buffer = nftl_malloc(zone->geometry->allocation_size);
 	if (!cache->page_buffer) {
 		/* OEM leaves the node allocations live on this failure. */
-		nand_print(nftl_ro_lc_414, __func__);
+		nand_print(nftl_ro_lc_414, nftl_ro_func_7884);
 		return 1;
 	}
 	return 0;
@@ -3653,7 +3653,7 @@ int write_data_to_nand(void *zone)
 	/* OEM logs allocation failure, then still dereferences the null
 	 * buffer in nand_memset and continues. Keep this broken path. */
 	if (!buffer)
-		nand_print(nftl_ro_lc_392, __func__);
+		nand_print(nftl_ro_lc_392, nftl_ro_func_7642);
 	nand_memset(buffer, -86, 512);
 	/* OEM diagnostic overwrites all 38,912 sectors with 0xaa. Its fixed
 	 * bound does not consult the zone capacity; never invoke casually. */
@@ -5277,7 +5277,7 @@ int nftl_sector_cache_init(void *zone)
 	if (!buffer) {
 		/* OEM leaves the count and allocation fields changed on failure,
 		 * and never clears a preexisting list or frees an old buffer. */
-		nand_print(nftl_ro_lc_141, __func__);
+		nand_print(nftl_ro_lc_141, nftl_ro_func_6755);
 		return 1;
 	}
 	cache->head.next = 0;
@@ -6060,7 +6060,7 @@ int shutdown_on_gc(struct shutdown_gc_zone *zone)
 
 	gc_src_type = 4;
 	/* Preserve the malformed trailing percent in the OEM diagnostic. */
-	nand_print_dbg(nftl_ro_lc_465, __func__, current,
+	nand_print_dbg(nftl_ro_lc_465, nftl_ro_func_8331, current,
 		       zone->enabled, zone->first, zone->second, zone->third);
 	while (zone->first <= zone->third) {
 		current = zone->current;
@@ -6193,7 +6193,7 @@ int sandisk_A19_special_exit(void)
 			result = sandisk_toggle_vendor_specific_setting(chip);
 			if (result) {
 				nand_print(nftl_ro_lc_102,
-					   __func__);
+					   nftl_ro_func_6409);
 				return result;
 			}
 		}
@@ -6450,7 +6450,7 @@ int nftl_initialize(void *raw_owner, unsigned short number)
 	cfg = nftl_malloc(36);
 	owner->config = cfg;
 	if (!cfg) {
-		nand_print(nftl_ro_lc_16, __func__);
+		nand_print(nftl_ro_lc_16, nftl_ro_func_5346);
 		return 1;
 	}
 	params = part->device->params;
@@ -6593,7 +6593,7 @@ int nftl_start(struct init_nftl_owner *owner, struct init_nftl_config *config,
 	zone = nftl_malloc(3528);
 	*output = (struct init_nftl_zone *)zone;
 	if (!zone) {
-		nand_print(nftl_ro_lc_474, __func__);
+		nand_print(nftl_ro_lc_474, nftl_ro_func_8536);
 		return -2;
 	}
 	/* OEM reuses the zone on retry, leaking its previous geometry and
@@ -6606,7 +6606,7 @@ int nftl_start(struct init_nftl_owner *owner, struct init_nftl_config *config,
 		geometry = nftl_malloc(40);
 		zone->geometry = geometry;
 		if (!geometry) {
-			nand_print(nftl_ro_lc_475, __func__);
+			nand_print(nftl_ro_lc_475, nftl_ro_func_8536);
 			return -2;
 		}
 		nand_memset(geometry, 0, 8);
@@ -6627,7 +6627,7 @@ int nftl_start(struct init_nftl_owner *owner, struct init_nftl_config *config,
 		geometry->block_array = blocks;
 		if (!blocks) {
 			nand_print(nftl_ro_lc_476,
-				   __func__);
+				   nftl_ro_func_8536);
 			return -2;
 		}
 		/* The last sentinel block is not covered by this fill. */
@@ -6692,7 +6692,7 @@ struct nftl_build_node *nftl_add(struct nftl_build_node *node)
 	struct nftl_add_block *block = nftl_malloc(136);
 
 	if (!block) {
-		nand_print(nftl_ro_lc_4, __func__);
+		nand_print(nftl_ro_lc_4, nftl_ro_func_5194);
 		return 0;
 	}
 	block->partition = build_nand_partition(node);
@@ -6975,7 +6975,7 @@ int panic_recover_data(void *owner)
 	nand_print(nftl_ro_lc_29);
 	data = nand_malloc(geometry->page_bytes);
 	if (!data) {
-		nand_print(nftl_ro_lc_30, __func__, 308);
+		nand_print(nftl_ro_lc_30, nftl_ro_func_5524, 308);
 		return -1;
 	}
 	nand_memset(data, 0, geometry->page_bytes);
@@ -7224,7 +7224,7 @@ int torture_block_and_mark(struct torture_zone *zone,
 		result = zone->write(zone, &op);
 		if (result) {
 			nand_print(nftl_ro_lc_302,
-				   __func__, block->number, page);
+				   nftl_ro_func_7402, block->number, page);
 			goto bad;
 		}
 	}
@@ -7237,20 +7237,20 @@ int torture_block_and_mark(struct torture_zone *zone,
 		result = zone->read(zone, &op);
 		if (result) {
 			nand_print(nftl_ro_lc_303,
-				   __func__, block->number, page);
+				   nftl_ro_func_7402, block->number, page);
 			goto bad;
 		}
 		result = nftl_check_pattern(zone->page_data, patterns[0],
 					    zone->geometry->page_bytes);
 		if (result) {
 			nand_print(nftl_ro_lc_304,
-				   __func__, block->number, page, patterns[0]);
+				   nftl_ro_func_7402, block->number, page, patterns[0]);
 			goto bad;
 		}
 		result = nftl_check_pattern(oob, patterns[0], 15);
 		if (result) {
 			nand_print(nftl_ro_lc_305,
-				   __func__, block->number, page, patterns[0]);
+				   nftl_ro_func_7402, block->number, page, patterns[0]);
 			goto bad;
 		}
 	}
@@ -7396,13 +7396,13 @@ int zone_param_init(void *zone, unsigned short first_block,
 	buffer = nftl_malloc(INIT_U16(chip, 26));
 	INIT_PTR(p, 512) = buffer;
 	if (!buffer) {
-		nand_print(nftl_ro_lc_202, __func__);
+		nand_print(nftl_ro_lc_202, nftl_ro_func_7098);
 		return -2;
 	}
 	buffer = nftl_malloc(INIT_U16(chip, 26));
 	INIT_PTR(p, 520) = buffer;
 	if (!buffer) {
-		nand_print(nftl_ro_lc_203, __func__);
+		nand_print(nftl_ro_lc_203, nftl_ro_func_7098);
 		return -2;
 	}
 	INIT_U32(p, 32) = sectors;
@@ -7429,7 +7429,7 @@ int zone_param_init(void *zone, unsigned short first_block,
 	INIT_PTR(p, 536) = buffer;
 	if (!buffer) {
 		nand_print(nftl_ro_lc_205,
-			   __func__);
+			   nftl_ro_func_7098);
 		return -2;
 	}
 	INIT_PTR(p, 552) = buffer;
@@ -7442,7 +7442,7 @@ int zone_param_init(void *zone, unsigned short first_block,
 	INIT_PTR(p, 600) = buffer;
 	if (!buffer) {
 		nand_print(nftl_ro_lc_206,
-			   __func__);
+			   nftl_ro_func_7098);
 		return -2;
 	}
 	INIT_PTR(p, 616) = buffer;
@@ -7455,7 +7455,7 @@ int zone_param_init(void *zone, unsigned short first_block,
 	INIT_PTR(p, 464) = buffer;
 	if (!buffer) {
 		nand_print(nftl_ro_lc_207,
-			   __func__);
+			   nftl_ro_func_7098);
 		return -2;
 	}
 	INIT_PTR(p, 480) = buffer;
@@ -9252,7 +9252,7 @@ int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 	if (error == 1) {
 		/* OEM prints its original source line and dumps 16 bytes of OOB;
 		 * preserve that diagnostic even if the source line moves. */
-		nand_print(nftl_ro_lc_398, __func__, 3046, error);
+		nand_print(nftl_ro_lc_398, nftl_ro_function_7666, 3046, error);
 		nand_print(nftl_ro_lc_399);
 		_DumpHexData(oob, 16);
 	}
@@ -9268,7 +9268,7 @@ unsigned int *get_logic_page_map(struct logic_page_map_zone *zone,
 
 	if (page >= zone->total_pages) {
 		nand_print(nftl_ro_lc_470,
-			   __func__, page, zone->total_pages);
+			   nftl_ro_func_8479, page, zone->total_pages);
 		result = 0;
 		return result;
 	}
@@ -10514,7 +10514,7 @@ int nand_dbg_phy_read(unsigned short channel, unsigned short block,
 	/* OEM logs failed allocation but continues into page_read and then
 	 * dereferences the NULL data pointer while formatting diagnostics. */
 	if (!data)
-		nand_print(nftl_ro_lc_382, __func__);
+		nand_print(nftl_ro_lc_382, nftl_ro_func_7558);
 	result = page_read(channel, block, page, 8, data, oob);
 	nand_print_dbg(nftl_ro_lc_383,
 		       oob[0], oob[1], oob[2], oob[3],
@@ -10550,7 +10550,7 @@ int init_nrc(struct nrc_zone *zone, struct nrc_buffers **output)
 	buffers = nftl_malloc(32);
 	if (!buffers) {
 		/* OEM leaves *output untouched for this first failure only. */
-		nand_print(nftl_ro_lc_279, __func__, 1408);
+		nand_print(nftl_ro_lc_279, nftl_ro_func_7312, 1408);
 		return -1;
 	}
 	nand_memset(buffers, 0, 32);
@@ -10558,18 +10558,18 @@ int init_nrc(struct nrc_zone *zone, struct nrc_buffers **output)
 	/* OEM uses wrapping 32-bit arithmetic for allocation sizes. */
 	buffers->second = nftl_malloc((zone->geometry->oob_bytes + 64U) * pages);
 	if (!buffers->second) {
-		nand_print(nftl_ro_lc_280, __func__, 1417);
+		nand_print(nftl_ro_lc_280, nftl_ro_func_7312, 1417);
 		goto fail;
 	}
 	buffers->third = nftl_malloc(pages * 4U);
 	if (!buffers->third) {
-		nand_print(nftl_ro_lc_281, __func__, 1422);
+		nand_print(nftl_ro_lc_281, nftl_ro_func_7312, 1422);
 		goto fail;
 	}
 	nand_memset(buffers->third, -1, pages * 4U);
 	buffers->first = nftl_malloc(pages);
 	if (!buffers->first) {
-		nand_print(nftl_ro_lc_282, __func__, 1428);
+		nand_print(nftl_ro_lc_282, nftl_ro_func_7312, 1428);
 		goto fail;
 	}
 	nand_memset(buffers->first, 0, pages);
@@ -10609,7 +10609,7 @@ int nand_dbg_zone_phy_read(struct nand_dbg_zone_read *zone,
 	/* OEM logs allocation failure but continues with a NULL data pointer;
 	 * the later byte diagnostics can fault on that path. */
 	if (!data)
-		nand_print(nftl_ro_lc_382, __func__);
+		nand_print(nftl_ro_lc_382, nftl_ro_func_7569);
 	physical = get_phy_block_addr((struct nftl_phy_outer *)zone, block);
 	/* OEM passes the caller's page as the plane argument and fixes the
 	 * physical page argument at eight. Preserve the swapped semantics. */
@@ -11256,14 +11256,14 @@ void *block_last_page_ecc_error(struct last_page_zone *zone,
 	good = 0;
 	saved = nftl_malloc(8192);
 	if (!saved)
-		nand_print(nftl_ro_lc_322, __func__);
+		nand_print(nftl_ro_lc_322, nftl_ro_func_7526);
 	for (page = 0; page < zone->geometry->pages; page++) {
 		/* Stock computes the slot before malloc, then reloads it for
 		 * the unchecked failure path. Keep the slot across the call. */
 		register void **slot = &saved[page];
 		*slot = nftl_malloc(zone->geometry->page_bytes);
 		if (!saved[page])
-			nand_print(nftl_ro_lc_323, __func__);
+			nand_print(nftl_ro_lc_323, nftl_ro_func_7526);
 	}
 	for (page = 0; page < zone->geometry->pages; page++) {
 		set_physic_op_par(&op, block->number, page,
