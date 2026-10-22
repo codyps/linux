@@ -3364,35 +3364,33 @@ struct cache_clean_zone {
 };
 int nftl_cache_clean(struct cache_clean_zone *zone)
 {
-	unsigned char *cache = (unsigned char *)zone + 1072;
+	struct cache_init_data *cache = (void *)zone + 1072;
 	unsigned int index;
 
-	*(unsigned short *)(cache + 0) = zone->geometry->slots;
-	*(unsigned short *)(cache + 2) = 0;
-	*(unsigned short *)(cache + 4) = 0;
-	*(unsigned short *)(cache + 6) = 0;
-	*(void **)(cache + 1712) = 0;
-	*(void **)(cache + 1720) = 0;
-	*(void **)(cache + 1728) = 0;
-	*(void **)(cache + 1736) = 0;
-	*(void **)(cache + 1768) = 0;
-	*(void **)(cache + 1776) = 0;
-	*(void **)(cache + 1784) = 0;
-	*(void **)(cache + 1792) = 0;
-	for (index = 0; index < *(unsigned short *)cache; index++) {
-		unsigned char *entry = cache + index * 56;
-
-		*(unsigned short *)(entry + 8) = index;
-		*(unsigned short *)(entry + 10) = 255;
-		*(unsigned int *)(entry + 16) = -1;
-		*(void **)(entry + 32) = 0;
-		*(void **)(entry + 40) = 0;
-		*(void **)(entry + 48) = 0;
-		/* OEM clears eight bytes at offset 56. This is the next
-		 * 56-byte entry's header, including after the final entry. */
-		*(void **)(entry + 56) = 0;
-		*(unsigned short *)(entry + 12) = 0;
-		*(unsigned short *)(entry + 14) = 0;
+	cache->count = zone->geometry->slots;
+	cache->field0 = 0;
+	cache->field1 = 0;
+	cache->field2 = 0;
+	cache->entries[30].links[0] = 0;
+	cache->entries[30].links[1] = 0;
+	cache->entries[30].links[2] = 0;
+	cache->entries[30].links[3] = 0;
+	cache->entries[31].links[0] = 0;
+	cache->entries[31].links[1] = 0;
+	cache->entries[31].links[2] = 0;
+	cache->entries[31].links[3] = 0;
+	/* OEM trusts the count; values above 32 overrun the embedded entries. */
+	for (index = 0; index < cache->count; index++) {
+		cache->entries[index].index = index;
+		cache->entries[index].status = 255;
+		cache->entries[index].page = -1;
+		cache->entries[index].links[0] = 0;
+		cache->entries[index].links[1] = 0;
+		cache->entries[index].links[2] = 0;
+		/* links[3] is the eight-byte store at cache+index*56+56. */
+		cache->entries[index].links[3] = 0;
+		cache->entries[index].field0 = 0;
+		cache->entries[index].field1 = 0;
 	}
 	return 0;
 }
