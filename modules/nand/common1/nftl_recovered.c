@@ -11165,7 +11165,10 @@ void *block_last_page_ecc_error(struct last_page_zone *zone,
 	if (!saved)
 		nand_print("[NE]%s:malloc fail 1!\n", __func__);
 	for (page = 0; page < zone->geometry->pages; page++) {
-		saved[page] = nftl_malloc(zone->geometry->page_bytes);
+		/* Stock computes the slot before malloc, then reloads it for
+		 * the unchecked failure path. Keep the slot across the call. */
+		register void **slot = &saved[page];
+		*slot = nftl_malloc(zone->geometry->page_bytes);
 		if (!saved[page])
 			nand_print("[NE]%s:malloc fail 2!\n", __func__);
 	}
