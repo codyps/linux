@@ -6151,24 +6151,24 @@ struct special_exit_info {
 };
 extern struct special_exit_info *g_nsi;
 
-#define SPECIAL_EXIT(vendor) \
+#define SPECIAL_EXIT(vendor, message) \
 	int vendor##_special_exit(void) \
 	{ \
 		struct special_exit_chip *chip; \
 		/* OEM ignores retry-exit errors and follows unchecked links. */ \
 		for (chip = g_nsi->chips; chip != 0; chip = chip->next) \
 			vendor##_readretry_exit((void *)chip); \
-		nand_print_dbg(" " #vendor "_special_exit \n"); \
+		nand_print_dbg(message); \
 		return 0; \
 	}
 
-SPECIAL_EXIT(samsung)
-SPECIAL_EXIT(hynix20nm)
-SPECIAL_EXIT(micron)
-SPECIAL_EXIT(toshiba)
-SPECIAL_EXIT(hynix26nm)
-SPECIAL_EXIT(hynix16nm)
-SPECIAL_EXIT(sandisk)
+SPECIAL_EXIT(samsung, nftl_ro_lc_42)
+SPECIAL_EXIT(hynix20nm, nftl_ro_lc_68)
+SPECIAL_EXIT(micron, nftl_ro_lc_76)
+SPECIAL_EXIT(toshiba, nftl_ro_lc_84)
+SPECIAL_EXIT(hynix26nm, nftl_ro_lc_93)
+SPECIAL_EXIT(hynix16nm, nftl_ro_lc_133)
+SPECIAL_EXIT(sandisk, nftl_ro_lc_140)
 
 struct sandisk_a19_exit_chip {
 	struct sandisk_a19_exit_chip *next;
@@ -8439,7 +8439,7 @@ int sandisk_A19_read_page_end(struct samsung_read_request *request)
 #undef A19_REPORT
 
 extern int set_one_addr(struct command_chip *chip, unsigned int address);
-#define HYNIX_LSB_EXIT(name) \
+#define HYNIX_LSB_EXIT(name, message) \
 int name(struct samsung_set_chip *chip) \
 { \
 	int delay = 1048575; \
@@ -8456,13 +8456,13 @@ int name(struct samsung_set_chip *chip) \
 	/* OEM burns 1,048,576 iterations rather than waiting on readiness. */ \
 	while (delay-- > 0) \
 		; \
-	nand_print_dbg(#name "\n"); \
+	nand_print_dbg(message); \
 	nand_disable_chip(chip); \
 	return 0; \
 }
 
-HYNIX_LSB_EXIT(hynix20nm_lsb_exit)
-HYNIX_LSB_EXIT(hynix26nm_lsb_exit)
+HYNIX_LSB_EXIT(hynix20nm_lsb_exit, nftl_ro_lc_50)
+HYNIX_LSB_EXIT(hynix26nm_lsb_exit, nftl_ro_lc_88)
 
 struct prio_gc_owner;
 extern int add_prio_gc(struct prio_gc_owner *zone, void *physical,

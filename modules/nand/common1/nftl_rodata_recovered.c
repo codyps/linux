@@ -2193,4 +2193,24 @@ NFTL_RO_VIEW(nftl_ro_func_8536, 22024);
 NFTL_RO_VIEW(nftl_ro_func_8331, 22040);
 NFTL_RO_VIEW(nftl_ro_func_5524, 22056);
 NFTL_RO_VIEW(nftl_ro_func_6409, 22080);
+
+/* Diagnostics formed by C token concatenation use their stock rows. */
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_42) == 18112, "NFTL lc_42 offset");
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_68) == 21656, "NFTL lc_68 offset");
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_76) == 20504, "NFTL lc_76 offset");
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_84) == 20072, "NFTL lc_84 offset");
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_93) == 18768, "NFTL lc_93 offset");
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_133) == 17736, "NFTL lc_133 offset");
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_140) == 20952, "NFTL lc_140 offset");
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_50) == 21128, "NFTL lc_50 offset");
+_Static_assert(__builtin_offsetof(struct nftl_readonly_layout, lc_88) == 18384, "NFTL lc_88 offset");
+NFTL_RO_VIEW(nftl_ro_lc_42, 18112);
+NFTL_RO_VIEW(nftl_ro_lc_68, 21656);
+NFTL_RO_VIEW(nftl_ro_lc_76, 20504);
+NFTL_RO_VIEW(nftl_ro_lc_84, 20072);
+NFTL_RO_VIEW(nftl_ro_lc_93, 18768);
+NFTL_RO_VIEW(nftl_ro_lc_133, 17736);
+NFTL_RO_VIEW(nftl_ro_lc_140, 20952);
+NFTL_RO_VIEW(nftl_ro_lc_50, 21128);
+NFTL_RO_VIEW(nftl_ro_lc_88, 18384);
 #undef NFTL_RO_VIEW

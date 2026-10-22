@@ -495,4 +495,14 @@ extern const char nftl_ro_func_8331[]; /* shutdown_on_gc */
 extern const char nftl_ro_func_5524[]; /* panic_recover_data */
 extern const char nftl_ro_func_6409[]; /* sandisk_A19_special_exit */
 
+extern const char nftl_ro_lc_42[];
+extern const char nftl_ro_lc_68[];
+extern const char nftl_ro_lc_76[];
+extern const char nftl_ro_lc_84[];
+extern const char nftl_ro_lc_93[];
+extern const char nftl_ro_lc_133[];
+extern const char nftl_ro_lc_140[];
+extern const char nftl_ro_lc_50[];
+extern const char nftl_ro_lc_88[];
+
 #endif /* NFTL_RO_ALIASES_H */
