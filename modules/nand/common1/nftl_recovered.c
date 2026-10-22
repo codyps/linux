@@ -5348,19 +5348,22 @@ struct sector_cache_init_view {
 	struct sector_node nodes[16];
 	struct sector_node head;
 };
+/* OEM keeps cache, buffer and index at FP+0x28/+0x30/+0x3c. The initializer
+ * recomputes each node field address and only stores the buffer local after
+ * the allocation has succeeded and the list head has been cleared. */
+__attribute__((optimize("-fno-stack-protector")))
 int nftl_sector_cache_init(void *zone)
 {
 	struct sector_cache_init_view *cache =
 		(struct sector_cache_init_view *)((unsigned char *)zone + 2880);
-	unsigned char *buffer;
 	unsigned int index;
+	unsigned char *buffer;
 
 	cache->capacity = 16;
 	cache->count = 0;
 	cache->buffer = 0;
-	buffer = nftl_malloc(8192);
-	cache->buffer = buffer;
-	if (!buffer) {
+	cache->buffer = nftl_malloc(8192);
+	if (!cache->buffer) {
 		/* OEM leaves the count and allocation fields changed on failure,
 		 * and never clears a preexisting list or frees an old buffer. */
 		nand_print(nftl_ro_lc_141, nftl_ro_func_6755);
@@ -5368,15 +5371,14 @@ int nftl_sector_cache_init(void *zone)
 	}
 	cache->head.next = 0;
 	cache->head.previous = 0;
+	buffer = cache->buffer;
 	for (index = 0; index < 16; index++) {
-		struct sector_node *node = &cache->nodes[index];
-
-		node->unknown = index;
-		node->flag = 255;
-		node->sector = -1;
-		node->next = 0;
-		node->previous = 0;
-		node->data = buffer;
+		cache->nodes[index].unknown = index;
+		cache->nodes[index].flag = 255;
+		cache->nodes[index].sector = -1;
+		cache->nodes[index].next = 0;
+		cache->nodes[index].previous = 0;
+		cache->nodes[index].data = buffer;
 		buffer += 512;
 	}
 	return 0;
