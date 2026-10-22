@@ -11230,7 +11230,7 @@ int hynix16nm_major_check_byte(unsigned char *value, unsigned int mode,
 		unsigned int index;
 
 		for (index = 0; index < length; index++) {
-			if ((primary[index] >> bit) & 1)
+			if (((unsigned int)primary[index] >> bit) & 1)
 				ones++;
 			else
 				zeros++;
@@ -11247,7 +11247,7 @@ int hynix16nm_major_check_byte(unsigned char *value, unsigned int mode,
 			ones = 0;
 			zeros = 0;
 			for (index = 0; index < length; index++) {
-				if ((secondary[index] >> bit) & 1)
+				if (((unsigned int)secondary[index] >> bit) & 1)
 					zeros++;
 				else
 					ones++;
