@@ -6815,7 +6815,8 @@ struct copy_page_zone {
 struct copy_page_source {
 	unsigned short block;
 	unsigned char before_logic_page[6];
-	unsigned int logic_page;
+	/* OEM call setup treats this as signed; forwarding preserves all 32 bits. */
+	int logic_page;
 };
 struct copy_page_destination {
 	unsigned short block;
