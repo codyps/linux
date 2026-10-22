@@ -338,7 +338,9 @@ struct nftl_free_erase_owner {
 struct nftl_invalid_erase_node {
 	unsigned char before_erase[6];
 	unsigned short erase_time;
-	unsigned int count;
+	/* The stock comparison emits the signed-field load schedule, then
+	 * compares with an unsigned limit. Negative counts rank as huge. */
+	int count;
 	unsigned char before_next[4];
 	struct nftl_invalid_erase_node *next;
 };
