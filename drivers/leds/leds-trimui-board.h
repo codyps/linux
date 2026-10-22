@@ -796,6 +796,8 @@ static ssize_t show_effect_lr(struct class *class, struct class_attribute *attr,
 
 static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
+	int right_cycles;
+
 	kstrtoint(buffer, 0, (int *)&trimui_effect_l.type);
 	if ((unsigned int)trimui_effect_l.type > 7) trimui_effect_l.type = 0;
 	trimui_effect_r.type = trimui_effect_l.type;
@@ -803,8 +805,11 @@ static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr
 	gen_effect(&trimui_effect_r, trimui_effect_r.type, trimui_effect_r.target_rgb, trimui_effect_r.current_rgb);
 	WRITE_ONCE(trimui_effect_l.index, 0);
 	WRITE_ONCE(trimui_effect_l.active_cycles, READ_ONCE(trimui_effect_l.cycles));
+	/* OEM reads right cycles before resetting right index, unlike the
+	 * five single-effect setters. Keep this observable ordering. */
+	right_cycles = READ_ONCE(trimui_effect_r.cycles);
 	WRITE_ONCE(trimui_effect_r.index, 0);
-	WRITE_ONCE(trimui_effect_r.active_cycles, READ_ONCE(trimui_effect_r.cycles));
+	WRITE_ONCE(trimui_effect_r.active_cycles, right_cycles);
 	return count;
 }
 
