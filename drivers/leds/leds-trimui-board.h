@@ -433,10 +433,20 @@ static ssize_t show_frame_hex(struct class *class, struct class_attribute *attr,
 static ssize_t store_frame_hex(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	int i, bytes = (int)count;
+	int rounded;
+	const char *position = buffer;
+	u32 *pixels = (u32 *)trimui_transfer_state.rgb;
 	if (bytes > (int)trimui_led_count * 7)
 		bytes = trimui_led_count * 7;
-	for (i = 0; i < bytes / 7; i++)
-		sscanf(buffer + 7 * i, "%x", &trimui_frame[i]);
+	rounded = bytes / 7 * 7;
+	/* Stock compares a signed 32-bit difference between the end and the
+	 * advancing input pointer. Keep its wraparound and unchecked destination.
+	 * TODO: bound the destination and use a non-wrapping length separately. */
+	for (i = 0; (int)((u32)(unsigned long)buffer + (u32)rounded -
+			 (u32)(unsigned long)position) > 0; i++) {
+		sscanf(position, "%X", &pixels[i]);
+		position += 7;
+	}
 	return count;
 }
 
