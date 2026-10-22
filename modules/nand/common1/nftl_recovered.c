@@ -8785,40 +8785,54 @@ extern unsigned char sandisk_A19_read_retry_mode,
 
 /* OEM ORs retry-init results across every chip, publishes the read-end
  * callback only when the aggregate is zero, and never checks list cycles. */
+/* Model the observed stock local slots: chip at FP+16, result at FP+28.
+ * The middle word is unused. Preserve that layout and the OEM's unchecked
+ * chip-list traversal; the aggregate OR is intentionally kept after each call. */
+struct special_init_state {
+	struct special_exit_chip *chip;
+	int unused;
+	int result;
+};
+_Static_assert(sizeof(struct special_init_state) == 16,
+	       "special-init stock local span");
+_Static_assert(__builtin_offsetof(struct special_init_state, result) == 12,
+	       "special-init stock result offset");
 #define SPECIAL_INIT_TWO(name, init, end, mode, cycle, success, failure) \
 int name(void) \
 { \
-	int result = 0; \
-	struct special_exit_chip *chip = g_nsi->chips; \
-	while (chip) { \
-		result |= init((void *)chip); \
-		chip = chip->next; \
+	struct special_init_state state; \
+	state.result = 0; \
+	state.chip = g_nsi->chips; \
+	while (state.chip) { \
+		state.result |= init((void *)state.chip); \
+		state.chip = state.chip->next; \
 	} \
-	if (result == 0) { \
+	if (state.result == 0) { \
 		df_read_page_end = (void (*)(void))end; \
 		nand_print_dbg(success, mode, cycle); \
 	} else { \
 		nand_print(failure, mode, cycle); \
 	} \
-	return result; \
+	return state.result; \
 }
 
 #define SPECIAL_INIT_THREE(name, init, end, mode, cycle, reg, success, failure) \
 int name(void) \
 { \
-	int result = 0; \
-	struct special_exit_chip *chip = g_nsi->chips; \
-	while (chip) { \
-		result |= init((void *)chip); \
-		chip = chip->next; \
+	struct special_init_state state; \
+	state.result = 0; \
+	state.chip = g_nsi->chips; \
+	while (state.chip) { \
+		state.result |= init((void *)state.chip); \
+		state.chip = state.chip->next; \
 	} \
-	if (result == 0) { \
+	if (state.result == 0) { \
 		df_read_page_end = (void (*)(void))end; \
 		nand_print_dbg(success, mode, cycle, reg); \
 	} else { \
 		nand_print(failure, mode, cycle, reg); \
 	} \
-	return result; \
+	return state.result; \
 }
 
 SPECIAL_INIT_TWO(samsung_special_init, samsung_readretry_init,
