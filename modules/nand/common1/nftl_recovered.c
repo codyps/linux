@@ -7090,8 +7090,8 @@ int mark_free_block(struct erase_block_zone *owner,
 				   zone->page_data, oob);
 		set_oob_special_page(zone, oob, 0x55555555,
 				     block->tag, block->erase_count);
-		/* OEM ignores both OOB-helper and page-write failures and
-		 * reports success even if none of the four marks persisted. */
+		/* OEM wraps page counts below two for the last slots, ignores
+		 * helper/write failures, and reports success if no mark persists. */
 		zone->write(zone, &op);
 	}
 	return 0;
