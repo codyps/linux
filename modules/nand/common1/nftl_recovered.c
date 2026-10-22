@@ -3993,15 +3993,16 @@ int hynix20nm_set_default_param(struct otp_chip *chip)
 
 	locals.result = 0;
 	/* The OEM trusts the mutable register count. Past eight bytes it
-	 * overwrites the result, then the loop index, in its own stack frame. */
-	for (locals.index = 0; locals.index < hynix20nm_read_retry_reg_num;
+	 * overwrites the result, then the loop index, in its own stack frame.
+	 * Keep the OEM's count-first comparison in both loops. */
+	for (locals.index = 0; hynix20nm_read_retry_reg_num > locals.index;
 	     locals.index++)
 		locals.values[locals.index] = chip->saved[locals.index];
 	locals.result = hynix20nm_vender_set_param(chip, locals.values,
 					hynix20nm_read_retry_reg_adr,
 					hynix20nm_read_retry_reg_num);
 	nand_print_dbg("set retry default value: ");
-	for (locals.index = 0; locals.index < hynix20nm_read_retry_reg_num;
+	for (locals.index = 0; hynix20nm_read_retry_reg_num > locals.index;
 	     locals.index++)
 		nand_print_dbg(" %x", locals.values[locals.index]);
 	nand_print_dbg("\n");
