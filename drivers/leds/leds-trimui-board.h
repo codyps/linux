@@ -860,7 +860,7 @@ static ssize_t store_anim_frames_hex(struct class *class, struct class_attribute
 	 * append and clear its actual destination in a separate fix. */
 	for (i = 0; i < colors; i++) {
 		trimui_anim_frames[i] = 0;
-		sscanf(buffer + 7 * i, "%x", &trimui_anim_frames[offset + i]);
+		sscanf(buffer + 7 * i, "%X", &trimui_anim_frames[offset + i]);
 	}
 	trimui_frames_len += colors / 14;
 	printk("\n anim frames:%d, pixels:%d\n", trimui_frames_len, colors);
