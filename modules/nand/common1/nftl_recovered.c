@@ -1747,6 +1747,8 @@ struct gc_phyinfo_view {
 };
 extern unsigned char phyinfo[20];
 extern int gc_all(void *zone, unsigned short count);
+/* OEM places info, used and quantity in the no-stack-protector local slots. */
+__attribute__((optimize("-fno-stack-protector")))
 int gc_all_enhance(struct gc_enhance_zone *zone)
 {
 	struct gc_phyinfo_view *info = (struct gc_phyinfo_view *)phyinfo;
@@ -1755,8 +1757,9 @@ int gc_all_enhance(struct gc_enhance_zone *zone)
 
 	if (zone->free_blocks > used)
 		return 0;
-	/* OEM multiplies in 32 bits and can wrap before this comparison. */
-	if ((unsigned int)zone->invalid_blocks * 3 < used)
+	/* The 16-bit invalid count promotes to int; its product by three fits
+	 * there. Comparison with unsigned used then follows OEM unsigned order. */
+	if (zone->invalid_blocks * 3 < used)
 		return 0;
 	quantity = (unsigned int)(info->pages * info->blocks);
 	quantity *= info->chips;
