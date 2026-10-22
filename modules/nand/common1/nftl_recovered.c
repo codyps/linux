@@ -11659,8 +11659,11 @@ int recover_phy_page_mapping(struct page_map_recovery_zone *zone,
 			     struct new_write_block *block,
 			     unsigned int *map)
 {
-	struct physic_op_param op;
+	/* Keep OEM's op/OOB frame order: op starts at FP+0x40 and the 16-byte
+	 * OOB buffer at FP+0x58. A too-large spare copy can corrupt nearby
+	 * locals; stock does not check the callback's write length. */
 	unsigned char oob[16];
+	struct physic_op_param op;
 	int page;
 	int status;
 
@@ -11711,8 +11714,13 @@ int recover_phy_page_mapping(struct page_map_recovery_zone *zone,
 			return 65535;
 		}
 	}
-	/* OEM returns the first unused page or the geometry page count,
-	 * instead of the status of the final read. */
+	/* OEM performs one last geometry read and pages-minus-two compare even
+	 * though both outcomes return the same page. Keep the redundant branch:
+	 * a callback that changed the geometry pointer can make it fault. */
+	if ((int)zone->geometry->pages - 2 > page)
+		page = page;
+	/* Return the first unused page or the geometry page count, instead of
+	 * the status of the final read. */
 	return page;
 }
 
