@@ -3590,7 +3590,8 @@ struct hynix16nm_init_chip {
 	unsigned char before_params[92];
 	struct hynix16nm_init_params *params;
 };
-extern int hynix16nm_init_readretry_param(void *);
+struct hynix16nm_readretry_zone;
+extern int hynix16nm_init_readretry_param(struct hynix16nm_readretry_zone *);
 int hynix16nm_readretry_init(struct hynix16nm_init_chip *chip)
 {
 	unsigned int index;
@@ -3614,7 +3615,7 @@ int hynix16nm_readretry_init(struct hynix16nm_init_chip *chip)
 	for (index = 0; index <= 127; index++)
 		chip->otp[index] = 0;
 	/* OEM discards OTP setup failure and reports initialization success. */
-	hynix16nm_init_readretry_param(chip);
+	hynix16nm_init_readretry_param((struct hynix16nm_readretry_zone *)chip);
 	return 0;
 }
 extern int hynix26nm_vender_set_param(void *chip, unsigned char *values,
@@ -3854,53 +3855,67 @@ extern int hynix16nm_get_special_info(unsigned char *buffer,
 				      void *destination, unsigned int bytes,
 				      unsigned int index);
 __attribute__((optimize("-fno-stack-protector")))
-int hynix16nm_init_readretry_param(void *owner)
+int hynix16nm_init_readretry_param(struct hynix16nm_readretry_zone *zone)
 {
-	struct hynix16nm_readretry_zone *zone = owner;
-	unsigned int unused_status[10] = {0};
-	unsigned char otp_values[32];
-	unsigned char *page_buffer;
-	unsigned char *copy_buffer;
-	unsigned int index;
-	int result;
+	/* The OEM reserves 64 bytes for the fallback OTP table even though its
+	 * helper currently copies only 32. Retain the observed unused slots and
+	 * zero-store order; callbacks can inspect the caller's private frame. */
+	struct {
+		unsigned int unused_status[10];
+		unsigned char otp_values[64];
+		unsigned char *copy_buffer;
+		unsigned int unused_before_result;
+		int result;
+		unsigned char *page_buffer;
+		unsigned int unused_before_index;
+		unsigned int index;
+	} frame;
+
+	frame.index = 0;
+	frame.page_buffer = 0;
+	frame.result = 0;
+	frame.copy_buffer = 0;
+	__builtin_memset(frame.unused_status, 0, sizeof(frame.unused_status));
 
 	/* OEM multiplies the untrusted page count in 32 bits, with no overflow
 	 * check, and returns silently if the first allocation fails. */
-	page_buffer = nand_get_temp_buf(zone->params->page_count << 9);
-	if (!page_buffer)
+	frame.page_buffer = nand_get_temp_buf(zone->params->page_count << 9);
+	if (!frame.page_buffer)
 		return -77;
-	copy_buffer = nand_get_temp_buf(32768);
-	if (!copy_buffer) {
-		nand_free_temp_buf(page_buffer);
+	frame.copy_buffer = nand_get_temp_buf(32768);
+	if (!frame.copy_buffer) {
+		nand_free_temp_buf(frame.page_buffer);
 		nand_print(nftl_ro_lc_59);
 		return -76;
 	}
-	result = hynix16nm_get_special_info(copy_buffer, page_buffer, 32,
-					   zone->chip);
-	if (!result) {
+	frame.result = 0;
+	frame.result = hynix16nm_get_special_info(frame.copy_buffer,
+						frame.page_buffer, 32, zone->chip);
+	if (!frame.result) {
 		/* Stock prints the zero-initialized scratch word as the chip
 		 * number here, rather than the zone's chip field. */
 		nand_print_dbg(nftl_ro_lc_128,
-			       zone->controller->channel, unused_status[0]);
-		for (index = 0; index <= 31; index++) {
-			nand_print_dbg(nftl_ro_lc_61, page_buffer[index]);
-			if ((index & 7) == 7)
+			       zone->controller->channel, frame.unused_status[0]);
+		for (frame.index = 0; frame.index <= 31; frame.index++) {
+			nand_print_dbg(nftl_ro_lc_61, frame.page_buffer[frame.index]);
+			if ((frame.index & 7) == 7)
 				nand_print_dbg(nftl_ro_lc_45);
 		}
-		hynix16nm_save_otp_value((struct otp_chip *)zone, page_buffer);
+		hynix16nm_save_otp_value((struct otp_chip *)zone,
+					 frame.page_buffer);
 		hynix16nm_set_default_param(zone);
 	} else {
 		nand_print_dbg(nftl_ro_lc_62,
 			       zone->controller->channel);
 		/* OEM ignores both fallback and default-program results. */
 		hynix16nm_get_otp_param((struct hynix16nm_otp_zone *)zone,
-					otp_values);
+					frame.otp_values);
 		hynix16nm_set_default_param(zone);
 		nand_print_dbg(nftl_ro_lc_129,
-			       zone->controller->channel, unused_status[0]);
+			       zone->controller->channel, frame.unused_status[0]);
 	}
-	nand_free_temp_buf(copy_buffer);
-	nand_free_temp_buf(page_buffer);
+	nand_free_temp_buf(frame.copy_buffer);
+	nand_free_temp_buf(frame.page_buffer);
 	return 0;
 }
 
