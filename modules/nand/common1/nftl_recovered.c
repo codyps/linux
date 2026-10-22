@@ -10868,7 +10868,9 @@ struct nand_op_zone {
 	unsigned char before_capacity[16];
 	unsigned int capacity;
 };
-extern int nand_cache_write(void *, int, unsigned short, void *);
+struct nand_cache_write_zone;
+extern int nand_cache_write(struct nand_cache_write_zone *, int,
+			    unsigned short, void *);
 int nand_op(unsigned char kind, struct nand_op_zone *zone,
 	    unsigned int sector, unsigned int count, void *data)
 {
@@ -12478,26 +12480,32 @@ _Static_assert(__builtin_offsetof(struct nand_cache_write_zone, configuration) =
 	       "write cache configuration offset");
 _Static_assert(__builtin_offsetof(struct nand_cache_write_zone, read) == 3512,
 	       "write cache read callback offset");
-int nand_cache_write(void *raw_zone, int page,
+int nand_cache_write(struct nand_cache_write_zone *zone, int page,
 		     unsigned short bitmap, void *source)
 {
-	struct nand_cache_write_zone *zone = raw_zone;
-	struct cache_init_data *cache = &zone->cache;
+	struct cache_init_data *cache;
 	struct cache_init_entry *node;
 	unsigned char *buffer;
-	unsigned short start = (unsigned short)(((bitmap >> 8) & 0xff) << 9);
-	unsigned short length = (unsigned short)((bitmap & 0xff) << 9);
+	unsigned short start;
+	unsigned short length;
 	unsigned short existing;
 	int status;
 
 	if (!source)
 		return 0;
+	start = bitmap >> 8;
+	length = bitmap & 0xff;
+	start <<= 9;
+	length <<= 9;
+	status = 0;
+	cache = &zone->cache;
 	if (zone->configuration->direct) {
 		buffer = cache->entries[0].allocation;
 		/* OEM ignores the read status and writes the merged buffer. */
 		zone->read(zone, page, buffer);
 		nand_memcpy(buffer + start, source, length);
-		return zone->write(zone, page, buffer);
+		status = zone->write(zone, page, buffer);
+		return status;
 	}
 	if (!zone->configuration->sorted &&
 	    bitmap == zone->geometry->sectors_per_page &&
@@ -12575,10 +12583,13 @@ int nand_cache_write(void *raw_zone, int page,
 		}
 		return 0;
 	}
-	if (cache->field1 >= zone->configuration->write_limit &&
-	    flush_write_cache_to_nand(zone, 0)) {
-		nand_print(nftl_ro_lc_424);
-		return 1;
+	/* OEM retries until the write-cache count falls below the limit.
+	 * A successful flush that does not reduce the count loops forever. */
+	while (cache->field1 >= zone->configuration->write_limit) {
+		if (flush_write_cache_to_nand(zone, 0)) {
+			nand_print(nftl_ro_lc_424);
+			return 1;
+		}
 	}
 	node = (struct cache_init_entry *)get_empty_cahce_node(
 		(struct cache_read_empty_zone *)cache);
