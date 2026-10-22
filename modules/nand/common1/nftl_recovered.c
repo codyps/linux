@@ -6472,8 +6472,14 @@ int nftl_initialize(struct init_nftl_owner *owner, int number)
 	owner->config->third = 1;
 	owner->config->fourth = 0;
 	owner->config->fifth = 0;
-	owner->config->limit_a = part->device->params->limit_a;
-	owner->config->limit_b = part->device->params->limit_b;
+	{
+		struct init_nftl_config *target = owner->config;
+		target->limit_a = part->device->params->limit_a;
+	}
+	{
+		struct init_nftl_config *target = owner->config;
+		target->limit_b = part->device->params->limit_b;
+	}
 	owner->config->eighth = 8;
 	owner->config->ninth = 2;
 	owner->config->tenth = 3;
@@ -6491,12 +6497,21 @@ int nftl_initialize(struct init_nftl_owner *owner, int number)
 		owner->config->erase_limit = 30;
 		owner->config->interval = 3;
 	} else {
-		owner->config->erase_limit = (unsigned short)(
-			part->device->params->retry_setting * 50);
-		owner->config->interval = (unsigned short)(
-			part->device->params->retry_setting * 40);
+		{
+			struct init_nftl_config *target = owner->config;
+			target->erase_limit = (unsigned short)(
+				part->device->params->retry_setting * 50);
+		}
+		{
+			struct init_nftl_config *target = owner->config;
+			target->interval = (unsigned short)(
+				part->device->params->retry_setting * 40);
+		}
 	}
-	owner->config->device_mode = part->device->mode;
+	{
+		struct init_nftl_config *target = owner->config;
+		target->device_mode = part->device->mode;
+	}
 	if (owner->config->device_mode)
 		owner->config->interval = 3;
 	else
@@ -6505,9 +6520,12 @@ int nftl_initialize(struct init_nftl_owner *owner, int number)
 		owner->config->erase_limit = 30;
 	/* OEM overwrites all interval decisions above unconditionally. */
 	owner->config->interval = 1;
-	if (part->device->params->format_revision > 0x1517f &&
-	    part->device->params->format_revision <= 0x76b2b8)
-		owner->config->revision = part->device->params->format_revision;
+	/* OEM checks the upper bound first, then reloads for the lower bound. */
+	if (part->device->params->format_revision <= 0x76b2b8 &&
+	    part->device->params->format_revision > 0x1517f) {
+		struct init_nftl_config *target = owner->config;
+		target->revision = part->device->params->format_revision;
+	}
 	owner->config->boot_crc = 1;
 	if (!nftl_support_boot_check_crc_from_dts())
 		owner->config->boot_crc = 0;
@@ -6516,9 +6534,15 @@ int nftl_initialize(struct init_nftl_owner *owner, int number)
 			    part, number, 0);
 	if (result)
 		return result;
-	owner->zone->geometry->max_erase_times = part->device->params->max_erase_times;
-	owner->zone->geometry->secondary_erase_times =
-		part->device->params->erased_block_limit;
+	{
+		struct init_nftl_geometry *target = owner->zone->geometry;
+		target->max_erase_times = part->device->params->max_erase_times;
+	}
+	{
+		struct init_nftl_geometry *target = owner->zone->geometry;
+		target->secondary_erase_times =
+			part->device->params->erased_block_limit;
+	}
 	nand_print_dbg(nftl_ro_lc_17,
 		       owner->zone->geometry->max_erase_times);
 	owner->capacity = nftl_get_zone_cap((struct nftl_zone_cap_view *)owner->zone);
