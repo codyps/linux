@@ -2458,23 +2458,21 @@ __attribute__((optimize("-fno-stack-protector")))
 unsigned int get_used_page_num(struct used_page_zone *zone,
 			       struct physical_block *block,
 			       unsigned int *read_errors,
-			       struct nrc_buffers *nrc)
+			       struct used_page_cache *cache)
 {
-	struct used_page_cache *cache = (struct used_page_cache *)nrc;
 	struct physic_op_param op;
 	unsigned char local_oob[16];
 	unsigned char *data, *oob;
-	unsigned int page, first_unused, trailing_unused = 0;
-	unsigned int span;
+	unsigned int page, first_unused, trailing_unused;
 	int status;
 
 	*read_errors = 0;
+	trailing_unused = 0;
 	for (page = 0; page < zone->geometry->pages; page++) {
 		if (cache && cache->valid[page] == 0) {
 			/* Stock multiplies in 32 bits, even on overflow. */
-			span = (unsigned int)(page *
+			data = cache->data + (unsigned int)(page *
 				(zone->geometry->page_bytes + 64));
-			data = cache->data + span;
 			oob = data + zone->geometry->page_bytes;
 		} else {
 			data = 0;
@@ -2512,9 +2510,8 @@ unsigned int get_used_page_num(struct used_page_zone *zone,
 	 * read failures to the caller's error count. */
 	for (; page < zone->geometry->pages; page++) {
 		if (cache && cache->valid[page] == 0) {
-			span = (unsigned int)(page *
+			data = cache->data + (unsigned int)(page *
 				(zone->geometry->page_bytes + 64));
-			data = cache->data + span;
 			oob = data + zone->geometry->page_bytes;
 		} else {
 			data = 0;
@@ -12198,7 +12195,8 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 		return 0;
 	}
 	primary_used = get_used_page_num((struct used_page_zone *)zone,
-		(struct physical_block *)primary, &primary_flag, nrc);
+		(struct physical_block *)primary, &primary_flag,
+		(struct used_page_cache *)nrc);
 	if (!assist) {
 		nand_print(nftl_ro_lc_285,
 			   primary->number, primary_used, primary->tag);
@@ -12216,7 +12214,8 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 			first_erase += 20;
 	} else {
 		assist_used = get_used_page_num((struct used_page_zone *)zone,
-			(struct physical_block *)assist, &assist_flag, nrc);
+			(struct physical_block *)assist, &assist_flag,
+			(struct used_page_cache *)nrc);
 		nand_print(nftl_ro_lc_287,
 			   primary->number, primary_used, primary->tag,
 			   assist->number, assist_used, assist->tag);
