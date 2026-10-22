@@ -2537,7 +2537,7 @@ int free_nrc(struct nrc_buffers *buffers)
 	return 0;
 }
 
-void set_spare_data(unsigned char *oob, int value, unsigned char offset,
+void set_spare_data(unsigned char *oob, unsigned int value, unsigned char offset,
 		    unsigned char count)
 {
 	unsigned int index = 0;
@@ -2555,7 +2555,8 @@ void set_spare_data(unsigned char *oob, int value, unsigned char offset,
 		index++;
 	}
 }
-void set_start_block_flag(void *unused, unsigned char *oob, int number)
+void set_start_block_flag(void *unused, unsigned char *oob,
+			  unsigned int number)
 {
 	/* OEM ignores the first argument and all spare-data write failures. */
 	oob[0] = 0xff;
