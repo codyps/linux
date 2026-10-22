@@ -977,7 +977,9 @@ struct invalid_node {
 	unsigned char before_erase[4];
 	unsigned short erase_time;
 	unsigned char after_erase[2];
-	volatile unsigned int count;
+	/* Signed in stock. Unsigned scan limits convert negative counts to
+	 * large values during comparison; keep that OEM behavior. */
+	volatile int count;
 	unsigned char before_next[4];
 	struct invalid_node *next;
 	struct invalid_node *previous;
@@ -999,39 +1001,55 @@ int is_block_in_invalid_list(struct invalid_zone *zone,
 	}
 	return 0;
 }
+/* Keep the OEM's private scan slots at SP+24/36/40. The gap is private
+ * stack layout, not an on-media or externally visible structure. */
+struct invalid_count_scan {
+	struct invalid_node *node;
+	unsigned char gap[4];
+	unsigned int limit;
+	struct invalid_node *best;
+};
 struct invalid_node *get_block_max_count_from_invalid_list(
 	struct invalid_zone *zone)
 {
-	struct invalid_node *best = 0;
-	unsigned int maximum = 0;
-	struct invalid_node *node = zone->head.next;
+	struct invalid_count_scan local;
 
+	local.best = 0;
+	local.limit = 0;
+	local.node = &zone->head;
+	local.node = local.node->next;
 	/* OEM selects the later node on ties and reads the chosen count
 	 * twice. It never detects a cycle. */
-	while (node) {
-		if (node->count >= maximum) {
-			maximum = node->count;
-			best = node;
+	while (local.node) {
+		if (local.node->count >= local.limit) {
+			local.limit = local.node->count;
+			local.best = local.node;
 		}
-		node = node->next;
+		local.node = local.node->next;
 	}
-	return best;
+	if (local.best)
+		return local.best;
+	return 0;
 }
 struct invalid_node *get_block_min_count_from_invalid_list(
 	struct invalid_zone *zone)
 {
-	struct invalid_node *best = 0;
-	unsigned int minimum = ~0U;
-	struct invalid_node *node = zone->head.next;
+	struct invalid_count_scan local;
 
-	while (node) {
-		if (node->count <= minimum) {
-			minimum = node->count;
-			best = node;
+	local.best = 0;
+	local.limit = ~0U;
+	local.node = &zone->head;
+	local.node = local.node->next;
+	while (local.node) {
+		if (local.node->count <= local.limit) {
+			local.limit = local.node->count;
+			local.best = local.node;
 		}
-		node = node->next;
+		local.node = local.node->next;
 	}
-	return best;
+	if (local.best)
+		return local.best;
+	return 0;
 }
 
 struct block_count_node {
