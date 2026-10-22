@@ -5774,14 +5774,15 @@ struct micron_init_chip {
 	unsigned char before_params[280 - 188];
 	struct micron_init_params *params;
 };
-int micron_readretry_init(void *owner)
+int micron_readretry_init(struct micron_init_chip *chip)
 {
-	struct micron_init_chip *chip = owner;
 	chip->retry_count = 0;
 	micron_read_retry_mode = 0;
 	micron_p1_recovered = micron_p1_2_recovered;
-	micron_read_retry_mode = chip->params->retry_spec >> 16;
-	micron_read_retry_cycle = chip->params->retry_spec >> 8;
+	/* Stock explicitly truncates both fields to one byte (UXTB), and
+	 * reloads the unchecked nested configuration for each assignment. */
+	micron_read_retry_mode = (unsigned char)(chip->params->retry_spec >> 16);
+	micron_read_retry_cycle = (unsigned char)(chip->params->retry_spec >> 8);
 	/* OEM ignores feature-command errors and leaves these global writes in
 	 * place even when the mode is unsupported. */
 	micron_intel_set_feature(chip, 0x89, 0);
@@ -9061,7 +9062,7 @@ int toshiba_readretry_init(struct samsung_init_chip *chip)
 	return 0;
 }
 
-extern int micron_readretry_init(void *);
+extern int micron_readretry_init(struct micron_init_chip *);
 extern int hynix20nm_readretry_init(void *);
 struct hynix26nm_init_chip;
 extern int hynix26nm_readretry_init(struct hynix26nm_init_chip *);
