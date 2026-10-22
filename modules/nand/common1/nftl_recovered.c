@@ -11289,10 +11289,18 @@ extern unsigned char sandisk_24_recovered[];
 extern unsigned char sandisk_1y_recovered[];
 int sandisk_set_readretry(struct samsung_set_chip *chip, unsigned short page)
 {
-	unsigned char *values;
-	unsigned char *addresses;
-	unsigned int count;
-	int result = 0;
+	/* OEM places count at FP+0x24, addresses at +0x28, values at
+	 * +0x30 and the private result at +0x3c. */
+	struct {
+		unsigned int before_count;
+		unsigned int count;
+		unsigned char *addresses;
+		unsigned char *values;
+		unsigned int before_result;
+		int result;
+	} frame;
+
+	frame.result = 0;
 
 	sandisk_read_retry_clock_save((struct clock_chip *)chip);
 	nand_enable_chip(chip);
@@ -11305,30 +11313,33 @@ int sandisk_set_readretry(struct samsung_set_chip *chip, unsigned short page)
 		/* OEM treats page zero as low and page 255 as high; every
 		 * other even nonzero page uses the high table. */
 		if (page != 255 && (page == 0 || (page & 1))) {
-			values = sandisk_19_low_recovered +
+			frame.values = sandisk_19_low_recovered +
 				 (unsigned long)chip->retry * 3;
 			sandisk_read_retry_cycle = 16;
 		} else {
-			values = sandisk_19_high_recovered +
+			frame.values = sandisk_19_high_recovered +
 				 (unsigned long)chip->retry * 3;
 			sandisk_read_retry_cycle = 20;
 		}
-		addresses = sandisk_read_retry_reg_adr_19;
-		count = 3;
-		result = sandisk_vender_set_param(chip, values, addresses, count);
+		frame.addresses = sandisk_read_retry_reg_adr_19;
+		frame.count = 3;
+		frame.result = sandisk_vender_set_param(chip, frame.values,
+						frame.addresses, frame.count);
 		/* OEM ignores the final command result. */
 		set_one_cmd((struct command_chip *)chip, -74, 0);
 	} else if (sandisk_read_retry_mode == 49) {
-		values = sandisk_24_recovered + (unsigned long)chip->retry * 3;
-		addresses = sandisk_read_retry_reg_adr_24;
-		count = 3;
-		result = sandisk_vender_set_param(chip, values, addresses, count);
+		frame.values = sandisk_24_recovered + (unsigned long)chip->retry * 3;
+		frame.addresses = sandisk_read_retry_reg_adr_24;
+		frame.count = 3;
+		frame.result = sandisk_vender_set_param(chip, frame.values,
+						frame.addresses, frame.count);
 		set_one_cmd((struct command_chip *)chip, -74, 0);
 	} else if (sandisk_read_retry_mode == 50) {
-		values = sandisk_1y_recovered + (unsigned long)chip->retry * 4;
-		addresses = sandisk_read_retry_reg_adr_1y;
-		count = 1;
-		result = sandisk_vender_set_param(chip, values, addresses, count);
+		frame.values = sandisk_1y_recovered + (unsigned long)chip->retry * 4;
+		frame.addresses = sandisk_read_retry_reg_adr_1y;
+		frame.count = 1;
+		frame.result = sandisk_vender_set_param(chip, frame.values,
+						frame.addresses, frame.count);
 		set_one_cmd((struct command_chip *)chip, 93, 0);
 	}
 	/* OEM's toggle flag is sticky across calls, even on another chip. */
@@ -11336,7 +11347,7 @@ int sandisk_set_readretry(struct samsung_set_chip *chip, unsigned short page)
 		ndfc_set_toggle_interface(chip->controller);
 	nand_disable_chip(chip);
 	sandisk_read_retry_clock_recover((struct clock_chip *)chip);
-	return result;
+	return frame.result;
 }
 
 /* These readonly aliases identify the OEM's two 7x4 signed delta tables. */
