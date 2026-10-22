@@ -1088,7 +1088,7 @@ void print_block_count_list(struct block_count_zone *zone)
 
 struct cache_read_node {
 	unsigned char before_key[8];
-	int key;
+	unsigned int key;
 	unsigned char before_next[12];
 	struct cache_read_node *next;
 };
@@ -1208,9 +1208,7 @@ int add_to_cache_read_list_tail(struct cache_read_add_zone *zone,
 		zone->second_count++;
 	return 0;
 }
-/* Four key searches below compile with the two equality operands loaded into
- * opposite registers from stock. The memory reads, comparison, branches and
- * return paths are otherwise identical; equality is symmetric. */
+/* OEM compares the cached sector keys as unsigned 32-bit values. */
 struct cache_read_node *search_from_cache_read_list(
 	struct cache_read_zone *zone, int key)
 {
@@ -1226,7 +1224,7 @@ struct cache_read_node *search_from_cache_read_list(
 
 struct cache_write_node {
 	unsigned char before_key[8];
-	int key;
+	unsigned int key;
 	unsigned char before_next[28];
 	struct cache_write_node *next;
 };
