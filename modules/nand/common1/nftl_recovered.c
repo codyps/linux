@@ -12092,9 +12092,12 @@ __attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_read_otp_info_hynix(struct hynix16nm_otp_info_chip *chip,
 				   unsigned char *buffer)
 {
-	unsigned char command;
-	unsigned char address;
-	unsigned char data;
+	/* OEM reserves separate eight-byte slots for each one-byte bus field. */
+	unsigned char address[8] __attribute__((aligned(8)));
+	unsigned char command[8] __attribute__((aligned(8)));
+	unsigned char data[8] __attribute__((aligned(8)));
+	int result;
+	unsigned char *destination;
 
 	nand_enable_chip((struct samsung_set_chip *)chip);
 	ndfc_disable_randomize(chip->controller);
@@ -12103,17 +12106,18 @@ int hynix16nm_read_otp_info_hynix(struct hynix16nm_otp_info_chip *chip,
 	nand_print_dbg(nftl_ro_lc_123,
 		       chip->controller->ce[chip->index],
 		       chip->controller->rb[chip->index]);
-	if (!buffer) {
+	destination = buffer;
+	if (!destination) {
 		nand_disable_chip((struct samsung_set_chip *)chip);
 		nand_print(nftl_ro_lc_124);
 		return -79;
 	}
 	/* OEM ignores every command and data-transfer status. */
 	set_one_cmd((struct command_chip *)chip, -1, 1);
-	command = 0x36;
-	address = 0x38;
-	data = 0x52;
-	set_cmd_with_nand_bus(chip, &command, 0, &address, &data, 1, 1);
+	command[0] = 0x36;
+	address[0] = 0x38;
+	data[0] = 0x52;
+	set_cmd_with_nand_bus(chip, command, 0, address, data, 1, 1);
 	set_one_cmd((struct command_chip *)chip, 0x16, 0);
 	set_one_cmd((struct command_chip *)chip, 0x17, 0);
 	set_one_cmd((struct command_chip *)chip, 0x04, 0);
@@ -12124,14 +12128,14 @@ int hynix16nm_read_otp_info_hynix(struct hynix16nm_otp_info_chip *chip,
 	set_one_addr((struct command_chip *)chip, 0);
 	set_one_addr((struct command_chip *)chip, 2);
 	set_one_addr((struct command_chip *)chip, 0);
-	command = 0x30;
+	command[0] = 0x30;
 	get_data_with_nand_bus_one_cmd((struct samsung_set_chip *)chip,
-					   &command, 0, buffer, 528);
+					   command, 0, destination, 528);
 	set_one_cmd((struct command_chip *)chip, -1, 1);
-	command = 0x36;
-	address = 0x38;
-	data = 0;
-	set_cmd_with_nand_bus(chip, &command, 0, &address, &data, 1, 1);
+	command[0] = 0x36;
+	address[0] = 0x38;
+	data[0] = 0;
+	set_cmd_with_nand_bus(chip, command, 0, address, data, 1, 1);
 	set_one_cmd((struct command_chip *)chip, 0x16, 0);
 	set_one_cmd((struct command_chip *)chip, 0x00, 0);
 	set_one_addr((struct command_chip *)chip, 0);
@@ -12140,11 +12144,12 @@ int hynix16nm_read_otp_info_hynix(struct hynix16nm_otp_info_chip *chip,
 	set_one_addr((struct command_chip *)chip, 0);
 	set_one_addr((struct command_chip *)chip, 0);
 	set_one_cmd((struct command_chip *)chip, 0x30, 1);
-	if (buffer[0] != 8 || buffer[1] != 8) {
+	if (destination[0] != 8 || destination[1] != 8) {
 		nand_print(nftl_ro_lc_51,
-			   buffer[0], buffer[1]);
+			   destination[0], destination[1]);
 		nand_disable_chip((struct samsung_set_chip *)chip);
-		return -96;
+		result = -96;
+		return result;
 	}
 	nand_disable_chip((struct samsung_set_chip *)chip);
 	return 0;
