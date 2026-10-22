@@ -1249,7 +1249,8 @@ struct cache_write_node *search_from_cache_write_list(
 
 struct sector_cache_node {
 	unsigned char before_key[4];
-	int key;
+	/* OEM compares the stored sector as an unsigned 32-bit key. */
+	unsigned int key;
 	unsigned char before_next[8];
 	struct sector_cache_node *next;
 };
