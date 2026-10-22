@@ -1032,9 +1032,15 @@ static ssize_t show_speaker_mute(struct class *class, struct class_attribute *at
 
 static ssize_t store_speaker_mute(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
+	/* OEM ignores parse failure and may use the prior mute request. */
 	kstrtoint(buffer, 0, (int *)&trimui_mute_requested);
-	trimui_speaker_mute = !!trimui_mute_requested;
-	trimui_set_speaker_enable(!trimui_mute_requested);
+	if (trimui_mute_requested) {
+		trimui_speaker_mute = 1;
+		trimui_set_speaker_enable(0);
+	} else {
+		trimui_speaker_mute = 0;
+		trimui_set_speaker_enable(1);
+	}
 	printk("speaker force mute:%d\n", trimui_speaker_mute);
 	return count;
 }
