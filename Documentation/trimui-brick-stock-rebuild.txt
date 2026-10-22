@@ -1,0 +1,41 @@
+TG3040 Brick stock-layout rebuild
+=================================
+
+The archived 1.1.1 Image was built with relative source filenames. GCC
+7.4.1 expands __FILE__ from the filename passed on its command line. An
+out-of-tree (O=) build of this kernel passes absolute filenames and embeds
+those paths in live kernel data. This changes string-pool size and moves
+many unrelated data targets. GCC 7.4.1 does not provide
+-fmacro-prefix-map or -ffile-prefix-map to correct this after the fact.
+
+Build in a separate, in-tree export of a committed revision. For example,
+from the root of this source repository, with a pinned AArch64 GCC 7.4.1
+toolchain and host build dependencies available:
+
+    mkdir -p /path/to/empty-build-directory
+    git archive HEAD | tar -xf - -C /path/to/empty-build-directory
+    cd /path/to/empty-build-directory
+    cp -f arch/arm64/configs/trimui_brick_stock_defconfig .config
+    export ARCH=arm64
+    export CROSS_COMPILE=/path/to/gcc-7.4.1/bin/aarch64-linux-gnu-
+    export KBUILD_BUILD_USER=TRIMUIDEV
+    export KBUILD_BUILD_HOST=NUC
+    export KBUILD_BUILD_VERSION=860
+    export KBUILD_BUILD_TIMESTAMP='Wed Nov 26 03:43:02 UTC 2025'
+    make olddefconfig Image modules dtbs
+
+The four KBUILD_BUILD_* values reproduce the stock version banner and are
+build metadata, not a claim about the origin of this reconstruction.
+The archive must be the committed kernel tree, and the destination must
+be empty so generated files cannot be confused with source files. In
+particular, do not use O= for the comparison build.
+
+At reconstruction checkpoint 825, the same .config and compiler produced
+the same function-audit counts in both build modes: 33,896 code matches,
+96 raw code differences, 304 size differences, 553 ambiguous built names,
+and 288 absent or ambiguous stock names. The in-tree build removed all
+769 absolute workspace-path occurrences from Image and exactly matched
+the stock version banner. Independently decoded ADRP/ADD target addresses
+improved from 11,180 to 23,556 matches among 26,217 pairs; 2,661 still
+point to different addresses. These measurements do not prove the entire
+Image, modules, runtime state, or original C spelling is identical.
