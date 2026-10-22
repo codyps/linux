@@ -8359,7 +8359,7 @@ int sandisk_A19_read_page_end(struct samsung_read_request *request)
 		/* Keep four separately expanded loops: the OEM rereads the retry-cycle
 		 * bound and mutable mode at their own call boundaries. */
 	#define A19_PHASE(phase) do { \
-			for (state.retry = 0; state.retry < sandisk_A19_read_retry_cycle; state.retry++) { \
+			for (state.retry = 0; sandisk_A19_read_retry_cycle > state.retry; state.retry++) { \
 				state.chip->retry = state.retry; \
 				state.result = sandisk_A19_set_readretry(state.chip, \
 						      (unsigned short)request->page); \
@@ -8406,7 +8406,7 @@ int sandisk_A19_read_page_end(struct samsung_read_request *request)
 					A19_REPORT("retry spare all 0xff! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"); \
 					continue; \
 				} \
-				if (state.result == 0 || state.result == 10) { \
+				if (state.result == 10 || state.result == 0) { \
 					if (state.result == 0) \
 						A19_REPORT("sandisk_A19 ReadRetry ok! ch =%d, chip = %d  block = %d, page = %d, RetryCount = %d  \n"); \
 					else \
