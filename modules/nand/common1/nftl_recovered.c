@@ -1334,7 +1334,8 @@ int nand_sector_cache_read(void *zone, unsigned int sector, void *data)
 
 struct gc_search_node {
 	unsigned char before_key[8];
-	void *key;
+	/* OEM loads this key as an integer when comparing pointer-sized IDs. */
+	unsigned long key;
 	struct gc_search_node *next;
 };
 struct gc_search_zone {
@@ -1346,7 +1347,7 @@ struct gc_search_node *search_gc_node(struct gc_search_zone *zone, void *key)
 	struct gc_search_node *node = &zone->head;
 	node = node->next;
 	while (node) {
-		if (key == node->key)
+		if ((unsigned long)key == node->key)
 			return node;
 		node = node->next;
 	}
