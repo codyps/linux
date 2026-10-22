@@ -99,13 +99,14 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 
 static u32 step_one_frame(struct trimui_led_effect *effect)
 {
-	/* Stock snapshots both counters before reading a frame, then publishes
-	 * the new cursor and color in that order. It never bounds the cursor;
-	 * TODO: validate it in a separate behavior change.
+	/* Stock loads index and length as one register pair, then reads the
+	 * frame before publishing cursor and color. READ_ONCE on these inputs
+	 * splits the paired load in this compiler, changing race/fault order.
+	 * OEM never bounds the cursor; TODO: validate it in a separate fix.
 	 */
-	int index = READ_ONCE(effect->index);
-	int length = READ_ONCE(effect->length);
-	u32 color = READ_ONCE(effect->frames[index]);
+	int index = effect->index;
+	int length = effect->length;
+	u32 color = effect->frames[index];
 	WRITE_ONCE(effect->index, index + 1);
 	WRITE_ONCE(effect->current_rgb, color);
 	if (index + 1 >= length) {
