@@ -9525,7 +9525,7 @@ int toshiba_set_readretry(struct samsung_set_chip *chip)
 {
 	unsigned char *values;
 	unsigned char *addresses;
-	int count;
+	unsigned int count;
 	int result;
 
 	if (toshiba_read_retry_mode != 16 &&
@@ -9543,15 +9543,17 @@ int toshiba_set_readretry(struct samsung_set_chip *chip)
 		toshiba_toggle_mode_flag_recovered = 1;
 	}
 	if (toshiba_read_retry_mode == 17) {
-		values = toshiba_p1_2 + chip->retry * 5;
+		/* OEM widens retry before multiplying. The table index is still
+		 * unchecked and may point far outside the table. */
+		values = toshiba_p1_2 + (unsigned long)chip->retry * 5;
 		addresses = toshiba_read_retry_addr_2;
 		count = 5;
 	} else if (toshiba_read_retry_mode == 18) {
-		values = toshiba_p1_3 + chip->retry * 5;
+		values = toshiba_p1_3 + (unsigned long)chip->retry * 5;
 		addresses = toshiba_read_retry_addr_2;
 		count = 5;
 	} else {
-		values = toshiba_p1_1 + chip->retry * 4;
+		values = toshiba_p1_1 + (unsigned long)chip->retry * 4;
 		addresses = toshiba_read_retry_addr_1;
 		count = 4;
 	}
