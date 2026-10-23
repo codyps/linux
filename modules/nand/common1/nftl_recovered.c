@@ -2146,6 +2146,7 @@ int sandisk_vender_set_param(void *chip, unsigned char *data,
 extern unsigned char sandisk_acti_start_addr[9];
 extern const unsigned char sandisk_activation_commands[9];
 /* OEM activation has no stack-canary prologue despite its local command data. */
+#ifndef TRIMUI_NFTL_SANDISK_INIT_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int sandisk_activation_seq(struct samsung_set_chip *chip)
 {
@@ -2178,6 +2179,9 @@ int sandisk_activation_seq(struct samsung_set_chip *chip)
 		nand_print(nftl_ro_lc_136, result);
 	return result;
 }
+#else
+extern int sandisk_activation_seq(struct samsung_set_chip *chip);
+#endif
 struct cross_talk_geometry {
 	unsigned char before_pages[20];
 	unsigned short pages;
@@ -2406,6 +2410,9 @@ int sandisk_A19_readretry_init(struct sandisk_a19_init_chip *chip)
 #endif
 /* The standard SanDisk initializer uses the same chip/configuration offsets
  * as A19. Retain separate global settings and its activation branch. */
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int sandisk_readretry_init(struct sandisk_a19_init_chip *chip);
+#else
 int sandisk_readretry_init(struct sandisk_a19_init_chip *chip)
 {
 	chip->retry = 0;
@@ -2424,6 +2431,7 @@ int sandisk_readretry_init(struct sandisk_a19_init_chip *chip)
 		       sandisk_read_retry_cycle);
 	return 0;
 }
+#endif
 extern int sandisk_A19_vender_set_param(void *chip, void *value,
 					void *address, int unused);
 int sandisk_A19_set_readretry(struct samsung_set_chip *chip,
