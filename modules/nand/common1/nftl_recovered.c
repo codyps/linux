@@ -1187,7 +1187,8 @@ struct cache_read_delete_owner {
 	unsigned char before_second[2];
 	unsigned short second_count;
 };
-#ifndef TRIMUI_NFTL_GCC7_PASS
+#if !defined(TRIMUI_NFTL_GCC7_PASS) && \
+    !defined(TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD)
 struct cache_read_delete_node *del_from_cache_read_list(
 	struct cache_read_delete_owner *owner,
 	struct cache_read_delete_node *target)
@@ -1237,6 +1238,7 @@ struct cache_read_empty_zone {
 };
 /* OEM stores the walk node/index at FP+0x20/+0x2e. Keep the original
  * misspelled symbol and unchecked node_count while restoring that frame. */
+#ifndef TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 struct cache_read_empty_node *get_empty_cahce_node(
 	struct cache_read_empty_zone *zone)
@@ -1281,8 +1283,13 @@ struct cache_read_empty_node *get_empty_cahce_node(
 	}
 	return 0;
 }
+#else
+extern struct cache_read_empty_node *get_empty_cahce_node(
+	struct cache_read_empty_zone *zone);
+#endif
 #if !defined(TRIMUI_NFTL_FLUSH_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_GCC7_PASS)
+    !defined(TRIMUI_NFTL_GCC7_PASS) && \
+    !defined(TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD)
 int add_to_cache_read_list_tail(struct cache_read_add_zone *zone,
 				struct cache_read_delete_node *node,
 				unsigned int state)
@@ -1308,6 +1315,7 @@ extern int add_to_cache_read_list_tail(struct cache_read_add_zone *zone,
 				       unsigned int state);
 #endif
 /* OEM compares the cached sector keys as unsigned 32-bit values. */
+#ifndef TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD
 struct cache_read_node *search_from_cache_read_list(
 	struct cache_read_zone *zone, int key)
 {
@@ -1320,6 +1328,10 @@ struct cache_read_node *search_from_cache_read_list(
 	}
 	return 0;
 }
+#else
+extern struct cache_read_node *search_from_cache_read_list(
+	struct cache_read_zone *zone, int key);
+#endif
 
 struct cache_write_node {
 	unsigned char before_key[8];
@@ -1331,6 +1343,7 @@ struct cache_write_zone {
 	unsigned char before_head[1744];
 	struct cache_write_node head;
 };
+#ifndef TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD
 struct cache_write_node *search_from_cache_write_list(
 	struct cache_write_zone *zone, int key)
 {
@@ -1343,6 +1356,10 @@ struct cache_write_node *search_from_cache_write_list(
 	}
 	return 0;
 }
+#else
+extern struct cache_write_node *search_from_cache_write_list(
+	struct cache_write_zone *zone, int key);
+#endif
 
 struct sector_cache_node {
 	unsigned char before_key[4];
@@ -3257,7 +3274,8 @@ _Static_assert(__builtin_offsetof(struct nand_cache_read_zone, stats) == 3440,
 	       "NAND read statistics offset");
 _Static_assert(__builtin_offsetof(struct nand_cache_read_zone, read) == 3512,
 	       "NAND read callback offset");
-#ifndef TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_GCC7_PASS)
 int nand_cache_read(struct nand_cache_read_zone *zone, int page,
 		    unsigned short sector_range,
 		    void *destination)
@@ -5400,7 +5418,8 @@ struct cache_list_owner {
     unsigned char until_head[1738];
     struct cache_list_node head;
 };
-#ifndef TRIMUI_NFTL_GCC7_PASS
+#if !defined(TRIMUI_NFTL_GCC7_PASS) && \
+    !defined(TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD)
 int add_to_cache_write_list_tail(struct cache_list_owner *owner, struct cache_list_node *node)
 {
     struct cache_list_node *cursor = &owner->head;
@@ -5466,7 +5485,8 @@ extern int add_to_sector_cache_write_list_tail(struct sector_owner *owner,
 					       struct sector_node *node);
 #endif
 #if !defined(TRIMUI_NFTL_FLUSH_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_GCC7_PASS)
+    !defined(TRIMUI_NFTL_GCC7_PASS) && \
+    !defined(TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD)
 struct cache_list_node *del_from_cache_write_list(struct cache_list_owner *owner, struct cache_list_node *node)
 {
     struct cache_list_node *previous = node->previous;
@@ -5691,7 +5711,8 @@ _Static_assert(__builtin_offsetof(struct flush_cache_zone, read) == 3512,
 extern int nand_memcmp(const void *, const void *, unsigned long);
 extern int nand_phy_get_page_type(unsigned int);
 
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD)
 extern int flush_write_cache_to_nand(struct flush_cache_zone *zone,
 				      int ignored_count);
 #else
@@ -11422,6 +11443,7 @@ struct nand_op_zone {
 struct nand_cache_write_zone;
 extern int nand_cache_write(struct nand_cache_write_zone *, int,
 			    unsigned short, void *);
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int nand_op(unsigned char kind, struct nand_op_zone *zone,
 	    unsigned int sector, unsigned int count, void *data)
 {
@@ -11486,6 +11508,10 @@ int nand_op(unsigned char kind, struct nand_op_zone *zone,
 	result |= operation(zone, first_page, packed, cursor);
 	return result;
 }
+#else
+extern int nand_op(unsigned char kind, struct nand_op_zone *zone,
+		   unsigned int sector, unsigned int count, void *data);
+#endif
 
 int hynix16nm_major_check_byte(unsigned char *value, unsigned int mode,
 			       unsigned int level, const unsigned char *primary,
@@ -13089,6 +13115,7 @@ _Static_assert(__builtin_offsetof(struct nand_cache_write_zone, configuration) =
 	       "write cache configuration offset");
 _Static_assert(__builtin_offsetof(struct nand_cache_write_zone, read) == 3512,
 	       "write cache read callback offset");
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int nand_cache_write(struct nand_cache_write_zone *zone, int page,
 		     unsigned short bitmap, void *source)
 {
@@ -13225,3 +13252,7 @@ int nand_cache_write(struct nand_cache_write_zone *zone, int page,
 					     (struct cache_list_node *)node);
 	return 0;
 }
+#else
+extern int nand_cache_write(struct nand_cache_write_zone *zone, int page,
+			    unsigned short bitmap, void *source);
+#endif
