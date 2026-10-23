@@ -1893,6 +1893,9 @@ extern int hynix16nm_vender_set_param(struct hynix16nm_retry_zone *zone,
 /* The stock frame puts the temporary values at FP+0x20 and the loop index at
  * FP+0x2c. GCC's stack-protector layout would move both, so an unchecked
  * register count would corrupt different stack bytes. */
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int hynix16nm_set_readretry(struct hynix16nm_retry_zone *zone);
+#else
 __attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_set_readretry(struct hynix16nm_retry_zone *zone)
 {
@@ -1912,9 +1915,11 @@ int hynix16nm_set_readretry(struct hynix16nm_retry_zone *zone)
 					 hynix16nm_read_retry_reg_num);
 	return result;
 }
+#endif
 
 /* OEM keeps result at FP+0x38 and index at +0x3c. Stack-protector's
  * reordered slots would expose different scratch state to NAND callbacks. */
+#ifndef TRIMUI_NFTL_HYNIX16_SET_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_vender_set_param(struct hynix16nm_retry_zone *zone,
 			      unsigned char *values,
@@ -1940,6 +1945,7 @@ int hynix16nm_vender_set_param(struct hynix16nm_retry_zone *zone,
 		       values[1], values[2], values[3]);
 	return result;
 }
+#endif
 
 /* The OEM leaves this unchecked stack array without a canary. */
 __attribute__((optimize("-fno-stack-protector")))
