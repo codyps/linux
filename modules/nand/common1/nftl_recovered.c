@@ -6,6 +6,7 @@
  * would duplicate these payloads and move later readonly and BSS addresses. */
 #include "nftl_ro_aliases.h"
 
+#ifndef TRIMUI_NFTL_TORTURE_GCC53_BUILD
 int nftl_check_pattern(const unsigned char *buffer, unsigned char pattern,
 		       int length)
 {
@@ -19,6 +20,10 @@ int nftl_check_pattern(const unsigned char *buffer, unsigned char pattern,
 	}
 	return 0;
 }
+#else
+extern int nftl_check_pattern(const unsigned char *buffer,
+			      unsigned char pattern, int length);
+#endif
 
 struct physic_op_param {
 	unsigned short plane;
@@ -35,7 +40,8 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PANIC_RECOVER_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SMART_INIT_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -2855,7 +2861,8 @@ int free_nrc(struct nrc_buffers *buffers)
 }
 
 #if !defined(TRIMUI_NFTL_OOB_LOGIC_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_GCC7_PASS)
+    !defined(TRIMUI_NFTL_GCC7_PASS) && \
+    !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD)
 void set_spare_data(unsigned char *oob, unsigned int value, unsigned char offset,
 		    unsigned char count)
 {
@@ -3210,7 +3217,8 @@ void set_no_use_page(void *unused, unsigned char *oob)
 	set_spare_data(oob, 0xbb, 2, 1);
 }
 
-#ifndef TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD)
 void set_oob_special_page(void *unused, unsigned char *oob,
 			  unsigned int block, unsigned int page,
 			  unsigned short erase_count)
@@ -7235,7 +7243,8 @@ struct mark_free_zone {
 	unsigned char before_write[3472 - 520];
 	int (*write)(struct mark_free_zone *, struct physic_op_param *);
 };
-#ifndef TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 int mark_free_block(struct erase_block_zone *owner,
 		    struct erase_block_info *block)
@@ -7346,6 +7355,7 @@ _Static_assert(__builtin_offsetof(struct torture_zone, erase) == 3456,
 	       "torture erase callback offset");
 _Static_assert(__builtin_offsetof(struct torture_zone, mark_bad) == 3496,
 	       "torture bad-block callback offset");
+#ifdef TRIMUI_NFTL_TORTURE_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int torture_block_and_mark(struct torture_zone *zone,
 			   struct erase_block_info *block)
@@ -7443,6 +7453,10 @@ bad:
 	zone->bad_count++;
 	return result;
 }
+#else
+extern int torture_block_and_mark(struct torture_zone *zone,
+				   struct erase_block_info *block);
+#endif
 int nand_dbg_zone_erase(void *zone, unsigned short block,
 			unsigned short mode)
 {
@@ -7940,7 +7954,8 @@ struct free_block_zone {
 
 /* OEM inserts equal erase counts before the existing block and trusts both
  * backlinks. A damaged or cyclic list is neither rejected nor repaired. */
-#ifndef TRIMUI_NFTL_SMALL_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD)
 int add_free_list(struct free_block_zone *zone, struct free_block *target)
 {
 	struct free_block *node = &zone->head;
@@ -7960,7 +7975,7 @@ int add_free_list(struct free_block_zone *zone, struct free_block *target)
 	target->previous = node;
 	return 0;
 }
-#endif /* TRIMUI_NFTL_SMALL_GCC53_BUILD */
+#endif
 
 /* The invalid list sorts descending by unsigned erase time. Equal values
  * insert before the old node; all links are followed without validation. */
@@ -8786,7 +8801,8 @@ int prio_gc_one(void *zone, unsigned short block, unsigned int priority)
 extern int add_free_list(struct free_block_zone *zone,
                          struct free_block *node);
 #if defined(TRIMUI_NFTL_GCC7_PASS) || \
-    defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD)
+    defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD) || \
+    defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD)
 extern int put_phy_block_to_free_list(struct move_zone *zone,
 				      struct move_node *node);
 #else
