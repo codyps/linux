@@ -1555,6 +1555,7 @@ struct new_write_zone {
 	unsigned char before_mark_bad[32];
 	int (*mark_bad)(struct new_write_zone *, struct physic_op_param *);
 };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int new_block_init_for_write(struct new_write_zone *zone,
 			     struct new_write_block *block, unsigned int tag)
 {
@@ -1584,6 +1585,11 @@ int new_block_init_for_write(struct new_write_zone *zone,
 	}
 	return 0;
 }
+#else
+extern int new_block_init_for_write(struct new_write_zone *zone,
+				    struct new_write_block *block,
+				    unsigned int tag);
+#endif
 struct write_error_geometry {
 	unsigned char before_page_bytes[28];
 	unsigned short page_bytes;
@@ -1810,6 +1816,7 @@ int do_write_error_in_build_list(struct write_error_zone *zone,
 	}
 	return 0;
 }
+#ifndef TRIMUI_NFTL_EVAL_ORDER_GCC53_BUILD
 int is_last_phy_block(struct physical_block *block,
 		      struct physical_zone *zone)
 {
@@ -1817,6 +1824,10 @@ int is_last_phy_block(struct physical_block *block,
 		return 1;
 	return 0;
 }
+#else
+extern int is_last_phy_block(struct physical_block *block,
+			     struct physical_zone *zone);
+#endif
 
 struct valid_block_chip {
 	unsigned char before_blocks[32];
@@ -1828,6 +1839,7 @@ struct valid_block_zone {
 	unsigned char before_check[3472];
 	int (*check)(struct valid_block_zone *, struct physic_op_param *);
 };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int get_vaild_blocks(struct valid_block_zone *zone, unsigned int start,
 		     unsigned int end)
 {
@@ -1865,6 +1877,10 @@ int get_vaild_blocks(struct valid_block_zone *zone, unsigned int start,
 	}
 	return local.remaining;
 }
+#else
+extern int get_vaild_blocks(struct valid_block_zone *zone,
+			    unsigned int start, unsigned int end);
+#endif
 
 struct gc_enhance_geometry {
 	unsigned char before_half_count[20];
@@ -6347,11 +6363,15 @@ unsigned char nftl_support_boot_check_crc_from_dts(void)
 #endif
 
 extern int nand_physic_erase_block(unsigned short chip, unsigned short block);
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int nand_dbg_single_phy_erase(unsigned short chip, unsigned short block)
 {
 	int result = nand_physic_erase_block(chip, block);
 	return result;
 }
+#else
+extern int nand_dbg_single_phy_erase(unsigned short chip, unsigned short block);
+#endif
 
 #ifndef TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD
 int get_nftl_read_claim_page_no(struct read_claim_node *head)
