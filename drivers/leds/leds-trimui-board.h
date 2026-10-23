@@ -1233,10 +1233,14 @@ static ssize_t store_speaker_mute(struct class *class, struct class_attribute *a
 {
 	unsigned char *root = (unsigned char *)&trimui_transfer_state;
 	int *requested;
+	register size_t saved_count asm("x20");
 
 	/* Stock addresses mute through the transfer-state root, then offsets
-	 * 0x7c8 into the shared LED state. Keep that root across the parser. */
+	 * 0x7c8 into the shared LED state. Keep that root across the parser.
+	 * Save count after forming the root: OEM emits ADRP/ADD before MOV x20.
+	 * The explicit register move only constrains this setup order. */
 	asm("" : "+r"(root));
+	asm("mov %0, %1" : "=r"(saved_count) : "r"(count), "r"(root));
 	requested = (int *)(root + 0x7c8);
 	/* OEM ignores parse failure and may use the prior mute request. */
 	kstrtoint(buffer, 0, requested);
@@ -1248,7 +1252,7 @@ static ssize_t store_speaker_mute(struct class *class, struct class_attribute *a
 		trimui_set_speaker_enable(1);
 	}
 	printk("speaker force mute:%d\n", trimui_speaker_mute);
-	return count;
+	return saved_count;
 }
 
 static struct class_attribute trimui_led_anim_attrs[] = {
