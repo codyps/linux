@@ -3453,13 +3453,23 @@ int nftl_cache_exit(void *zone)
 {
 	unsigned char *cache = (unsigned char *)zone + 1072;
 	int index;
+	register struct nftl_cache_entry_view *entry_base asm("x2");
+	register unsigned char *entry_ptr asm("x0");
 
 	for (index = 0; index < *(unsigned short *)cache; index++) {
 		/* OEM calls nftl_free even for null entries and re-reads the
 		 * count after each call. It never clears an allocation slot.
 		 * This view starts at the cache header; its allocation at +24
 		 * matches entries[0].allocation after the eight-byte header. */
-		nftl_free(((struct nftl_cache_entry_view *)cache)[index].allocation);
+		/* OEM loads the cache base before the signed index, then adds the
+		 * allocation-field offset separately before dereferencing it. */
+		entry_base = (void *)cache;
+		asm("" : "+r"(entry_base));
+		entry_ptr = (unsigned char *)(entry_base + index);
+		asm("" : "+r"(entry_ptr));
+		entry_ptr += __builtin_offsetof(struct nftl_cache_entry_view,
+					  allocation);
+		nftl_free(*(void **)entry_ptr);
 	}
 	nftl_free(((struct cache_init_data *)cache)->page_buffer);
 	return 0;
