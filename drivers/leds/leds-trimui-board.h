@@ -1211,17 +1211,21 @@ static ssize_t show_motor_voltage(struct class *class, struct class_attribute *a
 static ssize_t store_motor_voltage(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	struct trimui_motor_state_view *state;
+	register size_t saved_count asm("x20");
 
 	/* OEM keeps this state pointer live across kstrtoint and then re-reads
 	 * voltage from the same object. Keep the pointer live without adding a
-	 * memory access or changing the stock NULL/error-pointer handling. */
+	 * memory access or changing the stock NULL/error-pointer handling.
+	 * Saving count after forming the state root preserves OEM ADRP/ADD/MOV
+	 * order without changing the stale-value behavior on parse failure. */
 	state = &trimui_motor_state;
 	asm("" : "+r"(state));
+	asm("mov %0, %1" : "=r"(saved_count) : "r"(count), "r"(state));
 	kstrtoint(buffer, 0, &state->voltage);
 	/* Stock passes NULL/error pointers through. TODO: check regulator_get in a separate fix. */
 	regulator_set_voltage(state->regulator, state->voltage,
 		state->voltage + 100000);
-	return count;
+	return saved_count;
 }
 
 static ssize_t show_speaker_mute(struct class *class, struct class_attribute *attr, char *buffer)
