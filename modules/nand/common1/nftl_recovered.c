@@ -240,7 +240,8 @@ extern int set_one_cmd(struct command_chip *chip, unsigned char command,
 		       unsigned int wait_ready);
 /* OEM keeps result/index at FP+0x38/+0x3c; this function's local byte
  * arrays otherwise trigger GCC's stack-protector slot reordering. */
-#ifndef TRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_HYNIX20_RETRY_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_vender_set_param(void *chip, unsigned char *values,
 			      unsigned char *addresses, unsigned int count)
@@ -4225,32 +4226,29 @@ struct hynix20nm_retry_chip {
 };
 /* The mutable OEM register count is unchecked against this eight-byte stack
  * buffer. Keep the overflow and frame layout for stock compatibility. */
-#ifndef TRIMUI_NFTL_HYNIX_PAGE_END_GCC53_BUILD
+#ifdef TRIMUI_NFTL_HYNIX20_RETRY_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_set_readretry(struct hynix20nm_retry_chip *chip)
 {
-	struct {
-		unsigned char values[8];
-		int result;
-		unsigned int index;
-	} locals;
+	unsigned char values[8];
+	int result;
+	unsigned int index;
 
-	locals.result = 0;
+	result = 0;
 	if (chip->cycle > hynix20nm_read_retry_cycle)
 		return -92;
-	for (locals.index = 0; locals.index < hynix20nm_read_retry_reg_num;
-	     locals.index++)
-		locals.values[locals.index] =
-			chip->saved[(chip->cycle << 3) + locals.index];
-	locals.result = hynix20nm_vender_set_param(
-		chip, locals.values, hynix20nm_read_retry_reg_adr,
+	for (index = 0; index < hynix20nm_read_retry_reg_num;
+	     index++)
+		values[index] = chip->saved[(chip->cycle << 3) + index];
+	result = hynix20nm_vender_set_param(
+		chip, values, hynix20nm_read_retry_reg_adr,
 		hynix20nm_read_retry_reg_num);
 	nand_print_dbg(nftl_ro_lc_43);
-	for (locals.index = 0; locals.index < hynix20nm_read_retry_reg_num;
-	     locals.index++)
-		nand_print_dbg(nftl_ro_lc_44, locals.values[locals.index]);
+	for (index = 0; index < hynix20nm_read_retry_reg_num;
+	     index++)
+		nand_print_dbg(nftl_ro_lc_44, values[index]);
 	nand_print_dbg(nftl_ro_lc_45);
-	return locals.result;
+	return result;
 }
 #else
 extern int hynix20nm_set_readretry(struct hynix20nm_retry_chip *chip);
