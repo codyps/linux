@@ -9424,7 +9424,7 @@ int sandisk_exit_readretry(struct samsung_set_chip *chip)
 	int result = 0;
 	unsigned char values[4] = {0, 0, 0, 0};
 	unsigned char *addresses;
-	int count;
+	unsigned int count;
 
 	nand_enable_chip(chip);
 	ndfc_disable_randomize(chip->controller);
