@@ -1231,9 +1231,16 @@ static ssize_t show_speaker_mute(struct class *class, struct class_attribute *at
 
 static ssize_t store_speaker_mute(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
+	unsigned char *root = (unsigned char *)&trimui_transfer_state;
+	int *requested;
+
+	/* Stock addresses mute through the transfer-state root, then offsets
+	 * 0x7c8 into the shared LED state. Keep that root across the parser. */
+	asm("" : "+r"(root));
+	requested = (int *)(root + 0x7c8);
 	/* OEM ignores parse failure and may use the prior mute request. */
-	kstrtoint(buffer, 0, (int *)&trimui_mute_requested);
-	if (trimui_mute_requested) {
+	kstrtoint(buffer, 0, requested);
+	if (*requested) {
 		trimui_speaker_mute = 1;
 		trimui_set_speaker_enable(0);
 	} else {
