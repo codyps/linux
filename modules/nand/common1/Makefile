@@ -10,7 +10,7 @@ else
 obj-$(CONFIG_SUNXI_NAND) += nftl_tables_recovered.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_bss_recovered.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_rodata_recovered.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_recovered.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_recovered_merged.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_cache_init_gcc53.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_sector_cache_init_gcc53.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_invalid_page_incr_gcc53.o
@@ -131,6 +131,7 @@ $(obj)/nftl_gcc53_hynix20nm_vender_get_param_otp_hynix.o: override CC := python3
 $(obj)/nftl_gcc53_recover_phy_page_mapping.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) recover_phy_page_mapping --
 $(obj)/nftl_gcc53_get_spare_data.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) get_spare_data --
 $(obj)/nftl_gcc53_crc16_pair.o: override CC := $(TRIMUI_NFTL_GCC53)
+$(obj)/nftl_gcc53_crc_wrong.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) crc_wrong --
 $(obj)/nftl_gcc53_panic_flags.o: override CC := $(TRIMUI_NFTL_GCC53)
 $(obj)/nftl_gcc53_check_bit_nums.o: override CC := $(TRIMUI_NFTL_GCC53)
 $(obj)/nftl_gcc53_min_invalid_erase.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) get_block_min_erase_time_from_invalid_list --
@@ -160,6 +161,7 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix20nm_vender_get_param_otp_hynix.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_recover_phy_page_mapping.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_get_spare_data.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_crc16_pair.o
+nftl_gcc53_objects += $(obj)/nftl_gcc53_crc_wrong.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_panic_flags.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_check_bit_nums.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_min_invalid_erase.o
@@ -175,6 +177,10 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_eval_order_three.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_eval_cache_three.o
 $(nftl_gcc53_objects): override NOSTDINC_FLAGS := -nostdinc -isystem $(shell $(TRIMUI_NFTL_GCC53) -print-file-name=include)
 $(nftl_gcc53_objects): $(srctree)/scripts/trimui_nftl_select_cc.py
+quiet_cmd_nftl_crc_merge = LD      $@
+      cmd_nftl_crc_merge = $(LD) -r -o $@ $(filter %.o,$^) && $(OBJCOPY) --localize-symbol=crc_wrong $@
+$(obj)/nftl_recovered_merged.o: $(obj)/nftl_recovered.o $(obj)/nftl_gcc53_crc_wrong.o FORCE
+	$(call if_changed,nftl_crc_merge)
 CFLAGS_nftl_cache_init_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_sector_cache_init_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_invalid_page_incr_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
@@ -227,6 +233,7 @@ CFLAGS_nftl_gcc53_hynix20nm_vender_get_param_otp_hynix.o += -O0 -fno-builtin -fn
 CFLAGS_nftl_gcc53_recover_phy_page_mapping.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_get_spare_data.o += -O0 -fno-builtin -fno-pic -mcmodel=small -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_crc16_pair.o += -O0 -fno-builtin -fno-pic -mcmodel=small
+CFLAGS_nftl_gcc53_crc_wrong.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_panic_flags.o += -O0 -fno-builtin -fno-pic -mcmodel=small
 CFLAGS_nftl_gcc53_check_bit_nums.o += -O0 -fno-builtin -fno-pic -mcmodel=small
 CFLAGS_nftl_gcc53_min_invalid_erase.o += -O0 -fno-builtin -fno-pic -mcmodel=small -ffunction-sections -fdata-sections

@@ -52,7 +52,8 @@ extern void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 #endif
 
 #if !defined(TRIMUI_NFTL_HYNIX_PAGE_END_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_CRC_WRONG_GCC53_BUILD)
 int is_nouse_page(const unsigned char *bytes)
 {
 	unsigned int count;
@@ -725,6 +726,7 @@ int is_fill_page(void *oob)
 	return 0;
 }
 
+#ifndef TRIMUI_NFTL_CRC_WRONG_GCC53_BUILD
 int is_phy_mapping_page(void *oob)
 {
 	unsigned int marker = get_special_data_from_oob(oob);
@@ -732,6 +734,9 @@ int is_phy_mapping_page(void *oob)
 		return 1;
 	return 0;
 }
+#else
+extern int is_phy_mapping_page(void *oob);
+#endif
 
 int is_function_info_page(void *oob)
 {
@@ -5038,8 +5043,14 @@ struct cross_rebuild_zone;
 struct cross_rebuild_block;
 struct invalid_node;
 extern volatile unsigned int *g_nreg_base;
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_CRC_WRONG_GCC53_BUILD)
+extern int crc_wrong(struct crc_page_zone *, const unsigned char *,
+		     unsigned char *);
+#else
 static int crc_wrong(struct crc_page_zone *, const unsigned char *,
 		     unsigned char *);
+#endif
 extern int recover_logic_page_mapping(struct logic_page_map_zone *,
 				       struct invalid_page_node *,
 				       const unsigned int *, unsigned int);
@@ -9807,13 +9818,24 @@ struct crc_page_zone {
 	unsigned char before_map_length[544];
 	unsigned int map_length;
 };
-static int crc_wrong(struct crc_page_zone *zone, const unsigned char *data,
-	      unsigned char *oob)
+#ifndef TRIMUI_NFTL_GCC7_PASS
+#ifdef TRIMUI_NFTL_CRC_WRONG_GCC53_BUILD
+int
+#else
+static int
+#endif
+crc_wrong(struct crc_page_zone *zone, const unsigned char *data,
+	  unsigned char *oob)
 {
-	unsigned short stored = 0;
+	/* GCC 5.3 assigns the stock stack slots and initializer order when
+	 * these locals are declared in this order. Both zero stores are kept
+	 * even though neither value is observed before its later assignment. */
 	unsigned short actual = 0;
+	unsigned short stored = 0;
 	unsigned int length = 0;
 
+	/* OEM trusts the spare pointer and later reads bytes 12 and 13
+	 * without checking the callback's actual spare-buffer length. */
 	length = zone->geometry->page_size_factor << 9;
 	if (is_nouse_page(oob))
 		return 0;
@@ -9828,6 +9850,7 @@ static int crc_wrong(struct crc_page_zone *zone, const unsigned char *data,
 	}
 	return 0;
 }
+#endif
 struct poweroff_ecc_geometry {
 	unsigned char before_crc_enabled[28];
 	unsigned short crc_enabled;
