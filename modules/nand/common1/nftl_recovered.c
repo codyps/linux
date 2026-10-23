@@ -611,36 +611,40 @@ extern int nand_op(unsigned char kind, struct nand_op_zone *zone,
 int __nand_read(void *zone, unsigned int sector, unsigned int count,
 		void *data)
 {
-	struct nand_rw_zone *owner = zone;
-	struct nand_rw_inner *const volatile *slot =
-		(struct nand_rw_inner *const volatile *)&owner->inner;
-	struct nand_rw_inner *destination;
-	struct nand_rw_inner *source;
+	register struct nand_rw_inner *destination asm("x0");
+	register unsigned long long updated asm("x1");
+	int result;
 
-	if (owner->debug_level == 3)
+	if (((struct nand_rw_zone *)zone)->debug_level == 3)
 		nand_print_dbg(nftl_ro_lc_415, sector, count);
-	/* OEM fetches the inner pointer twice, destination before source.
-	 * It updates the counter before the operation, even on failure. */
-	destination = *slot;
-	source = *slot;
-	destination->read_count = source->read_count + count;
-	return nand_op(0, zone, sector, count, data);
+	/* OEM fetches the inner pointer twice, destination before source, and
+	 * updates the counter before nand_op even if the operation fails. The
+	 * register bindings preserve that load order in the stock compiler.
+	 * TODO: guard or synchronize the pointer in a separate corrective fix. */
+	destination = ((struct nand_rw_zone *)zone)->inner;
+	asm("" : "+r"(destination));
+	updated = ((struct nand_rw_zone *)zone)->inner->read_count + count;
+	destination->read_count = updated;
+	result = nand_op(0, zone, sector, count, data);
+	return result;
 }
 int __nand_write(void *zone, unsigned int sector, unsigned int count,
 		 void *data)
 {
-	struct nand_rw_zone *owner = zone;
-	struct nand_rw_inner *const volatile *slot =
-		(struct nand_rw_inner *const volatile *)&owner->inner;
-	struct nand_rw_inner *destination;
-	struct nand_rw_inner *source;
+	register struct nand_rw_inner *destination asm("x0");
+	register unsigned long long updated asm("x1");
+	int result;
 
-	if (owner->debug_level == 3)
+	if (((struct nand_rw_zone *)zone)->debug_level == 3)
 		nand_print_dbg(nftl_ro_lc_416, sector, count);
-	destination = *slot;
-	source = *slot;
-	destination->write_count = source->write_count + count;
-	return nand_op(1, zone, sector, count, data);
+	/* Preserve the same two pointer reads and pre-operation counter write
+	 * as __nand_read, including when nand_op reports an error. */
+	destination = ((struct nand_rw_zone *)zone)->inner;
+	asm("" : "+r"(destination));
+	updated = ((struct nand_rw_zone *)zone)->inner->write_count + count;
+	destination->write_count = updated;
+	result = nand_op(1, zone, sector, count, data);
+	return result;
 }
 struct discard_zone;
 extern int __nand_discard(struct discard_zone *zone, unsigned int sector,
