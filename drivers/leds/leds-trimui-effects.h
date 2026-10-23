@@ -102,6 +102,8 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 		ramp = effect->duration / 64;
 		start_rgb = trimui_rgb((target >> 20) & 15,
 				(target >> 12) & 15, (target >> 4) & 15);
+		/* Keep OEM's type-3 packed start color materialized here. */
+		asm volatile("" : "+r"(start_rgb));
 		from_r = (start_rgb >> 16) & 255;
 		from_g = (start_rgb >> 8) & 255;
 		from_b = start_rgb & 255;
