@@ -32,7 +32,8 @@ struct physic_op_param {
 #if !defined(TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -50,7 +51,8 @@ extern void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       void *data, void *oob);
 #endif
 
-#ifndef TRIMUI_NFTL_HYNIX_PAGE_END_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_HYNIX_PAGE_END_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD)
 int is_nouse_page(const unsigned char *bytes)
 {
 	unsigned int count;
@@ -709,6 +711,7 @@ int is_function_info_page(void *oob)
 	return 0;
 }
 
+#ifndef TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD
 int is_power_down_info_page(void *oob)
 {
 	unsigned int marker = get_special_data_from_oob(oob);
@@ -716,6 +719,9 @@ int is_power_down_info_page(void *oob)
 		return 1;
 	return 0;
 }
+#else
+extern int is_power_down_info_page(void *oob);
+#endif
 
 int is_ftl_start_flag_page(unsigned char *oob)
 {
@@ -849,7 +855,8 @@ unsigned short get_erase_count_from_oob(void *oob)
 	return value;
 }
 
-#ifndef TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD)
 unsigned int get_special_data_from_oob(void *oob)
 {
 	unsigned int value = get_spare_data(oob, 1, 4);
@@ -903,6 +910,7 @@ int current_block_at_first_page(void *owner, struct nftl_current_block *block)
 		return 0;
 }
 
+#ifndef TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD
 int is_ftl_special_data(unsigned char *oob)
 {
 	/* OEM reads byte one without checking the supplied buffer extent. */
@@ -911,6 +919,9 @@ int is_ftl_special_data(unsigned char *oob)
 	else
 		return 0;
 }
+#else
+extern int is_ftl_special_data(unsigned char *oob);
+#endif
 
 /* Bounded behavior-level NFTL C candidates, not original source claims. */
 
@@ -956,6 +967,7 @@ int _nand_flush_write_cache(struct nftl_logic_owner *owner, int force)
 	return result;
 }
 
+#ifndef TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD
 int is_ftl_logic_page_data(unsigned char *oob)
 {
 	/* OEM reads byte one without a buffer-length check. */
@@ -964,6 +976,9 @@ int is_ftl_logic_page_data(unsigned char *oob)
 	else
 		return 0;
 }
+#else
+extern int is_ftl_logic_page_data(unsigned char *oob);
+#endif
 
 int _nftl_discard_logic_page(void *zone, unsigned int page)
 {
@@ -971,6 +986,7 @@ int _nftl_discard_logic_page(void *zone, unsigned int page)
 	return result;
 }
 
+#ifndef TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD
 unsigned int get_logic_page_from_oob(void *oob)
 {
 	unsigned int page = get_spare_data(oob, 1, 4);
@@ -978,6 +994,9 @@ unsigned int get_logic_page_from_oob(void *oob)
 	page &= 0x0fffffff;
 	return page;
 }
+#else
+extern unsigned int get_logic_page_from_oob(void *oob);
+#endif
 
 int nand_write_logic_page_no_gc(void *zone, unsigned int page, void *data)
 {
@@ -9686,6 +9705,7 @@ struct poweroff_ecc_zone {
 	unsigned char before_geometry[3448];
 	struct poweroff_ecc_geometry *geometry;
 };
+#ifndef TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD
 int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 			     const unsigned char *data, unsigned char *oob)
 {
@@ -9714,6 +9734,10 @@ int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 	}
 	return error;
 }
+#else
+extern int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
+				    const unsigned char *data, unsigned char *oob);
+#endif
 #if defined(TRIMUI_NFTL_GCC7_PASS) || \
     defined(TRIMUI_NFTL_COLD_GCC53_BUILD) || \
     defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD)
@@ -11959,6 +11983,7 @@ _Static_assert(__builtin_offsetof(struct page_map_recovery_zone, mode) == 3448,
 	       "page-map mode offset");
 _Static_assert(__builtin_offsetof(struct page_map_recovery_zone, read) == 3464,
 	       "page-map read offset");
+#ifdef TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int recover_phy_page_mapping(struct page_map_recovery_zone *zone,
 			     struct new_write_block *block,
@@ -12028,6 +12053,7 @@ int recover_phy_page_mapping(struct page_map_recovery_zone *zone,
 	 * the status of the final read. */
 	return page;
 }
+#endif /* TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD */
 
 struct current_used_zone {
 	unsigned char before_flag[25];
