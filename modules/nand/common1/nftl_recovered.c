@@ -9506,6 +9506,7 @@ void clean_read_reclaim_complete_flag(struct read_claim_node *head)
 
 	while (node) {
 		register struct reclaim_flag_zone *destination asm("x0");
+		register unsigned int value asm("w1");
 
 		/* OEM reads node->zone twice, destination first, and does not
 		 * check either pointer. Binding the first read preserves this
@@ -9514,8 +9515,12 @@ void clean_read_reclaim_complete_flag(struct read_claim_node *head)
 		 * TODO: synchronize it in a separate corrective change. */
 		destination = (struct reclaim_flag_zone *)node->zone;
 		asm("" : "+r"(destination));
-		destination->complete =
-			((struct reclaim_flag_zone *)node->zone)->complete == 0;
+		value = ((struct reclaim_flag_zone *)node->zone)->complete;
+		/* GCC 7 emits AND for the implicit boolean conversion; stock
+		 * uses CMP, CSET and UXTB in this order. */
+		asm("cmp %w0, #0\n\tcset %w0, eq\n\tuxtb %w0, %w0"
+		    : "+r"(value) : : "cc");
+		destination->complete = value;
 		node = node->next;
 	}
 }
