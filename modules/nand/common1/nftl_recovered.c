@@ -5803,6 +5803,7 @@ extern struct move_node *out_phy_block_from_invalid_page_list(
 	struct move_zone *zone);
 extern int put_phy_block_to_free_list(struct move_zone *zone,
 				     struct move_node *node);
+#ifndef TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD
 int adjust_invaild_list(struct move_zone *zone)
 {
 	struct move_node *node;
@@ -5817,6 +5818,9 @@ int adjust_invaild_list(struct move_zone *zone)
 	}
 	return 0;
 }
+#else
+extern int adjust_invaild_list(struct move_zone *zone);
+#endif /* TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD */
 
 extern unsigned char micron_read_retry_mode;
 extern unsigned char micron_read_retry_cycle;
@@ -7043,6 +7047,7 @@ void nftl_ops_init(struct nftl_ops *ops)
 
 extern int add_block_invalid_list(struct invalid_zone *zone,
 				  struct invalid_node *block);
+#ifndef TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD
 int put_phy_block_to_invalid_page_list(void *zone,
 				       struct invalid_node *block)
 {
@@ -7056,6 +7061,9 @@ int put_phy_block_to_invalid_page_list(void *zone,
 		nand_print_dbg(nftl_ro_lc_410);
 	return result;
 }
+#else
+extern int put_phy_block_to_invalid_page_list(void *zone, struct invalid_node *block);
+#endif /* TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD */
 
 struct panic_header {
 	unsigned char unknown[4];
@@ -10019,6 +10027,7 @@ struct invalid_page_location {
 	unsigned short flags : 4;
 	unsigned short block;
 };
+#ifndef TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD
 int check_invalid_page_right(struct page_map_write_zone *zone,
 			     void *raw_map,
 			     struct page_map_write_block *block,
@@ -10056,6 +10065,13 @@ int check_invalid_page_right(struct page_map_write_zone *zone,
 	}
 	return 0;
 }
+#else
+extern int check_invalid_page_right(struct page_map_write_zone *zone, void *raw_map, struct page_map_write_block *block, unsigned short page_count);
+#endif /* TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD */
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int write_phy_page_map_to_current_block(struct page_map_write_zone *zone,
+					       struct page_map_write_current *current);
+#else
 int write_phy_page_map_to_current_block(struct page_map_write_zone *zone,
 					struct page_map_write_current *current)
 {
@@ -10084,6 +10100,7 @@ int write_phy_page_map_to_current_block(struct page_map_write_zone *zone,
 	}
 	return 0;
 }
+#endif
 
 struct do_after_zone {
 	unsigned char before_flags[25];
@@ -12369,6 +12386,7 @@ _Static_assert(__builtin_offsetof(struct phy_write_zone, map_bytes) == 560,
 _Static_assert(__builtin_offsetof(struct phy_write_zone, write) == 3472,
 	       "physical write callback offset");
 extern int do_write_error(struct phy_write_zone *, struct phy_write_state *);
+#ifndef TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int write_phy_data_to_current_block(struct phy_write_zone *zone,
 				    struct phy_write_state *state,
@@ -12429,6 +12447,9 @@ int write_phy_data_to_current_block(struct phy_write_zone *zone,
 		retry++;
 	}
 }
+#else
+extern int write_phy_data_to_current_block(struct phy_write_zone *zone, struct phy_write_state *state, const unsigned char *data, unsigned int logic_page, unsigned int kind);
+#endif /* TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD */
 
 struct do_write_geometry {
 	unsigned char before_fixed_page[28];
