@@ -7131,7 +7131,8 @@ union panic_recover_state {
 	struct {
 		void *blocks[3];
 		unsigned int reserved_pages;
-		int block_index;
+		/* OEM zero-extends slot indices but signed-tests the erase exit. */
+		unsigned int block_index;
 		unsigned int page_index;
 		unsigned int unused;
 	};
@@ -7180,7 +7181,7 @@ int panic_recover_data(void *owner)
 	struct panic_recover_block *block;
 	struct physic_op_param op;
 	unsigned char oob[16];
-	unsigned char *data;
+	unsigned char *data = 0;
 	unsigned int logic_page;
 	unsigned int sectors;
 
@@ -7230,7 +7231,7 @@ int panic_recover_data(void *owner)
 		state->block_index++;
 	}
 erase:
-	while (state->block_index >= 0) {
+	while ((int)state->block_index >= 0) {
 		/* A complete three-block scan arrives here with index three.
 		 * OEM then treats bookkeeping slot three as a block pointer and
 		 * can fault. Preserve the bad access for binary equivalence. */
