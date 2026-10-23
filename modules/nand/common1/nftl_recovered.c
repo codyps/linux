@@ -6745,6 +6745,7 @@ int sandisk_read_retry_clock_recover(struct clock_chip *chip)
 	return 0;
 }
 
+#ifndef TRIMUI_NFTL_TOSHIBA_RETRY_GCC53_BUILD
 int toshiba_read_retry_clock_recover(struct clock_chip *chip)
 {
 	/* OEM ignores clock-programming errors and reports success. */
@@ -6752,6 +6753,9 @@ int toshiba_read_retry_clock_recover(struct clock_chip *chip)
 		     toshiba_sclk0_bak, toshiba_sclk1_bak);
 	return 0;
 }
+#else
+extern int toshiba_read_retry_clock_recover(struct clock_chip *chip);
+#endif
 
 extern int nand_get_clk(void *controller, unsigned int channel,
 			unsigned int *sclk0, unsigned int *sclk1);
@@ -6767,7 +6771,11 @@ extern int nand_get_clk(void *controller, unsigned int channel,
 
 CLOCK_SAVE(sandisk_A19)
 CLOCK_SAVE(sandisk)
+#ifndef TRIMUI_NFTL_TOSHIBA_RETRY_GCC53_BUILD
 CLOCK_SAVE(toshiba)
+#else
+extern int toshiba_read_retry_clock_save(struct clock_chip *chip);
+#endif
 
 struct move_node *out_phy_block_from_invalid_page_list(struct move_zone *zone)
 {
@@ -7207,6 +7215,7 @@ extern int panic_recover_data(void *owner);
 /* Keep this address in the stock-ordered table span. The vendor bus helper
  * trusts its count, so bytes beyond the declared array can be observed. */
 extern unsigned char toshiba_read_retry_start_cmd[2];
+#ifndef TRIMUI_NFTL_TOSHIBA_RETRY_GCC53_BUILD
 int toshiba_vender_pre_condition(void *chip)
 {
 	int result;
@@ -7219,6 +7228,9 @@ int toshiba_vender_pre_condition(void *chip)
 	}
 	return 0;
 }
+#else
+extern int toshiba_vender_pre_condition(void *chip);
+#endif
 
 /* As above, the command byte must keep its stock table neighbors. */
 extern unsigned char sandisk_A19_read_retry_cmd_1y;
@@ -9349,6 +9361,7 @@ extern unsigned char toshiba_read_retry_exit_cmd[];
 extern unsigned char toshiba_read_retry_last_cmd[];
 extern unsigned char toshiba_read_retry_end_cmd[];
 extern unsigned int toshiba_retry_flag_recovered;
+#ifndef TRIMUI_NFTL_TOSHIBA_RETRY_GCC53_BUILD
 int toshiba_vender_set_param(struct samsung_set_chip *chip,
 			    unsigned char *values, unsigned char *addresses,
 			    unsigned int count)
@@ -9404,8 +9417,24 @@ int toshiba_vender_set_param(struct samsung_set_chip *chip,
 		       values[0], values[1], values[2], values[3]);
 	return result;
 }
+#else
+extern int toshiba_vender_set_param(struct samsung_set_chip *chip,
+				   unsigned char *values,
+				   unsigned char *addresses,
+				   unsigned int count);
+#endif
 /* Stock keeps values/addresses/count/result at FP+0x38/+0x30/+0x2c/+0x28,
  * matching its exit path; the normal stack-protector layout reverses them. */
+#ifdef TRIMUI_NFTL_TOSHIBA_RETRY_GCC53_BUILD
+/* Keep the widened retry index in x0 and the table base in x1. This small
+ * arithmetic step reproduces stock code generation; the index remains
+ * unchecked and may read beyond the selected five-byte row. */
+#define TOSHIBA_RETRY_VALUES(TABLE) ({ \
+	register unsigned long n asm("x0") = (unsigned long)chip->retry * 5; \
+	register unsigned char *b asm("x1") = (TABLE); \
+	asm("add %0, %0, %1" : "+r"(n) : "r"(b)); \
+	(unsigned char *)n; \
+})
 __attribute__((optimize("-fno-stack-protector")))
 int toshiba_set_readretry(struct samsung_set_chip *chip)
 {
@@ -9431,11 +9460,11 @@ int toshiba_set_readretry(struct samsung_set_chip *chip)
 	if (toshiba_read_retry_mode == 17) {
 		/* OEM widens retry before multiplying. The table index is still
 		 * unchecked and may point far outside the table. */
-		values = toshiba_p1_2 + (unsigned long)chip->retry * 5;
+		values = TOSHIBA_RETRY_VALUES(toshiba_p1_2);
 		addresses = toshiba_read_retry_addr_2;
 		count = 5;
 	} else if (toshiba_read_retry_mode == 18) {
-		values = toshiba_p1_3 + (unsigned long)chip->retry * 5;
+		values = TOSHIBA_RETRY_VALUES(toshiba_p1_3);
 		addresses = toshiba_read_retry_addr_2;
 		count = 5;
 	} else {
@@ -9452,6 +9481,10 @@ int toshiba_set_readretry(struct samsung_set_chip *chip)
 	toshiba_read_retry_clock_recover((struct clock_chip *)chip);
 	return result;
 }
+#undef TOSHIBA_RETRY_VALUES
+#else
+extern int toshiba_set_readretry(struct samsung_set_chip *chip);
+#endif
 /* OEM keeps values/addresses/count/result at FP+0x38/+0x30/+0x2c/+0x28.
  * GCC's stack-protector pass reverses these private slots without a canary. */
 __attribute__((optimize("-fno-stack-protector")))
