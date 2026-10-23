@@ -3048,30 +3048,7 @@ int is_all_byte_ff(const unsigned char *buffer, int length, int tolerance)
 	return 0;
 }
 
-/* Inferred NFTL per-byte bit counter. */
-/* The byte mask compiles as AND #0xff, where stock uses UXTB. Both discard
- * the upper 24 bits before the same bit-count loop. */
-__attribute__((optimize("-fno-stack-protector")))
-int check_bit_nums(const unsigned char *data, int length)
-{
-	int index;
-	int bit;
-	int total;
-	unsigned char mask;
-
-	total = 0;
-	for (index = 0; index < length; index++) {
-		mask = 1;
-		for (bit = 0; bit <= 7; bit++) {
-			if (data[index] & mask)
-				total++;
-			mask <<= 1;
-		}
-	}
-	/* OEM skips the loop for a negative length and does not guard a
-	 * positive length against the actual buffer extent. */
-	return total;
-}
+int check_bit_nums(const unsigned char *data, int length);
 
 /* Isolated OEM C equivalents; aggregate names are inferred from access. */
 
