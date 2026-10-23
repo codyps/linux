@@ -268,7 +268,8 @@ extern int hynix20nm_vender_set_param(void *, unsigned char *,
 
 /* Preserve the OEM result/index slots at FP+0x38/+0x3c as in the 16nm
  * programmer; callbacks can observe the otherwise reordered frame. */
-#ifndef TRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_HYNIX_DEFAULT_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 int hynix26nm_vender_set_param(void *chip, unsigned char *values,
 			      unsigned char *addresses, unsigned int count)
@@ -2040,7 +2041,8 @@ int hynix16nm_set_readretry(struct hynix16nm_retry_zone *zone)
 
 /* OEM keeps result at FP+0x38 and index at +0x3c. Stack-protector's
  * reordered slots would expose different scratch state to NAND callbacks. */
-#ifndef TRIMUI_NFTL_HYNIX16_SET_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_HYNIX16_SET_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_HYNIX_DEFAULT_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_vender_set_param(struct hynix16nm_retry_zone *zone,
 			      unsigned char *values,
@@ -2066,37 +2068,43 @@ int hynix16nm_vender_set_param(struct hynix16nm_retry_zone *zone,
 		       values[1], values[2], values[3]);
 	return result;
 }
+#else
+extern int hynix16nm_vender_set_param(struct hynix16nm_retry_zone *,
+				      unsigned char *, unsigned char *,
+				      unsigned int);
 #endif
 
 /* The OEM leaves this unchecked stack array without a canary. */
+#ifdef TRIMUI_NFTL_HYNIX_DEFAULT_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_set_default_param(void *zone_ptr)
 {
-	struct {
-		unsigned char values[8];
-		int result;
-		unsigned int index;
-	} locals;
+	unsigned char values[8];
+	int result;
+	unsigned int index;
 
-	locals.result = 0;
+	result = 0;
 	/* OEM's mutable register count can overwrite the result and then the
 	 * index after the eight-byte local buffer. */
-	for (locals.index = 0; locals.index < hynix16nm_read_retry_reg_num;
-	     locals.index++)
-		locals.values[locals.index] =
-			((struct hynix16nm_retry_zone *)zone_ptr)->values[locals.index];
-	locals.result = hynix16nm_vender_set_param(
+	for (index = 0; index < hynix16nm_read_retry_reg_num;
+	     index++)
+		values[index] =
+			((struct hynix16nm_retry_zone *)zone_ptr)->values[index];
+	result = hynix16nm_vender_set_param(
 					   (struct hynix16nm_retry_zone *)zone_ptr,
-					   locals.values,
+					   values,
 					   hynix16nm_read_retry_reg_adr,
 					   hynix16nm_read_retry_reg_num);
 	nand_print_dbg(nftl_ro_lc_56);
-	for (locals.index = 0; locals.index < hynix16nm_read_retry_reg_num;
-	     locals.index++)
-		nand_print_dbg(nftl_ro_lc_57, locals.values[locals.index]);
+	for (index = 0; index < hynix16nm_read_retry_reg_num;
+	     index++)
+		nand_print_dbg(nftl_ro_lc_57, values[index]);
 	nand_print_dbg(nftl_ro_lc_45);
-	return locals.result;
+	return result;
 }
+#else
+extern int hynix16nm_set_default_param(void *zone_ptr);
+#endif
 
 struct hynix16nm_otp_controller {
 	unsigned char before_channel[12];
@@ -4382,31 +4390,33 @@ extern int hynix26nm_set_readretry(struct hynix20nm_retry_chip *chip);
 extern unsigned char hynix26nm_read_retry_reg_num;
 extern unsigned char hynix26nm_read_retry_reg_adr[];
 /* Stock uses a signed index and omits a canary around its unchecked buffer. */
+#ifdef TRIMUI_NFTL_HYNIX_DEFAULT_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix26nm_setdefaultparam(void *chip)
 {
-	struct {
-		unsigned char values[8];
-		int result;
-		int index;
-	} locals;
+	unsigned char values[8];
+	int result;
+	int index;
 
-	locals.result = 0;
+	result = 0;
 	/* OEM's mutable count can overwrite the result and then the index. */
-	for (locals.index = 0; locals.index < hynix26nm_read_retry_reg_num;
-	     locals.index++)
-		locals.values[locals.index] =
-			((struct otp_chip *)chip)->saved[locals.index];
-	locals.result = hynix26nm_vender_set_param(chip, locals.values,
+	for (index = 0; index < hynix26nm_read_retry_reg_num;
+	     index++)
+		values[index] =
+			((struct otp_chip *)chip)->saved[index];
+	result = hynix26nm_vender_set_param(chip, values,
 					   hynix26nm_read_retry_reg_adr,
 					   hynix26nm_read_retry_reg_num);
 	nand_print_dbg(nftl_ro_lc_56);
-	for (locals.index = 0; locals.index < hynix26nm_read_retry_reg_num;
-	     locals.index++)
-		nand_print_dbg(nftl_ro_lc_57, locals.values[locals.index]);
+	for (index = 0; index < hynix26nm_read_retry_reg_num;
+	     index++)
+		nand_print_dbg(nftl_ro_lc_57, values[index]);
 	nand_print_dbg(nftl_ro_lc_45);
-	return locals.result;
+	return result;
 }
+#else
+extern int hynix26nm_setdefaultparam(void *chip);
+#endif
 
 extern struct nftl_list_node nftl_blk_head;
 /* Stock uses a different local-slot order under the kernel's
