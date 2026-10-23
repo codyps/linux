@@ -6981,7 +6981,9 @@ int nftl_build_one(struct nftl_build_owner *owner, int number)
 	if (!number)
 		nftl_blk_head.next = 0;
 	while (node) {
-		if (node->number == number && !nftl_add(node)) {
+		/* Compare all 32 request bits. The explicit promotion preserves
+		 * stock's operand order; negative requests remain unmatched. */
+		if ((unsigned int)node->number == number && !nftl_add(node)) {
 			/* OEM discards the underlying add failure. */
 			nand_print(nftl_ro_lc_3);
 			return 1;
