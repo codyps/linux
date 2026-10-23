@@ -5904,6 +5904,10 @@ int generic_special_init(void)
 extern unsigned int nand_on_panic;
 extern unsigned int panic_enable;
 
+#ifdef TRIMUI_NFTL_PANIC_WRITE_GCC53_BUILD
+/* Panic write needs leaf frames, but this local flag setter does not. */
+__attribute__((optimize("-fomit-frame-pointer")))
+#endif
 static void panic_mark_panic(void)
 {
 	nand_on_panic = 1;
@@ -5974,6 +5978,7 @@ struct panic_write_owner {
 	struct first_list_zone *zone;
 };
 /* The OEM OOB buffer is stack-resident without a stack canary. */
+#ifndef TRIMUI_NFTL_GCC7_PASS
 __attribute__((optimize("-fno-stack-protector")))
 int panic_write(struct panic_write_owner *owner, unsigned int sector,
 		unsigned int count, void *buffer)
@@ -5982,8 +5987,8 @@ int panic_write(struct panic_write_owner *owner, unsigned int sector,
 	struct first_list_zone *zone;
 	struct first_list_geometry *geometry;
 	struct first_list_block *block;
-	/* This order preserves the OEM operation and scalar stack slots.
-	 * The OOB array still lands four bytes above its stock slot. */
+	/* This order and the OEM compiler profile preserve the original scalar
+	 * and OOB stack slots, including the unprotected OOB buffer. */
 	unsigned char oob[16];
 	struct physic_op_param op;
 	unsigned char *cursor;
@@ -6071,6 +6076,10 @@ int panic_write(struct panic_write_owner *owner, unsigned int sector,
 	}
 	return 0;
 }
+#else
+extern int panic_write(struct panic_write_owner *owner, unsigned int sector,
+		       unsigned int count, void *buffer);
+#endif
 
 struct gc_policy_geometry {
 	unsigned char before_pages[0x14];
