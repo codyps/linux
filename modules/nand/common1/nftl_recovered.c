@@ -2732,6 +2732,7 @@ struct read_claim_node {
 	struct read_claim_node *next;
 	struct read_claim_zone *zone;
 };
+#ifndef TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD
 int set_nftl_read_claim_flag(struct read_claim_node *head, int flag, int page)
 {
 	struct read_claim_node *node = head;
@@ -2743,6 +2744,7 @@ int set_nftl_read_claim_flag(struct read_claim_node *head, int flag, int page)
 	}
 	return 0;
 }
+#endif /* TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD */
 
 /* Isolated NFTL C candidates; private aggregate labels are inferred. */
 
@@ -3230,6 +3232,7 @@ _Static_assert(__builtin_offsetof(struct nand_cache_read_zone, stats) == 3440,
 	       "NAND read statistics offset");
 _Static_assert(__builtin_offsetof(struct nand_cache_read_zone, read) == 3512,
 	       "NAND read callback offset");
+#ifndef TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD
 int nand_cache_read(struct nand_cache_read_zone *zone, int page,
 		    unsigned short sector_range,
 		    void *destination)
@@ -3328,6 +3331,7 @@ int nand_cache_read(struct nand_cache_read_zone *zone, int page,
 	}
 	return result;
 }
+#endif /* TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD */
 
 /* GCC's stack-protector pass reorders these two locals even though this
  * function has no canary. Keep the OEM's cache pointer at FP+0x20 and signed
@@ -6286,6 +6290,7 @@ int nand_dbg_single_phy_erase(unsigned short chip, unsigned short block)
 	return result;
 }
 
+#ifndef TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD
 int get_nftl_read_claim_page_no(struct read_claim_node *head)
 {
 	struct read_claim_node *last =
@@ -6293,6 +6298,7 @@ int get_nftl_read_claim_page_no(struct read_claim_node *head)
 	/* OEM does not check any pointer in this chain. */
 	return last->zone->settings->page;
 }
+#endif /* TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD */
 
 /* Private stack slots observed at FP+40/52/56 in the stock read-claim
  * search. The gap has no persistent layout or ABI significance. */
@@ -9495,6 +9501,7 @@ void clean_read_reclaim_complete_flag(struct read_claim_node *head)
 		node = node->next;
 	}
 }
+#ifndef TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD
 int set_nftl_read_claim_complete(struct read_claim_node *head,
 				 struct read_claim_node *selected)
 {
@@ -9518,6 +9525,7 @@ int set_nftl_read_claim_complete(struct read_claim_node *head,
 	last->zone->settings->page = 0;
 	return 0;
 }
+#endif /* TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD */
 
 struct reclaim_cache_mode {
 	unsigned char before_mode[8];
@@ -9852,7 +9860,8 @@ struct cold_map_entry {
 /* Stock uses the no-stack-protector slot order for current and entry. Its
  * extra UXTB before masking the low cold bit is retained as a documented
  * instruction-level difference: it cannot affect the stored low bit. */
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD)
 extern int get_cold_logic_page(void *zone, int page, unsigned int pages);
 #else
 __attribute__((optimize("-fno-stack-protector")))
@@ -9882,8 +9891,17 @@ int get_cold_logic_page(void *zone, int page, unsigned int pages)
 extern int nand_cache_read(struct nand_cache_read_zone *zone, int page,
 			   unsigned short mode,
 			   void *buffer);
+extern int get_nftl_read_claim_page_no(struct read_claim_node *head);
+extern int set_nftl_read_claim_complete(struct read_claim_node *head,
+					struct read_claim_node *selected);
+extern int set_nftl_read_claim_flag(struct read_claim_node *head,
+				    int flag, int page);
 /* Keep the OEM's private read/claim slots; the byte truncation and ignored
  * callback results below are intentional stock behavior. */
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int read_reclaim(struct read_claim_node *head,
+			struct read_claim_node *selected, void *buffer);
+#else
 __attribute__((optimize("-fno-stack-protector")))
 int read_reclaim(struct read_claim_node *head,
 		 struct read_claim_node *selected, void *buffer)
@@ -9912,6 +9930,7 @@ int read_reclaim(struct read_claim_node *head,
 	}
 	return result;
 }
+#endif
 
 struct page_map_write_geometry {
 	unsigned char before_pages[20];
