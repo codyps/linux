@@ -5929,11 +5929,13 @@ int panic_write(struct panic_write_owner *owner, unsigned int sector,
 	struct first_list_zone *zone;
 	struct first_list_geometry *geometry;
 	struct first_list_block *block;
-	struct physic_op_param op;
+	/* This order preserves the OEM operation and scalar stack slots.
+	 * The OOB array still lands four bytes above its stock slot. */
 	unsigned char oob[16];
+	struct physic_op_param op;
+	unsigned char *cursor;
 	unsigned int pages, blocks;
 	unsigned int dummy;
-	unsigned char *cursor;
 
 	if (!is_panic_enable())
 		return -1;
