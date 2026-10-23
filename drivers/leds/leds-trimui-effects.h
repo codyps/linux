@@ -77,6 +77,11 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 			effect->frames[n - 1 - i] = rgb;
 			r += to_r - from_r; g += to_g - from_g; b += to_b - from_b;
 		}
+		/* Stock's type-2 path publishes these fields and returns here. */
+		WRITE_ONCE(effect->length, n);
+		WRITE_ONCE(effect->index, 0);
+		WRITE_ONCE(effect->active_cycles, 0);
+		return;
 	} else if (type == 3) {
 		u32 start_rgb;
 
