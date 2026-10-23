@@ -45,24 +45,45 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 			effect->frames[i] = trimui_rgb(r / n, g / n, b / n);
 			r += to_r - from_r; g += to_g - from_g; b += to_b - from_b;
 		}
-	} else if (type == 2 || type == 3) {
+	} else if (type == 2) {
 		if (effect->duration < 500)
 			effect->duration = 500;
 		if (effect->duration > 8000)
 			effect->duration = 8000;
 		n = effect->duration / 16;
-		ramp = effect->duration / (type == 2 ? 48 : 64);
+		ramp = effect->duration / 48;
 		from_r = (target >> 20) & 15;
 		from_g = (target >> 12) & 15;
 		from_b = (target >> 4) & 15;
 		for (i = 0; i < n; i++)
-			effect->frames[i] = type == 2 ? target :
-				trimui_rgb(from_r, from_g, from_b);
+			effect->frames[i] = target;
 		r = ramp * from_r; g = ramp * from_g; b = ramp * from_b;
 		for (i = 0; i < ramp; i++) {
 			u32 rgb = trimui_rgb(r / ramp, g / ramp, b / ramp);
 			effect->frames[i] = rgb;
-			effect->frames[(type == 2 ? n : 2 * ramp) - 1 - i] = rgb;
+			effect->frames[n - 1 - i] = rgb;
+			r += to_r - from_r; g += to_g - from_g; b += to_b - from_b;
+		}
+	} else if (type == 3) {
+		/* OEM has an independent type-3 clamp, fill and ramp path. The
+		 * same two loops retain its initial writes and mirrored ramp order.
+		 */
+		if (effect->duration < 500)
+			effect->duration = 500;
+		if (effect->duration > 8000)
+			effect->duration = 8000;
+		n = effect->duration / 16;
+		ramp = effect->duration / 64;
+		from_r = (target >> 20) & 15;
+		from_g = (target >> 12) & 15;
+		from_b = (target >> 4) & 15;
+		for (i = 0; i < n; i++)
+			effect->frames[i] = trimui_rgb(from_r, from_g, from_b);
+		r = ramp * from_r; g = ramp * from_g; b = ramp * from_b;
+		for (i = 0; i < ramp; i++) {
+			u32 rgb = trimui_rgb(r / ramp, g / ramp, b / ramp);
+			effect->frames[i] = rgb;
+			effect->frames[2 * ramp - 1 - i] = rgb;
 			r += to_r - from_r; g += to_g - from_g; b += to_b - from_b;
 		}
 	} else if (type == 4) {
