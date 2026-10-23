@@ -9756,13 +9756,18 @@ int set_nftl_read_claim_complete(struct read_claim_node *head,
 		last->zone->settings->flag = 0;
 		clean_read_reclaim_complete_flag(head);
 	} else {
-		struct read_claim_settings *destination =
+		register struct read_claim_settings *destination asm("x0") =
 			last->zone->settings;
+		register unsigned int updated asm("w1");
 
 		/* OEM increments the one-byte marker as a 32-bit value,
 		 * so 0xff becomes 0x100 rather than wrapping to zero. Resolve
-		 * the destination first, as the OEM does before reading marker. */
-		destination->flag = selected->zone->need_claim + 1;
+		 * the destination first, as the OEM does before reading marker.
+		 * These register bindings also retain the OEM private stack slot
+		 * for last and avoid an extra temporary pointer spill. */
+		asm("" : "+r"(destination));
+		updated = selected->zone->need_claim + 1;
+		destination->flag = updated;
 	}
 	last->zone->settings->page = 0;
 	return 0;
