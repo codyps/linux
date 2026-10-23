@@ -6184,10 +6184,14 @@ int _shutdown_op(struct nftl_shutdown_view *object)
 }
 
 extern int nand_get_support_boot_check_crc(void);
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern unsigned char nftl_support_boot_check_crc_from_dts(void);
+#else
 unsigned char nftl_support_boot_check_crc_from_dts(void)
 {
 	return nand_get_support_boot_check_crc() != 0;
 }
+#endif
 
 extern int nand_physic_erase_block(unsigned short chip, unsigned short block);
 int nand_dbg_single_phy_erase(unsigned short chip, unsigned short block)
@@ -9485,6 +9489,10 @@ int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 	}
 	return error;
 }
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern unsigned int *get_logic_page_map(struct logic_page_map_zone *zone,
+				 unsigned int page);
+#else
 unsigned int *get_logic_page_map(struct logic_page_map_zone *zone,
 				 unsigned int page)
 {
@@ -9511,6 +9519,7 @@ unsigned int *get_logic_page_map(struct logic_page_map_zone *zone,
 	result = map + page;
 	return result;
 }
+#endif
 
 struct logic_page_print_entry {
 	unsigned short code;
