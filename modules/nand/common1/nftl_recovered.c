@@ -3473,6 +3473,7 @@ struct hynix20nm_lsb_chip {
 	unsigned char before_params[280];
 	struct hynix20nm_lsb_params *params;
 };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int hynix20nm_lsb_init(struct hynix20nm_lsb_chip *chip)
 {
 	/* OEM reloads the nested retry word for each byte and trusts its
@@ -3503,6 +3504,9 @@ int hynix20nm_lsb_init(struct hynix20nm_lsb_chip *chip)
 	}
 	return 0;
 }
+#else
+extern int hynix20nm_lsb_init(struct hynix20nm_lsb_chip *chip);
+#endif
 extern int hynix20nm_vender_set_param(void *chip, unsigned char *values,
 				     unsigned char *addresses,
 				     unsigned int count);
@@ -3548,6 +3552,7 @@ struct hynix26nm_lsb_chip {
 	unsigned char before_params[280];
 	struct hynix26nm_lsb_params *params;
 };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int hynix26nm_lsb_init(struct hynix26nm_lsb_chip *chip)
 {
 	/* OEM separately reloads the packed retry word for all three fields
@@ -3568,6 +3573,9 @@ int hynix26nm_lsb_init(struct hynix26nm_lsb_chip *chip)
 	hynix26nm_lsb_mode_val[4] = 1;
 	return 0;
 }
+#else
+extern int hynix26nm_lsb_init(struct hynix26nm_lsb_chip *chip);
+#endif
 extern unsigned char hynix16nm_read_retry_mode;
 extern unsigned char hynix16nm_read_retry_cycle;
 extern unsigned char hynix16nm_read_retry_reg_num;
