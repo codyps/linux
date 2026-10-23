@@ -3565,6 +3565,7 @@ struct hynix16nm_init_chip {
 };
 struct hynix16nm_readretry_zone;
 extern int hynix16nm_init_readretry_param(struct hynix16nm_readretry_zone *);
+#ifndef TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD
 int hynix16nm_readretry_init(struct hynix16nm_init_chip *chip)
 {
 	unsigned int index;
@@ -3591,6 +3592,7 @@ int hynix16nm_readretry_init(struct hynix16nm_init_chip *chip)
 	hynix16nm_init_readretry_param((struct hynix16nm_readretry_zone *)chip);
 	return 0;
 }
+#endif /* TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD */
 extern int hynix26nm_vender_set_param(void *chip, unsigned char *values,
 				     unsigned char *addresses,
 				     unsigned int count);
@@ -4167,6 +4169,7 @@ int hynix20nm_set_default_param(struct otp_chip *chip)
 	return locals.result;
 }
 
+#ifndef TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD
 int hynix20nm_readretry_init(struct hynix20nm_retry_chip *chip)
 {
 	/* Keep the stock private return slot ahead of the signed loop index. */
@@ -4211,6 +4214,7 @@ int hynix20nm_readretry_init(struct hynix20nm_retry_chip *chip)
 			(struct hynix20nm_readretry_zone *)chip);
 	return frame.result;
 }
+#endif /* TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD */
 
 extern unsigned char hynix26nm_read_retry_cycle;
 extern unsigned char hynix26nm_read_retry_reg_num;
@@ -8536,12 +8540,14 @@ int name(struct samsung_read_request *request) \
 	} \
 	return result; \
 }
+#ifndef TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD
 HYNIX_READ_PAGE_END(hynix16nm_read_page_end, hynix16nm_read_retry_cycle,
 		    hynix16nm_set_readretry, nftl_ro_lc_110,
 		    nftl_ro_lc_111)
 HYNIX_READ_PAGE_END(hynix26nm_read_page_end, hynix26nm_read_retry_cycle,
 		    hynix26nm_set_readretry, nftl_ro_lc_86,
 		    nftl_ro_lc_87)
+#endif
 #undef HYNIX_READ_PAGE_END
 
 extern int set_one_cmd(struct command_chip *chip, unsigned int command,
@@ -9060,6 +9066,7 @@ int toshiba_readretry_init(struct samsung_init_chip *chip)
 #endif
 
 extern int micron_readretry_init(struct micron_init_chip *);
+extern int hynix16nm_readretry_init(struct hynix16nm_init_chip *);
 extern int hynix20nm_readretry_init(struct hynix20nm_retry_chip *);
 struct hynix26nm_init_chip;
 extern int hynix26nm_readretry_init(struct hynix26nm_init_chip *);
@@ -9067,6 +9074,8 @@ extern int hynix20nm_read_page_end(struct samsung_read_request *);
 extern int samsung_read_page_end(struct samsung_read_request *);
 extern int micron_read_page_end(struct samsung_read_request *);
 extern int toshiba_read_page_end(struct samsung_read_request *);
+extern int hynix16nm_read_page_end(struct samsung_read_request *);
+extern int hynix26nm_read_page_end(struct samsung_read_request *);
 extern int sandisk_read_page_end(struct samsung_read_request *);
 extern int sandisk_A19_read_page_end(struct samsung_read_request *);
 extern unsigned char hynix16nm_read_retry_mode, hynix16nm_read_retry_cycle,
@@ -9156,21 +9165,33 @@ SPECIAL_INIT_THREE(toshiba_special_init, toshiba_readretry_init,
 	nftl_ro_lc_82,
 	nftl_ro_lc_83)
 #endif
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int hynix16nm_special_init(void);
+#else
 SPECIAL_INIT_THREE(hynix16nm_special_init, hynix16nm_readretry_init,
 	hynix16nm_read_page_end, hynix16nm_read_retry_mode,
 	hynix16nm_read_retry_cycle, hynix16nm_read_retry_reg_num,
 	nftl_ro_lc_131,
 	nftl_ro_lc_132)
+#endif
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int hynix20nm_special_init(void);
+#else
 SPECIAL_INIT_THREE(hynix20nm_special_init, hynix20nm_readretry_init,
 	hynix20nm_read_page_end, hynix20nm_read_retry_mode,
 	hynix20nm_read_retry_cycle, hynix20nm_read_retry_reg_num,
 	nftl_ro_lc_66,
 	nftl_ro_lc_67)
+#endif
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int hynix26nm_special_init(void);
+#else
 SPECIAL_INIT_THREE(hynix26nm_special_init, hynix26nm_readretry_init,
 	hynix26nm_read_page_end, hynix26nm_read_retry_mode,
 	hynix26nm_read_retry_cycle, hynix26nm_read_retry_reg_num,
 	nftl_ro_lc_91,
 	nftl_ro_lc_92)
+#endif
 #ifdef TRIMUI_NFTL_GCC7_PASS
 extern int sandisk_special_init(void);
 #else
@@ -11049,6 +11070,7 @@ struct hynix20nm_page_chip {
 };
 /* GCC's stack-protector pass reorders private retry-state slots without
  * emitting a canary. Keep the OEM frame while retaining its retry quirks. */
+#ifndef TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_read_page_end(struct samsung_read_request *request)
 {
@@ -11106,6 +11128,7 @@ int hynix20nm_read_page_end(struct samsung_read_request *request)
 	}
 	return result;
 }
+#endif /* TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD */
 
 struct nftl_gc_info_geometry {
 	unsigned char before_pages[20];
@@ -11412,6 +11435,7 @@ struct hynix26nm_init_chip {
 	unsigned char before_params[280 - 188];
 	struct hynix26nm_lsb_params *params;
 };
+#ifndef TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD
 int hynix26nm_readretry_init(struct hynix26nm_init_chip *chip)
 {
 	const short *table;
@@ -11455,6 +11479,7 @@ int hynix26nm_readretry_init(struct hynix26nm_init_chip *chip)
 	hynix26nm_get_default_param((struct hynix_default_chip *)chip);
 	return 0;
 }
+#endif /* TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD */
 
 struct nftl_clean_geometry {
 	unsigned char before_sectors[8];
