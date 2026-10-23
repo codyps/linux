@@ -6474,7 +6474,9 @@ unsigned char nftl_support_boot_check_crc_from_dts(void)
 }
 #endif
 
-extern int nand_physic_erase_block(unsigned short chip, unsigned short block);
+/* The physical interface takes 32-bit arguments even though this debug
+ * wrapper accepts 16-bit inputs. Keep the OEM declaration and promotion. */
+extern int nand_physic_erase_block(unsigned int chip, unsigned int block);
 #ifndef TRIMUI_NFTL_GCC7_PASS
 int nand_dbg_single_phy_erase(unsigned short chip, unsigned short block)
 {
