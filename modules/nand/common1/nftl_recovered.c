@@ -189,7 +189,13 @@ int name(struct samsung_set_chip *chip, unsigned char *data, \
 }
 
 HYNIX_GET_EARLY(hynix16nm_vender_get_param)
+#if defined(TRIMUI_NFTL_GCC7_PASS) || !defined(TRIMUI_NFTL_HYNIX26_GET_GCC53_BUILD)
 HYNIX_GET_EARLY(hynix26nm_vender_get_param)
+#else
+extern int hynix26nm_vender_get_param(struct samsung_set_chip *,
+					     unsigned char *, unsigned char *,
+					     unsigned int);
+#endif
 
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_vender_get_param(struct samsung_set_chip *chip,
@@ -2871,6 +2877,9 @@ struct hynix_saved_chip {
 };
 /* The global build's stack protector swaps these two scalar local slots;
  * the OEM frame uses the unprotected layout despite having no canary. */
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int hynix26nm_getdefaultparam(void *chip, unsigned char *values);
+#else
 __attribute__((optimize("-fno-stack-protector")))
 int hynix26nm_getdefaultparam(void *chip, unsigned char *values)
 {
@@ -2887,6 +2896,7 @@ int hynix26nm_getdefaultparam(void *chip, unsigned char *values)
 		values[index] = ((struct hynix_saved_chip *)chip)->saved[index];
 	return result;
 }
+#endif
 
 struct nftl_retry_chip {
 	unsigned char preceding[0xb8];
