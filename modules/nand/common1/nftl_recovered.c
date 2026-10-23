@@ -1241,6 +1241,7 @@ struct cache_read_empty_node *get_empty_cahce_node(
 	}
 	return 0;
 }
+#ifndef TRIMUI_NFTL_FLUSH_GCC53_BUILD
 int add_to_cache_read_list_tail(struct cache_read_add_zone *zone,
 				struct cache_read_delete_node *node,
 				unsigned int state)
@@ -1260,6 +1261,11 @@ int add_to_cache_read_list_tail(struct cache_read_add_zone *zone,
 		zone->second_count++;
 	return 0;
 }
+#else
+extern int add_to_cache_read_list_tail(struct cache_read_add_zone *zone,
+				       struct cache_read_delete_node *node,
+				       unsigned int state);
+#endif
 /* OEM compares the cached sector keys as unsigned 32-bit values. */
 struct cache_read_node *search_from_cache_read_list(
 	struct cache_read_zone *zone, int key)
@@ -5414,6 +5420,7 @@ int add_to_sector_cache_write_list_tail(struct sector_owner *owner, struct secto
     owner->count++;
     return 0;
 }
+#ifndef TRIMUI_NFTL_FLUSH_GCC53_BUILD
 struct cache_list_node *del_from_cache_write_list(struct cache_list_owner *owner, struct cache_list_node *node)
 {
     struct cache_list_node *previous = node->previous;
@@ -5428,6 +5435,10 @@ struct cache_list_node *del_from_cache_write_list(struct cache_list_owner *owner
     owner->count--;
     return node;
 }
+#else
+extern struct cache_list_node *del_from_cache_write_list(
+	struct cache_list_owner *owner, struct cache_list_node *node);
+#endif
 struct sector_node *del_from_sector_cache_write_list(struct sector_owner *owner, struct sector_node *node)
 {
     struct sector_node *previous = node->previous;
@@ -5629,6 +5640,10 @@ _Static_assert(__builtin_offsetof(struct flush_cache_zone, read) == 3512,
 extern int nand_memcmp(const void *, const void *, unsigned long);
 extern int nand_phy_get_page_type(unsigned int);
 
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int flush_write_cache_to_nand(struct flush_cache_zone *zone,
+				      int ignored_count);
+#else
 __attribute__((optimize("-fno-stack-protector")))
 int flush_write_cache_to_nand(struct flush_cache_zone *zone, int ignored_count)
 {
@@ -5710,6 +5725,7 @@ int flush_write_cache_to_nand(struct flush_cache_zone *zone, int ignored_count)
 	/* OEM reports success even after both writes failed. */
 	return 0;
 }
+#endif
 
 struct gc_list_node {
 	unsigned char before_next[0x10];
