@@ -2798,23 +2798,31 @@ int free_nrc(struct nrc_buffers *buffers)
 	return 0;
 }
 
-#ifndef TRIMUI_NFTL_OOB_LOGIC_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_OOB_LOGIC_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_GCC7_PASS)
 void set_spare_data(unsigned char *oob, unsigned int value, unsigned char offset,
 		    unsigned char count)
 {
-	unsigned int index = 0;
-	unsigned int shift;
+	/* The OEM keeps shift at SP+0x18 and index at SP+0x1c. */
+	struct {
+		unsigned int shift;
+		unsigned int index;
+	} frame;
+
+	frame.index = 0;
 
 	/* OEM stores offset/count as bytes at entry, dropping higher bits. */
-	while (count > index) {
-		shift = count - index;
-		shift--;
-		shift <<= 3;
-		/* AArch64 masks variable 32-bit shift counts to five bits.
-		 * Preserve that OEM wraparound for counts above four. */
-		oob[(unsigned int)offset + index] =
-			(unsigned char)((unsigned int)value >> (shift & 31));
-		index++;
+	while (count > frame.index) {
+		frame.shift = count - frame.index;
+		frame.shift--;
+		frame.shift <<= 3;
+		/* OEM bug: counts above four make this shift undefined in C.
+		 * Pinned GCC 5.3 emits LSR Wn, Wm, Wk, whose hardware shift count
+		 * wraps modulo 32. Preserve its shipped behavior; a corrected
+		 * implementation should validate count before shifting. */
+		oob[(unsigned int)offset + frame.index] =
+			(unsigned char)((unsigned int)value >> frame.shift);
+		frame.index++;
 	}
 }
 #else
