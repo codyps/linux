@@ -27,8 +27,7 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 		       u32 target, u32 previous)
 {
 	int n, ramp, i, count, r, g, b, from_r, from_g, from_b;
-	int to_r = (target >> 16) & 255, to_g = (target >> 8) & 255;
-	int to_b = target & 255;
+	int to_r, to_g, to_b;
 	if (effect->duration < 200)
 		effect->duration = 200;
 	/* Stock leaves linear/static effects unbounded and can overwrite the
@@ -40,6 +39,9 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 		from_r = (previous >> 16) & 255;
 		from_g = (previous >> 8) & 255;
 		from_b = previous & 255;
+		to_r = (target >> 16) & 255;
+		to_g = (target >> 8) & 255;
+		to_b = target & 255;
 		r = n * from_r; g = n * from_g; b = n * from_b;
 		for (i = 0; i < n; i++) {
 			effect->frames[i] = trimui_rgb(r / n, g / n, b / n);
@@ -64,6 +66,10 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 		from_b = start_rgb & 255;
 		for (i = 0; i < n; i++)
 			effect->frames[i] = target;
+		/* OEM computes the target channels after the initial fill. */
+		to_r = (target >> 16) & 255;
+		to_g = (target >> 8) & 255;
+		to_b = target & 255;
 		r = ramp * from_r; g = ramp * from_g; b = ramp * from_b;
 		for (i = 0; i < ramp; i++) {
 			u32 rgb = trimui_rgb(r / ramp, g / ramp, b / ramp);
@@ -90,6 +96,9 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 		from_b = start_rgb & 255;
 		for (i = 0; i < n; i++)
 			effect->frames[i] = start_rgb;
+		to_r = (target >> 16) & 255;
+		to_g = (target >> 8) & 255;
+		to_b = target & 255;
 		r = ramp * from_r; g = ramp * from_g; b = ramp * from_b;
 		for (i = 0; i < ramp; i++) {
 			u32 rgb = trimui_rgb(r / ramp, g / ramp, b / ramp);
