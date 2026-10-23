@@ -139,18 +139,21 @@ static void commit_static_frame(void)
  u32 *out;
  mutex_lock(access);
  state=RELOC_HIDE(&trimui_transfer_state,0);
- src=state->rgb; out=state->wire;
+ /* OEM starts one pixel ahead, then reads this pixel with negative byte
+  * offsets. Preserve that address shape and the unchecked count. */
+ src=state->rgb+4; out=state->wire;
  /* Stock snapshots these values after locking, before conversion. */
  count=READ_ONCE(trimui_transfer_config.count);
  low=READ_ONCE(state->low_battery);
  /* Stock trusts the count beyond both arrays and its 32-entry scale table.
   * TODO: bound it in a separate behavior change. */
  for(i=0;i<count;i++) {
-  scale=*trimui_scale_by_led[i];
+  /* Stock observes the scale before the three color-byte reads. */
+  scale=READ_ONCE(*trimui_scale_by_led[i]);
   if(low && scale>3)scale=3;
   /* Preserve byte observation order, wrap, and arithmetic blue shift.
    * TODO: normalize channel widths only as a separate fix. */
-  blue=(u32)src[0]*scale; red=(u32)src[2]*scale; green=(u32)src[1]*scale;
+  blue=(u32)src[-4]*scale; red=(u32)src[-2]*scale; green=(u32)src[-3]*scale;
   if(i<10)out[i]=((red<<8)&0xff0000)|(green&0xff00)|(blue>>8);
   else out[i]=((green<<8)&0xff0000)|(red&0xff00)|(blue>>8);
   src+=4;
