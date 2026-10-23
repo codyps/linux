@@ -4736,6 +4736,13 @@ struct scan_zone {
 	unsigned char before_reserve_geometry[2760];
 	struct scan_reserve_geometry *reserve_geometry;
 };
+#if !defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_FIRST_SCAN_GCC53_BUILD)
+#ifdef TRIMUI_NFTL_FIRST_SCAN_GCC53_BUILD
+/* Keep the selected body next to the NFTL text rather than in a late
+ * function-section group, which moves it megabytes from the OEM address. */
+__attribute__((section(".text")))
+#endif
 int init_zone_after_first_scan(struct scan_zone *zone,
 			       unsigned int available_blocks)
 {
@@ -4781,6 +4788,10 @@ int init_zone_after_first_scan(struct scan_zone *zone,
 	zone->status = 0;
 	return 0;
 }
+#else
+extern int init_zone_after_first_scan(struct scan_zone *zone,
+				      unsigned int available_blocks);
+#endif
 extern int first_scan_all_blocks(struct build_zone *);
 extern int second_scan_all_blocks(struct build_zone *);
 struct power_gc_zone;
