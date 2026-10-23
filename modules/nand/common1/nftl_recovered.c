@@ -4801,12 +4801,16 @@ int init_zone_after_first_scan(struct scan_zone *zone,
 	 * Keep the difference in w0 through the following reserve comparison;
 	 * the stock branch compares it with the freshly loaded minimum. */
 	remaining = available_blocks - needed_blocks;
-	if (remaining <
-	    (unsigned int)zone->reserve_geometry->min_free_blocks - 1) {
-		nand_print(nftl_ro_lc_232,
-			   available_blocks, needed_blocks);
-		return 1;
-	}
+	/* Keep the OEM CMP w0,w1 / B.HS sequence. GCC 5.3 otherwise
+	 * reverses the operands and emits the equivalent B.LS branch. */
+	asm goto("cmp %w0, %w1\n\tb.hs %l[enough_reserve]"
+		 : : "r"(remaining),
+		 "r"((unsigned int)zone->reserve_geometry->min_free_blocks - 1)
+		 : "cc" : enough_reserve);
+	nand_print(nftl_ro_lc_232,
+		   available_blocks, needed_blocks);
+	return 1;
+enough_reserve:
 	zone->gc_reserve = (available_blocks - needed_blocks) / 5;
 	if (zone->gc_reserve < zone->reserve_geometry->min_gc_blocks)
 		zone->gc_reserve = zone->reserve_geometry->min_gc_blocks;
