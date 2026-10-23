@@ -1612,6 +1612,7 @@ int new_block_init_for_write(struct new_write_zone *zone,
 		unsigned char gap[4];
 		int result;
 	} local;
+	register unsigned int stored_tag asm("w1");
 
 	set_physic_op_par(&local.op, block->number, 0,
 			  zone->geometry->page, 0, 0);
@@ -1623,7 +1624,12 @@ int new_block_init_for_write(struct new_write_zone *zone,
 	if (block->erase_count > zone->max_erase &&
 	    block->erase_count < zone->geometry->erase_limit)
 		zone->max_erase = block->erase_count;
-	block->tag = tag;
+	/* OEM loads the saved tag before the block pointer for this final
+	 * store. Binding its value to w1 preserves that load order while
+	 * leaving the metadata update and failed-erase behavior unchanged. */
+	stored_tag = tag;
+	asm("" : "+r"(stored_tag));
+	block->tag = stored_tag;
 	if (local.result) {
 		zone->mark_bad(zone, &local.op);
 		nand_print(nftl_ro_lc_174);
