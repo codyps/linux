@@ -827,11 +827,19 @@ unsigned int nftl_get_boot_cnt(struct nftl_boot_owner_view *input)
 /* C candidates for bounded OEM NFTL helpers; offsets are evidence, not types. */
 
 unsigned int get_spare_data(void *oob, unsigned char offset,
+			    unsigned char bytes);
+#ifndef TRIMUI_NFTL_GCC7_PASS
+unsigned int get_spare_data(void *oob, unsigned char offset,
 			    unsigned char bytes)
 {
 	/* OEM stores both arguments as bytes on entry, discarding high bits. */
-	unsigned int index = 0;
-	unsigned int value = 0;
+	unsigned int value;
+	unsigned int index;
+
+	/* OEM GCC 5.3.1 assigns index/value to +0x18/+0x1c, then stores
+	 * index first. Keep declaration and initialization order distinct. */
+	index = 0;
+	value = 0;
 
 	while (bytes > index) {
 		value <<= 8;
@@ -841,6 +849,7 @@ unsigned int get_spare_data(void *oob, unsigned char offset,
 	/* OEM keeps only the final four bytes for lengths above four. */
 	return value;
 }
+#endif
 extern int block_erase(unsigned short block, unsigned short chip);
 
 unsigned int get_block_used_count_from_oob(void *oob)
