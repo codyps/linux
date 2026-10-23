@@ -30,7 +30,8 @@ struct physic_op_param {
 };
 
 #if !defined(TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -868,7 +869,8 @@ struct nftl_phy_outer {
 };
 
 #if !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD)
 unsigned char *get_phy_block_addr(struct nftl_phy_outer *outer,
 				  unsigned short block)
 {
@@ -8884,7 +8886,8 @@ struct prio_gc_node *get_empty_gc_node(struct prio_gc_pool *pool)
 	}
 	return 0;
 }
-#ifndef TRIMUI_NFTL_SMALL_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD)
 int add_prio_gc(struct prio_gc_owner *owner, void *block,
 		unsigned short priority)
 {
@@ -8930,6 +8933,7 @@ _Static_assert(__builtin_offsetof(struct do_prio_gc_zone,
 				  queue.head.next) == 1040,
 	       "priority GC head offset");
 
+#ifndef TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD
 int do_prio_gc(void *owner)
 {
 	struct do_prio_gc_zone *zone = owner;
@@ -9016,6 +9020,7 @@ clear_error:
 	node->block = 0;
 	return 1;
 }
+#endif /* TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD */
 
 struct static_wear_stats {
 	unsigned char before_attempts[180];
@@ -9670,7 +9675,9 @@ int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 	}
 	return error;
 }
-#if defined(TRIMUI_NFTL_GCC7_PASS) || defined(TRIMUI_NFTL_COLD_GCC53_BUILD)
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_COLD_GCC53_BUILD) || \
+    defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD)
 extern unsigned int *get_logic_page_map(struct logic_page_map_zone *zone,
 				 unsigned int page);
 #else
@@ -9713,6 +9720,12 @@ struct logic_page_recover_entry {
 	unsigned short preserve : 3;
 	unsigned short marker;
 };
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int recover_logic_page_mapping(struct logic_page_map_zone *zone,
+				      struct invalid_page_node *current,
+				      const unsigned int *pages,
+				      unsigned int count);
+#else
 int recover_logic_page_mapping(struct logic_page_map_zone *zone,
 			       struct invalid_page_node *current,
 			       const unsigned int *pages, unsigned int count)
@@ -9763,6 +9776,7 @@ int recover_logic_page_mapping(struct logic_page_map_zone *zone,
 	}
 	return 0;
 }
+#endif
 
 struct logic_read_geometry {
 	unsigned char before_erased_size[26];
@@ -9778,6 +9792,10 @@ struct logic_read_zone {
 	int (*read)(struct logic_read_zone *, struct physic_op_param *);
 };
 /* Stock has a stack OOB array but no canary in this body. */
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int _nftl_nand_read_logic_page(struct logic_read_zone *zone,
+				      unsigned int page, void *data);
+#else
 __attribute__((optimize("-fno-stack-protector")))
 int _nftl_nand_read_logic_page(struct logic_read_zone *zone,
 			       unsigned int page, void *data)
@@ -9816,6 +9834,7 @@ int _nftl_nand_read_logic_page(struct logic_read_zone *zone,
 	do_prio_gc(zone);
 	return result;
 }
+#endif
 
 int print_logic_page_map(struct logic_page_map_zone *zone, unsigned int ignored)
 {
