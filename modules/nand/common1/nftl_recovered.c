@@ -244,7 +244,8 @@ extern int set_one_cmd(struct command_chip *chip, unsigned char command,
 /* OEM keeps result/index at FP+0x38/+0x3c; this function's local byte
  * arrays otherwise trigger GCC's stack-protector slot reordering. */
 #if !defined(TRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_HYNIX20_RETRY_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_HYNIX20_RETRY_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_HYNIX20_PARAM_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_vender_set_param(void *chip, unsigned char *values,
 			      unsigned char *addresses, unsigned int count)
@@ -4006,6 +4007,7 @@ void hynix16nm_save_otp_value(struct otp_chip *chip,
 }
 
 /* OEM copies all 64 bytes without checking either pointer or extent. */
+#ifndef TRIMUI_NFTL_HYNIX20_PARAM_GCC53_BUILD
 void hynix20nm_saveotpvalue(struct otp_chip *chip,
 			    const unsigned char *value)
 {
@@ -4014,6 +4016,10 @@ void hynix20nm_saveotpvalue(struct otp_chip *chip,
 	for (index = 0; index < 64; index++)
 		chip->saved[index] = value[index];
 }
+#else
+extern void hynix20nm_saveotpvalue(struct otp_chip *,
+				   const unsigned char *);
+#endif
 
 struct hynix16nm_readretry_params {
 	unsigned char before_page_count[20];
@@ -4104,71 +4110,75 @@ struct hynix20nm_readretry_zone {
 	struct hynix16nm_readretry_params *params;
 };
 extern int hynix20nm_getotpparam(struct otp_chip *, unsigned char *);
-#ifndef TRIMUI_NFTL_HYNIX20_INIT_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_HYNIX20_INIT_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_GCC7_PASS)
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_init_readretry_param(struct hynix20nm_readretry_zone *zone)
 {
 	/* OEM keeps the special-info result apart from its final return value.
-	 * The four-byte gap after the OTP table is present in the stock frame. */
-	struct {
-		unsigned char otp_values[64];
-		unsigned int unused_after_otp;
-		int special_result;
-		unsigned char *copy_buffer;
-		unsigned char *page_buffer;
-		int result;
-		unsigned int index;
-	} frame;
+	 * The four-byte gap after the 64-byte OTP table is present in the
+	 * stock frame, so the local array includes that unused space. */
+	unsigned int index;
+	int result;
+	unsigned char *page_buffer;
+	unsigned char *copy_buffer;
+	int special_result;
+	unsigned char otp_values[68];
 
-	frame.index = 0;
-	frame.page_buffer = 0;
-	frame.copy_buffer = 0;
-	frame.result = 0;
-	frame.special_result = 0;
+	index = 0;
+	page_buffer = 0;
+	copy_buffer = 0;
+	result = 0;
+	special_result = 0;
 
 	/* Stock shifts the count in 32 bits and never checks whether the
 	 * resulting allocation can hold the 64-byte table. */
-	frame.page_buffer = nand_get_temp_buf(zone->params->page_count << 9);
-	if (!frame.page_buffer) {
+	page_buffer = nand_get_temp_buf(zone->params->page_count << 9);
+	if (!page_buffer) {
 		nand_print_dbg(nftl_ro_lc_58);
 		return -94;
 	}
-	frame.copy_buffer = nand_get_temp_buf(32768);
-	if (!frame.copy_buffer) {
-		nand_free_temp_buf(frame.page_buffer);
+	copy_buffer = nand_get_temp_buf(32768);
+	if (!copy_buffer) {
+		nand_free_temp_buf(page_buffer);
 		nand_print(nftl_ro_lc_59);
 		return -76;
 	}
-	frame.special_result = 0;
-	frame.special_result = hynix16nm_get_special_info(frame.copy_buffer,
-						frame.page_buffer, 64, zone->chip);
-	if (frame.special_result == 0) {
+	special_result = 0;
+	special_result = hynix16nm_get_special_info(copy_buffer,
+						page_buffer, 64, zone->chip);
+	if (special_result == 0) {
 		nand_print_dbg(nftl_ro_lc_60,
 			       zone->controller->channel, zone->chip);
-		for (frame.index = 0; frame.index <= 63; frame.index++) {
-			nand_print_dbg(nftl_ro_lc_61, frame.page_buffer[frame.index]);
-			if ((frame.index & 7) == 7)
+		for (index = 0; index <= 63; index++) {
+			nand_print_dbg(nftl_ro_lc_61, page_buffer[index]);
+			if ((index & 7) == 7)
 				nand_print_dbg(nftl_ro_lc_45);
 		}
 		hynix20nm_saveotpvalue((struct otp_chip *)zone,
-					 frame.page_buffer);
-		frame.result = hynix20nm_set_default_param((struct otp_chip *)zone);
+					 page_buffer);
+		result = hynix20nm_set_default_param((struct otp_chip *)zone);
 	} else {
 		nand_print_dbg(nftl_ro_lc_62,
 			       zone->controller->channel);
-		frame.result = hynix20nm_getotpparam((struct otp_chip *)zone,
-						frame.otp_values);
-		if (frame.result == 0) {
+		result = hynix20nm_getotpparam((struct otp_chip *)zone,
+						otp_values);
+		if (result == 0) {
 			/* OEM ignores the default-program result on this fallback. */
 			hynix20nm_set_default_param((struct otp_chip *)zone);
 			nand_print_dbg(nftl_ro_lc_63,
 				       zone->controller->channel);
+			goto done;
+		} else {
+			/* Preserve the OEM failure-path NOP and branch layout. */
+			asm volatile("nop");
 		}
 	}
 	/* OEM frees only the page buffer here. The 32 KiB copy buffer leaks
 	 * on every normal completion; retain that behavior for equivalence. */
-	nand_free_temp_buf(frame.page_buffer);
-	return frame.result;
+done:
+	nand_free_temp_buf(page_buffer);
+	return result;
 }
 #else
 extern int hynix20nm_init_readretry_param(struct hynix20nm_readretry_zone *);
@@ -4347,6 +4357,7 @@ int hynix20nm_set_readretry(struct hynix20nm_retry_chip *chip)
 extern int hynix20nm_set_readretry(struct hynix20nm_retry_chip *chip);
 #endif
 /* Stock omits a canary although its unchecked count can overrun the buffer. */
+#ifndef TRIMUI_NFTL_HYNIX20_PARAM_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_set_default_param(struct otp_chip *chip)
 {
@@ -4373,6 +4384,7 @@ int hynix20nm_set_default_param(struct otp_chip *chip)
 	nand_print_dbg(nftl_ro_lc_45);
 	return locals.result;
 }
+#endif
 
 #ifdef TRIMUI_NFTL_HYNIX20_INIT_GCC53_BUILD
 int hynix20nm_readretry_init(struct hynix20nm_retry_chip *chip)
@@ -10180,7 +10192,8 @@ extern int fill_no_use_data_to_page(struct do_after_zone *zone);
 extern int physic_info_get_offset(unsigned int *offset);
 extern int physic_info_get_one_copy(unsigned int block, unsigned int offset,
 				    unsigned int *scratch, unsigned char *buffer);
-#ifndef TRIMUI_NFTL_GCC7_PASS
+#if !defined(TRIMUI_NFTL_GCC7_PASS) && \
+    !defined(TRIMUI_NFTL_HYNIX20_PARAM_GCC53_BUILD)
 /* The OEM page has an 8 KiB data area followed by the spare area. */
 struct hynix_special_page_view {
 	unsigned char data[8192];
