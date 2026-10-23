@@ -1817,6 +1817,9 @@ struct gc_phyinfo_view {
 extern unsigned char phyinfo[20];
 extern int gc_all(void *zone, unsigned short count);
 /* OEM places info, used and quantity in the no-stack-protector local slots. */
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int gc_all_enhance(struct gc_enhance_zone *zone);
+#else
 __attribute__((optimize("-fno-stack-protector")))
 int gc_all_enhance(struct gc_enhance_zone *zone)
 {
@@ -1837,6 +1840,7 @@ int gc_all_enhance(struct gc_enhance_zone *zone)
 		return 0;
 	return gc_all(zone, zone->geometry->half_count >> 1);
 }
+#endif
 struct gc_policy_zone;
 extern int gc_all_cnt(struct gc_policy_zone *zone, unsigned short pages,
 		      unsigned int count);
@@ -3598,6 +3602,7 @@ struct diag_free_zone {
 	unsigned char before_head[0x110];
 	struct diag_free_node head;
 };
+#ifndef TRIMUI_NFTL_FREE_SELECTOR_GCC53_BUILD
 struct diag_free_node *del_free_list(struct diag_free_zone *zone)
 {
 	struct diag_free_node *node = &zone->head;
@@ -3613,6 +3618,9 @@ struct diag_free_node *del_free_list(struct diag_free_zone *zone)
 	}
 	return node;
 }
+#else
+extern struct diag_free_node *del_free_list(struct diag_free_zone *zone);
+#endif
 
 struct gc_node {
 	unsigned char before_links[0x10];
@@ -6109,6 +6117,7 @@ int gc_all_cnt(struct gc_policy_zone *zone, unsigned short pages,
 	return 0;
 }
 
+#ifndef TRIMUI_NFTL_GC_ENHANCE_GCC53_BUILD
 int gc_all(void *zone, unsigned short count)
 {
 	int result;
@@ -6121,6 +6130,9 @@ int gc_all(void *zone, unsigned short count)
 	}
 	return 0;
 }
+#else
+extern int gc_all(void *zone, unsigned short count);
+#endif
 
 int all_time_gc(struct gc_policy_zone *zone)
 {
@@ -7982,7 +7994,12 @@ struct node_type *name(struct zone_type *zone, struct node_type *target) \
 	return node; \
 }
 
+#ifndef TRIMUI_NFTL_FREE_SELECTOR_GCC53_BUILD
 NFTL_DELETE_BY_BLOCK(del_free_list_by_block, free_block_zone, free_block)
+#else
+extern struct free_block *del_free_list_by_block(
+	struct free_block_zone *zone, struct free_block *target);
+#endif
 NFTL_DELETE_BY_BLOCK(del_block_invalid_list_by_block, invalid_zone, invalid_node)
 NFTL_DELETE_BY_BLOCK(del_block_count_by_block, count_delete_zone, count_delete_node)
 
@@ -8082,6 +8099,9 @@ void print_block_invalid_list(struct invalid_print_zone *zone)
 		}
 	}
 }
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone);
+#else
 struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone)
 {
 	struct free_block *block = (struct free_block *)
@@ -8096,6 +8116,7 @@ struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone)
 	}
 	return block;
 }
+#endif
 
 struct clean_list_block {
 	unsigned char number[2];
@@ -8707,6 +8728,10 @@ int put_phy_block_to_free_list(struct move_zone *zone,
 
 extern struct free_block *del_free_list_by_block(
     struct free_block_zone *zone, struct free_block *target);
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern struct nftl_free_erase_node *out_phy_block_from_free_list_by_block(
+    struct nftl_free_erase_owner *zone, struct nftl_free_erase_node *target);
+#else
 struct nftl_free_erase_node *out_phy_block_from_free_list_by_block(
     struct nftl_free_erase_owner *zone, struct nftl_free_erase_node *target)
 {
@@ -8724,6 +8749,7 @@ struct nftl_free_erase_node *out_phy_block_from_free_list_by_block(
     }
     return node;
 }
+#endif
 
 struct prio_gc_node {
 	unsigned short state;
