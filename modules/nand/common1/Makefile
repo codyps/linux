@@ -16,8 +16,15 @@ obj-$(CONFIG_SUNXI_NAND) += nftl_sector_cache_init_gcc53.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_invalid_page_incr_gcc53.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_micron_init_gcc53.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_copy_page_gcc53.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_dump_buf.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nftl_read.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nftl_write.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nftl_discard.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_samsung_readretry_init.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_toshiba_readretry_init.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_sandisk_A19_readretry_init.o
 endif
-CFLAGS_nftl_recovered.o += -O0 -fno-builtin -fno-pic -mcmodel=small
+CFLAGS_nftl_recovered.o += -O0 -fno-builtin -fno-pic -mcmodel=small -DTRIMUI_NFTL_GCC7_PASS
 # The stock NFTL object identifies Linaro GCC 5.3.1 (2016.05). These
 # recovered bodies need its field-address code generation; the rest of NFTL
 # remains on the established compiler to retain previously matched bodies.
@@ -27,7 +34,14 @@ $(obj)/nftl_sector_cache_init_gcc53.o: override CC := python3 $(srctree)/scripts
 $(obj)/nftl_invalid_page_incr_gcc53.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) phy_block_from_invalid_page_incr --
 $(obj)/nftl_micron_init_gcc53.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) micron_readretry_init --
 $(obj)/nftl_copy_page_gcc53.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) _nftl_nand_copy_page --
-nftl_gcc53_objects := $(addprefix $(obj)/,nftl_cache_init_gcc53.o nftl_sector_cache_init_gcc53.o nftl_invalid_page_incr_gcc53.o nftl_micron_init_gcc53.o nftl_copy_page_gcc53.o)
+$(obj)/nftl_gcc53_dump_buf.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) dump_buf --
+$(obj)/nftl_gcc53_nftl_read.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) nftl_read --
+$(obj)/nftl_gcc53_nftl_write.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) nftl_write --
+$(obj)/nftl_gcc53_nftl_discard.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) nftl_discard --
+$(obj)/nftl_gcc53_samsung_readretry_init.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) samsung_readretry_init --
+$(obj)/nftl_gcc53_toshiba_readretry_init.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) toshiba_readretry_init --
+$(obj)/nftl_gcc53_sandisk_A19_readretry_init.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) sandisk_A19_readretry_init --
+nftl_gcc53_objects := $(addprefix $(obj)/,nftl_cache_init_gcc53.o nftl_sector_cache_init_gcc53.o nftl_invalid_page_incr_gcc53.o nftl_micron_init_gcc53.o nftl_copy_page_gcc53.o nftl_gcc53_dump_buf.o nftl_gcc53_nftl_read.o nftl_gcc53_nftl_write.o nftl_gcc53_nftl_discard.o nftl_gcc53_samsung_readretry_init.o nftl_gcc53_toshiba_readretry_init.o nftl_gcc53_sandisk_A19_readretry_init.o)
 $(nftl_gcc53_objects): override NOSTDINC_FLAGS := -nostdinc -isystem $(shell $(TRIMUI_NFTL_GCC53) -print-file-name=include)
 $(nftl_gcc53_objects): $(srctree)/scripts/trimui_nftl_select_cc.py
 CFLAGS_nftl_cache_init_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
@@ -35,6 +49,13 @@ CFLAGS_nftl_sector_cache_init_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=smal
 CFLAGS_nftl_invalid_page_incr_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_micron_init_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_copy_page_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_dump_buf.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_nftl_read.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_nftl_write.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_nftl_discard.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_samsung_readretry_init.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_toshiba_readretry_init.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_sandisk_A19_readretry_init.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_tables_recovered.o += -O0
 CFLAGS_nftl_bss_recovered.o += -O0
 CFLAGS_nftl_rodata_recovered.o += -O0

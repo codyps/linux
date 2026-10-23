@@ -2364,6 +2364,9 @@ struct sandisk_a19_init_chip {
 	unsigned char before_params[92];
 	struct sandisk_a19_init_params *params;
 };
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int sandisk_A19_readretry_init(struct sandisk_a19_init_chip *chip);
+#else
 int sandisk_A19_readretry_init(struct sandisk_a19_init_chip *chip)
 {
 	chip->retry = 0;
@@ -2384,6 +2387,7 @@ int sandisk_A19_readretry_init(struct sandisk_a19_init_chip *chip)
 		       sandisk_A19_read_retry_cycle);
 	return 0;
 }
+#endif
 /* The standard SanDisk initializer uses the same chip/configuration offsets
  * as A19. Retain separate global settings and its activation branch. */
 int sandisk_readretry_init(struct sandisk_a19_init_chip *chip)
@@ -3696,6 +3700,9 @@ static void _DumpHexData(const unsigned char *data, int length)
 	}
 	nand_print(nftl_ro_lc_45);
 }
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern void dump_buf(const unsigned char *data, unsigned int length);
+#else
 void dump_buf(const unsigned char *data, unsigned int length)
 {
 	int index = 0;
@@ -3714,6 +3721,7 @@ void dump_buf(const unsigned char *data, unsigned int length)
 	}
 	nand_print(nftl_ro_lc_45);
 }
+#endif
 int nand_check_table(void *zone)
 {
 	void *block = zone;
@@ -4338,6 +4346,9 @@ struct nftl_discard_node {
 	int (*discard)(struct nftl_discard_node *node, unsigned int sector,
 		       unsigned int count);
 };
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int nftl_discard(unsigned int sector, unsigned int count);
+#else
 int nftl_discard(unsigned int sector, unsigned int count)
 {
 	struct nftl_discard_node *node =
@@ -4357,6 +4368,7 @@ int nftl_discard(unsigned int sector, unsigned int count)
 	}
 	return node->discard(node, sector, count);
 }
+#endif
 
 /* OEM treats a zero-length request as success, walks unchecked links, and
  * forwards the whole count to one callback without spanning partitions. */
@@ -4378,8 +4390,13 @@ int name(unsigned int sector, unsigned int count, void *data) \
 	return node->member(node, sector, count, data); \
 }
 
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int nftl_read(unsigned int sector, unsigned int count, void *data);
+extern int nftl_write(unsigned int sector, unsigned int count, void *data);
+#else
 NFTL_RW(nftl_read, read)
 NFTL_RW(nftl_write, write)
+#endif
 
 /* Inferred NFTL orchestration body; callback signatures remain provisional. */
 
@@ -8912,6 +8929,9 @@ struct samsung_init_chip {
 };
 extern unsigned char samsung_read_retry_mode;
 extern unsigned char samsung_read_retry_cycle;
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int samsung_readretry_init(struct samsung_init_chip *chip);
+#else
 int samsung_readretry_init(struct samsung_init_chip *chip)
 {
 	chip->state = 0;
@@ -8925,9 +8945,13 @@ int samsung_readretry_init(struct samsung_init_chip *chip)
 		return -100;
 	return 0;
 }
+#endif
 extern unsigned char toshiba_read_retry_mode;
 extern unsigned char toshiba_read_retry_cycle;
 extern unsigned char toshiba_read_retry_reg_cnt;
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int toshiba_readretry_init(struct samsung_init_chip *chip);
+#else
 int toshiba_readretry_init(struct samsung_init_chip *chip)
 {
 	chip->state = 0;
@@ -8943,6 +8967,7 @@ int toshiba_readretry_init(struct samsung_init_chip *chip)
 		       toshiba_read_retry_cycle);
 	return 0;
 }
+#endif
 
 extern int micron_readretry_init(struct micron_init_chip *);
 extern int hynix20nm_readretry_init(struct hynix20nm_retry_chip *);
