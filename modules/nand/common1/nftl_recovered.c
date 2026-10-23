@@ -5236,8 +5236,9 @@ int build_zone_list_first(struct first_list_zone *zone, unsigned int number)
 	/* OEM loads cursor after the debug callback; that callback can change
 	 * the initial block before the scan begins. */
 	block = zone->cursor;
-	/* OEM performs two unguarded divisions, including when either divisor
-	 * is zero. Keep this crash behavior until stock compatibility ends. */
+	/* OEM performs two unguarded divisions. On AArch64, UDIV with a zero
+	 * divisor yields zero: a nonzero logical-page count then skips the scan
+	 * and reports no block. Preserve this stock bug. */
 	if (zone->logical_pages) {
 		limit = (zone->logical_pages + zone->extra_pages) /
 			zone->geometry->factor;
@@ -5288,13 +5289,16 @@ int build_zone_list_first(struct first_list_zone *zone, unsigned int number)
 			break;
 		block++;
 	}
-	if (zone->count <= 1) {
+	if (zone->count > 1) {
+		zone->count--;
+		if (limit != ~0U)
+			goto next_scan;
+	} else {
 		nand_print(nftl_ro_lc_210, zone->count);
 		return 1;
 	}
-	zone->count--;
-	if (limit == ~0U)
-		return 0;
+	return 0;
+next_scan:
 	if (is_last_phy_block((struct physical_block *)block,
 			      (struct physical_zone *)zone) == 1)
 		return 0;
