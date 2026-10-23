@@ -31,7 +31,8 @@ struct physic_op_param {
 
 #if !defined(TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -7293,6 +7294,7 @@ struct mark_free_zone {
 	unsigned char before_write[3472 - 520];
 	int (*write)(struct mark_free_zone *, struct physic_op_param *);
 };
+#ifndef TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int mark_free_block(struct erase_block_zone *owner,
 		    struct erase_block_info *block)
@@ -7333,7 +7335,10 @@ int mark_free_block(struct erase_block_zone *owner,
 #undef MARK_ZONE
 	return 0;
 }
+#endif
 extern int mark_free_block(struct erase_block_zone *, struct erase_block_info *);
+#if !defined(TRIMUI_NFTL_GCC7_PASS) && \
+    !defined(TRIMUI_NFTL_ADJUST_FREE_GCC53_BUILD)
 int erase_block(struct erase_block_zone *zone, struct erase_block_info *block,
 		unsigned short mode)
 {
@@ -7369,6 +7374,7 @@ int erase_block(struct erase_block_zone *zone, struct erase_block_info *block,
 	}
 	return local.result;
 }
+#endif
 struct torture_geometry {
 	unsigned char before_pages[20];
 	unsigned short pages;
@@ -8097,6 +8103,9 @@ struct adjust_free_block {
 	unsigned short erase_time;
 };
 extern struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone);
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int adjust_free_list(struct adjust_free_zone *zone);
+#else
 int adjust_free_list(struct adjust_free_zone *zone)
 {
 	struct adjust_free_block *block = (struct adjust_free_block *)
@@ -8117,6 +8126,7 @@ int adjust_free_list(struct adjust_free_zone *zone)
 		   block->number, block->erase_time);
 	return 0;
 }
+#endif
 struct free_print_node {
 	unsigned short number;
 	unsigned short info;
@@ -8183,7 +8193,8 @@ void print_block_invalid_list(struct invalid_print_zone *zone)
 		}
 	}
 }
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD)
 extern struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone);
 #else
 struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone)
@@ -8814,7 +8825,8 @@ int prio_gc_one(void *zone, unsigned short block, unsigned int priority)
 
 extern int add_free_list(struct free_block_zone *zone,
                          struct free_block *node);
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD)
 extern int put_phy_block_to_free_list(struct move_zone *zone,
 				      struct move_node *node);
 #else
@@ -8838,7 +8850,8 @@ int put_phy_block_to_free_list(struct move_zone *zone,
 
 extern struct free_block *del_free_list_by_block(
     struct free_block_zone *zone, struct free_block *target);
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD)
 extern struct nftl_free_erase_node *out_phy_block_from_free_list_by_block(
     struct nftl_free_erase_owner *zone, struct nftl_free_erase_node *target);
 #else
