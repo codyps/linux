@@ -8320,7 +8320,10 @@ void print_free_list(struct free_print_zone *zone)
 			nand_print_dbg(nftl_ro_lc_402, node->count);
 			nand_print_dbg(nftl_ro_lc_403, node->info);
 			node = node->next;
-	}
+		}
+	} else {
+		/* Preserve the OEM's separate debug-disabled exit. */
+		return;
 	}
 }
 struct invalid_print_node {
@@ -8355,6 +8358,9 @@ void print_block_invalid_list(struct invalid_print_zone *zone)
 			nand_print_dbg(nftl_ro_lc_403, node->info);
 			node = node->next;
 		}
+	} else {
+		/* Preserve the OEM's separate debug-disabled exit. */
+		return;
 	}
 }
 #if defined(TRIMUI_NFTL_GCC7_PASS) || \
