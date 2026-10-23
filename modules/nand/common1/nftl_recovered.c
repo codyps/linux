@@ -2357,10 +2357,10 @@ int check_cross_talk(struct cross_talk_zone *zone,
 		    zone->stats->max <= oobptr[14]) {
 			/* Keep the OEM's final store order: fetch stats before
 			 * reading OOB[14]. GCC 7.4.1 otherwise evaluates the OOB
-			 * byte first. The volatile local uses the spare frame slot
-			 * at FP+0x20 without moving op or OOB; the OEM's unchecked
-			 * 16-byte OOB buffer remains unchanged. */
-			struct cross_talk_stats *volatile target = zone->stats;
+			 * byte first. Binding the temporary to x0 reproduces the
+			 * stock load order without an extra private stack write;
+			 * the unchecked 16-byte OOB buffer remains unchanged. */
+			register struct cross_talk_stats *target asm("x0") = zone->stats;
 
 			target->max = oobptr[14];
 			break;
