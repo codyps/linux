@@ -980,15 +980,22 @@ static ssize_t store_anim_frames(struct class *class, struct class_attribute *at
 
 static ssize_t show_anim_frames_hex(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	int i = 0, count = 0;
+	/* Stock keeps the animation index in a 64-bit register. */
+	register long i asm("x21") = 0;
+	int count = 0;
 	char *position = buffer;
 	u32 *pixels = trimui_anim_frames;
 	/* Stock advances by the cumulative length, producing sparse output.
 	 * At 34 LEDs the newline lands beyond a 4 KiB sysfs page.
 	 * TODO: advance by the last write and bound output in a separate fix. */
-	while (i < (int)trimui_led_count) {
+	while ((int)i < (int)trimui_led_count) {
 		count += 7;
-		sprintf(position, "%06X ", pixels[i] & 0xffffff);
+		/* Keep the destination in x0 before setting the format argument. */
+		{
+			register char *destination asm("x0") = position;
+			asm("" : "+r"(destination));
+			sprintf(destination, "%06X ", pixels[i] & 0xffffff);
+		}
 		position += count;
 		/* Keep the cumulative count live across the next LED-count read. */
 		asm volatile("" : "+r"(count));
