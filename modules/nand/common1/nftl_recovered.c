@@ -10300,6 +10300,9 @@ struct nand_discard_frame {
 	unsigned int page;
 };
 #ifdef TRIMUI_NFTL_NAND_DISCARD_GCC53_BUILD
+/* Keep this selected body in ordinary text. Function-section sorting moves
+ * it far ahead of the stock NFTL call sites despite identical instructions. */
+__attribute__((section(".text")))
 int nand_discard(struct nand_discard_view *zone, unsigned int sector,
 		 unsigned int count)
 {
