@@ -39,6 +39,10 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 		from_r = (previous >> 16) & 255;
 		from_g = (previous >> 8) & 255;
 		from_b = previous & 255;
+		/* OEM extracts all three previous channels before touching target.
+		 * Keep that register schedule without changing memory observations.
+		 */
+		asm volatile("" : "+r"(from_r), "+r"(from_g), "+r"(from_b));
 		to_r = (target >> 16) & 255;
 		to_g = (target >> 8) & 255;
 		to_b = target & 255;
