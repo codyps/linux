@@ -6716,7 +6716,7 @@ extern char *nand_fdt_get_prop_string_by_path(void *, const char *,
 extern void nftl_get_nand_phyinfo(void *);
 extern int nftl_start(struct init_nftl_owner *, struct init_nftl_config *,
 		      struct init_nftl_zone **, void *, void *, unsigned int,
-		      unsigned short, unsigned short, struct init_partition *,
+		      unsigned int, unsigned int, struct init_partition *,
 		      unsigned int, unsigned char);
 
 __attribute__((optimize("-fno-stack-protector")))
@@ -6902,7 +6902,7 @@ static __attribute__((always_inline)) inline unsigned int nftl_stock_udiv(unsign
 int nftl_start(struct init_nftl_owner *owner, struct init_nftl_config *config,
 		struct init_nftl_zone **output, void *start_bytes,
 		void *capacity_bytes, unsigned int area_bytes,
-		unsigned short erase_bytes, unsigned short chips,
+		unsigned int erase_bytes, unsigned int chips,
 		struct init_partition *partition, unsigned int number,
 		unsigned char mode)
 {
@@ -6912,6 +6912,9 @@ int nftl_start(struct init_nftl_owner *owner, struct init_nftl_config *config,
 	unsigned int start = (unsigned long)start_bytes >> 9;
 	unsigned int capacity = (unsigned long)capacity_bytes >> 9;
 	unsigned int area = area_bytes >> 9;
+	/* Stock shifts the full 32-bit erase argument before narrowing its
+	 * resulting geometry fields.  Premature u16 narrowing changes large
+	 * direct-call inputs even though the initializer passes a u16 value. */
 	unsigned int erase = erase_bytes >> 9;
 	unsigned int total, reserved, i, attempts = 0, result;
 
