@@ -198,7 +198,9 @@ int name(struct samsung_set_chip *chip, unsigned char *data, \
 }
 
 HYNIX_GET_EARLY(hynix16nm_vender_get_param)
-#if defined(TRIMUI_NFTL_GCC7_PASS) || !defined(TRIMUI_NFTL_HYNIX26_GET_GCC53_BUILD)
+#if (defined(TRIMUI_NFTL_GCC7_PASS) || \
+     !defined(TRIMUI_NFTL_HYNIX26_GET_GCC53_BUILD)) && \
+    !defined(TRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD)
 HYNIX_GET_EARLY(hynix26nm_vender_get_param)
 #else
 extern int hynix26nm_vender_get_param(struct samsung_set_chip *,
@@ -206,6 +208,7 @@ extern int hynix26nm_vender_get_param(struct samsung_set_chip *,
 					     unsigned int);
 #endif
 
+#ifndef TRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_vender_get_param(struct samsung_set_chip *chip,
 			      unsigned char *data, unsigned char *addresses,
@@ -225,6 +228,11 @@ int hynix20nm_vender_get_param(struct samsung_set_chip *chip,
 	/* OEM does not validate count or pointers, and discards read errors. */
 	return result;
 }
+#else
+extern int hynix20nm_vender_get_param(struct samsung_set_chip *,
+				      unsigned char *, unsigned char *,
+				      unsigned int);
+#endif
 
 struct command_chip;
 /* The BSP helper takes u8: OEM truncates callers' -1/0xffffffc5 commands. */
@@ -232,6 +240,7 @@ extern int set_one_cmd(struct command_chip *chip, unsigned char command,
 		       unsigned int wait_ready);
 /* OEM keeps result/index at FP+0x38/+0x3c; this function's local byte
  * arrays otherwise trigger GCC's stack-protector slot reordering. */
+#ifndef TRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_vender_set_param(void *chip, unsigned char *values,
 			      unsigned char *addresses, unsigned int count)
@@ -252,9 +261,14 @@ int hynix20nm_vender_set_param(void *chip, unsigned char *values,
 	nand_disable_chip(chip);
 	return result;
 }
+#else
+extern int hynix20nm_vender_set_param(void *, unsigned char *,
+				      unsigned char *, unsigned int);
+#endif
 
 /* Preserve the OEM result/index slots at FP+0x38/+0x3c as in the 16nm
  * programmer; callbacks can observe the otherwise reordered frame. */
+#ifndef TRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix26nm_vender_set_param(void *chip, unsigned char *values,
 			      unsigned char *addresses, unsigned int count)
@@ -280,6 +294,10 @@ int hynix26nm_vender_set_param(void *chip, unsigned char *values,
 		       values[1], values[2], values[3]);
 	return result;
 }
+#else
+extern int hynix26nm_vender_set_param(void *, unsigned char *,
+				      unsigned char *, unsigned int);
+#endif
 
 struct nftl_chip_block_ops {
 	unsigned char before_callbacks[88];
@@ -3551,12 +3569,11 @@ extern int hynix20nm_lsb_init(struct hynix20nm_lsb_chip *chip);
 extern int hynix20nm_vender_set_param(void *chip, unsigned char *values,
 				     unsigned char *addresses,
 				     unsigned int count);
+#ifdef TRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD
 int hynix20nm_lsb_enable(void *chip)
 {
-	struct {
-		unsigned char values[4];
-		unsigned int index;
-	} locals;
+	unsigned char values[4];
+	unsigned int index;
 
 	/* OEM ignores both vendor transfer results. The shared defaults are
 	 * overwritten by the read before the LSB offsets are applied. */
@@ -3564,20 +3581,21 @@ int hynix20nm_lsb_enable(void *chip)
 				   hynix20nm_lsb_mode_reg_adr,
 				   hynix20nm_lsb_mode_reg_num);
 	/* OEM trusts the mutable register count even when it exceeds the
-	 * four-byte destination and source tables. */
-	for (locals.index = 0; locals.index < hynix20nm_lsb_mode_reg_num;
-	     locals.index++) {
-		locals.values[locals.index] =
-			hynix20nm_lsb_mode_default_val[locals.index];
-		locals.values[locals.index] =
-			locals.values[locals.index] +
-			hynix20nm_lsb_mode_val[locals.index];
+	 * four-byte destination and source tables. The fifth destination byte
+	 * aliases the stack index and can change the next iteration. */
+	for (index = 0; index < hynix20nm_lsb_mode_reg_num;
+	     index++) {
+		values[index] = hynix20nm_lsb_mode_default_val[index];
+		values[index] = values[index] + hynix20nm_lsb_mode_val[index];
 	}
-	hynix20nm_vender_set_param(chip, locals.values,
+	hynix20nm_vender_set_param(chip, values,
 				   hynix20nm_lsb_mode_reg_adr,
 				   hynix20nm_lsb_mode_reg_num);
 	return 0;
 }
+#else
+extern int hynix20nm_lsb_enable(void *chip);
+#endif
 extern unsigned char hynix26nm_lsb_mode_reg_num;
 extern unsigned char hynix26nm_lsb_mode_reg_adr[];
 extern unsigned char hynix26nm_lsb_mode_default_val[];
@@ -3669,13 +3687,12 @@ extern int hynix26nm_vender_set_param(void *chip, unsigned char *values,
 				     unsigned char *addresses,
 				     unsigned int count);
 /* The stock body has no canary despite its unchecked local array index. */
+#ifdef TRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix26nm_lsb_enable(void *chip)
 {
-	struct {
-		unsigned char values[12];
-		unsigned int index;
-	} locals;
+	unsigned char values[12];
+	unsigned int index;
 
 	/* OEM ignores both vendor transfer results and trusts the mutable
 	 * count, which can index beyond the five-byte global tables. The
@@ -3683,19 +3700,19 @@ int hynix26nm_lsb_enable(void *chip)
 	hynix26nm_vender_get_param(chip, hynix26nm_lsb_mode_default_val,
 				   hynix26nm_lsb_mode_reg_adr,
 				   hynix26nm_lsb_mode_reg_num);
-	for (locals.index = 0; locals.index < hynix26nm_lsb_mode_reg_num;
-	     locals.index++) {
-		locals.values[locals.index] =
-			hynix26nm_lsb_mode_default_val[locals.index];
-		locals.values[locals.index] =
-			locals.values[locals.index] +
-			hynix26nm_lsb_mode_val[locals.index];
+	for (index = 0; index < hynix26nm_lsb_mode_reg_num;
+	     index++) {
+		values[index] = hynix26nm_lsb_mode_default_val[index];
+		values[index] = values[index] + hynix26nm_lsb_mode_val[index];
 	}
-	hynix26nm_vender_set_param(chip, locals.values,
+	hynix26nm_vender_set_param(chip, values,
 				   hynix26nm_lsb_mode_reg_adr,
 				   hynix26nm_lsb_mode_reg_num);
 	return 0;
 }
+#else
+extern int hynix26nm_lsb_enable(void *chip);
+#endif
 
 int hynix20nm_lsb_disable(void *chip)
 {
