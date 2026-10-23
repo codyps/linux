@@ -6343,9 +6343,15 @@ int gc_win_block(struct gc_win_zone *zone, unsigned short blocks)
 	locals.progress = 0;
 	locals.limit = (int)((unsigned int)blocks * zone->chip->pages_per_block);
 	while ((int)locals.progress < locals.limit) {
+		register int count asm("w1");
+
 		if (!zone->current)
 			return 0;
-		locals.progress = zone->current->count + locals.progress;
+		/* OEM loads the 16-bit count into w1 before progress into w0,
+		 * then performs a signed ADD followed by a separate decrement. */
+		count = zone->current->count;
+		asm("" : "+r"(count));
+		locals.progress = locals.progress + count;
 		locals.progress--;
 		locals.result = gc_one((struct gc_one_zone *)zone, 1);
 		if (locals.result) {
