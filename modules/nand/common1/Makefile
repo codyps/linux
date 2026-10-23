@@ -59,6 +59,7 @@ obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix16nm_write_page_FF.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix20nm_vender_get_param_otp_hynix.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_recover_phy_page_mapping.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_get_spare_data.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_crc16_pair.o
 endif
 CFLAGS_nftl_recovered.o += -O0 -fno-builtin -fno-pic -mcmodel=small -DTRIMUI_NFTL_GCC7_PASS
 # The stock NFTL object identifies Linaro GCC 5.3.1 (2016.05). These
@@ -116,6 +117,7 @@ $(obj)/nftl_gcc53_hynix16nm_write_page_FF.o: override CC := python3 $(srctree)/s
 $(obj)/nftl_gcc53_hynix20nm_vender_get_param_otp_hynix.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix20nm_vender_get_param_otp_hynix --
 $(obj)/nftl_gcc53_recover_phy_page_mapping.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) recover_phy_page_mapping --
 $(obj)/nftl_gcc53_get_spare_data.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) get_spare_data --
+$(obj)/nftl_gcc53_crc16_pair.o: override CC := $(TRIMUI_NFTL_GCC53)
 nftl_gcc53_objects := $(addprefix $(obj)/,nftl_cache_init_gcc53.o nftl_sector_cache_init_gcc53.o nftl_invalid_page_incr_gcc53.o nftl_micron_init_gcc53.o nftl_copy_page_gcc53.o nftl_gcc53_dump_buf.o nftl_gcc53_nftl_read.o nftl_gcc53_nftl_write.o nftl_gcc53_nftl_discard.o nftl_gcc53_samsung_readretry_init.o nftl_gcc53_toshiba_readretry_init.o nftl_gcc53_sandisk_A19_readretry_init.o nftl_gcc53_get_logic_page_map.o nftl_gcc53_nftl_support_boot_check_crc_from_dts.o nftl_gcc53_gc_all_enhance.o nftl_gcc53_out_phy_block_from_free_list.o nftl_gcc53_out_phy_block_from_free_list_by_block.o nftl_gcc53_get_cold_logic_page.o nftl_gcc53_fill_no_use_data_to_current_block.o nftl_gcc53_set_oob_logic_page.o nftl_gcc53_hynix26nm_getdefaultparam.o nftl_gcc53_hynix16nm_set_readretry.o nftl_gcc53_sandisk_readretry_init.o)
 nftl_gcc53_objects += $(addprefix $(obj)/,$(nftl_special_objects))
 nftl_gcc53_objects += $(addprefix $(obj)/,nftl_gcc53_nand_dbg_phy_read.o nftl_gcc53_nand_dbg_zone_phy_read.o)
@@ -131,6 +133,7 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix16nm_write_page_FF.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix20nm_vender_get_param_otp_hynix.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_recover_phy_page_mapping.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_get_spare_data.o
+nftl_gcc53_objects += $(obj)/nftl_gcc53_crc16_pair.o
 $(nftl_gcc53_objects): override NOSTDINC_FLAGS := -nostdinc -isystem $(shell $(TRIMUI_NFTL_GCC53) -print-file-name=include)
 $(nftl_gcc53_objects): $(srctree)/scripts/trimui_nftl_select_cc.py
 CFLAGS_nftl_cache_init_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
@@ -184,6 +187,7 @@ CFLAGS_nftl_gcc53_hynix16nm_write_page_FF.o += -O0 -fno-builtin -fno-pic -mcmode
 CFLAGS_nftl_gcc53_hynix20nm_vender_get_param_otp_hynix.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_recover_phy_page_mapping.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_get_spare_data.o += -O0 -fno-builtin -fno-pic -mcmodel=small -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_crc16_pair.o += -O0 -fno-builtin -fno-pic -mcmodel=small
 CFLAGS_nftl_tables_recovered.o += -O0
 CFLAGS_nftl_bss_recovered.o += -O0
 CFLAGS_nftl_rodata_recovered.o += -O0

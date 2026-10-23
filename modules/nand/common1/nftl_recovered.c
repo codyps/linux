@@ -3194,26 +3194,8 @@ int prio_gc_all(void *zone)
 	return result;
 }
 
-/* OEM NFTL CRC16 helper; lookup data lives in the stock-ordered C pool. */
-extern const unsigned short nand_crc16_table[256];
-
-/* The compiler uses AND #0xffff at two sites where stock uses UXTH.
- * Both keep the same low halfword; the table and all other instructions
- * are verified against the retained stock object. */
-static unsigned short nand_crc16_byte(unsigned short crc, unsigned char value)
-{
-	return (crc >> 8) ^ nand_crc16_table[(crc ^ value) & 0xff];
-}
-
 unsigned short nand_crc16(unsigned short crc, const unsigned char *data,
-			  unsigned int length)
-{
-	/* OEM decrements the 32-bit count until zero. A negative caller count
-	 * becomes a huge unsigned span and can read well beyond the buffer. */
-	while (length--)
-		crc = nand_crc16_byte(crc, *data++);
-	return crc;
-}
+			  unsigned int length);
 
 /* Isolated C equivalents for four NFTL bodies, not original type claims. */
 
