@@ -11571,6 +11571,7 @@ int nand_op(unsigned char kind, struct nand_op_zone *zone,
 	int result;
 	unsigned int (*operation)(void *, unsigned int, unsigned short,
 				  unsigned char *);
+	register unsigned int update asm("w1");
 
 	result = 0;
 	if (!count)
@@ -11613,13 +11614,19 @@ int nand_op(unsigned char kind, struct nand_op_zone *zone,
 		packed = take;
 		count -= zone->geometry->sectors_per_page;
 		previous = zone->geometry->sectors_per_page;
-		result |= operation(zone, first_page, packed, cursor);
+		/* OEM keeps the callback result in w1 and the accumulated result
+		 * in w0 for this OR, including callback error values. */
+		update = operation(zone, first_page, packed, cursor);
+		asm("" : "+r"(update));
+		result |= update;
 	}
 	take = count;
 	first_page++;
 	cursor += previous << 9;
 	packed = take;
-	result |= operation(zone, first_page, packed, cursor);
+	update = operation(zone, first_page, packed, cursor);
+	asm("" : "+r"(update));
+	result |= update;
 	return result;
 }
 #else
