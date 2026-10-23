@@ -578,7 +578,8 @@ unsigned short nftl_get_bad_block_cnt(struct nftl_small_owner *owner)
 
 extern void nand_free(void *object);
 
-#ifndef TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_CACHE_EXIT_GCC53_BUILD)
 void nftl_free(void *object)
 {
 	nand_free(object);
@@ -3459,6 +3460,7 @@ int nand_cache_read(struct nand_cache_read_zone *zone, int page,
 /* GCC's stack-protector pass reorders these two locals even though this
  * function has no canary. Keep the OEM's cache pointer at FP+0x20 and signed
  * index at FP+0x2c; nftl_free callbacks can observe the caller's stack. */
+#ifndef TRIMUI_NFTL_GCC7_PASS
 __attribute__((optimize("-fno-stack-protector")))
 int nftl_cache_exit(void *zone)
 {
@@ -3485,6 +3487,9 @@ int nftl_cache_exit(void *zone)
 	nftl_free(((struct cache_init_data *)cache)->page_buffer);
 	return 0;
 }
+#else
+extern int nftl_cache_exit(void *zone);
+#endif
 
 struct cache_clean_geometry {
 	unsigned char before_slots[22];
