@@ -46,6 +46,8 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 		to_r = (target >> 16) & 255;
 		to_g = (target >> 8) & 255;
 		to_b = target & 255;
+		/* OEM materializes target blue before starting the accumulators. */
+		asm volatile("" : "+r"(to_b));
 		r = n * from_r; g = n * from_g; b = n * from_b;
 		for (i = 0; i < n; i++) {
 			effect->frames[i] = trimui_rgb(r / n, g / n, b / n);
