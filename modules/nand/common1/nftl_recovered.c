@@ -2162,6 +2162,11 @@ extern int hynix16nm_major_check_byte(unsigned char *value,
 				      const unsigned char *primary,
 				      const unsigned char *secondary,
 				      unsigned int length);
+extern int hynix16nm_get_read_retry_cfg(unsigned char *mode,
+					unsigned char *cycle,
+					unsigned char *values, void *raw_buffer);
+extern int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone);
+#ifndef TRIMUI_NFTL_HYNIX16_GETOTP_GCC53_BUILD
 /* OEM's 144-byte frame has no stack canary around its OTP vote buffers. */
 __attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
@@ -2251,12 +2256,19 @@ int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone)
 	nand_free_temp_buf(buffer);
 	return result;
 }
+#endif
+extern int hynix16nm_get_otp_param(struct hynix16nm_otp_zone *zone,
+				   unsigned char *values);
+#ifdef TRIMUI_NFTL_HYNIX16_GETOTP_GCC53_BUILD
 int hynix16nm_get_otp_param(struct hynix16nm_otp_zone *zone,
 			    unsigned char *values)
 {
 	/* Keep the five OEM scalar slots together in their original frame order.
 	 * The retry loop remains unbounded when the OTP helper keeps failing. */
 	struct {
+		/* Stock starts result at FP+0x2c; this unused word preserves
+		 * the original stack slots under the OEM GCC 5.3 compiler. */
+		unsigned int unused_before_result;
 		int result;
 		unsigned int complete;
 		unsigned int attempt;
@@ -2284,6 +2296,7 @@ int hynix16nm_get_otp_param(struct hynix16nm_otp_zone *zone,
 	}
 	return 0;
 }
+#endif
 extern unsigned char sandisk_acti_start_cmd[2];
 extern unsigned char sandisk_read_retry_mode;
 extern unsigned char sandisk_read_retry_cycle;
