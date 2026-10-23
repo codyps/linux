@@ -3450,6 +3450,7 @@ struct cache_clean_zone {
 	unsigned char before_geometry[3448];
 	struct cache_clean_geometry *geometry;
 };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int nftl_cache_clean(struct cache_clean_zone *zone)
 {
 	struct cache_init_data *cache = (void *)zone + 1072;
@@ -3482,6 +3483,9 @@ int nftl_cache_clean(struct cache_clean_zone *zone)
 	}
 	return 0;
 }
+#else
+extern int nftl_cache_clean(struct cache_clean_zone *zone);
+#endif
 
 struct nftl_zone_storage_view {
 	unsigned char before_allocation[32];
