@@ -5215,21 +5215,28 @@ _Static_assert(__builtin_offsetof(struct first_list_zone, is_good) == 3488,
 __attribute__((optimize("-fno-stack-protector")))
 int build_zone_list_first(struct first_list_zone *zone, unsigned int number)
 {
-	struct first_list_block *block = zone->cursor;
-	struct physic_op_param op;
-	unsigned char oob[16];
 	unsigned int limit;
 	unsigned int page;
 	int result;
+	/* Declaration order recovers the stock scalar and operation slots.
+	 * The OOB array remains four bytes above its stock stack address. */
+	struct first_list_block *block;
+	unsigned char oob[16];
+	struct physic_op_param op;
 
 	nand_print_dbg(nftl_ro_lc_209);
+	/* OEM loads cursor after the debug callback; that callback can change
+	 * the initial block before the scan begins. */
+	block = zone->cursor;
 	/* OEM performs two unguarded divisions, including when either divisor
 	 * is zero. Keep this crash behavior until stock compatibility ends. */
-	if (zone->logical_pages)
+	if (zone->logical_pages) {
 		limit = (zone->logical_pages + zone->extra_pages) /
-			zone->geometry->factor / zone->geometry->pages;
-	else
+			zone->geometry->factor;
+		limit /= zone->geometry->pages;
+	} else {
 		limit = ~0U;
+	}
 	zone->count = 0;
 	while (zone->count < limit) {
 		zone->last = block;
