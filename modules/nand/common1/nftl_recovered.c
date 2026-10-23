@@ -3004,6 +3004,7 @@ struct hynix_default_chip {
 	unsigned char before_channel[240];
 	struct hynix_default_channel *channel;
 };
+#ifndef TRIMUI_NFTL_HYNIX26_INIT_GCC53_BUILD
 int hynix26nm_get_default_param(struct hynix_default_chip *chip)
 {
 	/* Eight-byte alignment keeps the scratch bytes at OEM frame offset 40. */
@@ -3018,6 +3019,9 @@ int hynix26nm_get_default_param(struct hynix_default_chip *chip)
 	hynix26nm_setdefaultparam(chip);
 	return 0;
 }
+#else
+extern int hynix26nm_get_default_param(struct hynix_default_chip *chip);
+#endif
 extern unsigned char hynix26nm_read_retry_reg_num;
 extern unsigned char hynix26nm_read_retry_reg_adr[4];
 struct hynix_saved_chip {
@@ -11699,10 +11703,9 @@ struct hynix26nm_init_chip {
 	unsigned char before_params[280 - 188];
 	struct hynix26nm_lsb_params *params;
 };
-#ifndef TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD
+#ifdef TRIMUI_NFTL_HYNIX26_INIT_GCC53_BUILD
 int hynix26nm_readretry_init(struct hynix26nm_init_chip *chip)
 {
-	const short *table;
 	unsigned int row, column;
 
 	/* Stock reloads the nested specification for each field and trusts
@@ -11715,27 +11718,31 @@ int hynix26nm_readretry_init(struct hynix26nm_init_chip *chip)
 		hynix26nm_read_retry_reg_adr[1] = 0xad;
 		hynix26nm_read_retry_reg_adr[2] = 0xae;
 		hynix26nm_read_retry_reg_adr[3] = 0xaf;
-		table = hynix26nm_para0_recovered;
+		/* OEM keeps a distinct unchecked copy loop for each mode. */
+		for (row = 0; row < (unsigned int)hynix26nm_read_retry_cycle + 1;
+		     row++)
+			for (column = 0; column < hynix26nm_read_retry_reg_num;
+			     column++)
+				hynix26nm_read_retry_val[row * 4 + column] =
+					hynix26nm_para0_recovered[row * 4 + column];
 	} else if (hynix26nm_read_retry_mode == 1) {
 		hynix26nm_read_retry_reg_adr[0] = 0xa7;
 		hynix26nm_read_retry_reg_adr[1] = 0xad;
 		hynix26nm_read_retry_reg_adr[2] = 0xae;
 		hynix26nm_read_retry_reg_adr[3] = 0xaf;
-		table = hynix26nm_para1_recovered;
+		for (row = 0; row < (unsigned int)hynix26nm_read_retry_cycle + 1;
+		     row++)
+			for (column = 0; column < hynix26nm_read_retry_reg_num;
+			     column++)
+				hynix26nm_read_retry_val[row * 4 + column] =
+					hynix26nm_para1_recovered[row * 4 + column];
 	} else {
 		nand_print(nftl_ro_lc_64,
 			   hynix26nm_read_retry_mode);
 		return -54;
 	}
-	/* OEM loops through cycle+1 rows and register-count columns, but the
-	 * source rows have only four entries and the destination has 28.
-	 * Preserve its unchecked crossing of row and table boundaries. */
-	for (row = 0; row < (unsigned int)hynix26nm_read_retry_cycle + 1;
-	     row++)
-		for (column = 0; column < hynix26nm_read_retry_reg_num;
-		     column++)
-			hynix26nm_read_retry_val[row * 4 + column] =
-				table[row * 4 + column];
+	/* OEM's source rows have only four entries and its destination has 28;
+	 * both loops above can cross those bounds when global counts change. */
 	chip->retry = 0;
 	for (row = 0; row < 128; row++)
 		chip->saved[row] = 0;
@@ -11743,7 +11750,9 @@ int hynix26nm_readretry_init(struct hynix26nm_init_chip *chip)
 	hynix26nm_get_default_param((struct hynix_default_chip *)chip);
 	return 0;
 }
-#endif /* TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD */
+#else
+extern int hynix26nm_readretry_init(struct hynix26nm_init_chip *chip);
+#endif
 
 struct nftl_clean_geometry {
 	unsigned char before_sectors[8];
