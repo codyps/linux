@@ -890,9 +890,16 @@ static ssize_t show_frames_len(struct class *class, struct class_attribute *attr
 	return sprintf(buffer, "%d\n", trimui_frames_len);
 }
 
+/* This view starts eight bytes before the LED state and roots the nearby
+ * scalar setters at the same BSS address used by the stock callbacks. */
+struct trimui_frame_control_view { u8 unused[0x14]; int enable,cycles,fps,len; };
+extern struct trimui_frame_control_view trimui_frame_controls;
+
 static ssize_t store_frames_len(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_frames_len);
+	struct trimui_frame_control_view *control = &trimui_frame_controls;
+	asm volatile("" : "+r"(control));
+	kstrtoint(buffer, 0, &control->len);
 	return count;
 }
 
@@ -903,7 +910,9 @@ static ssize_t show_frames_fps(struct class *class, struct class_attribute *attr
 
 static ssize_t store_frames_fps(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_frames_fps);
+	struct trimui_frame_control_view *control = &trimui_frame_controls;
+	asm volatile("" : "+r"(control));
+	kstrtoint(buffer, 0, &control->fps);
 	return count;
 }
 
@@ -914,14 +923,12 @@ static ssize_t show_frames_cycles(struct class *class, struct class_attribute *a
 
 /* Compatible address views, not independent allocations or recovered types.
  * Only the explicitly rooted control/counter fields are accessed. */
-struct trimui_frame_control_view { u8 unused[0x14]; int enable,cycles,fps,len; };
 struct trimui_frame_counter_view { u8 unused[0x9d0]; int index,left; };
 /* Voltage and regulator share the same stock BSS root as the frame counters. */
 struct trimui_motor_state_view {
  u8 unused[0x9d8]; int voltage;
  struct regulator *regulator;
 };
-extern struct trimui_frame_control_view trimui_frame_controls;
 extern struct trimui_frame_counter_view trimui_frame_counters;
 extern struct trimui_motor_state_view trimui_motor_state;
 __asm__(".local trimui_frame_controls\n.type trimui_frame_controls,%object\n.set trimui_frame_controls,trimui_led_state-8\n.size trimui_frame_controls,36\n"
