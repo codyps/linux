@@ -2282,8 +2282,14 @@ int hynix16nm_get_otp_param(struct hynix16nm_otp_zone *zone,
 	/* OEM retries forever when OTP parsing never returns zero; keep the
 	 * unbounded loop for stock behavior. */
 	while (local.complete == 0) {
-		nand_print_dbg(nftl_ro_lc_54,
-			       local.attempt);
+		/* Keep the OEM diagnostic argument schedule: form the format
+		 * address in x0 before loading the private retry slot into w1.
+		 * GCC 5.3 otherwise reverses these independent preparations.
+		 */
+		register const char *message asm("x0") = nftl_ro_lc_54;
+		register unsigned int attempt asm("w1") = local.attempt;
+
+		nand_print_dbg(message, attempt);
 		local.result = hynix16nm_get_rr_value_otp_hynix(zone);
 		if (local.result == 0)
 			local.complete = 1;
