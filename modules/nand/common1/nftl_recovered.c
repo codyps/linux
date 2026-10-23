@@ -11233,10 +11233,10 @@ struct nftl_gc_info_frame {
 	struct nftl_gc_info_geometry *geometry;
 	struct nftl_gc_info_node *node;
 	unsigned int unused_after_node;
-	unsigned int high_invalid;
-	unsigned int high_count;
 	unsigned int total_invalid;
+	unsigned int high_invalid;
 	unsigned int total_count;
+	unsigned int high_count;
 	int written;
 };
 int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
@@ -11246,15 +11246,25 @@ int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
 
 	frame.written = 0;
 	frame.geometry = zone->geometry;
-	frame.total_invalid = frame.total_count = frame.high_count =
-		frame.high_invalid = 0;
+	/* Match OEM private slots at FP+0x4c/+0x50/+0x54/+0x58. */
+	frame.total_count = frame.high_count = frame.high_invalid =
+		frame.total_invalid = 0;
 	for (frame.node = zone->list; frame.node; frame.node = frame.node->next) {
 		if (frame.node->invalid_pages > frame.geometry->pages_per_block / 2) {
-			frame.high_invalid += frame.node->invalid_pages;
+			/* Stock loads the page count before the accumulator. */
+			register unsigned int invalid asm("w1") =
+				frame.node->invalid_pages;
+
+			frame.high_invalid += invalid;
 			frame.high_count++;
 		}
 		frame.total_count++;
-		frame.total_invalid += frame.node->invalid_pages;
+		{
+			register unsigned int invalid asm("w1") =
+				frame.node->invalid_pages;
+
+			frame.total_invalid += invalid;
+		}
 	}
 	frame.written = nand_snprint(buffer, size,
 			       nftl_ro_lc_468,
@@ -11276,7 +11286,9 @@ int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
 			buffer[(long)frame.written - 1] = '\n';
 	}
 	/* OEM writes before the buffer when the first formatter returns zero
-	 * and trusts its return even if it exceeds the remaining size. */
+	 * and trusts its return even if it exceeds the remaining size. A
+	 * corrective version should validate written and remaining capacity
+	 * before either newline store; retain the shipped writes here. */
 	buffer[(long)frame.written - 1] = '\n';
 	return frame.written;
 }
