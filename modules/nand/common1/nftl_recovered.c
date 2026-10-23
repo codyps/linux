@@ -9729,20 +9729,17 @@ void clean_read_reclaim_complete_flag(struct read_claim_node *head)
 	struct read_claim_node *node = head;
 
 	while (node) {
-		/* OEM reads the zone pointer twice, destination before source.
-		 * These volatile reads preserve the order even if another actor
-		 * changes the node between them. Neither pointer is checked.
-		 * A direct node->zone->complete assignment compiles to the stock
-		 * size but GCC evaluates its source pointer first, losing the OEM
-		 * destination-before-source behavior on a racing pointer change. */
-		struct read_claim_zone *const volatile *slot =
-			(struct read_claim_zone *const volatile *)&node->zone;
-		struct reclaim_flag_zone *destination =
-			(struct reclaim_flag_zone *)*slot;
-		struct reclaim_flag_zone *source =
-			(struct reclaim_flag_zone *)*slot;
+		register struct reclaim_flag_zone *destination asm("x0");
 
-		destination->complete = source->complete == 0;
+		/* OEM reads node->zone twice, destination first, and does not
+		 * check either pointer. Binding the first read preserves this
+		 * order without the extra private stack slots of a volatile slot.
+		 * A concurrent pointer change can still write a different zone;
+		 * TODO: synchronize it in a separate corrective change. */
+		destination = (struct reclaim_flag_zone *)node->zone;
+		asm("" : "+r"(destination));
+		destination->complete =
+			((struct reclaim_flag_zone *)node->zone)->complete == 0;
 		node = node->next;
 	}
 }
