@@ -5226,10 +5226,10 @@ int build_zone_list_first(struct first_list_zone *zone, unsigned int number)
 	unsigned int limit;
 	unsigned int page;
 	int result;
-	/* Declaration order recovers the stock scalar and operation slots.
-	 * The OOB array remains four bytes above its stock stack address. */
+	/* Stock passes the OOB pointer at FP+0x38. A twenty-byte local places
+	 * it there; callbacks and memset use only the first sixteen bytes. */
 	struct first_list_block *block;
-	unsigned char oob[16];
+	unsigned char oob[20];
 	struct physic_op_param op;
 
 	nand_print_dbg(nftl_ro_lc_209);
