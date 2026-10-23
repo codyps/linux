@@ -3996,6 +3996,7 @@ struct otp_chip {
 	unsigned char before_saved[0x38];
 	unsigned char saved[64];
 };
+#ifndef TRIMUI_NFTL_HYNIX16_PARAM_GCC53_BUILD
 void hynix16nm_save_otp_value(struct otp_chip *chip,
 			      const unsigned char *value)
 {
@@ -4005,6 +4006,10 @@ void hynix16nm_save_otp_value(struct otp_chip *chip,
 	for (index = 0; index < 32; index++)
 		chip->saved[index] = value[index];
 }
+#else
+extern void hynix16nm_save_otp_value(struct otp_chip *,
+				     const unsigned char *);
+#endif
 
 /* OEM copies all 64 bytes without checking either pointer or extent. */
 #ifndef TRIMUI_NFTL_HYNIX20_PARAM_GCC53_BUILD
@@ -4035,72 +4040,79 @@ struct hynix16nm_readretry_zone {
 extern int hynix16nm_get_special_info(unsigned char *buffer,
 				      void *destination, unsigned int bytes,
 				      unsigned int index);
-#ifndef TRIMUI_NFTL_SMALL_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_GCC7_PASS)
 __attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_init_readretry_param(struct hynix16nm_readretry_zone *zone)
 {
 	/* The OEM reserves 64 bytes for the fallback OTP table even though its
 	 * helper currently copies only 32. Retain the observed unused slots and
 	 * zero-store order; callbacks can inspect the caller's private frame. */
+	unsigned int index;
+	unsigned int unused_before_index;
+	unsigned char *page_buffer;
+	int result;
+	unsigned int unused_before_result;
+	unsigned char *copy_buffer;
+	unsigned char otp_values[64];
 	struct {
-		unsigned int unused_status[10];
-		unsigned char otp_values[64];
-		unsigned char *copy_buffer;
-		unsigned int unused_before_result;
-		int result;
-		unsigned char *page_buffer;
-		unsigned int unused_before_index;
-		unsigned int index;
-	} frame;
+		unsigned int first[4];
+		unsigned long long tail;
+	} status_second;
+	unsigned int status_first[4];
 
-	frame.index = 0;
-	frame.page_buffer = 0;
-	frame.result = 0;
-	frame.copy_buffer = 0;
-	__builtin_memset(frame.unused_status, 0, sizeof(frame.unused_status));
+	index = 0;
+	page_buffer = 0;
+	result = 0;
+	copy_buffer = 0;
+	__builtin_memset(status_first, 0, sizeof(status_first));
+	__builtin_memset(status_second.first, 0, sizeof(status_second.first));
+	status_second.tail = 0;
 
 	/* OEM multiplies the untrusted page count in 32 bits, with no overflow
 	 * check, and returns silently if the first allocation fails. */
-	frame.page_buffer = nand_get_temp_buf(zone->params->page_count << 9);
-	if (!frame.page_buffer)
+	page_buffer = nand_get_temp_buf(zone->params->page_count << 9);
+	if (!page_buffer)
 		return -77;
-	frame.copy_buffer = nand_get_temp_buf(32768);
-	if (!frame.copy_buffer) {
-		nand_free_temp_buf(frame.page_buffer);
+	copy_buffer = nand_get_temp_buf(32768);
+	if (!copy_buffer) {
+		nand_free_temp_buf(page_buffer);
 		nand_print(nftl_ro_lc_59);
 		return -76;
 	}
-	frame.result = 0;
-	frame.result = hynix16nm_get_special_info(frame.copy_buffer,
-						frame.page_buffer, 32, zone->chip);
-	if (!frame.result) {
+	result = 0;
+	result = hynix16nm_get_special_info(copy_buffer,
+						page_buffer, 32, zone->chip);
+	if (!result) {
 		/* Stock prints the zero-initialized scratch word as the chip
 		 * number here, rather than the zone's chip field. */
 		nand_print_dbg(nftl_ro_lc_128,
-			       zone->controller->channel, frame.unused_status[0]);
-		for (frame.index = 0; frame.index <= 31; frame.index++) {
-			nand_print_dbg(nftl_ro_lc_61, frame.page_buffer[frame.index]);
-			if ((frame.index & 7) == 7)
+			       zone->controller->channel, status_first[0]);
+		for (index = 0; index <= 31; index++) {
+			nand_print_dbg(nftl_ro_lc_61, page_buffer[index]);
+			if ((index & 7) == 7)
 				nand_print_dbg(nftl_ro_lc_45);
 		}
 		hynix16nm_save_otp_value((struct otp_chip *)zone,
-					 frame.page_buffer);
+					 page_buffer);
 		hynix16nm_set_default_param(zone);
 	} else {
 		nand_print_dbg(nftl_ro_lc_62,
 			       zone->controller->channel);
 		/* OEM ignores both fallback and default-program results. */
 		hynix16nm_get_otp_param((struct hynix16nm_otp_zone *)zone,
-					frame.otp_values);
+					otp_values);
 		hynix16nm_set_default_param(zone);
 		nand_print_dbg(nftl_ro_lc_129,
-			       zone->controller->channel, frame.unused_status[0]);
+			       zone->controller->channel, status_first[0]);
+		/* Preserve the OEM fallback-path NOP before buffer cleanup. */
+		asm volatile("nop");
 	}
-	nand_free_temp_buf(frame.copy_buffer);
-	nand_free_temp_buf(frame.page_buffer);
+	nand_free_temp_buf(copy_buffer);
+	nand_free_temp_buf(page_buffer);
 	return 0;
 }
-#endif /* TRIMUI_NFTL_SMALL_GCC53_BUILD */
+#endif /* Hynix16 parameter body, built by the selected GCC 5.3 pass */
 
 struct hynix20nm_readretry_zone {
 	unsigned char before_chip[24];
@@ -10193,7 +10205,8 @@ extern int physic_info_get_offset(unsigned int *offset);
 extern int physic_info_get_one_copy(unsigned int block, unsigned int offset,
 				    unsigned int *scratch, unsigned char *buffer);
 #if !defined(TRIMUI_NFTL_GCC7_PASS) && \
-    !defined(TRIMUI_NFTL_HYNIX20_PARAM_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_HYNIX20_PARAM_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_HYNIX16_PARAM_GCC53_BUILD)
 /* The OEM page has an 8 KiB data area followed by the spare area. */
 struct hynix_special_page_view {
 	unsigned char data[8192];
