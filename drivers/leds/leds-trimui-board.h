@@ -813,6 +813,14 @@ static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr
 	return count;
 }
 
+/* This view begins eight bytes before the LED state. The adjacent scalar
+ * fields share the address root used by the stock sysfs setters. */
+struct trimui_frame_control_view {
+	u8 unused[0x14];
+	int enable, cycles, fps, len, effect_enable;
+};
+extern struct trimui_frame_control_view trimui_frame_controls;
+
 static ssize_t show_effect_enable(struct class *class, struct class_attribute *attr, char *buffer)
 {
 	return sprintf(buffer, "%d\n", trimui_effect_enable);
@@ -820,7 +828,9 @@ static ssize_t show_effect_enable(struct class *class, struct class_attribute *a
 
 static ssize_t store_effect_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_enable);
+	struct trimui_frame_control_view *control = &trimui_frame_controls;
+	asm volatile("" : "+r"(control));
+	kstrtoint(buffer, 0, &control->effect_enable);
 	return count;
 }
 
@@ -890,11 +900,6 @@ static ssize_t show_frames_len(struct class *class, struct class_attribute *attr
 	return sprintf(buffer, "%d\n", trimui_frames_len);
 }
 
-/* This view starts eight bytes before the LED state and roots the nearby
- * scalar setters at the same BSS address used by the stock callbacks. */
-struct trimui_frame_control_view { u8 unused[0x14]; int enable,cycles,fps,len; };
-extern struct trimui_frame_control_view trimui_frame_controls;
-
 static ssize_t store_frames_len(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	struct trimui_frame_control_view *control = &trimui_frame_controls;
@@ -931,7 +936,7 @@ struct trimui_motor_state_view {
 };
 extern struct trimui_frame_counter_view trimui_frame_counters;
 extern struct trimui_motor_state_view trimui_motor_state;
-__asm__(".local trimui_frame_controls\n.type trimui_frame_controls,%object\n.set trimui_frame_controls,trimui_led_state-8\n.size trimui_frame_controls,36\n"
+__asm__(".local trimui_frame_controls\n.type trimui_frame_controls,%object\n.set trimui_frame_controls,trimui_led_state-8\n.size trimui_frame_controls,40\n"
         ".local trimui_frame_counters\n.type trimui_frame_counters,%object\n.set trimui_frame_counters,trimui_led_state+0x43f8\n.size trimui_frame_counters,0x9d8\n");
 __asm__(".local trimui_motor_state\n.type trimui_motor_state,%object\n.set trimui_motor_state,trimui_led_state+0x43f8\n.size trimui_motor_state,0x9e8\n");
 static ssize_t store_frames_cycles(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
