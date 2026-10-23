@@ -2885,6 +2885,7 @@ int hynix26nm_readretry_exit(struct nftl_retry_chip *chip)
 	return 0;
 }
 
+#ifndef TRIMUI_NFTL_CACHE_GCC53_BUILD
 void *nftl_malloc(unsigned int size)
 {
 	/* OEM warns above 1.5 MiB but still attempts the allocation. */
@@ -2892,6 +2893,7 @@ void *nftl_malloc(unsigned int size)
 		nand_print(nftl_ro_lc_9, size);
 	return nand_malloc(size);
 }
+#endif
 
 struct nftl_sector_cache {
 	unsigned char preceding[8];
@@ -3134,98 +3136,13 @@ struct nftl_cache_entry_view {
 /* The 32 slots and terminal page buffer occupy bytes 8..1807 of the
  * embedded cache. The OEM loop trusts the count from the configuration;
  * it does not cap it at the physical number of slots. */
-struct cache_init_entry {
-	unsigned short index;
-	unsigned short status;
-	unsigned short field0;
-	unsigned short field1;
-	unsigned int page;
-	unsigned int untouched;
-	void *allocation;
-	void *links[4];
-};
-struct cache_init_data {
-	unsigned short count;
-	unsigned short field0;
-	unsigned short field1;
-	unsigned short field2;
-	struct cache_init_entry entries[32];
-	void *page_buffer;
-};
-struct cache_init_geometry {
-	unsigned char before_allocation_size[26];
-	unsigned short allocation_size;
-};
-struct cache_init_configuration {
-	unsigned char before_count[22];
-	unsigned short count;
-};
-struct cache_init_zone {
-	unsigned char before_geometry[8];
-	struct cache_init_geometry *geometry;
-	unsigned char before_cache[1056];
-	struct cache_init_data cache;
-	unsigned char before_configuration[568];
-	struct cache_init_configuration *configuration;
-};
-_Static_assert(sizeof(struct cache_init_entry) == 56, "cache entry stride");
-_Static_assert(__builtin_offsetof(struct cache_init_entry, allocation) == 16,
-	       "cache entry allocation offset");
-_Static_assert(__builtin_offsetof(struct cache_init_data, page_buffer) == 1800,
-	       "cache page buffer offset");
-_Static_assert(__builtin_offsetof(struct cache_init_zone, cache) == 1072,
-	       "zone cache offset");
-_Static_assert(__builtin_offsetof(struct cache_init_zone, configuration) == 3448,
-	       "zone configuration offset");
+#include "nftl_cache_init_layout.h"
 
-int nftl_cache_init(void *owner)
-{
-	struct cache_init_zone *zone = owner;
-	struct cache_init_data *cache = &zone->cache;
-	unsigned int index;
-
-	cache->count = zone->configuration->count;
-	cache->field0 = 0;
-	cache->field1 = 0;
-	cache->field2 = 0;
-	/* These eight slots are also the links of entries 30 and 31. OEM
-	 * clears them before the allocation loop, even when count is zero. */
-	cache->entries[30].links[0] = 0;
-	cache->entries[30].links[1] = 0;
-	cache->entries[30].links[2] = 0;
-	cache->entries[30].links[3] = 0;
-	cache->entries[31].links[0] = 0;
-	cache->entries[31].links[1] = 0;
-	cache->entries[31].links[2] = 0;
-	cache->entries[31].links[3] = 0;
-	/* OEM does not clamp the count to the 32-entry array. Larger counts
-	 * write through following zone fields; preserve the unchecked walk. */
-	for (index = 0; index < cache->count; index++) {
-		cache->entries[index].index = index;
-		cache->entries[index].status = 255;
-		cache->entries[index].page = -1;
-		cache->entries[index].links[0] = 0;
-		cache->entries[index].links[1] = 0;
-		cache->entries[index].links[2] = 0;
-		cache->entries[index].links[3] = 0;
-		cache->entries[index].field0 = 0;
-		cache->entries[index].field1 = 0;
-		cache->entries[index].allocation = nftl_malloc(
-			zone->geometry->allocation_size);
-		if (!cache->entries[index].allocation) {
-			/* OEM leaks all earlier allocations on this failure. */
-			nand_print(nftl_ro_lc_413, nftl_ro_func_7884);
-			return 1;
-		}
-	}
-	cache->page_buffer = nftl_malloc(zone->geometry->allocation_size);
-	if (!cache->page_buffer) {
-		/* OEM leaves the node allocations live on this failure. */
-		nand_print(nftl_ro_lc_414, nftl_ro_func_7884);
-		return 1;
-	}
-	return 0;
-}
+#ifdef TRIMUI_NFTL_CACHE_GCC53_BUILD
+#include "nftl_cache_init_impl.h"
+#else
+int nftl_cache_init(struct cache_init_zone *zone);
+#endif
 
 struct nand_cache_read_geometry {
 	unsigned char before_sectors[8];
@@ -4496,7 +4413,7 @@ int nand_find_zone_table(void *zone)
 	nand_print_dbg(nftl_ro_lc_388);
 	build_zone_list(current);
 	nand_print_dbg(nftl_ro_lc_389);
-	nftl_cache_init(current);
+	nftl_cache_init((struct cache_init_zone *)current);
 	nand_print_dbg(nftl_ro_lc_390);
 	print_block_invalid_list(current);
 	print_free_list(current);
@@ -6933,7 +6850,7 @@ int nftl_start(struct init_nftl_owner *owner, struct init_nftl_config *config,
 		result = build_zone_list((struct build_zone *)zone);
 		if (!result) {
 			/* OEM ignores cache-initialization failures. */
-			nftl_cache_init(zone);
+			nftl_cache_init((struct cache_init_zone *)zone);
 			return 0;
 		}
 		nand_print(nftl_ro_lc_481);

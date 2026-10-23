@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+"""Compile the OEM NFTL initializer, retaining only its live ELF sections.
+
+The recovered C translation unit also supplies functions already compiled by
+the regular kernel compiler.  A GCC 5.3.1 pass is needed for the exact stock
+cache initializer, so discard every other function from this pass before link.
+"""
+
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+
+
+def main():
+    compiler, linker, objcopy = sys.argv[1:4]
+    flags = sys.argv[5:]  # argv[4] is the separating '--'.
+    if sys.argv[4] != '--' or '-o' not in flags:
+        raise SystemExit('expected compiler linker objcopy -- ... -o OUTPUT')
+    target = Path(flags[flags.index('-o') + 1])
+    with tempfile.TemporaryDirectory(prefix='.nftl-cache-', dir=target.parent) as tmp:
+        tmp = Path(tmp)
+        whole = tmp / 'whole.o'
+        retained = tmp / 'retained.o'
+        final = tmp / 'final.o'
+        compile_flags = flags.copy()
+        compile_flags[compile_flags.index('-o') + 1] = str(whole)
+        subprocess.run([compiler, *compile_flags], check=True)
+        subprocess.run([linker, '-r', '--gc-sections',
+                        '--entry=nftl_cache_init', '-o', str(retained),
+                        str(whole)], check=True)
+        # ld -r retains irrelevant undefined symbols in the symbol table even
+        # after discarding their sections. Drop those unreferenced names.
+        subprocess.run([objcopy, '--strip-unneeded', str(retained),
+                        str(final)], check=True)
+        os.replace(final, target)
+
+
+if __name__ == '__main__':
+    main()
