@@ -68,6 +68,7 @@ obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix_lsb_init_pair.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix_lsb_enable_pair.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix_default_pair.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix20_retry.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix20_init.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_panic_write.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_eval_order_three.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_eval_cache_three.o
@@ -137,6 +138,7 @@ $(obj)/nftl_gcc53_hynix_lsb_init_pair.o: override CC := python3 $(srctree)/scrip
 $(obj)/nftl_gcc53_hynix_lsb_enable_pair.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix20nm_lsb_enable,hynix26nm_lsb_enable --
 $(obj)/nftl_gcc53_hynix_default_pair.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix16nm_set_default_param,hynix26nm_setdefaultparam --
 $(obj)/nftl_gcc53_hynix20_retry.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix20nm_set_readretry --
+$(obj)/nftl_gcc53_hynix20_init.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix20nm_readretry_init --
 $(obj)/nftl_gcc53_panic_write.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) panic_write --
 $(obj)/nftl_gcc53_eval_order_three.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) new_block_init_for_write,get_vaild_blocks,nand_dbg_single_phy_erase --
 $(obj)/nftl_gcc53_eval_cache_three.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) nand_cache_read,nand_cache_write,nand_op --
@@ -164,6 +166,7 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix_lsb_init_pair.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix_lsb_enable_pair.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix_default_pair.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix20_retry.o
+nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix20_init.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_panic_write.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_eval_order_three.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_eval_cache_three.o
@@ -229,6 +232,7 @@ CFLAGS_nftl_gcc53_hynix_lsb_init_pair.o += -O0 -fno-builtin -fno-pic -mcmodel=sm
 CFLAGS_nftl_gcc53_hynix_lsb_enable_pair.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD
 CFLAGS_nftl_gcc53_hynix_default_pair.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_HYNIX_DEFAULT_GCC53_BUILD
 CFLAGS_nftl_gcc53_hynix20_retry.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_HYNIX20_RETRY_GCC53_BUILD
+CFLAGS_nftl_gcc53_hynix20_init.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_HYNIX20_INIT_GCC53_BUILD
 CFLAGS_nftl_gcc53_panic_write.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_COPY_PAGE_GCC53_BUILD -DTRIMUI_NFTL_OOB_LOGIC_GCC53_BUILD -DTRIMUI_NFTL_PANIC_WRITE_GCC53_BUILD
 CFLAGS_nftl_gcc53_eval_order_three.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_COPY_PAGE_GCC53_BUILD -DTRIMUI_NFTL_EVAL_ORDER_GCC53_BUILD
 CFLAGS_nftl_gcc53_eval_cache_three.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD

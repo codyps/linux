@@ -4019,6 +4019,7 @@ struct hynix20nm_readretry_zone {
 	struct hynix16nm_readretry_params *params;
 };
 extern int hynix20nm_getotpparam(struct otp_chip *, unsigned char *);
+#ifndef TRIMUI_NFTL_HYNIX20_INIT_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_init_readretry_param(struct hynix20nm_readretry_zone *zone)
 {
@@ -4084,6 +4085,9 @@ int hynix20nm_init_readretry_param(struct hynix20nm_readretry_zone *zone)
 	nand_free_temp_buf(frame.page_buffer);
 	return frame.result;
 }
+#else
+extern int hynix20nm_init_readretry_param(struct hynix20nm_readretry_zone *);
+#endif
 
 extern int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *chip);
 int hynix20nm_getotpparam(struct otp_chip *chip, unsigned char *value)
@@ -4281,14 +4285,12 @@ int hynix20nm_set_default_param(struct otp_chip *chip)
 	return locals.result;
 }
 
-#ifndef TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD
+#ifdef TRIMUI_NFTL_HYNIX20_INIT_GCC53_BUILD
 int hynix20nm_readretry_init(struct hynix20nm_retry_chip *chip)
 {
 	/* Keep the stock private return slot ahead of the signed loop index. */
-	struct {
-		int result;
-		int index;
-	} frame;
+	int result;
+	int index;
 
 	hynix20nm_read_retry_mode = chip->params->retry_spec >> 16;
 	hynix20nm_read_retry_cycle = chip->params->retry_spec >> 8;
@@ -4319,14 +4321,16 @@ int hynix20nm_readretry_init(struct hynix20nm_retry_chip *chip)
 		return -93;
 	}
 	chip->cycle = 0;
-	for (frame.index = 0; frame.index <= 127; frame.index++)
-		chip->saved[frame.index] = 0;
+	for (index = 0; index <= 127; index++)
+		chip->saved[index] = 0;
 	/* OEM permits a register count larger than its eight address bytes. */
-	frame.result = hynix20nm_init_readretry_param(
+	result = hynix20nm_init_readretry_param(
 			(struct hynix20nm_readretry_zone *)chip);
-	return frame.result;
+	return result;
 }
-#endif /* TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD */
+#else
+extern int hynix20nm_readretry_init(struct hynix20nm_retry_chip *chip);
+#endif
 
 extern unsigned char hynix26nm_read_retry_cycle;
 extern unsigned char hynix26nm_read_retry_reg_num;
