@@ -3344,6 +3344,8 @@ int nand_cache_read(struct nand_cache_read_zone *zone, int page,
 {
 	struct cache_init_data *cache;
 	struct cache_init_entry *node;
+	register struct cache_init_entry *page_node asm("x0");
+	register int page_value asm("w1");
 	unsigned char *buffer;
 	unsigned int offset;
 	unsigned int length;
@@ -3421,7 +3423,12 @@ int nand_cache_read(struct nand_cache_read_zone *zone, int page,
 			   cache->field0, cache->field2);
 		return 1;
 	}
-	node->page = page;
+	/* OEM loads the node pointer before the page value. Keep that order
+	 * even if the cache metadata is malformed. */
+	page_node = node;
+	page_value = page;
+	asm("" : "+r"(page_node), "+r"(page_value));
+	page_node->page = page_value;
 	buffer = node->allocation;
 	result = zone->read(zone, page, buffer);
 	node->field0 = 0;
@@ -13247,6 +13254,8 @@ int nand_cache_write(struct nand_cache_write_zone *zone, int page,
 {
 	struct cache_init_data *cache;
 	struct cache_init_entry *node;
+	register struct cache_init_entry *page_node asm("x0");
+	register int page_value asm("w1");
 	unsigned char *buffer;
 	unsigned short start;
 	unsigned short length;
@@ -13360,7 +13369,11 @@ int nand_cache_write(struct nand_cache_write_zone *zone, int page,
 			   cache->field1, cache->field0, cache->field2);
 		return 1;
 	}
-	node->page = page;
+	/* The stock write path uses the same pointer-before-value load order. */
+	page_node = node;
+	page_value = page;
+	asm("" : "+r"(page_node), "+r"(page_value));
+	page_node->page = page_value;
 	buffer = node->allocation;
 	if (start == 0) {
 		node->field0 = 0;
