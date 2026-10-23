@@ -808,6 +808,7 @@ int nand_before_shutdown(void *object)
 }
 
 #include "nftl_initialize_types.h"
+#include "nftl_start_types.h"
 
 unsigned int nftl_get_zone_cap(struct nftl_zone_cap_view *input)
 {
@@ -6575,13 +6576,6 @@ struct read_claim_node *get_nftl_need_read_claim(struct read_claim_node *head)
 	return local.node;
 }
 
-struct special_exit_chip {
-	struct special_exit_chip *next;
-};
-struct special_exit_info {
-	void *before_chips;
-	struct special_exit_chip *chips;
-};
 extern struct special_exit_info *g_nsi;
 
 #define SPECIAL_EXIT(vendor, message) \
@@ -6782,48 +6776,6 @@ extern int nftl_start(struct init_nftl_owner *, struct init_nftl_config *,
 
 extern int nftl_initialize(struct init_nftl_owner *owner, int number);
 
-struct start_geometry {
-	unsigned char vendor_id[8];
-	unsigned char sectors_per_page;
-	unsigned char before_page_bytes[1];
-	unsigned char chip_count;
-	unsigned char before_cache_limit[5];
-	unsigned short cache_limit;
-	unsigned char before_pages[2];
-	unsigned short pages;
-	unsigned char before_blocks[2];
-	unsigned short blocks;
-	unsigned short page_bytes;
-	unsigned short sectors;
-	unsigned char before_block_array[2];
-	void *block_array;
-};
-struct start_zone {
-	struct init_nftl_owner *owner;
-	struct start_geometry *geometry;
-	unsigned char before_mode[8];
-	unsigned char mode;
-	unsigned char flags;
-	unsigned char before_backup_blocks[4];
-	unsigned short backup_blocks;
-	unsigned char before_config[3448 - 32];
-	struct init_nftl_config *config;
-};
-struct start_physical_block {
-	unsigned short number;
-	unsigned short state;
-	unsigned short page;
-	unsigned short erase_count;
-	unsigned int tag;
-	unsigned int padding;
-	void *links[6];
-};
-_Static_assert(sizeof(struct start_physical_block) == 64,
-	       "NFTL physical block stride");
-_Static_assert(__builtin_offsetof(struct start_zone, config) == 3448,
-	       "NFTL start configuration offset");
-_Static_assert(__builtin_offsetof(struct start_geometry, block_array) == 32,
-	       "NFTL start block-array offset");
 extern int zone_param_init(void *, unsigned short, unsigned int, unsigned int);
 extern int build_zone_list_first(struct first_list_zone *, unsigned int);
 extern int build_zone_list(struct build_zone *);
@@ -6832,128 +6784,8 @@ extern int is_no_use_device(struct no_use_zone *, unsigned int);
 struct nftl_ops;
 extern void nftl_ops_init(struct nftl_ops *);
 
-static __attribute__((always_inline)) inline unsigned int nftl_stock_udiv(unsigned int numerator,
-				    unsigned int denominator)
-{
-	/* AArch64 UDIV returns zero on a zero divisor; C division does not. */
-	return denominator ? numerator / denominator : 0;
-}
 
-int nftl_start(struct init_nftl_owner *owner, struct init_nftl_config *config,
-		struct init_nftl_zone **output, void *start_bytes,
-		void *capacity_bytes, unsigned int area_bytes,
-		unsigned int erase_bytes, unsigned int chips,
-		struct init_partition *partition, unsigned int number,
-		unsigned char mode)
-{
-	struct start_zone *zone;
-	struct start_geometry *geometry;
-	struct start_physical_block *blocks;
-	unsigned int start = (unsigned long)start_bytes >> 9;
-	unsigned int capacity = (unsigned long)capacity_bytes >> 9;
-	unsigned int area = area_bytes >> 9;
-	/* Stock shifts the full 32-bit erase argument before narrowing its
-	 * resulting geometry fields.  Premature u16 narrowing changes large
-	 * direct-call inputs even though the initializer passes a u16 value. */
-	unsigned int erase = erase_bytes >> 9;
-	unsigned int total, reserved, i, attempts = 0, result;
 
-	zone = nftl_malloc(3528);
-	*output = (struct init_nftl_zone *)zone;
-	if (!zone) {
-		nand_print(nftl_ro_lc_474, nftl_ro_func_8536);
-		return -2;
-	}
-	/* OEM reuses the zone on retry, leaking its previous geometry and
-	 * block array when the first list build fails. */
-	for (;;) {
-		attempts++;
-		nand_memset(zone, 0, 3528);
-		zone->owner = owner;
-		zone->config = config;
-		geometry = nftl_malloc(40);
-		zone->geometry = geometry;
-		if (!geometry) {
-			nand_print(nftl_ro_lc_475, nftl_ro_func_8536);
-			return -2;
-		}
-		nand_memset(geometry, 0, 8);
-		/* Stock follows the global NAND-info pointers unchecked. */
-		nand_memcpy(geometry->vendor_id,
-			    (char *)g_nsi->chips + 16, 8);
-		geometry->page_bytes = (unsigned short)(erase << 9);
-		geometry->chip_count = chips;
-		total = nftl_stock_udiv(capacity, area);
-		if (config->limit_a >= total)
-			return -1;
-		geometry->blocks = total;
-		geometry->pages = nftl_stock_udiv(area, erase);
-		geometry->sectors_per_page = erase;
-		geometry->sectors = geometry->sectors_per_page;
-		geometry->cache_limit = 3000;
-		blocks = nftl_malloc((unsigned int)((total + 1) << 6));
-		geometry->block_array = blocks;
-		if (!blocks) {
-			nand_print(nftl_ro_lc_476,
-				   nftl_ro_func_8536);
-			return -2;
-		}
-		/* The last sentinel block is not covered by this fill. */
-		nand_memset(blocks, -1, total << 6);
-		for (i = 0; i < total + 1; i++) {
-			blocks[i].number = i;
-			blocks[i].page = 0;
-			blocks[i].state = 0;
-			blocks[i].tag = ~0U;
-			blocks[i].erase_count = 0;
-			blocks[i].links[0] = blocks[i].links[1] =
-				blocks[i].links[2] = blocks[i].links[3] =
-				blocks[i].links[4] = blocks[i].links[5] = 0;
-		}
-		nftl_ops_init((struct nftl_ops *)zone);
-		reserved = nftl_stock_udiv(start, area);
-		zone->backup_blocks = (unsigned short)
-			((unsigned short)total - (unsigned short)reserved);
-		if (zone->backup_blocks < config->limit_a) {
-			nand_print(nftl_ro_lc_477,
-				   zone->backup_blocks);
-			return -2;
-		}
-		nand_print_dbg(nftl_ro_lc_478, total,
-			       zone->backup_blocks);
-		result = zone_param_init(zone, 0,
-			(total - zone->backup_blocks) * area,
-			zone->backup_blocks * area);
-		if (result) {
-			nand_print(nftl_ro_lc_479);
-			return result;
-		}
-		/* The stock frame loads stack argument nine, the NFTL number;
-		 * the final mode byte is never used. */
-		zone->mode = number;
-		if (config->device_mode)
-			zone->flags |= 1;
-		if (config->fifth &&
-		    is_no_use_device((struct no_use_zone *)zone, total) == 1) {
-			result = build_zone_list_first(
-				(struct first_list_zone *)zone, total);
-			if (result) {
-				nand_print(nftl_ro_lc_480);
-				return result;
-			}
-		}
-		result = build_zone_list((struct build_zone *)zone);
-		if (!result) {
-			/* OEM ignores cache-initialization failures. */
-			nftl_cache_init((struct cache_init_zone *)zone);
-			return 0;
-		}
-		nand_print(nftl_ro_lc_481);
-		if (attempts > 1)
-			return result;
-		nand_print(nftl_ro_lc_482);
-	}
-}
 extern int panic_recover_data(void *block);
 struct nftl_build_node *nftl_add(struct nftl_build_node *node)
 {

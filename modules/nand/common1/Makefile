@@ -26,6 +26,7 @@ obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_sandisk_A19_readretry_init.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_get_logic_page_map.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nftl_support_boot_check_crc_from_dts.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nftl_initialize.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nftl_start.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_gc_all_enhance.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_out_phy_block_from_free_list.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_out_phy_block_from_free_list_by_block.o
@@ -100,6 +101,7 @@ $(obj)/nftl_gcc53_sandisk_A19_readretry_init.o: override CC := python3 $(srctree
 $(obj)/nftl_gcc53_get_logic_page_map.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) get_logic_page_map --
 $(obj)/nftl_gcc53_nftl_support_boot_check_crc_from_dts.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) nftl_support_boot_check_crc_from_dts --
 $(obj)/nftl_gcc53_nftl_initialize.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) nftl_initialize:nftl_version --
+$(obj)/nftl_gcc53_nftl_start.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) nftl_start --
 $(obj)/nftl_gcc53_gc_all_enhance.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) gc_all_enhance --
 $(obj)/nftl_gcc53_out_phy_block_from_free_list.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) out_phy_block_from_free_list --
 $(obj)/nftl_gcc53_out_phy_block_from_free_list_by_block.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) out_phy_block_from_free_list_by_block --
@@ -193,6 +195,7 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_smart_init.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_eval_order_three.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_eval_cache_three.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_nftl_initialize.o
+nftl_gcc53_objects += $(obj)/nftl_gcc53_nftl_start.o
 $(nftl_gcc53_objects): override NOSTDINC_FLAGS := -nostdinc -isystem $(shell $(TRIMUI_NFTL_GCC53) -print-file-name=include)
 $(nftl_gcc53_objects): $(srctree)/scripts/trimui_nftl_select_cc.py
 quiet_cmd_nftl_crc_merge = LD      $@
@@ -214,6 +217,7 @@ CFLAGS_nftl_gcc53_sandisk_A19_readretry_init.o += -O0 -fno-builtin -fno-pic -mcm
 CFLAGS_nftl_gcc53_get_logic_page_map.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_nftl_support_boot_check_crc_from_dts.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_nftl_initialize.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_nftl_start.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -fno-stack-protector -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_gc_all_enhance.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_out_phy_block_from_free_list.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_out_phy_block_from_free_list_by_block.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
