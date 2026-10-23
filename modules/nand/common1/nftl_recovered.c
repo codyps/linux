@@ -29,7 +29,8 @@ struct physic_op_param {
 	void *oob;
 };
 
-#ifndef TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -537,10 +538,14 @@ unsigned short nftl_get_bad_block_cnt(struct nftl_small_owner *owner)
 
 extern void nand_free(void *object);
 
+#ifndef TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD
 void nftl_free(void *object)
 {
 	nand_free(object);
 }
+#else
+extern void nftl_free(void *object);
+#endif
 
 /* Stock NFTL operation wrappers and spare-area marker classifiers. */
 /* Bounded C candidates for retained NFTL assembly, not original declarations. */
@@ -858,12 +863,17 @@ struct nftl_phy_outer {
 	struct nftl_phy_inner *inner;
 };
 
+#ifndef TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD
 unsigned char *get_phy_block_addr(struct nftl_phy_outer *outer,
 				  unsigned short block)
 {
 	/* OEM performs no bounds check before indexing 64-byte blocks. */
 	return outer->inner->blocks + (unsigned long)block * 64;
 }
+#else
+extern unsigned char *get_phy_block_addr(struct nftl_phy_outer *outer,
+					  unsigned short block);
+#endif
 
 int nand_dbg_phy_erase(unsigned short chip, unsigned short block)
 {
@@ -2942,7 +2952,8 @@ int hynix26nm_readretry_exit(struct nftl_retry_chip *chip)
 }
 
 #if !defined(TRIMUI_NFTL_CACHE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_SECTOR_CACHE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_SECTOR_CACHE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD)
 void *nftl_malloc(unsigned int size)
 {
 	/* OEM warns above 1.5 MiB but still attempts the allocation. */
@@ -10894,6 +10905,10 @@ int sandisk_A19_check_bad_block_first_burn(
 
 extern int page_read(unsigned short, unsigned short, unsigned short,
 		     unsigned int, void *, void *);
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int nand_dbg_phy_read(unsigned short channel, unsigned short block,
+			     unsigned short page);
+#else
 __attribute__((optimize("-fno-stack-protector")))
 int nand_dbg_phy_read(unsigned short channel, unsigned short block,
 		      unsigned short page)
@@ -10920,6 +10935,7 @@ int nand_dbg_phy_read(unsigned short channel, unsigned short block,
 	nftl_free(data);
 	return result;
 }
+#endif
 
 struct nrc_geometry {
 	unsigned char before_pages[20];
@@ -10988,6 +11004,10 @@ struct nand_dbg_zone_read {
 	unsigned char before_read[3464];
 	int (*read)(struct nand_dbg_zone_read *, struct physic_op_param *);
 };
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int nand_dbg_zone_phy_read(struct nand_dbg_zone_read *zone,
+				  unsigned short block, unsigned short page);
+#else
 __attribute__((optimize("-fno-stack-protector")))
 int nand_dbg_zone_phy_read(struct nand_dbg_zone_read *zone,
 			   unsigned short block, unsigned short page)
@@ -11019,6 +11039,7 @@ int nand_dbg_zone_phy_read(struct nand_dbg_zone_read *zone,
 	nftl_free(data);
 	return result;
 }
+#endif
 
 struct hynix20nm_page_chip {
 	unsigned char before_retry[184];
