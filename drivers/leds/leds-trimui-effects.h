@@ -55,6 +55,7 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 		}
 	} else if (type == 2) {
 		u32 start_rgb;
+		int delta_r, delta_g, delta_b;
 
 		if (effect->duration < 500)
 			effect->duration = 500;
@@ -76,12 +77,16 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 		to_r = (target >> 16) & 255;
 		to_g = (target >> 8) & 255;
 		to_b = target & 255;
+		/* OEM computes channel differences before the ramp accumulators. */
+		delta_r = to_r - from_r;
+		delta_g = to_g - from_g;
+		delta_b = to_b - from_b;
 		r = ramp * from_r; g = ramp * from_g; b = ramp * from_b;
 		for (i = 0; i < ramp; i++) {
 			u32 rgb = trimui_rgb(r / ramp, g / ramp, b / ramp);
 			effect->frames[i] = rgb;
 			effect->frames[n - 1 - i] = rgb;
-			r += to_r - from_r; g += to_g - from_g; b += to_b - from_b;
+			r += delta_r; g += delta_g; b += delta_b;
 		}
 		/* Stock's type-2 path publishes these fields and returns here. */
 		WRITE_ONCE(effect->length, n);
