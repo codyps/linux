@@ -2885,7 +2885,8 @@ int hynix26nm_readretry_exit(struct nftl_retry_chip *chip)
 	return 0;
 }
 
-#ifndef TRIMUI_NFTL_CACHE_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_CACHE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SECTOR_CACHE_GCC53_BUILD)
 void *nftl_malloc(unsigned int size)
 {
 	/* OEM warns above 1.5 MiB but still attempts the allocation. */
@@ -5358,38 +5359,11 @@ struct sector_cache_init_view {
 /* OEM keeps cache, buffer and index at FP+0x28/+0x30/+0x3c. The initializer
  * recomputes each node field address and only stores the buffer local after
  * the allocation has succeeded and the list head has been cleared. */
-__attribute__((optimize("-fno-stack-protector")))
-int nftl_sector_cache_init(void *zone)
-{
-	struct sector_cache_init_view *cache =
-		(struct sector_cache_init_view *)((unsigned char *)zone + 2880);
-	unsigned int index;
-	unsigned char *buffer;
-
-	cache->capacity = 16;
-	cache->count = 0;
-	cache->buffer = 0;
-	cache->buffer = nftl_malloc(8192);
-	if (!cache->buffer) {
-		/* OEM leaves the count and allocation fields changed on failure,
-		 * and never clears a preexisting list or frees an old buffer. */
-		nand_print(nftl_ro_lc_141, nftl_ro_func_6755);
-		return 1;
-	}
-	cache->head.next = 0;
-	cache->head.previous = 0;
-	buffer = cache->buffer;
-	for (index = 0; index < 16; index++) {
-		cache->nodes[index].unknown = index;
-		cache->nodes[index].flag = 255;
-		cache->nodes[index].sector = -1;
-		cache->nodes[index].next = 0;
-		cache->nodes[index].previous = 0;
-		cache->nodes[index].data = buffer;
-		buffer += 512;
-	}
-	return 0;
-}
+#ifdef TRIMUI_NFTL_SECTOR_CACHE_GCC53_BUILD
+#include "nftl_sector_cache_init_impl.h"
+#else
+int nftl_sector_cache_init(void *zone);
+#endif
 
 /* The two zero stores below are redundant for results, but the OEM emits
  * both before deriving the cache pointer and then overwrites bytes with 512. */

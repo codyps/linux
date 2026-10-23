@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0 */
-/* Recovered OEM cache layout shared by the two NFTL translation units. */
+/* Recovered OEM cache layout shared by the NFTL compiler passes. */
 #ifndef NFTL_CACHE_INIT_LAYOUT_H
 #define NFTL_CACHE_INIT_LAYOUT_H
 struct cache_init_entry {
