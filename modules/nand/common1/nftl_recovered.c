@@ -48,6 +48,7 @@ extern void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       void *data, void *oob);
 #endif
 
+#ifndef TRIMUI_NFTL_HYNIX_PAGE_END_GCC53_BUILD
 int is_nouse_page(const unsigned char *bytes)
 {
 	unsigned int count;
@@ -65,6 +66,9 @@ int is_nouse_page(const unsigned char *bytes)
 		return 1;
 	return 0;
 }
+#else
+extern int is_nouse_page(const unsigned char *bytes);
+#endif
 
 struct samsung_set_chip {
 	unsigned char until_count[184];
@@ -1904,7 +1908,8 @@ extern int hynix16nm_vender_set_param(struct hynix16nm_retry_zone *zone,
 /* The stock frame puts the temporary values at FP+0x20 and the loop index at
  * FP+0x2c. GCC's stack-protector layout would move both, so an unchecked
  * register count would corrupt different stack bytes. */
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_HYNIX_PAGE_END_GCC53_BUILD)
 extern int hynix16nm_set_readretry(struct hynix16nm_retry_zone *zone);
 #else
 __attribute__((optimize("-fno-stack-protector")))
@@ -4122,6 +4127,7 @@ struct hynix20nm_retry_chip {
 };
 /* The mutable OEM register count is unchecked against this eight-byte stack
  * buffer. Keep the overflow and frame layout for stock compatibility. */
+#ifndef TRIMUI_NFTL_HYNIX_PAGE_END_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_set_readretry(struct hynix20nm_retry_chip *chip)
 {
@@ -4148,6 +4154,9 @@ int hynix20nm_set_readretry(struct hynix20nm_retry_chip *chip)
 	nand_print_dbg(nftl_ro_lc_45);
 	return locals.result;
 }
+#else
+extern int hynix20nm_set_readretry(struct hynix20nm_retry_chip *chip);
+#endif
 /* Stock omits a canary although its unchecked count can overrun the buffer. */
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_set_default_param(struct otp_chip *chip)
@@ -4227,6 +4236,7 @@ extern unsigned char hynix26nm_read_retry_cycle;
 extern unsigned char hynix26nm_read_retry_reg_num;
 extern unsigned char hynix26nm_read_retry_reg_adr[];
 extern signed short hynix26nm_read_retry_val[];
+#ifndef TRIMUI_NFTL_HYNIX_PAGE_END_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix26nm_set_readretry(struct hynix20nm_retry_chip *chip)
 {
@@ -4275,6 +4285,9 @@ int hynix26nm_set_readretry(struct hynix20nm_retry_chip *chip)
 	nand_print_dbg(nftl_ro_lc_45);
 	return locals.result;
 }
+#else
+extern int hynix26nm_set_readretry(struct hynix20nm_retry_chip *chip);
+#endif
 
 extern unsigned char hynix26nm_read_retry_reg_num;
 extern unsigned char hynix26nm_read_retry_reg_adr[];
@@ -8549,7 +8562,11 @@ int name(struct samsung_read_request *request) \
 	} \
 	return result; \
 }
-#ifndef TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD)
+extern int hynix16nm_read_page_end(struct samsung_read_request *request);
+extern int hynix26nm_read_page_end(struct samsung_read_request *request);
+#else
 HYNIX_READ_PAGE_END(hynix16nm_read_page_end, hynix16nm_read_retry_cycle,
 		    hynix16nm_set_readretry, nftl_ro_lc_110,
 		    nftl_ro_lc_111)
@@ -11096,7 +11113,10 @@ struct hynix20nm_page_chip {
 };
 /* GCC's stack-protector pass reorders private retry-state slots without
  * emitting a canary. Keep the OEM frame while retaining its retry quirks. */
-#ifndef TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD)
+extern int hynix20nm_read_page_end(struct samsung_read_request *request);
+#else
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_read_page_end(struct samsung_read_request *request)
 {
