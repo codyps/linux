@@ -1229,7 +1229,8 @@ struct cache_read_delete_owner {
 	unsigned short second_count;
 };
 #if !defined(TRIMUI_NFTL_GCC7_PASS) && \
-    !defined(TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NAND_DISCARD_GCC53_BUILD)
 struct cache_read_delete_node *del_from_cache_read_list(
 	struct cache_read_delete_owner *owner,
 	struct cache_read_delete_node *target)
@@ -1356,7 +1357,8 @@ extern int add_to_cache_read_list_tail(struct cache_read_add_zone *zone,
 				       unsigned int state);
 #endif
 /* OEM compares the cached sector keys as unsigned 32-bit values. */
-#ifndef TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NAND_DISCARD_GCC53_BUILD)
 struct cache_read_node *search_from_cache_read_list(
 	struct cache_read_zone *zone, int key)
 {
@@ -1384,7 +1386,8 @@ struct cache_write_zone {
 	unsigned char before_head[1744];
 	struct cache_write_node head;
 };
-#ifndef TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NAND_DISCARD_GCC53_BUILD)
 struct cache_write_node *search_from_cache_write_list(
 	struct cache_write_zone *zone, int key)
 {
@@ -5619,7 +5622,8 @@ extern int add_to_sector_cache_write_list_tail(struct sector_owner *owner,
 #endif
 #if !defined(TRIMUI_NFTL_FLUSH_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_GCC7_PASS) && \
-    !defined(TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NAND_DISCARD_GCC53_BUILD)
 struct cache_list_node *del_from_cache_write_list(struct cache_list_owner *owner, struct cache_list_node *node)
 {
     struct cache_list_node *previous = node->previous;
@@ -10295,11 +10299,11 @@ struct nand_discard_frame {
 	int result;
 	unsigned int page;
 };
+#ifdef TRIMUI_NFTL_NAND_DISCARD_GCC53_BUILD
 int nand_discard(struct nand_discard_view *zone, unsigned int sector,
 		 unsigned int count)
 {
 	struct nand_discard_frame frame;
-	struct smart_print_payload *write_smart;
 
 	/* Keep OEM's private slots and its single reused cache-node pointer. */
 	frame.result = 0;
@@ -10310,12 +10314,10 @@ int nand_discard(struct nand_discard_view *zone, unsigned int sector,
 		nand_print(nftl_ro_lc_430);
 		return 1;
 	}
-	/* OEM samples the write target before reloading the read target.
-	 * This is an unsynchronized race if another thread replaces smart;
-	 * retain the shipped sampling order rather than repairing the race. */
-	write_smart = zone->smart;
-	write_smart->recv_discard_sectors =
-		zone->smart->recv_discard_sectors + count;
+	/* The pinned OEM GCC 5.3.1 evaluates the write target before the read
+	 * target for this expression. Keep its unsynchronized pointer race;
+	 * repairing the race would change the shipped result. */
+	zone->smart->recv_discard_sectors += count;
 	frame.page = sector / zone->geometry->sectors_per_page;
 	frame.remainder = sector % zone->geometry->sectors_per_page;
 	frame.first_page_sectors = zone->geometry->sectors_per_page - frame.remainder;
@@ -10349,14 +10351,13 @@ int nand_discard(struct nand_discard_view *zone, unsigned int sector,
 		zone->discard_page(zone, frame.page);
 		count--;
 		frame.page++;
-		/* The loop counter uses the same OEM pointer sampling order. */
-		write_smart = zone->smart;
-		write_smart->real_discard_sectors =
-			zone->smart->real_discard_sectors +
+		/* GCC 5.3.1 also samples this write target before its read. */
+		zone->smart->real_discard_sectors +=
 			zone->geometry->sectors_per_page;
 	} while (count);
 	return frame.result;
 }
+#endif /* TRIMUI_NFTL_NAND_DISCARD_GCC53_BUILD */
 
 struct no_use_geometry {
 	unsigned char before_sectors[8];
