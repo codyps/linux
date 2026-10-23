@@ -33,6 +33,7 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_PANIC_RECOVER_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
@@ -773,6 +774,7 @@ int is_ftl_end_flag_page(unsigned char *oob)
 	return oob[1] == 0xaa && oob[2] == 0xcc;
 }
 
+#ifndef TRIMUI_NFTL_PANIC_RECOVER_GCC53_BUILD
 int is_panic_data_page(unsigned char *oob)
 {
 	return oob[1] == 0xaa && oob[2] == 0x63;
@@ -782,6 +784,10 @@ int is_panic_dummy_page(unsigned char *oob)
 {
 	return oob[1] == 0xaa && oob[2] == 0x62;
 }
+#else
+extern int is_panic_data_page(unsigned char *oob);
+extern int is_panic_dummy_page(unsigned char *oob);
+#endif
 
 /* Offset-limited behavioral candidates; these are not original declarations. */
 
@@ -867,7 +873,8 @@ unsigned int nftl_get_boot_cnt(struct nftl_boot_owner_view *input)
 
 unsigned int get_spare_data(void *oob, unsigned char offset,
 			    unsigned char bytes);
-#ifndef TRIMUI_NFTL_GCC7_PASS
+#if !defined(TRIMUI_NFTL_GCC7_PASS) && \
+    !defined(TRIMUI_NFTL_PANIC_RECOVER_GCC53_BUILD)
 unsigned int get_spare_data(void *oob, unsigned char offset,
 			    unsigned char bytes)
 {
@@ -4627,7 +4634,8 @@ int name(unsigned int sector, unsigned int count, void *data) \
 	return node->member(node, sector, count, data); \
 }
 
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_PANIC_RECOVER_GCC53_BUILD)
 extern int nftl_read(unsigned int sector, unsigned int count, void *data);
 extern int nftl_write(unsigned int sector, unsigned int count, void *data);
 #else
@@ -7373,6 +7381,7 @@ _Static_assert(__builtin_offsetof(union panic_recover_state, page_index) == 32,
 _Static_assert(__builtin_offsetof(struct panic_recover_zone, read) == 3464,
 	       "panic recovery read offset");
 
+#ifndef TRIMUI_NFTL_GCC7_PASS
 __attribute__((optimize("-fno-stack-protector")))
 int panic_recover_data(void *owner)
 {
@@ -7420,7 +7429,9 @@ int panic_recover_data(void *owner)
 				}
 				nand_print(nftl_ro_lc_33,
 					   block->number, state->page_index);
-				goto erase;
+				/* Enter the OEM erase loop at its condition. Jumping
+				 * to the loop header adds an extra branch in the image. */
+				goto erase_test;
 			} else {
 				logic_page = get_spare_data(oob, 7, 4);
 				sectors = get_spare_data(oob, 11, 4);
@@ -7443,11 +7454,16 @@ erase:
 			    (struct erase_block_info *)block,
 			    (unsigned short)(block->erase_count + 1));
 		state->block_index--;
+erase_test:
+		;
 	}
 done:
 	nand_free(data);
 	return 0;
 }
+#else
+extern int panic_recover_data(void *owner);
+#endif
 
 /* Keep this address in the stock-ordered table span. The vendor bus helper
  * trusts its count, so bytes beyond the declared array can be observed. */
@@ -7553,7 +7569,8 @@ int mark_free_block(struct erase_block_zone *owner,
 #endif
 extern int mark_free_block(struct erase_block_zone *, struct erase_block_info *);
 #if !defined(TRIMUI_NFTL_GCC7_PASS) && \
-    !defined(TRIMUI_NFTL_ADJUST_FREE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_ADJUST_FREE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_PANIC_RECOVER_GCC53_BUILD)
 int erase_block(struct erase_block_zone *zone, struct erase_block_info *block,
 		unsigned short mode)
 {
