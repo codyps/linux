@@ -34,6 +34,7 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PANIC_RECOVER_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SMART_INIT_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
@@ -732,7 +733,8 @@ int is_fill_page(void *oob)
 	return 0;
 }
 
-#ifndef TRIMUI_NFTL_CRC_WRONG_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_CRC_WRONG_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SMART_INIT_GCC53_BUILD)
 int is_phy_mapping_page(void *oob)
 {
 	unsigned int marker = get_special_data_from_oob(oob);
@@ -1734,6 +1736,7 @@ struct smart_print_payload {
 	unsigned int read_reclaim_page;
 	unsigned int wl_gc_times;
 };
+#ifndef TRIMUI_NFTL_SMART_INIT_GCC53_BUILD
 void print_smart(struct smart_info_zone *input)
 {
 	/* OEM keeps the payload at FP+0x20 and the zone at FP+0x28. */
@@ -1772,32 +1775,31 @@ void print_smart(struct smart_info_zone *input)
 	nand_print_dbg(nftl_ro_lc_198, frame.smart->read_reclaim_zone);
 	nand_print_dbg(nftl_ro_lc_199, frame.smart->read_reclaim_page);
 }
+#endif
 struct smart_info_block {
 	unsigned short number;
 };
 extern void *nand_memset(void *destination, int value, unsigned int size);
 extern void print_smart(struct smart_info_zone *zone);
-/* The OEM uses these private stack slots in init_smart_info. Keep the OOB
- * bytes uninitialized: its marker check can consume them when read() returns
- * without filling spare data. A fixed implementation should initialize OOB
- * or reject such reads, but that would change stock behavior. */
-struct smart_info_init_frame {
+/* The OEM uses these private stack slots in init_smart_info. Its OOB marker
+ * check can consume stale stack bytes when read() does not fill spare data.
+ * TODO: initialize OOB or reject that read result in a non-OEM mode. */
+struct smart_info_init_prefix {
 	unsigned char preceding[24];
 	struct smart_info_payload *stored;
 	unsigned char before_op[8];
-	struct physic_op_param op;
-	unsigned char oob[16];
 };
-_Static_assert(__builtin_offsetof(struct smart_info_init_frame, stored) == 24,
+_Static_assert(__builtin_offsetof(struct smart_info_init_prefix, stored) == 24,
 	       "SMART stored pointer slot");
-_Static_assert(__builtin_offsetof(struct smart_info_init_frame, op) == 40,
-	       "SMART operation slot");
-_Static_assert(__builtin_offsetof(struct smart_info_init_frame, oob) == 64,
-	       "SMART OOB slot");
+#ifndef TRIMUI_NFTL_GCC7_PASS
 __attribute__((optimize("-fno-stack-protector")))
 int init_smart_info(struct smart_info_zone *zone, struct smart_info_block *block)
 {
-	struct smart_info_init_frame frame;
+	/* The four unused tail bytes put OOB at FP+0x68, ahead of the result
+	 * slot at +0x7c. OEM callbacks can write beyond sixteen OOB bytes. */
+	unsigned char oob[20];
+	struct physic_op_param op;
+	struct smart_info_init_prefix prefix;
 	int read_result;
 
 	nand_memset(zone->smart, 0, 320);
@@ -1805,16 +1807,16 @@ int init_smart_info(struct smart_info_zone *zone, struct smart_info_block *block
 	zone->smart->init_count++;
 	if (!block)
 		return 0;
-	set_physic_op_par(&frame.op, block->number,
+	set_physic_op_par(&op, block->number,
 			   (unsigned short)(zone->geometry->pages - 1),
-			   zone->geometry->page_bytes, zone->data, frame.oob);
-	read_result = zone->read(zone, &frame.op);
+			   zone->geometry->page_bytes, zone->data, oob);
+	read_result = zone->read(zone, &op);
 	/* OEM probes the OOB marker even when the page read failed. */
-	if (is_phy_mapping_page(frame.oob) == 1 &&
+	if (is_phy_mapping_page(oob) == 1 &&
 	    (read_result == 0 || read_result == 10)) {
-		frame.stored = (struct smart_info_payload *)(zone->data + zone->offset);
-		if (frame.stored->magic == 0xaaaaaa01U) {
-			nand_memcpy(zone->smart, frame.stored, 320);
+		prefix.stored = (struct smart_info_payload *)(zone->data + zone->offset);
+		if (prefix.stored->magic == 0xaaaaaa01U) {
+			nand_memcpy(zone->smart, prefix.stored, 320);
 			zone->smart->init_count++;
 			if (zone->smart->field_164 == ~0U)
 				zone->smart->field_164 = 0;
@@ -1827,6 +1829,10 @@ int init_smart_info(struct smart_info_zone *zone, struct smart_info_block *block
 	print_smart(zone);
 	return 0;
 }
+#else
+extern int init_smart_info(struct smart_info_zone *zone,
+			   struct smart_info_block *block);
+#endif
 struct write_error_build_frame {
 	struct physic_op_param op;
 	unsigned char before_result[4];
