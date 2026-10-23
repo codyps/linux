@@ -227,7 +227,8 @@ int hynix20nm_vender_get_param(struct samsung_set_chip *chip,
 }
 
 struct command_chip;
-extern int set_one_cmd(struct command_chip *chip, unsigned int command,
+/* The BSP helper takes u8: OEM truncates callers' -1/0xffffffc5 commands. */
+extern int set_one_cmd(struct command_chip *chip, unsigned char command,
 		       unsigned int wait_ready);
 int hynix20nm_vender_set_param(void *chip, unsigned char *values,
 			      unsigned char *addresses, unsigned int count)
@@ -8703,7 +8704,7 @@ HYNIX_READ_PAGE_END(hynix26nm_read_page_end, hynix26nm_read_retry_cycle,
 #endif
 #undef HYNIX_READ_PAGE_END
 
-extern int set_one_cmd(struct command_chip *chip, unsigned int command,
+extern int set_one_cmd(struct command_chip *chip, unsigned char command,
 			unsigned int argument);
 extern unsigned char sandisk_A19_read_retry_reg_adr_1y;
 /* Keep the OEM private result and parameter slots beside the aligned buffer. */
