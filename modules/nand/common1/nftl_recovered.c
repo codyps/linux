@@ -41,7 +41,8 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_PANIC_RECOVER_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SMART_INIT_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_FIRST_LIST_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -1895,7 +1896,8 @@ int do_write_error_in_build_list(struct write_error_zone *zone,
 	}
 	return 0;
 }
-#ifndef TRIMUI_NFTL_EVAL_ORDER_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_EVAL_ORDER_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_FIRST_LIST_GCC53_BUILD)
 int is_last_phy_block(struct physical_block *block,
 		      struct physical_zone *zone)
 {
@@ -2892,6 +2894,7 @@ void set_spare_data(unsigned char *oob, unsigned int value, unsigned char offset
 extern void set_spare_data(unsigned char *oob, unsigned int value, unsigned char offset,
 		    unsigned char count);
 #endif
+#ifndef TRIMUI_NFTL_FIRST_LIST_GCC53_BUILD
 void set_start_block_flag(void *unused, unsigned char *oob,
 			  unsigned int number)
 {
@@ -2901,6 +2904,10 @@ void set_start_block_flag(void *unused, unsigned char *oob,
 	set_spare_data(oob, 0xee, 2, 1);
 	set_spare_data(oob, number, 3, 4);
 }
+#else
+extern void set_start_block_flag(void *unused, unsigned char *oob,
+				 unsigned int number);
+#endif
 
 struct read_claim_settings {
 	unsigned char before_flags[172];
@@ -3201,6 +3208,7 @@ int check_bit_nums(const unsigned char *data, int length);
 
 /* Isolated OEM C equivalents; aggregate names are inferred from access. */
 
+#ifndef TRIMUI_NFTL_FIRST_LIST_GCC53_BUILD
 void set_end_block_flag(void *unused, unsigned char *oob)
 {
 	/* OEM ignores the first argument and does not propagate write errors. */
@@ -3208,6 +3216,9 @@ void set_end_block_flag(void *unused, unsigned char *oob)
 	set_spare_data(oob, 0xaa, 1, 1);
 	set_spare_data(oob, 0xcc, 2, 1);
 }
+#else
+extern void set_end_block_flag(void *unused, unsigned char *oob);
+#endif
 
 void set_no_use_page(void *unused, unsigned char *oob)
 {
@@ -5482,6 +5493,7 @@ _Static_assert(__builtin_offsetof(struct first_list_zone, data) == 512,
 _Static_assert(__builtin_offsetof(struct first_list_zone, is_good) == 3488,
 	       "first-scan good callback offset");
 /* OEM keeps the stack OOB buffer without a canary. */
+#ifdef TRIMUI_NFTL_FIRST_LIST_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int build_zone_list_first(struct first_list_zone *zone, unsigned int number)
 {
@@ -5553,12 +5565,17 @@ int build_zone_list_first(struct first_list_zone *zone, unsigned int number)
 	}
 	if (zone->count > 1) {
 		zone->count--;
-		if (limit != ~0U)
-			goto next_scan;
+		/* This explicit branch retains OEM's B.NE to the next scan,
+		 * followed by B to the success return. Both paths are taken;
+		 * the compiler's inverse test otherwise changes the stock body. */
+		asm goto("cmn %w0, #1\n\tb.ne %l[next_scan]\n\tb %l[first_success]"
+			 : : "r"(limit) : "cc" : next_scan, first_success);
+		__builtin_unreachable();
 	} else {
 		nand_print(nftl_ro_lc_210, zone->count);
 		return 1;
 	}
+first_success:
 	return 0;
 next_scan:
 	if (is_last_phy_block((struct physical_block *)block,
@@ -5590,6 +5607,10 @@ next_scan:
 	/* OEM also reports success when the search exhausted all blocks. */
 	return 0;
 }
+#else
+extern int build_zone_list_first(struct first_list_zone *zone,
+				 unsigned int number);
+#endif
 
 /* Inferred cache write-list bodies. Private layout names are provisional.
  * OEM GCC 5.3.1 restores stock UXTH on the 16-bit count updates and their
