@@ -5165,9 +5165,11 @@ struct first_list_geometry {
 	unsigned short pages;
 	unsigned char before_blocks[2];
 	unsigned short blocks;
-	unsigned char before_fixed_page[2];
+	unsigned short page_bytes;
 	unsigned short fixed_page;
 };
+_Static_assert(__builtin_offsetof(struct first_list_geometry, page_bytes) == 26,
+	       "panic-write page-byte count offset");
 struct first_list_block {
 	unsigned short number;
 	unsigned short state;
@@ -5929,7 +5931,7 @@ int panic_write(struct panic_write_owner *owner, unsigned int sector,
 	struct first_list_block *block;
 	struct physic_op_param op;
 	unsigned char oob[16];
-	unsigned int pages, blocks, sectors;
+	unsigned int pages, blocks;
 	unsigned int dummy;
 	unsigned char *cursor;
 
@@ -5950,7 +5952,7 @@ int panic_write(struct panic_write_owner *owner, unsigned int sector,
 		   (info->remaining - 3) * geometry->factor);
 		return -1;
 	}
-	nand_memset(oob, 0xa5, 16);
+	nand_memset(oob, -91, 16);
 	cursor = buffer;
 	block = info->blocks[info->block_index];
 	while (pages) {
@@ -5970,24 +5972,25 @@ int panic_write(struct panic_write_owner *owner, unsigned int sector,
 		nand_print(nftl_ro_lc_24,
 			   block->number, info->page);
 		oob[0] = 0xff;
-		oob[1] = 0xaa;
+		oob[1] = -86;
 		oob[2] = 99;
 		oob[3] = *(unsigned char *)((char *)zone + 24);
 		oob[4] = (unsigned char)info->block_index;
 		set_spare_data(oob, block->used_pages, 5, 2);
 		set_spare_data(oob, sector, 7, 4);
-		sectors = geometry->factor < count ? geometry->factor : count;
-		set_spare_data(oob, sectors, 11, 4);
+		set_spare_data(oob, geometry->factor < count ? geometry->factor : count,
+			       11, 4);
 		set_physic_op_par(&op, block->number,
 				  (unsigned short)info->page,
 				  geometry->fixed_page, cursor, oob);
 		/* OEM ignores the write result. */
 		zone->write(zone, &op);
 		/* OEM advances by the configured byte count even for a short page. */
-		cursor += geometry->before_fixed_page[0] |
-			  ((unsigned int)geometry->before_fixed_page[1] << 8);
-		sector += sectors;
-		count -= sectors;
+		cursor += geometry->page_bytes;
+		/* OEM reloads factor after the write callback. A callback can
+		 * change it; retaining the repeated reads preserves that quirk. */
+		sector += geometry->factor < count ? geometry->factor : count;
+		count -= geometry->factor < count ? geometry->factor : count;
 		info->remaining--;
 		info->page++;
 		pages--;
