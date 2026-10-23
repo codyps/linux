@@ -16,10 +16,16 @@ import tempfile
 
 def main():
     compiler, linker, objcopy, entry = sys.argv[1:5]
-    entries = entry.split(',')
+    selection, separator, retained_names = entry.partition(':')
+    entries = selection.split(',')
+    keep_symbols = retained_names.split(',') if separator else []
     if not entries or any(not re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*', name)
                           for name in entries):
         raise SystemExit('expected comma-separated C symbol names')
+    if separator and (not keep_symbols or any(
+            not re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*', name)
+            for name in keep_symbols)):
+        raise SystemExit('expected comma-separated retained local symbols')
     flags = sys.argv[6:]  # argv[5] is the separating '--'.
     if sys.argv[5] != '--' or '-o' not in flags:
         raise SystemExit('expected compiler linker objcopy ENTRY -- ... -o OUTPUT')
@@ -39,7 +45,9 @@ def main():
                         str(whole)], check=True)
         # ld -r retains irrelevant undefined symbols in the symbol table even
         # after discarding their sections. Drop those unreferenced names.
-        subprocess.run([objcopy, '--strip-unneeded', str(retained),
+        subprocess.run([objcopy, '--strip-unneeded',
+                        *['--keep-symbol=' + name for name in keep_symbols],
+                        str(retained),
                         str(final)], check=True)
         os.replace(final, target)
 

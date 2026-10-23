@@ -807,10 +807,7 @@ int nand_before_shutdown(void *object)
 	return fill_no_use_page_to_current_block(object, 8);
 }
 
-struct nftl_zone_cap_view {
-	unsigned char preceding[32];
-	unsigned int capacity;
-};
+#include "nftl_initialize_types.h"
 
 unsigned int nftl_get_zone_cap(struct nftl_zone_cap_view *input)
 {
@@ -2925,12 +2922,6 @@ int set_nftl_read_claim_flag(struct read_claim_node *head, int flag, int page)
 #endif /* TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD */
 
 /* Isolated NFTL C candidates; private aggregate labels are inferred. */
-
-static void nftl_version(void)
-{
-	nand_print(nftl_ro_lc_15,
-		   nftl_ro_lc_14, nftl_ro_lc_13, nftl_ro_lc_12, nftl_ro_lc_11, nftl_ro_lc_10);
-}
 
 struct discard_zone {
 	unsigned char before_debug[0x290];
@@ -6521,10 +6512,12 @@ int _shutdown_op(struct nftl_shutdown_view *object)
 }
 
 extern int nand_get_support_boot_check_crc(void);
+/* OEM callers compare the full W0 result. The helper itself normalizes to
+ * zero or one, but declaring an 8-bit return here changes caller codegen. */
 #ifdef TRIMUI_NFTL_GCC7_PASS
-extern unsigned char nftl_support_boot_check_crc_from_dts(void);
+extern int nftl_support_boot_check_crc_from_dts(void);
 #else
-unsigned char nftl_support_boot_check_crc_from_dts(void)
+int nftl_support_boot_check_crc_from_dts(void)
 {
 	return nand_get_support_boot_check_crc() != 0;
 }
@@ -6778,87 +6771,6 @@ struct nftl_add_block {
 	void *partition;
 };
 extern void *build_nand_partition(struct nftl_build_node *node);
-struct init_nand_parameters {
-	unsigned char before_retry[2494];
-	unsigned short retry_setting;
-	unsigned char before_limits[2];
-	unsigned short limit_a;
-	unsigned short limit_b;
-	unsigned char before_words[2];
-	unsigned int max_erase_times;
-	unsigned int erased_block_limit;
-	unsigned int format_revision;
-};
-struct init_nand_device {
-	unsigned char before_mode[2];
-	unsigned short mode;
-	unsigned char before_params[36];
-	struct init_nand_parameters *params;
-};
-struct init_partition {
-	unsigned char before_pages[34];
-	unsigned short pages;
-	unsigned char before_small[4];
-	unsigned short small;
-	unsigned char before_capacity[2];
-	unsigned int capacity;
-	unsigned char before_callbacks[16];
-	void *read;
-	void *write;
-	struct init_nand_device *device;
-};
-struct init_nftl_config {
-	unsigned short mode;
-	unsigned short first;
-	unsigned short second;
-	unsigned short third;
-	unsigned short fourth;
-	unsigned short fifth;
-	unsigned short limit_a;
-	unsigned short eighth;
-	unsigned short limit_b;
-	unsigned short ninth;
-	unsigned short tenth;
-	unsigned short erase_limit;
-	unsigned short interval;
-	unsigned short device_mode;
-	unsigned short boot_crc;
-	unsigned short reserved;
-	unsigned int revision;
-};
-struct init_nftl_geometry {
-	unsigned char before_erase[16];
-	unsigned short max_erase_times;
-	unsigned char before_secondary[12];
-	unsigned short secondary_erase_times;
-};
-struct init_nftl_zone {
-	unsigned char before_geometry[8];
-	struct init_nftl_geometry *geometry;
-};
-struct init_nftl_owner {
-	unsigned int capacity;
-	unsigned char before_partition[4];
-	struct init_partition *partition;
-	void *next;
-	struct init_nftl_zone *zone;
-	struct init_nftl_config *config;
-	unsigned char before_callbacks[32];
-	void (*read)(void);
-	void (*write)(void);
-	void (*flush)(void);
-	void (*discard)(void);
-	void (*shutdown)(void);
-	void (*sector_read)(void);
-	void (*sector_write)(void);
-	void (*sector_flush)(void);
-};
-_Static_assert(__builtin_offsetof(struct init_nftl_owner, sector_flush) == 128,
-	       "NFTL owner callback layout");
-_Static_assert(__builtin_offsetof(struct init_nand_parameters, format_revision) == 2512,
-	       "NFTL NAND parameter layout");
-_Static_assert(__builtin_offsetof(struct init_partition, device) == 80,
-	       "NFTL partition device layout");
 extern char com[];
 extern char *nand_fdt_get_prop_string_by_path(void *, const char *,
 						const char *);
@@ -6868,129 +6780,8 @@ extern int nftl_start(struct init_nftl_owner *, struct init_nftl_config *,
 		      unsigned int, unsigned int, struct init_partition *,
 		      unsigned int, unsigned char);
 
-__attribute__((optimize("-fno-stack-protector")))
-/* OEM forwards all 32 partition-number bits to nftl_start. */
-int nftl_initialize(struct init_nftl_owner *owner, int number)
-{
-	struct init_partition *part = owner->partition;
-	/* Stock reserves these slots but initializes only the bytes it reads.
-	 * Their remaining bytes must not be treated as terminated strings. */
-	char vendor[12];
-	char path[8];
-	char *compatible = 0;
-	int result;
+extern int nftl_initialize(struct init_nftl_owner *owner, int number);
 
-	__builtin_memcpy(vendor, nftl_vendor_allwinner, 9);
-	path[0] = '/';
-	path[1] = 0;
-	compatible = nand_fdt_get_prop_string_by_path(0, path, com);
-	if (!compatible)
-		return -1;
-	if (nand_memcmp(compatible, vendor, 9))
-		return -1;
-	nftl_version();
-	nftl_get_nand_phyinfo(phyinfo);
-	if (part->pages <= 15)
-		return -1;
-	owner->config = nftl_malloc(36);
-	if (!owner->config) {
-		nand_print(nftl_ro_lc_16, nftl_ro_func_5346);
-		return 1;
-	}
-	/* OEM reloads both shared pointers for each field access. These reads
-	 * can race with another writer; add synchronization only in a separate
-	 * non-stock fix. */
-	owner->config->mode = 0;
-	owner->config->first = 1;
-	owner->config->second = 1;
-	owner->config->third = 1;
-	owner->config->fourth = 0;
-	owner->config->fifth = 0;
-	{
-		struct init_nftl_config *target = owner->config;
-		target->limit_a = part->device->params->limit_a;
-	}
-	{
-		struct init_nftl_config *target = owner->config;
-		target->limit_b = part->device->params->limit_b;
-	}
-	owner->config->eighth = 8;
-	owner->config->ninth = 2;
-	owner->config->tenth = 3;
-	owner->config->revision = 0x0013c680;
-	if (part->device->params->retry_setting == 0) {
-		owner->config->erase_limit = 30;
-		owner->config->interval = 3;
-	} else if (part->device->params->retry_setting == 255) {
-		owner->config->mode = 1;
-		owner->config->erase_limit = 50;
-		owner->config->interval = 40;
-	} else if (part->device->params->retry_setting > 10) {
-		/* Stock changes the caller's NAND settings in place. */
-		part->device->params->retry_setting = 10;
-		owner->config->erase_limit = 30;
-		owner->config->interval = 3;
-	} else {
-		{
-			struct init_nftl_config *target = owner->config;
-			target->erase_limit = (unsigned short)(
-				part->device->params->retry_setting * 50);
-		}
-		{
-			struct init_nftl_config *target = owner->config;
-			target->interval = (unsigned short)(
-				part->device->params->retry_setting * 40);
-		}
-	}
-	{
-		struct init_nftl_config *target = owner->config;
-		target->device_mode = part->device->mode;
-	}
-	if (owner->config->device_mode)
-		owner->config->interval = 3;
-	else
-		owner->config->interval = 1;
-	if (owner->config->erase_limit > 30)
-		owner->config->erase_limit = 30;
-	/* OEM overwrites all interval decisions above unconditionally. */
-	owner->config->interval = 1;
-	/* OEM checks the upper bound first, then reloads for the lower bound. */
-	if (part->device->params->format_revision <= 0x76b2b8 &&
-	    part->device->params->format_revision > 0x1517f) {
-		struct init_nftl_config *target = owner->config;
-		target->revision = part->device->params->format_revision;
-	}
-	owner->config->boot_crc = 1;
-	if (!nftl_support_boot_check_crc_from_dts())
-		owner->config->boot_crc = 0;
-	result = nftl_start(owner, owner->config, &owner->zone, part->read, part->write,
-			    part->capacity, part->small, part->pages,
-			    part, number, 0);
-	if (result)
-		return result;
-	{
-		struct init_nftl_geometry *target = owner->zone->geometry;
-		target->max_erase_times = part->device->params->max_erase_times;
-	}
-	{
-		struct init_nftl_geometry *target = owner->zone->geometry;
-		target->secondary_erase_times =
-			part->device->params->erased_block_limit;
-	}
-	nand_print_dbg(nftl_ro_lc_17,
-		       owner->zone->geometry->max_erase_times);
-	owner->capacity = nftl_get_zone_cap((struct nftl_zone_cap_view *)owner->zone);
-	owner->read = (void (*)(void))_nand_read;
-	owner->write = (void (*)(void))_nand_write;
-	owner->discard = (void (*)(void))_nand_discard;
-	owner->flush = (void (*)(void))_nand_flush_write_cache;
-	owner->shutdown = (void (*)(void))_shutdown_op;
-	owner->sector_read = (void (*)(void))_nand_sector_read;
-	owner->sector_write = (void (*)(void))_nand_sector_write;
-	owner->sector_flush = (void (*)(void))_nand_flush_sector_write_cache;
-	owner->next = 0;
-	return 0;
-}
 struct start_geometry {
 	unsigned char vendor_id[8];
 	unsigned char sectors_per_page;
