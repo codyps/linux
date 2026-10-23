@@ -46,15 +46,22 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 			r += to_r - from_r; g += to_g - from_g; b += to_b - from_b;
 		}
 	} else if (type == 2) {
+		u32 start_rgb;
+
 		if (effect->duration < 500)
 			effect->duration = 500;
 		if (effect->duration > 8000)
 			effect->duration = 8000;
 		n = effect->duration / 16;
 		ramp = effect->duration / 48;
-		from_r = (target >> 20) & 15;
-		from_g = (target >> 12) & 15;
-		from_b = (target >> 4) & 15;
+		/* OEM assembles a four-bit-per-channel start color, then reads
+		 * its channels for the ramp. Preserve that intermediate shape.
+		 */
+		start_rgb = trimui_rgb((target >> 20) & 15,
+				(target >> 12) & 15, (target >> 4) & 15);
+		from_r = (start_rgb >> 16) & 255;
+		from_g = (start_rgb >> 8) & 255;
+		from_b = start_rgb & 255;
 		for (i = 0; i < n; i++)
 			effect->frames[i] = target;
 		r = ramp * from_r; g = ramp * from_g; b = ramp * from_b;
@@ -65,6 +72,8 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 			r += to_r - from_r; g += to_g - from_g; b += to_b - from_b;
 		}
 	} else if (type == 3) {
+		u32 start_rgb;
+
 		/* OEM has an independent type-3 clamp, fill and ramp path. The
 		 * same two loops retain its initial writes and mirrored ramp order.
 		 */
@@ -74,11 +83,13 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 			effect->duration = 8000;
 		n = effect->duration / 16;
 		ramp = effect->duration / 64;
-		from_r = (target >> 20) & 15;
-		from_g = (target >> 12) & 15;
-		from_b = (target >> 4) & 15;
+		start_rgb = trimui_rgb((target >> 20) & 15,
+				(target >> 12) & 15, (target >> 4) & 15);
+		from_r = (start_rgb >> 16) & 255;
+		from_g = (start_rgb >> 8) & 255;
+		from_b = start_rgb & 255;
 		for (i = 0; i < n; i++)
-			effect->frames[i] = trimui_rgb(from_r, from_g, from_b);
+			effect->frames[i] = start_rgb;
 		r = ramp * from_r; g = ramp * from_g; b = ramp * from_b;
 		for (i = 0; i < ramp; i++) {
 			u32 rgb = trimui_rgb(r / ramp, g / ramp, b / ramp);
