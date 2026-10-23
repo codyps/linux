@@ -2537,13 +2537,16 @@ int sandisk_readretry_init(struct sandisk_a19_init_chip *chip)
 #endif
 extern int sandisk_A19_vender_set_param(void *chip, void *value,
 					void *address, int unused);
+/* Stock keeps result/values/address/count at FP+0x34/+0x38/+0x28/+0x24;
+ * GCC's stack-protector pass reorders these private slots. */
+__attribute__((optimize("-fno-stack-protector")))
 int sandisk_A19_set_readretry(struct samsung_set_chip *chip,
 			      unsigned short ignored)
 {
 	int result = 0;
 	unsigned char *values;
 	unsigned char *address;
-	unsigned int count;
+	int count;
 
 	nand_enable_chip(chip);
 	ndfc_disable_randomize(chip->controller);
