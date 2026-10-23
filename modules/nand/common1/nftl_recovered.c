@@ -10889,6 +10889,7 @@ extern void fill_cmd_addr(unsigned int, unsigned int, unsigned int,
 			  unsigned int, void *);
 extern int ndfc_execute_cmd(void *, struct sandisk_first_command *);
 extern void ndfc_disable_ecc(void *controller);
+#ifdef TRIMUI_NFTL_HYNIX_FF_GCC53_BUILD
 int hynix16nm_write_page_FF(struct hynix_ff_request *request,
 			    unsigned int mode)
 {
@@ -10978,6 +10979,7 @@ int hynix16nm_write_page_FF(struct hynix_ff_request *request,
 	nand_disable_chip((struct samsung_set_chip *)chip);
 	return result;
 }
+#endif /* TRIMUI_NFTL_HYNIX_FF_GCC53_BUILD */
 _Static_assert(__builtin_offsetof(struct sandisk_first_command, address_cycles)
 	       == 112, "first-burn address cycles");
 _Static_assert(__builtin_offsetof(struct sandisk_first_command, third_count)
