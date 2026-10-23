@@ -230,6 +230,9 @@ struct command_chip;
 /* The BSP helper takes u8: OEM truncates callers' -1/0xffffffc5 commands. */
 extern int set_one_cmd(struct command_chip *chip, unsigned char command,
 		       unsigned int wait_ready);
+/* OEM keeps result/index at FP+0x38/+0x3c; this function's local byte
+ * arrays otherwise trigger GCC's stack-protector slot reordering. */
+__attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_vender_set_param(void *chip, unsigned char *values,
 			      unsigned char *addresses, unsigned int count)
 {
