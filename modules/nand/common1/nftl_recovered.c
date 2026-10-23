@@ -863,7 +863,8 @@ struct nftl_phy_outer {
 	struct nftl_phy_inner *inner;
 };
 
-#ifndef TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD)
 unsigned char *get_phy_block_addr(struct nftl_phy_outer *outer,
 				  unsigned short block)
 {
@@ -2953,7 +2954,8 @@ int hynix26nm_readretry_exit(struct nftl_retry_chip *chip)
 
 #if !defined(TRIMUI_NFTL_CACHE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SECTOR_CACHE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD)
 void *nftl_malloc(unsigned int size)
 {
 	/* OEM warns above 1.5 MiB but still attempts the allocation. */
@@ -3565,7 +3567,10 @@ struct hynix16nm_init_chip {
 };
 struct hynix16nm_readretry_zone;
 extern int hynix16nm_init_readretry_param(struct hynix16nm_readretry_zone *);
-#ifndef TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD)
+extern int hynix16nm_readretry_init(struct hynix16nm_init_chip *chip);
+#else
 int hynix16nm_readretry_init(struct hynix16nm_init_chip *chip)
 {
 	unsigned int index;
@@ -3592,7 +3597,7 @@ int hynix16nm_readretry_init(struct hynix16nm_init_chip *chip)
 	hynix16nm_init_readretry_param((struct hynix16nm_readretry_zone *)chip);
 	return 0;
 }
-#endif /* TRIMUI_NFTL_HYNIX_SPECIAL_GCC53_BUILD */
+#endif
 extern int hynix26nm_vender_set_param(void *chip, unsigned char *values,
 				     unsigned char *addresses,
 				     unsigned int count);
@@ -3837,6 +3842,7 @@ struct hynix16nm_readretry_zone {
 extern int hynix16nm_get_special_info(unsigned char *buffer,
 				      void *destination, unsigned int bytes,
 				      unsigned int index);
+#ifndef TRIMUI_NFTL_SMALL_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_init_readretry_param(struct hynix16nm_readretry_zone *zone)
 {
@@ -3901,6 +3907,7 @@ int hynix16nm_init_readretry_param(struct hynix16nm_readretry_zone *zone)
 	nand_free_temp_buf(frame.page_buffer);
 	return 0;
 }
+#endif /* TRIMUI_NFTL_SMALL_GCC53_BUILD */
 
 struct hynix20nm_readretry_zone {
 	unsigned char before_chip[24];
@@ -7952,6 +7959,7 @@ struct free_block_zone {
 
 /* OEM inserts equal erase counts before the existing block and trusts both
  * backlinks. A damaged or cyclic list is neither rejected nor repaired. */
+#ifndef TRIMUI_NFTL_SMALL_GCC53_BUILD
 int add_free_list(struct free_block_zone *zone, struct free_block *target)
 {
 	struct free_block *node = &zone->head;
@@ -7971,6 +7979,7 @@ int add_free_list(struct free_block_zone *zone, struct free_block *target)
 	target->previous = node;
 	return 0;
 }
+#endif /* TRIMUI_NFTL_SMALL_GCC53_BUILD */
 
 /* The invalid list sorts descending by unsigned erase time. Equal values
  * insert before the old node; all links are followed without validation. */
@@ -8753,6 +8762,10 @@ HYNIX_LSB_EXIT(hynix26nm_lsb_exit, nftl_ro_lc_88)
 struct prio_gc_owner;
 extern int add_prio_gc(struct prio_gc_owner *zone, void *physical,
 		       unsigned short priority);
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int prio_gc_one(void *zone, unsigned short block,
+			unsigned int priority);
+#else
 int prio_gc_one(void *zone, unsigned short block, unsigned int priority)
 {
 	void *physical = get_phy_block_addr((struct nftl_phy_outer *)zone,
@@ -8772,9 +8785,14 @@ int prio_gc_one(void *zone, unsigned short block, unsigned int priority)
 		    (unsigned short)priority);
 	return 0;
 }
+#endif
 
 extern int add_free_list(struct free_block_zone *zone,
                          struct free_block *node);
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int put_phy_block_to_free_list(struct move_zone *zone,
+				      struct move_node *node);
+#else
 int put_phy_block_to_free_list(struct move_zone *zone,
                                struct move_node *node)
 {
@@ -8791,6 +8809,7 @@ int put_phy_block_to_free_list(struct move_zone *zone,
         nand_print_dbg(nftl_ro_lc_409);
     return result;
 }
+#endif
 
 extern struct free_block *del_free_list_by_block(
     struct free_block_zone *zone, struct free_block *target);
@@ -8842,6 +8861,7 @@ struct prio_gc_node *get_empty_gc_node(struct prio_gc_pool *pool)
 	}
 	return 0;
 }
+#ifndef TRIMUI_NFTL_SMALL_GCC53_BUILD
 int add_prio_gc(struct prio_gc_owner *owner, void *block,
 		unsigned short priority)
 {
@@ -8863,6 +8883,7 @@ int add_prio_gc(struct prio_gc_owner *owner, void *block,
 			    (struct gc_list_node *)node);
 	return 0;
 }
+#endif /* TRIMUI_NFTL_SMALL_GCC53_BUILD */
 
 struct prio_gc_queue {
 	unsigned short count;
@@ -9502,6 +9523,10 @@ struct logic_page_map_zone {
 	unsigned char before_maps[32];
 	unsigned int *maps[];
 };
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int malloc_logic_page_map(struct logic_page_map_zone *zone,
+				 unsigned int remaining_pages);
+#else
 int malloc_logic_page_map(struct logic_page_map_zone *zone,
 			  unsigned int remaining_pages)
 {
@@ -9548,6 +9573,7 @@ int malloc_logic_page_map(struct logic_page_map_zone *zone,
 	}
 	return 0;
 }
+#endif
 struct logic_page_geometry {
 	unsigned char before_divisor[8];
 	unsigned char divisor;
