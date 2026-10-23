@@ -10180,16 +10180,24 @@ extern int fill_no_use_data_to_page(struct do_after_zone *zone);
 extern int physic_info_get_offset(unsigned int *offset);
 extern int physic_info_get_one_copy(unsigned int block, unsigned int offset,
 				    unsigned int *scratch, unsigned char *buffer);
+#ifndef TRIMUI_NFTL_GCC7_PASS
+/* The OEM page has an 8 KiB data area followed by the spare area. */
+struct hynix_special_page_view {
+	unsigned char data[8192];
+	unsigned char spare[4096];
+};
+
 int hynix16nm_get_special_info(unsigned char *buffer, void *destination,
 			      unsigned int length, unsigned int copy_index)
 {
-	unsigned int scratch;
 	unsigned int offset;
-	unsigned int block;
+	unsigned int scratch;
 	unsigned int index;
+	int result;
+	unsigned int block;
 	unsigned char checksum;
 	int offset_result;
-	int result;
+	unsigned char (*page)[8192];
 
 	nand_print_dbg(nftl_ro_lc_107);
 	offset_result = physic_info_get_offset(&offset);
@@ -10202,28 +10210,33 @@ int hynix16nm_get_special_info(unsigned char *buffer, void *destination,
 	result = -1;
 	for (block = 4; block <= 50; block++) {
 		nand_print_dbg(nftl_ro_lc_109, block);
+		page = (void *)buffer;
 		/* OEM ignores a failed copy helper and judges only the header in
 		 * the shared buffer, which may still hold earlier contents. */
-		if (buffer[8192 + 1536] != 0xa5)
+		if (page[1][1536] != 0xa5)
 			physic_info_get_one_copy(block, offset, &scratch, buffer);
-		if (buffer[8192 + 1536] != 0xa5)
-			continue;
-		checksum = 0;
-		for (index = 2; index <= 1023; index++)
-			checksum += buffer[8192 + 1536 + index];
-		if (checksum == buffer[8192 + 1537]) {
-			result = 0;
-			/* OEM performs 32-bit index arithmetic and never bounds-checks
-			 * the resulting payload address or requested length. */
-			nand_memcpy(destination,
-				    buffer + 8192 + 1536 +
-				    (unsigned int)(copy_index * length + 2), length);
-			break;
+		page = (void *)buffer;
+		if (page[1][1536] == 0xa5) {
+			checksum = 0;
+			for (index = 2; index <= 1023; index++)
+				checksum += ((struct hynix_special_page_view *)
+					(&page[0][0] + index))->spare[1536];
+			if (checksum == page[1][1537]) {
+				result = 0;
+				/* OEM performs 32-bit index arithmetic and never
+				 * bounds-checks the payload address or length. */
+				nand_memcpy(destination,
+					    page[1] + 1536 +
+					    (unsigned int)(copy_index * length + 2),
+					    length);
+				break;
+			}
+			page[1][1536] = 0;
 		}
-		buffer[8192 + 1536] = 0;
 	}
 	return result;
 }
+#endif
 
 struct get_new_geometry {
 	unsigned char before_limit[16];
