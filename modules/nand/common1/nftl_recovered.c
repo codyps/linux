@@ -274,7 +274,8 @@ extern int hynix20nm_vender_set_param(void *, unsigned char *,
 /* Preserve the OEM result/index slots at FP+0x38/+0x3c as in the 16nm
  * programmer; callbacks can observe the otherwise reordered frame. */
 #if !defined(TRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_HYNIX_DEFAULT_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_HYNIX_DEFAULT_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_HYNIX26_RETRY_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 int hynix26nm_vender_set_param(void *chip, unsigned char *values,
 			      unsigned char *addresses, unsigned int count)
@@ -4449,54 +4450,59 @@ extern unsigned char hynix26nm_read_retry_cycle;
 extern unsigned char hynix26nm_read_retry_reg_num;
 extern unsigned char hynix26nm_read_retry_reg_adr[];
 extern signed short hynix26nm_read_retry_val[];
-#ifndef TRIMUI_NFTL_HYNIX_PAGE_END_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_HYNIX_PAGE_END_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_GCC7_PASS)
+/* This typed view keeps the stock row-stride address calculation. The OEM
+ * index and mutable count are unchecked, so a row access can cross into the
+ * next row and the values stack buffer can overflow. */
+extern signed short hynix26nm_read_retry_rows[][4]
+    asm("hynix26nm_read_retry_val");
 __attribute__((optimize("-fno-stack-protector")))
 int hynix26nm_set_readretry(struct hynix20nm_retry_chip *chip)
 {
-	struct {
-		unsigned char values[8];
-		unsigned short padding;
-		unsigned short base;
-		int result;
-		unsigned short padding2;
-		unsigned short adjusted;
-		unsigned int index;
-	} locals;
+	unsigned int index;
+	short adjusted;
+	/* Unused slots retain the OEM stack frame with this compiler. */
+	unsigned short padding2;
+	int result;
+	unsigned short base;
+	unsigned short padding;
+	unsigned char values[8];
 
-	locals.result = 0;
+	result = 0;
 	if (chip->cycle > hynix26nm_read_retry_cycle)
 		return -53;
 	/* OEM trusts the mutable register count and does not guard this
 	 * eight-byte stack buffer against overflow. */
-	for (locals.index = 0; locals.index < hynix26nm_read_retry_reg_num;
-	     locals.index++) {
-		locals.base = chip->saved[locals.index];
-		locals.adjusted = (unsigned short)(
-			hynix26nm_read_retry_val[chip->cycle * 4 + locals.index]
-			+ locals.base);
+	for (index = 0; index < hynix26nm_read_retry_reg_num;
+	     index++) {
+		base = chip->saved[index];
+		adjusted = (unsigned short)(
+			hynix26nm_read_retry_rows[chip->cycle][index]
+			+ base);
 		/* Stock truncates to 16 bits before interpreting the sum as
 		 * signed and clamping it to the byte range. */
-		if ((short)locals.adjusted > 255)
-			locals.adjusted = 255;
-		else if ((short)locals.adjusted < 0)
-			locals.adjusted = 0;
+		if ((short)adjusted > 255)
+			adjusted = 255;
+		else if ((short)adjusted < 0)
+			adjusted = 0;
 		else
-			locals.adjusted &= 255;
-		locals.values[locals.index] = locals.adjusted;
+			adjusted &= 255;
+		values[index] = adjusted;
 	}
 	if (chip->cycle >= 2 && chip->cycle <= 6)
-		locals.values[0] = 0;
+		values[0] = 0;
 	if (chip->cycle == 5 || chip->cycle == 6)
-		locals.values[1] = 0;
-	locals.result = hynix26nm_vender_set_param(
-		chip, locals.values, hynix26nm_read_retry_reg_adr,
+		values[1] = 0;
+	result = hynix26nm_vender_set_param(
+		chip, values, hynix26nm_read_retry_reg_adr,
 		hynix26nm_read_retry_reg_num);
 	nand_print_dbg(nftl_ro_lc_85);
-	for (locals.index = 0; locals.index < hynix26nm_read_retry_reg_num;
-	     locals.index++)
-		nand_print_dbg(nftl_ro_lc_44, locals.values[locals.index]);
+	for (index = 0; index < hynix26nm_read_retry_reg_num;
+	     index++)
+		nand_print_dbg(nftl_ro_lc_44, values[index]);
 	nand_print_dbg(nftl_ro_lc_45);
-	return locals.result;
+	return result;
 }
 #else
 extern int hynix26nm_set_readretry(struct hynix20nm_retry_chip *chip);
