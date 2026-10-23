@@ -1187,6 +1187,7 @@ struct cache_read_delete_owner {
 	unsigned char before_second[2];
 	unsigned short second_count;
 };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 struct cache_read_delete_node *del_from_cache_read_list(
 	struct cache_read_delete_owner *owner,
 	struct cache_read_delete_node *target)
@@ -1207,6 +1208,11 @@ struct cache_read_delete_node *del_from_cache_read_list(
 	target->previous = 0;
 	return target;
 }
+#else
+extern struct cache_read_delete_node *del_from_cache_read_list(
+	struct cache_read_delete_owner *owner,
+	struct cache_read_delete_node *target);
+#endif
 struct cache_read_add_zone {
 	unsigned char before_first[2];
 	unsigned short first_count;
@@ -1275,7 +1281,8 @@ struct cache_read_empty_node *get_empty_cahce_node(
 	}
 	return 0;
 }
-#ifndef TRIMUI_NFTL_FLUSH_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_FLUSH_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_GCC7_PASS)
 int add_to_cache_read_list_tail(struct cache_read_add_zone *zone,
 				struct cache_read_delete_node *node,
 				unsigned int state)
@@ -3698,8 +3705,9 @@ struct gc_node {
 struct gc_zone {
 	unsigned short count;
 };
-/* Stock uses UXTH for the count decrement; this C body uses AND #0xffff.
- * Both retain the same low halfword, including wraparound at zero. */
+/* OEM GCC 5.3.1 emits stock UXTH for the count decrement; preserve
+ * its 16-bit wraparound at zero. */
+#ifndef TRIMUI_NFTL_GCC7_PASS
 struct gc_node *del_from_gc_list(struct gc_zone *zone, struct gc_node *node)
 {
 	struct gc_node *previous = node->previous;
@@ -3713,6 +3721,10 @@ struct gc_node *del_from_gc_list(struct gc_zone *zone, struct gc_node *node)
 	zone->count--;
 	return node;
 }
+#else
+extern struct gc_node *del_from_gc_list(struct gc_zone *zone,
+					struct gc_node *node);
+#endif
 
 struct diag_current_zone {
 	unsigned char before_flags[0x19];
@@ -3722,8 +3734,9 @@ struct diag_current_zone {
 	unsigned char before_other[0x250 - 0x218];
 	void *other;
 };
-/* Three equality comparisons load the same operands into exchanged
- * registers; equality and every branch target remain unchanged. */
+/* OEM GCC 5.3.1 preserves the stock equality-load order and all three
+ * branches. The OEM trusts both the zone and block pointers. */
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int is_current_blcok(struct diag_current_zone *zone, void *block)
 {
 	int result = 0;
@@ -3736,6 +3749,9 @@ int is_current_blcok(struct diag_current_zone *zone, void *block)
 	}
 	return result;
 }
+#else
+extern int is_current_blcok(struct diag_current_zone *zone, void *block);
+#endif
 
 extern int nand_clean_zone_table(void *zone);
 extern int nand_find_zone_table(void *zone);
@@ -5345,8 +5361,8 @@ next_scan:
 }
 
 /* Inferred cache write-list bodies. Private layout names are provisional.
- * Each 16-bit count update uses AND #0xffff where stock uses UXTH; both
- * preserve the same low halfword, including wraparound. */
+ * OEM GCC 5.3.1 restores stock UXTH on the 16-bit count updates and their
+ * unchecked wraparound. */
 struct cache_list_node {
     unsigned short unknown;
     unsigned short flag;
@@ -5360,6 +5376,7 @@ struct cache_list_owner {
     unsigned char until_head[1738];
     struct cache_list_node head;
 };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int add_to_cache_write_list_tail(struct cache_list_owner *owner, struct cache_list_node *node)
 {
     struct cache_list_node *cursor = &owner->head;
@@ -5373,6 +5390,10 @@ int add_to_cache_write_list_tail(struct cache_list_owner *owner, struct cache_li
     owner->count++;
     return 0;
 }
+#else
+extern int add_to_cache_write_list_tail(struct cache_list_owner *owner,
+					struct cache_list_node *node);
+#endif
 struct sector_node {
     unsigned short unknown;
     unsigned short flag;
@@ -5402,6 +5423,7 @@ struct sector_owner {
     unsigned char until_head[524];
     struct sector_node head;
 };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int add_to_sector_cache_write_list_tail(struct sector_owner *owner, struct sector_node *node)
 {
     struct sector_node *cursor = &owner->head;
@@ -5415,7 +5437,12 @@ int add_to_sector_cache_write_list_tail(struct sector_owner *owner, struct secto
     owner->count++;
     return 0;
 }
-#ifndef TRIMUI_NFTL_FLUSH_GCC53_BUILD
+#else
+extern int add_to_sector_cache_write_list_tail(struct sector_owner *owner,
+					       struct sector_node *node);
+#endif
+#if !defined(TRIMUI_NFTL_FLUSH_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_GCC7_PASS)
 struct cache_list_node *del_from_cache_write_list(struct cache_list_owner *owner, struct cache_list_node *node)
 {
     struct cache_list_node *previous = node->previous;
@@ -5434,6 +5461,7 @@ struct cache_list_node *del_from_cache_write_list(struct cache_list_owner *owner
 extern struct cache_list_node *del_from_cache_write_list(
 	struct cache_list_owner *owner, struct cache_list_node *node);
 #endif
+#ifndef TRIMUI_NFTL_GCC7_PASS
 struct sector_node *del_from_sector_cache_write_list(struct sector_owner *owner, struct sector_node *node)
 {
     struct sector_node *previous = node->previous;
@@ -5448,6 +5476,10 @@ struct sector_node *del_from_sector_cache_write_list(struct sector_owner *owner,
     owner->count--;
     return node;
 }
+#else
+extern struct sector_node *del_from_sector_cache_write_list(
+	struct sector_owner *owner, struct sector_node *node);
+#endif
 
 struct sector_cache_init_view {
 	unsigned short capacity;
@@ -5732,6 +5764,7 @@ struct gc_list {
 	unsigned char before_head[0x148 - 2];
 	struct gc_list_node head;
 };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int add_to_gc_list_tail(struct gc_list *list, struct gc_list_node *target)
 {
 	struct gc_list_node *node;
@@ -5746,6 +5779,10 @@ int add_to_gc_list_tail(struct gc_list *list, struct gc_list_node *target)
 	list->count++;
 	return 0;
 }
+#else
+extern int add_to_gc_list_tail(struct gc_list *list,
+			       struct gc_list_node *target);
+#endif
 
 
 struct invalid_node *del_block_invalid_list(struct invalid_zone *zone)
