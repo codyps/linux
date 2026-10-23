@@ -1,3 +1,3 @@
 /* SPDX-License-Identifier: GPL-2.0 */
-/* Select nine stock-exact C list helpers from the OEM compiler pass. */
+/* Select eleven stock-exact C list and empty-node helpers. */
 #include "nftl_recovered.c"

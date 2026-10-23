@@ -5489,6 +5489,7 @@ struct empty_sector_pool {
 	unsigned char before_nodes[16];
 	struct sector_node nodes[16];
 };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 struct sector_node *get_empty_sector_cahce_node(struct empty_sector_pool *pool)
 {
 	unsigned short index;
@@ -5500,6 +5501,9 @@ struct sector_node *get_empty_sector_cahce_node(struct empty_sector_pool *pool)
 	}
 	return 0;
 }
+#else
+extern struct sector_node *get_empty_sector_cahce_node(struct empty_sector_pool *pool);
+#endif
 struct sector_owner {
     unsigned char unknown[2];
     unsigned short count;
@@ -9035,6 +9039,7 @@ struct prio_gc_pool {
 	struct prio_gc_node nodes[10];
 };
 struct prio_gc_owner { unsigned char before[696]; struct prio_gc_pool pool; };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 struct prio_gc_node *get_empty_gc_node(struct prio_gc_pool *pool)
 {
 	unsigned short index;
@@ -9047,6 +9052,9 @@ struct prio_gc_node *get_empty_gc_node(struct prio_gc_pool *pool)
 	}
 	return 0;
 }
+#else
+extern struct prio_gc_node *get_empty_gc_node(struct prio_gc_pool *pool);
+#endif
 #if !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD)
 int add_prio_gc(struct prio_gc_owner *owner, void *block,
