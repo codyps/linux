@@ -4940,7 +4940,7 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 	struct second_scan_zone *zone = (struct second_scan_zone *)raw_zone;
 	struct first_scan_block *block, *first = 0, *second = 0;
 	struct first_scan_block *last_recorded = 0, *last_mapping = 0;
-	struct first_scan_block *erased = 0, *candidate = 0;
+	struct first_scan_block *erased = 0, *candidate;
 	struct physic_op_param op;
 	unsigned char oob[16];
 	unsigned int read_page, last_used = ~0U, previous_used = ~0U;
@@ -5071,12 +5071,20 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 		nand_print(nftl_ro_lc_241,
 			   last_recorded->used_count, first->used_count);
 	zone->current = 0;
+	candidate = 0;
 	if (!first && !second) {
 		nand_print(nftl_ro_lc_242);
-		if (last_recorded && ((zone->flags & 1) ||
-		    last_recorded->state == 170))
+		/* OEM has two separate call sites and reads the flag before
+		 * checking last_recorded. Keep that order even though the calls
+		 * have identical arguments. */
+		if (zone->flags & 1) {
+			if (last_recorded)
+				add_prio_gc((struct prio_gc_owner *)zone,
+					    last_recorded, 3);
+		} else if (last_recorded && last_recorded->state == 170) {
 			add_prio_gc((struct prio_gc_owner *)zone,
 				    last_recorded, 3);
+		}
 	} else if (!second) {
 		candidate = first;
 		if (zone->flags & 1) {
