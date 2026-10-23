@@ -7674,10 +7674,16 @@ __attribute__((optimize("-fno-stack-protector")))
 int torture_block_and_mark(struct torture_zone *zone,
 			   struct erase_block_info *block)
 {
+	int result = 0;
+	int pattern_index = 0;
+	int pattern_count = 0;
+	int page = 0;
+	int page_count = 3;
+	unsigned char oob[15] __attribute__((aligned(8))) = {0};
 	struct physic_op_param op;
-	unsigned char oob[15] = {0};
-	unsigned int page;
-	int result;
+	/* OEM initializes this counter to zero, then enables its one-pattern loop.
+	 * Keep both writes: they are visible in the shipped unoptimized body. */
+	pattern_count = 1;
 
 	nand_print(nftl_ro_lc_301, block->number);
 	set_physic_op_par(&op, block->number, 0,
@@ -7689,45 +7695,51 @@ int torture_block_and_mark(struct torture_zone *zone,
 	}
 	block->erase_count++;
 	/* OEM's initialized table has one pattern and tests only three pages,
-	 * regardless of the advertised geometry. Reload the writable table
+	 * regardless of the advertised geometry. A corrected test should derive
+	 * these bounds from the table and geometry. Reload the writable table
 	 * around callbacks as the stock object does. */
-	memset(zone->page_data, patterns[0], zone->geometry->page_bytes);
-	memset(oob, patterns[0], 15);
-	for (page = 0; page < 3; page++) {
-		set_physic_op_par(&op, block->number, (unsigned short)page,
-				  zone->geometry->fixed_page,
-				  zone->page_data, oob);
-		result = zone->write(zone, &op);
-		if (result) {
-			nand_print(nftl_ro_lc_302,
-				   nftl_ro_func_7402, block->number, page);
-			goto bad;
+	for (pattern_index = 0; pattern_index < pattern_count; pattern_index++) {
+		memset(zone->page_data, patterns[pattern_index],
+		       zone->geometry->page_bytes);
+		memset(oob, patterns[pattern_index], 15);
+		for (page = 0; page < page_count; page++) {
+			set_physic_op_par(&op, block->number, (unsigned short)page,
+					  zone->geometry->fixed_page,
+					  zone->page_data, oob);
+			result = zone->write(zone, &op);
+			if (result) {
+				nand_print(nftl_ro_lc_302,
+					   nftl_ro_func_7402, block->number, page);
+				goto bad;
+			}
 		}
-	}
-	for (page = 0; page < 3; page++) {
-		memset(zone->page_data, 0, zone->geometry->page_bytes);
-		memset(oob, 0, 15);
-		set_physic_op_par(&op, block->number, (unsigned short)page,
-				  zone->geometry->fixed_page,
-				  zone->page_data, oob);
-		result = zone->read(zone, &op);
-		if (result) {
-			nand_print(nftl_ro_lc_303,
-				   nftl_ro_func_7402, block->number, page);
-			goto bad;
-		}
-		result = nftl_check_pattern(zone->page_data, patterns[0],
-					    zone->geometry->page_bytes);
-		if (result) {
-			nand_print(nftl_ro_lc_304,
-				   nftl_ro_func_7402, block->number, page, patterns[0]);
-			goto bad;
-		}
-		result = nftl_check_pattern(oob, patterns[0], 15);
-		if (result) {
-			nand_print(nftl_ro_lc_305,
-				   nftl_ro_func_7402, block->number, page, patterns[0]);
-			goto bad;
+		for (page = 0; page < page_count; page++) {
+			memset(zone->page_data, 0, zone->geometry->page_bytes);
+			memset(oob, 0, 15);
+			set_physic_op_par(&op, block->number, (unsigned short)page,
+					  zone->geometry->fixed_page,
+					  zone->page_data, oob);
+			result = zone->read(zone, &op);
+			if (result) {
+				nand_print(nftl_ro_lc_303,
+					   nftl_ro_func_7402, block->number, page);
+				goto bad;
+			}
+			result = nftl_check_pattern(zone->page_data, patterns[pattern_index],
+						    zone->geometry->page_bytes);
+			if (result) {
+				nand_print(nftl_ro_lc_304,
+					   nftl_ro_func_7402, block->number, page,
+					   patterns[pattern_index]);
+				goto bad;
+			}
+			result = nftl_check_pattern(oob, patterns[pattern_index], 15);
+			if (result) {
+				nand_print(nftl_ro_lc_305,
+					   nftl_ro_func_7402, block->number, page,
+					   patterns[pattern_index]);
+				goto bad;
+			}
 		}
 	}
 	set_physic_op_par(&op, block->number, 0,
