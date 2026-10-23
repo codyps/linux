@@ -2966,7 +2966,7 @@ int zone_param_exit(struct exit_zone *zone)
 	return 0;
 }
 
-extern int fill_no_use_data_to_page(void *zone);
+extern int fill_no_use_data_to_page(struct do_after_zone *zone);
 /* Kernel -fstack-protector reorders two integer locals without adding a
  * canary; disabling it for this function restores the stock stack layout. */
 __attribute__((optimize("-fno-stack-protector")))
@@ -2976,7 +2976,7 @@ int fill_no_use_page_to_current_block(void *zone, int count)
 	int result;
 
 	for (index = 0; index < count; index++) {
-		result = fill_no_use_data_to_page(zone);
+		result = fill_no_use_data_to_page((struct do_after_zone *)zone);
 		/* OEM treats zero as early success and nonzero as continuation. */
 		if (result == 0)
 			return 0;
@@ -3002,7 +3002,7 @@ int fill_no_use_data_to_current_block(struct no_use_data_zone *zone)
 	int result;
 
 	for (index = 0; index < zone->extent->count; index++) {
-		result = fill_no_use_data_to_page(zone);
+		result = fill_no_use_data_to_page((struct do_after_zone *)zone);
 		/* OEM treats zero as early success and re-reads count each
 		 * iteration, including after the helper mutates the extent. */
 		if (result == 0)
@@ -10417,9 +10417,11 @@ int do_after_write(struct do_after_zone *zone)
 }
 
 #ifndef TRIMUI_NFTL_FILL_CURRENT_GCC53_BUILD
-int fill_no_use_data_to_page(void *owner)
+int fill_no_use_data_to_page(struct do_after_zone *zone)
 {
-	struct do_after_zone *zone = owner;
+	/* The OEM keeps the incoming zone pointer in its argument slot.
+	 * Copying it to a second local adds a stack slot and changes the
+	 * callback-visible frame without changing the apparent C behavior. */
 	if (current_block_at_last_page((struct current_zone *)zone,
 				       (struct current_page *)zone->current)) {
 		if (write_phy_page_map_to_current_block(
@@ -10467,7 +10469,7 @@ int fill_no_use_data_to_page(void *owner)
 	return 8;
 }
 #else
-extern int fill_no_use_data_to_page(void *owner);
+extern int fill_no_use_data_to_page(struct do_after_zone *zone);
 #endif
 
 extern int physic_info_get_offset(unsigned int *offset);
