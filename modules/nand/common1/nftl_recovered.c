@@ -9564,7 +9564,7 @@ int toshiba_exit_readretry(struct samsung_set_chip *chip)
 {
 	unsigned char *values;
 	unsigned char *addresses;
-	int count;
+	unsigned int count;
 	int result;
 
 	if (toshiba_read_retry_mode != 16 &&
