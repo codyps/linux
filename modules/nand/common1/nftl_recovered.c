@@ -2645,6 +2645,7 @@ int free_nrc(struct nrc_buffers *buffers)
 	return 0;
 }
 
+#ifndef TRIMUI_NFTL_OOB_LOGIC_GCC53_BUILD
 void set_spare_data(unsigned char *oob, unsigned int value, unsigned char offset,
 		    unsigned char count)
 {
@@ -2663,6 +2664,10 @@ void set_spare_data(unsigned char *oob, unsigned int value, unsigned char offset
 		index++;
 	}
 }
+#else
+extern void set_spare_data(unsigned char *oob, unsigned int value, unsigned char offset,
+		    unsigned char count);
+#endif
 void set_start_block_flag(void *unused, unsigned char *oob,
 			  unsigned int number)
 {
@@ -2804,6 +2809,9 @@ struct no_use_data_zone {
 	unsigned char before_extent[8];
 	struct no_use_data_extent *extent;
 };
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int fill_no_use_data_to_current_block(struct no_use_data_zone *zone);
+#else
 __attribute__((optimize("-fno-stack-protector")))
 int fill_no_use_data_to_current_block(struct no_use_data_zone *zone)
 {
@@ -2819,6 +2827,7 @@ int fill_no_use_data_to_current_block(struct no_use_data_zone *zone)
 	}
 	return 1;
 }
+#endif
 
 /* Bounded C candidates for stock NFTL assembly, not OEM declaration claims. */
 
@@ -3018,6 +3027,11 @@ extern void set_oob_special_page(void *unused, unsigned char *oob,
 			  unsigned short erase_count);
 #endif
 
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern void set_oob_logic_page(void *unused, unsigned char *oob,
+			unsigned int block, unsigned int page,
+			unsigned short erase_count);
+#else
 void set_oob_logic_page(void *unused, unsigned char *oob,
 			unsigned int block, unsigned int page,
 			unsigned short erase_count)
@@ -3030,6 +3044,7 @@ void set_oob_logic_page(void *unused, unsigned char *oob,
 	/* OEM forces the two high bits of byte one after encoding the block. */
 	oob[1] |= 0xc0;
 }
+#endif
 
 struct invalid_page_node {
 	unsigned short number;
@@ -9515,7 +9530,7 @@ int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 	}
 	return error;
 }
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || defined(TRIMUI_NFTL_COLD_GCC53_BUILD)
 extern unsigned int *get_logic_page_map(struct logic_page_map_zone *zone,
 				 unsigned int page);
 #else
@@ -9705,6 +9720,9 @@ struct cold_map_entry {
 /* Stock uses the no-stack-protector slot order for current and entry. Its
  * extra UXTB before masking the low cold bit is retained as a documented
  * instruction-level difference: it cannot affect the stored low bit. */
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int get_cold_logic_page(void *zone, int page, unsigned int pages);
+#else
 __attribute__((optimize("-fno-stack-protector")))
 int get_cold_logic_page(void *zone, int page, unsigned int pages)
 {
@@ -9728,6 +9746,7 @@ int get_cold_logic_page(void *zone, int page, unsigned int pages)
 	}
 	return -1;
 }
+#endif
 extern int nand_cache_read(struct nand_cache_read_zone *zone, int page,
 			   unsigned short mode,
 			   void *buffer);
@@ -9956,6 +9975,7 @@ int do_after_write(struct do_after_zone *zone)
 	return 0;
 }
 
+#ifndef TRIMUI_NFTL_FILL_CURRENT_GCC53_BUILD
 int fill_no_use_data_to_page(void *owner)
 {
 	struct do_after_zone *zone = owner;
@@ -10005,6 +10025,9 @@ int fill_no_use_data_to_page(void *owner)
 	}
 	return 8;
 }
+#else
+extern int fill_no_use_data_to_page(void *owner);
+#endif
 
 extern int physic_info_get_offset(unsigned int *offset);
 extern int physic_info_get_one_copy(unsigned int block, unsigned int offset,
