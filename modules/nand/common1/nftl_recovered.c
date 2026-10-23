@@ -4747,6 +4747,7 @@ int init_zone_after_first_scan(struct scan_zone *zone,
 			       unsigned int available_blocks)
 {
 	unsigned int needed_blocks;
+	register unsigned int remaining asm("w0");
 
 	/* Stock performs both unsigned divisions without checking for zero.
 	 * AArch64 UDIV yields zero for a zero divisor in the shipped binary;
@@ -4766,8 +4767,11 @@ int init_zone_after_first_scan(struct scan_zone *zone,
 	zone->free_capacity = (available_blocks - needed_blocks) *
 		zone->geometry->page_factor *
 		zone->geometry->pages_per_block;
-	/* The OEM subtracts in 32 bits, so a zero minimum wraps to UINT_MAX. */
-	if (available_blocks - needed_blocks <
+	/* The OEM subtracts in 32 bits, so a zero minimum wraps to UINT_MAX.
+	 * Keep the difference in w0 through the following reserve comparison;
+	 * the stock branch compares it with the freshly loaded minimum. */
+	remaining = available_blocks - needed_blocks;
+	if (remaining <
 	    (unsigned int)zone->reserve_geometry->min_free_blocks - 1) {
 		nand_print(nftl_ro_lc_232,
 			   available_blocks, needed_blocks);
