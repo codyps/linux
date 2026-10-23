@@ -2384,7 +2384,7 @@ struct sandisk_a19_init_chip {
 	unsigned char before_params[92];
 	struct sandisk_a19_init_params *params;
 };
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || defined(TRIMUI_NFTL_SPECIAL_GCC53_BUILD)
 extern int sandisk_A19_readretry_init(struct sandisk_a19_init_chip *chip);
 #else
 int sandisk_A19_readretry_init(struct sandisk_a19_init_chip *chip)
@@ -2410,7 +2410,7 @@ int sandisk_A19_readretry_init(struct sandisk_a19_init_chip *chip)
 #endif
 /* The standard SanDisk initializer uses the same chip/configuration offsets
  * as A19. Retain separate global settings and its activation branch. */
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || defined(TRIMUI_NFTL_SPECIAL_GCC53_BUILD)
 extern int sandisk_readretry_init(struct sandisk_a19_init_chip *chip);
 #else
 int sandisk_readretry_init(struct sandisk_a19_init_chip *chip)
@@ -8246,6 +8246,7 @@ struct samsung_read_chip_id {
 };
 /* The four vendor page-end paths keep chip/result/retry in OEM private slots
  * FP+0x20/+0x28/+0x2c. Callback failures can observe these frame bytes. */
+#ifndef TRIMUI_NFTL_SPECIAL_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int samsung_read_page_end(struct samsung_read_request *request)
 {
@@ -8287,6 +8288,7 @@ int samsung_read_page_end(struct samsung_read_request *request)
 	}
 	return result;
 }
+#endif /* TRIMUI_NFTL_SPECIAL_GCC53_BUILD */
 /* C-visible name for the OEM-local eight-byte pointer at BSS offset 416. */
 extern unsigned char *micron_p1_recovered;
 int micron_set_readretry(struct samsung_set_chip *chip)
@@ -8325,6 +8327,7 @@ done:
 	nand_disable_chip(chip);
 	return result;
 }
+#ifndef TRIMUI_NFTL_SPECIAL_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int micron_read_page_end(struct samsung_read_request *request)
 {
@@ -8366,12 +8369,14 @@ int micron_read_page_end(struct samsung_read_request *request)
 	}
 	return result;
 }
+#endif /* TRIMUI_NFTL_SPECIAL_GCC53_BUILD */
 /* An exported alias retains the original local BSS symbol and its assembly
  * relocations while letting this C body address the same four-byte slot. */
 extern unsigned int toshiba_retry_flag_recovered;
 extern unsigned char toshiba_read_retry_cycle;
 extern int toshiba_set_readretry(struct samsung_set_chip *);
 extern int toshiba_exit_readretry(struct samsung_set_chip *);
+#ifndef TRIMUI_NFTL_SPECIAL_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int toshiba_read_page_end(struct samsung_read_request *request)
 {
@@ -8415,10 +8420,12 @@ int toshiba_read_page_end(struct samsung_read_request *request)
 	}
 	return result;
 }
+#endif /* TRIMUI_NFTL_SPECIAL_GCC53_BUILD */
 
 extern int sandisk_set_readretry(struct samsung_set_chip *, unsigned short);
 extern int sandisk_end_one_read_retry(struct samsung_set_chip *);
 extern int sandisk_exit_readretry(struct samsung_set_chip *);
+#ifndef TRIMUI_NFTL_SPECIAL_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int sandisk_read_page_end(struct samsung_read_request *request)
 {
@@ -8470,6 +8477,7 @@ int sandisk_read_page_end(struct samsung_read_request *request)
 	}
 	return result;
 }
+#endif /* TRIMUI_NFTL_SPECIAL_GCC53_BUILD */
 
 extern int hynix26nm_set_readretry(struct hynix20nm_retry_chip *);
 /* Both Hynix generations use this OEM retry state machine. In particular,
@@ -8602,6 +8610,7 @@ int sandisk_A19_set_lmflgfix_next(const unsigned int *index,
 		((struct samsung_read_controller *)state.chip->controller)->channel, \
 		((struct samsung_read_chip_id *)state.chip)->chip, \
 		request->block, request->page, state.chip->retry)
+#ifndef TRIMUI_NFTL_SPECIAL_GCC53_BUILD
 int sandisk_A19_read_page_end(struct samsung_read_request *request)
 {
 	/* OEM's private 16-byte record places chip/result/retry at FP+32/40/44. */
@@ -8695,6 +8704,7 @@ int sandisk_A19_read_page_end(struct samsung_read_request *request)
 	}
 	return state.result;
 }
+#endif /* TRIMUI_NFTL_SPECIAL_GCC53_BUILD */
 #undef A19_REPORT
 
 extern int set_one_addr(struct command_chip *chip, unsigned int address);
@@ -8998,7 +9008,7 @@ struct samsung_init_chip {
 };
 extern unsigned char samsung_read_retry_mode;
 extern unsigned char samsung_read_retry_cycle;
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || defined(TRIMUI_NFTL_SPECIAL_GCC53_BUILD)
 extern int samsung_readretry_init(struct samsung_init_chip *chip);
 #else
 int samsung_readretry_init(struct samsung_init_chip *chip)
@@ -9018,7 +9028,7 @@ int samsung_readretry_init(struct samsung_init_chip *chip)
 extern unsigned char toshiba_read_retry_mode;
 extern unsigned char toshiba_read_retry_cycle;
 extern unsigned char toshiba_read_retry_reg_cnt;
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || defined(TRIMUI_NFTL_SPECIAL_GCC53_BUILD)
 extern int toshiba_readretry_init(struct samsung_init_chip *chip);
 #else
 int toshiba_readretry_init(struct samsung_init_chip *chip)
@@ -9043,6 +9053,9 @@ extern int hynix20nm_readretry_init(struct hynix20nm_retry_chip *);
 struct hynix26nm_init_chip;
 extern int hynix26nm_readretry_init(struct hynix26nm_init_chip *);
 extern int hynix20nm_read_page_end(struct samsung_read_request *);
+extern int samsung_read_page_end(struct samsung_read_request *);
+extern int micron_read_page_end(struct samsung_read_request *);
+extern int toshiba_read_page_end(struct samsung_read_request *);
 extern int sandisk_read_page_end(struct samsung_read_request *);
 extern int sandisk_A19_read_page_end(struct samsung_read_request *);
 extern unsigned char hynix16nm_read_retry_mode, hynix16nm_read_retry_cycle,
@@ -9107,19 +9120,31 @@ int name(void) \
 	return state.result; \
 }
 
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int samsung_special_init(void);
+#else
 SPECIAL_INIT_TWO(samsung_special_init, samsung_readretry_init,
 	samsung_read_page_end, samsung_read_retry_mode, samsung_read_retry_cycle,
 	nftl_ro_lc_40,
 	nftl_ro_lc_41)
+#endif
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int micron_special_init(void);
+#else
 SPECIAL_INIT_TWO(micron_special_init, micron_readretry_init,
 	micron_read_page_end, micron_read_retry_mode, micron_read_retry_cycle,
 	nftl_ro_lc_74,
 	nftl_ro_lc_75)
+#endif
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int toshiba_special_init(void);
+#else
 SPECIAL_INIT_THREE(toshiba_special_init, toshiba_readretry_init,
 	toshiba_read_page_end, toshiba_read_retry_mode, toshiba_read_retry_cycle,
 	toshiba_read_retry_reg_cnt,
 	nftl_ro_lc_82,
 	nftl_ro_lc_83)
+#endif
 SPECIAL_INIT_THREE(hynix16nm_special_init, hynix16nm_readretry_init,
 	hynix16nm_read_page_end, hynix16nm_read_retry_mode,
 	hynix16nm_read_retry_cycle, hynix16nm_read_retry_reg_num,
@@ -9135,16 +9160,24 @@ SPECIAL_INIT_THREE(hynix26nm_special_init, hynix26nm_readretry_init,
 	hynix26nm_read_retry_cycle, hynix26nm_read_retry_reg_num,
 	nftl_ro_lc_91,
 	nftl_ro_lc_92)
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int sandisk_special_init(void);
+#else
 SPECIAL_INIT_THREE(sandisk_special_init, sandisk_readretry_init,
 	sandisk_read_page_end, sandisk_read_retry_mode,
 	sandisk_read_retry_cycle, sandisk_read_retry_reg_cnt,
 	nftl_ro_lc_138,
 	nftl_ro_lc_139)
+#endif
+#ifdef TRIMUI_NFTL_GCC7_PASS
+extern int sandisk_A19_special_init(void);
+#else
 SPECIAL_INIT_THREE(sandisk_A19_special_init, sandisk_A19_readretry_init,
 	sandisk_A19_read_page_end, sandisk_A19_read_retry_mode,
 	sandisk_A19_read_retry_cycle, sandisk_A19_read_retry_reg_cnt,
 	nftl_ro_lc_100,
 	nftl_ro_lc_101)
+#endif
 
 extern unsigned int sandisk_toggle_mode_flag;
 extern unsigned char sandisk_read_retry_disable_cmd_19[];
