@@ -467,16 +467,37 @@ static ssize_t show_duration_m(struct class *class, struct class_attribute *attr
 	return sprintf(buffer, "%d\n", trimui_effect_m.duration);
 }
 
-/* OEM scalar setters root their address at the BSS pointer just before the
- * LED state, then form the field address before saving the return count.
- * They ignore parse errors and return count even for bad input; TODO: report
- * parser failures only in a separate behavior-changing fix. */
+/* OEM scalar setters form the field address before saving the return count.
+ * F1/F2 use the BSS pointer immediately before the LED state. The L/R/M
+ * setters use interior effect-frame addresses as roots; these frames are
+ * not read by the setters. The parser errors are ignored and count is
+ * returned even for bad input; TODO: report errors in a separate fix. */
+_Static_assert(sizeof(sunxi_led) +
+	__builtin_offsetof(struct trimui_stock_led_state,
+			   effects[1].frames[102]) == 0x1100,
+	       "right-effect address root");
+_Static_assert(sizeof(sunxi_led) +
+	__builtin_offsetof(struct trimui_stock_led_state,
+			   effects[2].frames[222]) == 0x2200,
+	       "left-effect address root");
+_Static_assert(sizeof(sunxi_led) +
+	__builtin_offsetof(struct trimui_stock_led_state,
+			   effects[3].frames[342]) == 0x3300,
+	       "middle-effect address root");
 static ssize_t store_duration_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	struct trimui_led_effect *effect = &trimui_effect_m;
-	asm volatile("" : "+r"(effect));
-	kstrtoint(buffer, 0, &effect->duration);
-	return count;
+	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[3].frames[342];
+	int *value;
+	size_t saved_count;
+
+	asm volatile("" : "+r"(anchor));
+	value = (int *)(anchor + sizeof(sunxi_led) +
+		__builtin_offsetof(struct trimui_stock_led_state, effects[4].duration) - 0x3300);
+	asm volatile("" : "+r"(value));
+	saved_count = count;
+	asm volatile("" : "+r"(saved_count));
+	kstrtoint(buffer, 0, value);
+	return saved_count;
 }
 
 static ssize_t show_duration_l(struct class *class, struct class_attribute *attr, char *buffer)
@@ -486,10 +507,18 @@ static ssize_t show_duration_l(struct class *class, struct class_attribute *attr
 
 static ssize_t store_duration_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	struct trimui_led_effect *effect = &trimui_effect_l;
-	asm volatile("" : "+r"(effect));
-	kstrtoint(buffer, 0, &effect->duration);
-	return count;
+	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[2].frames[222];
+	int *value;
+	size_t saved_count;
+
+	asm volatile("" : "+r"(anchor));
+	value = (int *)(anchor + sizeof(sunxi_led) +
+		__builtin_offsetof(struct trimui_stock_led_state, effects[3].duration) - 0x2200);
+	asm volatile("" : "+r"(value));
+	saved_count = count;
+	asm volatile("" : "+r"(saved_count));
+	kstrtoint(buffer, 0, value);
+	return saved_count;
 }
 
 static ssize_t show_duration_r(struct class *class, struct class_attribute *attr, char *buffer)
@@ -499,10 +528,18 @@ static ssize_t show_duration_r(struct class *class, struct class_attribute *attr
 
 static ssize_t store_duration_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	struct trimui_led_effect *effect = &trimui_effect_r;
-	asm volatile("" : "+r"(effect));
-	kstrtoint(buffer, 0, &effect->duration);
-	return count;
+	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[1].frames[102];
+	int *value;
+	size_t saved_count;
+
+	asm volatile("" : "+r"(anchor));
+	value = (int *)(anchor + sizeof(sunxi_led) +
+		__builtin_offsetof(struct trimui_stock_led_state, effects[2].duration) - 0x1100);
+	asm volatile("" : "+r"(value));
+	saved_count = count;
+	asm volatile("" : "+r"(saved_count));
+	kstrtoint(buffer, 0, value);
+	return saved_count;
 }
 
 static ssize_t show_duration_f1(struct class *class, struct class_attribute *attr, char *buffer)
@@ -576,10 +613,18 @@ static ssize_t show_cycles_m(struct class *class, struct class_attribute *attr, 
 
 static ssize_t store_cycles_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	struct trimui_led_effect *effect = &trimui_effect_m;
-	asm volatile("" : "+r"(effect));
-	kstrtoint(buffer, 0, &effect->cycles);
-	return count;
+	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[3].frames[342];
+	int *value;
+	size_t saved_count;
+
+	asm volatile("" : "+r"(anchor));
+	value = (int *)(anchor + sizeof(sunxi_led) +
+		__builtin_offsetof(struct trimui_stock_led_state, effects[4].cycles) - 0x3300);
+	asm volatile("" : "+r"(value));
+	saved_count = count;
+	asm volatile("" : "+r"(saved_count));
+	kstrtoint(buffer, 0, value);
+	return saved_count;
 }
 
 static ssize_t show_cycles_l(struct class *class, struct class_attribute *attr, char *buffer)
@@ -589,10 +634,18 @@ static ssize_t show_cycles_l(struct class *class, struct class_attribute *attr, 
 
 static ssize_t store_cycles_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	struct trimui_led_effect *effect = &trimui_effect_l;
-	asm volatile("" : "+r"(effect));
-	kstrtoint(buffer, 0, &effect->cycles);
-	return count;
+	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[2].frames[222];
+	int *value;
+	size_t saved_count;
+
+	asm volatile("" : "+r"(anchor));
+	value = (int *)(anchor + sizeof(sunxi_led) +
+		__builtin_offsetof(struct trimui_stock_led_state, effects[3].cycles) - 0x2200);
+	asm volatile("" : "+r"(value));
+	saved_count = count;
+	asm volatile("" : "+r"(saved_count));
+	kstrtoint(buffer, 0, value);
+	return saved_count;
 }
 
 static ssize_t show_cycles_r(struct class *class, struct class_attribute *attr, char *buffer)
@@ -602,10 +655,18 @@ static ssize_t show_cycles_r(struct class *class, struct class_attribute *attr, 
 
 static ssize_t store_cycles_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	struct trimui_led_effect *effect = &trimui_effect_r;
-	asm volatile("" : "+r"(effect));
-	kstrtoint(buffer, 0, &effect->cycles);
-	return count;
+	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[1].frames[102];
+	int *value;
+	size_t saved_count;
+
+	asm volatile("" : "+r"(anchor));
+	value = (int *)(anchor + sizeof(sunxi_led) +
+		__builtin_offsetof(struct trimui_stock_led_state, effects[2].cycles) - 0x1100);
+	asm volatile("" : "+r"(value));
+	saved_count = count;
+	asm volatile("" : "+r"(saved_count));
+	kstrtoint(buffer, 0, value);
+	return saved_count;
 }
 
 static ssize_t show_cycles_f1(struct class *class, struct class_attribute *attr, char *buffer)
