@@ -5907,17 +5907,8 @@ int panic_init_part(const char *name, unsigned int offset, unsigned int size)
 	return 0;
 }
 
-/* AND #0xff and stock UXTB both zero-extend the comparison result. */
-unsigned char is_on_panic(void)
-{
-	return nand_on_panic != 0;
-}
-
-/* Preserve OEM's unchecked shared BSS flag and byte result. */
-int is_panic_enable(void)
-{
-	return panic_enable != 0;
-}
+unsigned char is_on_panic(void);
+int is_panic_enable(void);
 
 struct panic_read_ops {
 	unsigned char before_read[72];
