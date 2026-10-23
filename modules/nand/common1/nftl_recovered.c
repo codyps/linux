@@ -5686,8 +5686,9 @@ int flush_write_cache_to_nand(struct flush_cache_zone *zone, int ignored_count)
 		status = zone->read(zone, node->page, cache->page_buffer);
 		/* OEM copies from the read buffer even after a read failure. */
 		/* OEM masks the sector count to seven bits and trusts that the
-		 * resulting offset does not exceed page_bytes. */
-		offset = (node->sectors & 127) << 9;
+		 * resulting offset does not exceed page_bytes. The explicit
+		 * truncation preserves its 16-bit offset and bitfield insert. */
+		offset = (unsigned short)((node->sectors & 127) << 9);
 		nand_memcpy(data + offset, cache->page_buffer + offset,
 			    (unsigned int)zone->geometry->page_bytes - offset);
 		if (status == 10)
