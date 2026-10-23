@@ -467,9 +467,14 @@ static ssize_t show_duration_m(struct class *class, struct class_attribute *attr
 	return sprintf(buffer, "%d\n", trimui_effect_m.duration);
 }
 
+/* The OEM duration/cycle setters form the effect base before the field
+ * address. They ignore parse errors and return count even for bad input;
+ * TODO: report parser failures only in a separate behavior-changing fix. */
 static ssize_t store_duration_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_m.duration);
+	struct trimui_led_effect *effect = &trimui_effect_m;
+	asm volatile("" : "+r"(effect));
+	kstrtoint(buffer, 0, &effect->duration);
 	return count;
 }
 
@@ -480,7 +485,9 @@ static ssize_t show_duration_l(struct class *class, struct class_attribute *attr
 
 static ssize_t store_duration_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_l.duration);
+	struct trimui_led_effect *effect = &trimui_effect_l;
+	asm volatile("" : "+r"(effect));
+	kstrtoint(buffer, 0, &effect->duration);
 	return count;
 }
 
@@ -491,7 +498,9 @@ static ssize_t show_duration_r(struct class *class, struct class_attribute *attr
 
 static ssize_t store_duration_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_r.duration);
+	struct trimui_led_effect *effect = &trimui_effect_r;
+	asm volatile("" : "+r"(effect));
+	kstrtoint(buffer, 0, &effect->duration);
 	return count;
 }
 
@@ -502,7 +511,9 @@ static ssize_t show_duration_f1(struct class *class, struct class_attribute *att
 
 static ssize_t store_duration_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_f1.duration);
+	struct trimui_led_effect *effect = &trimui_effect_f1;
+	asm volatile("" : "+r"(effect));
+	kstrtoint(buffer, 0, &effect->duration);
 	return count;
 }
 
@@ -513,7 +524,9 @@ static ssize_t show_duration_f2(struct class *class, struct class_attribute *att
 
 static ssize_t store_duration_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_f2.duration);
+	struct trimui_led_effect *effect = &trimui_effect_f2;
+	asm volatile("" : "+r"(effect));
+	kstrtoint(buffer, 0, &effect->duration);
 	return count;
 }
 
@@ -546,7 +559,9 @@ static ssize_t show_cycles_m(struct class *class, struct class_attribute *attr, 
 
 static ssize_t store_cycles_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_m.cycles);
+	struct trimui_led_effect *effect = &trimui_effect_m;
+	asm volatile("" : "+r"(effect));
+	kstrtoint(buffer, 0, &effect->cycles);
 	return count;
 }
 
@@ -557,7 +572,9 @@ static ssize_t show_cycles_l(struct class *class, struct class_attribute *attr, 
 
 static ssize_t store_cycles_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_l.cycles);
+	struct trimui_led_effect *effect = &trimui_effect_l;
+	asm volatile("" : "+r"(effect));
+	kstrtoint(buffer, 0, &effect->cycles);
 	return count;
 }
 
@@ -568,7 +585,9 @@ static ssize_t show_cycles_r(struct class *class, struct class_attribute *attr, 
 
 static ssize_t store_cycles_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_r.cycles);
+	struct trimui_led_effect *effect = &trimui_effect_r;
+	asm volatile("" : "+r"(effect));
+	kstrtoint(buffer, 0, &effect->cycles);
 	return count;
 }
 
@@ -579,7 +598,9 @@ static ssize_t show_cycles_f1(struct class *class, struct class_attribute *attr,
 
 static ssize_t store_cycles_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_f1.cycles);
+	struct trimui_led_effect *effect = &trimui_effect_f1;
+	asm volatile("" : "+r"(effect));
+	kstrtoint(buffer, 0, &effect->cycles);
 	return count;
 }
 
@@ -590,7 +611,9 @@ static ssize_t show_cycles_f2(struct class *class, struct class_attribute *attr,
 
 static ssize_t store_cycles_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_f2.cycles);
+	struct trimui_led_effect *effect = &trimui_effect_f2;
+	asm volatile("" : "+r"(effect));
+	kstrtoint(buffer, 0, &effect->cycles);
 	return count;
 }
 
