@@ -11387,12 +11387,17 @@ extern int nand_op(unsigned char kind, struct nand_op_zone *zone,
 		   unsigned int sector, unsigned int count, void *data);
 #endif
 
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int hynix16nm_major_check_byte(unsigned char *value, unsigned int mode,
 			       unsigned int level, const unsigned char *primary,
 			       const unsigned char *secondary, unsigned int length)
 {
-	unsigned int valid = 0;
 	unsigned int bit;
+	unsigned int index;
+	unsigned int ones;
+	unsigned int zeros;
+	unsigned int accepted;
+	unsigned int valid;
 	unsigned char result = 0;
 
 	if ((length >> 1) > level) {
@@ -11401,11 +11406,11 @@ int hynix16nm_major_check_byte(unsigned char *value, unsigned int mode,
 		*value = 0xff;
 		return -107;
 	}
+	valid = 0;
 	for (bit = 0; bit < 8; bit++) {
-		unsigned int ones = 0;
-		unsigned int zeros = 0;
-		unsigned int accepted = 0;
-		unsigned int index;
+		ones = 0;
+		zeros = 0;
+		accepted = 0;
 
 		for (index = 0; index < length; index++) {
 			if (((unsigned int)primary[index] >> bit) & 1)
@@ -11414,7 +11419,7 @@ int hynix16nm_major_check_byte(unsigned char *value, unsigned int mode,
 				zeros++;
 		}
 		if (ones > level) {
-			result |= (unsigned char)(1U << bit);
+			result |= 1U << bit;
 			accepted = 1;
 		}
 		if (zeros > level)
@@ -11424,6 +11429,9 @@ int hynix16nm_major_check_byte(unsigned char *value, unsigned int mode,
 			 * Do not validate its length independently. */
 			ones = 0;
 			zeros = 0;
+			/* OEM clears the already-zero vote flag before checking the
+			 * inverted second copy. Keep the redundant store and order. */
+			accepted = 0;
 			for (index = 0; index < length; index++) {
 				if (((unsigned int)secondary[index] >> bit) & 1)
 					zeros++;
@@ -11433,7 +11441,7 @@ int hynix16nm_major_check_byte(unsigned char *value, unsigned int mode,
 			if (zeros > level)
 				accepted = 1;
 			if (ones > level) {
-				result |= (unsigned char)(1U << bit);
+				result |= 1U << bit;
 				accepted = 1;
 			}
 		}
@@ -11452,6 +11460,7 @@ int hynix16nm_major_check_byte(unsigned char *value, unsigned int mode,
 	*value = 0xff;
 	return -80;
 }
+#endif /* !TRIMUI_NFTL_GCC7_PASS */
 
 /* Aliases preserve the original table locations; their declared bounds are
  * intentionally not used to clamp the OEM retry index. */
