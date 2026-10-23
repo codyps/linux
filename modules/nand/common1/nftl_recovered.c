@@ -9855,6 +9855,9 @@ int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 	} else if (oob[11] != 0xa5 || oob[15] != 0xa5) {
 		nand_print(nftl_ro_lc_397);
 		error = 1;
+		/* The stock body executes one NOP at this join point, only after
+		 * the bad-marker diagnostic. Keep its instruction timing. */
+		asm volatile("nop");
 	}
 	if (error == 1) {
 		/* OEM prints its original source line and dumps 16 bytes of OOB;
