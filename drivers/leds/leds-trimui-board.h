@@ -816,7 +816,8 @@ static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr
 /* This view begins eight bytes before the LED state. The adjacent scalar
  * fields share the address root used by the stock sysfs setters. */
 struct trimui_frame_control_view {
-	u8 unused[0x14];
+	u8 unused[8];
+	int mask_lr, mask_f, mask_m;
 	int enable, cycles, fps, len, effect_enable;
 };
 extern struct trimui_frame_control_view trimui_frame_controls;
@@ -998,7 +999,9 @@ static ssize_t show_frames_override_m_enable(struct class *class, struct class_a
 
 static ssize_t store_frames_override_m_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_mask_m);
+	struct trimui_frame_control_view *control = &trimui_frame_controls;
+	asm volatile("" : "+r"(control));
+	kstrtoint(buffer, 0, &control->mask_m);
 	return count;
 }
 
@@ -1009,7 +1012,9 @@ static ssize_t show_frames_override_f1f2_enable(struct class *class, struct clas
 
 static ssize_t store_frames_override_f1f2_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_mask_f);
+	struct trimui_frame_control_view *control = &trimui_frame_controls;
+	asm volatile("" : "+r"(control));
+	kstrtoint(buffer, 0, &control->mask_f);
 	return count;
 }
 
@@ -1020,7 +1025,9 @@ static ssize_t show_frames_override_lr_enable(struct class *class, struct class_
 
 static ssize_t store_frames_override_lr_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_mask_lr);
+	struct trimui_frame_control_view *control = &trimui_frame_controls;
+	asm volatile("" : "+r"(control));
+	kstrtoint(buffer, 0, &control->mask_lr);
 	return count;
 }
 
