@@ -1905,6 +1905,7 @@ int get_vaild_blocks(struct valid_block_zone *zone, unsigned int start,
 		unsigned int index;
 		unsigned int remaining;
 	} local;
+	register struct physical_zone *call_zone asm("x1");
 
 	local.block = (struct physical_block *)
 		((unsigned char *)zone->chip->blocks + ((unsigned long)start << 6));
@@ -1921,7 +1922,11 @@ int get_vaild_blocks(struct valid_block_zone *zone, unsigned int start,
 			if (local.remaining == 0)
 				return 0;
 		}
-		if (is_last_phy_block(local.block, (struct physical_zone *)zone) == 1)
+		/* OEM loads the zone argument into x1 before the block argument
+		 * into x0. Both addresses are unchanged across this call. */
+		call_zone = (struct physical_zone *)zone;
+		asm("" : "+r"(call_zone));
+		if (is_last_phy_block(local.block, call_zone) == 1)
 			break;
 		local.block = (struct physical_block *)
 			((unsigned char *)local.block + 64);
