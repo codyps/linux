@@ -10299,6 +10299,7 @@ int nand_discard(struct nand_discard_view *zone, unsigned int sector,
 		 unsigned int count)
 {
 	struct nand_discard_frame frame;
+	struct smart_print_payload *write_smart;
 
 	/* Keep OEM's private slots and its single reused cache-node pointer. */
 	frame.result = 0;
@@ -10309,7 +10310,12 @@ int nand_discard(struct nand_discard_view *zone, unsigned int sector,
 		nand_print(nftl_ro_lc_430);
 		return 1;
 	}
-	zone->smart->recv_discard_sectors += count;
+	/* OEM samples the write target before reloading the read target.
+	 * This is an unsynchronized race if another thread replaces smart;
+	 * retain the shipped sampling order rather than repairing the race. */
+	write_smart = zone->smart;
+	write_smart->recv_discard_sectors =
+		zone->smart->recv_discard_sectors + count;
 	frame.page = sector / zone->geometry->sectors_per_page;
 	frame.remainder = sector % zone->geometry->sectors_per_page;
 	frame.first_page_sectors = zone->geometry->sectors_per_page - frame.remainder;
@@ -10343,7 +10349,10 @@ int nand_discard(struct nand_discard_view *zone, unsigned int sector,
 		zone->discard_page(zone, frame.page);
 		count--;
 		frame.page++;
-		zone->smart->real_discard_sectors +=
+		/* The loop counter uses the same OEM pointer sampling order. */
+		write_smart = zone->smart;
+		write_smart->real_discard_sectors =
+			zone->smart->real_discard_sectors +
 			zone->geometry->sectors_per_page;
 	} while (count);
 	return frame.result;
