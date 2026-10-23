@@ -1021,9 +1021,11 @@ static ssize_t store_motor_voltage(struct class *class, struct class_attribute *
 {
 	struct trimui_motor_state_view *state;
 
-	/* The state has a fixed link-time address. GCC may rematerialize that
-	 * address after the parser call; both uses still name the same object. */
+	/* OEM keeps this state pointer live across kstrtoint and then re-reads
+	 * voltage from the same object. Keep the pointer live without adding a
+	 * memory access or changing the stock NULL/error-pointer handling. */
 	state = &trimui_motor_state;
+	asm("" : "+r"(state));
 	kstrtoint(buffer, 0, &state->voltage);
 	/* Stock passes NULL/error pointers through. TODO: check regulator_get in a separate fix. */
 	regulator_set_voltage(state->regulator, state->voltage,
