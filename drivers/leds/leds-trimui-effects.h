@@ -128,7 +128,15 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 		n = effect->duration / 16;
 		for (i = 0; i < n; i++)
 			effect->frames[i] = 0;
-		count = (type - 4) * 10;
+		/* Stock selects the three fixed blink-table extents through
+		 * distinct type branches, in descending type order.
+		 */
+		if (type == 7)
+			count = 30;
+		else if (type == 6)
+			count = 20;
+		else
+			count = 10;
 		for (i = 0; i < count; i++)
 			if (trimui_blink_pattern[i])
 				effect->frames[i] = target;
