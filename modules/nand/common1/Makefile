@@ -13,18 +13,21 @@ obj-$(CONFIG_SUNXI_NAND) += nftl_rodata_recovered.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_recovered.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_cache_init_gcc53.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_sector_cache_init_gcc53.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_invalid_page_incr_gcc53.o
 endif
 CFLAGS_nftl_recovered.o += -O0 -fno-builtin -fno-pic -mcmodel=small
-# The stock NFTL object identifies Linaro GCC 5.3.1 (2016.05). These two
+# The stock NFTL object identifies Linaro GCC 5.3.1 (2016.05). These
 # recovered bodies need its field-address code generation; the rest of NFTL
 # remains on the established compiler to retain previously matched bodies.
 TRIMUI_NFTL_GCC53 ?= $(srctree)/../../tools/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-gcc
 $(obj)/nftl_cache_init_gcc53.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) nftl_cache_init --
 $(obj)/nftl_sector_cache_init_gcc53.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) nftl_sector_cache_init --
-$(obj)/nftl_cache_init_gcc53.o $(obj)/nftl_sector_cache_init_gcc53.o: override NOSTDINC_FLAGS := -nostdinc -isystem $(shell $(TRIMUI_NFTL_GCC53) -print-file-name=include)
-$(obj)/nftl_cache_init_gcc53.o $(obj)/nftl_sector_cache_init_gcc53.o: $(srctree)/scripts/trimui_nftl_select_cc.py
+$(obj)/nftl_invalid_page_incr_gcc53.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) phy_block_from_invalid_page_incr --
+$(obj)/nftl_cache_init_gcc53.o $(obj)/nftl_sector_cache_init_gcc53.o $(obj)/nftl_invalid_page_incr_gcc53.o: override NOSTDINC_FLAGS := -nostdinc -isystem $(shell $(TRIMUI_NFTL_GCC53) -print-file-name=include)
+$(obj)/nftl_cache_init_gcc53.o $(obj)/nftl_sector_cache_init_gcc53.o $(obj)/nftl_invalid_page_incr_gcc53.o: $(srctree)/scripts/trimui_nftl_select_cc.py
 CFLAGS_nftl_cache_init_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_sector_cache_init_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_invalid_page_incr_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_tables_recovered.o += -O0
 CFLAGS_nftl_bss_recovered.o += -O0
 CFLAGS_nftl_rodata_recovered.o += -O0
