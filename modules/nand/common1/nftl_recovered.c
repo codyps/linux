@@ -418,6 +418,7 @@ NFTL_MAX_ERASE(get_block_max_erase_time_from_free_list,
 NFTL_MAX_ERASE(get_block_max_erase_time_from_invalid_list,
 	       nftl_invalid_erase_owner, nftl_invalid_erase_node)
 
+#ifndef TRIMUI_NFTL_GCC7_PASS
 __attribute__((optimize("-fno-stack-protector")))
 struct nftl_invalid_erase_node *get_block_min_erase_time_from_invalid_list(
 	struct nftl_invalid_erase_owner *owner, unsigned short limit,
@@ -442,6 +443,11 @@ struct nftl_invalid_erase_node *get_block_min_erase_time_from_invalid_list(
 		return best;
 	return 0;
 }
+#else
+extern struct nftl_invalid_erase_node *get_block_min_erase_time_from_invalid_list(
+	struct nftl_invalid_erase_owner *owner, unsigned short limit,
+	unsigned int count_limit);
+#endif
 
 __attribute__((optimize("-fno-stack-protector")))
 unsigned short get_max_erase_time_from_free_list(
