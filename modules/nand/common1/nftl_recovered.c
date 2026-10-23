@@ -5550,7 +5550,8 @@ struct write_flush_zone {
 	unsigned char before_cache[1072 - 660];
 	struct write_flush_list cache;
 };
-extern int flush_write_cache_to_nand(void *zone, int count);
+struct flush_cache_zone;
+extern int flush_write_cache_to_nand(struct flush_cache_zone *zone, int count);
 /* GCC otherwise moves the private loop state to different frame slots.
  * Keep the OEM stack layout and its zero-limit underflow behavior. */
 __attribute__((optimize("-fno-stack-protector")))
@@ -5630,21 +5631,39 @@ extern int nand_memcmp(const void *, const void *, unsigned long);
 extern int nand_phy_get_page_type(unsigned int);
 
 __attribute__((optimize("-fno-stack-protector")))
-int flush_write_cache_to_nand(void *owner, int ignored_count)
+int flush_write_cache_to_nand(struct flush_cache_zone *zone, int ignored_count)
 {
-	struct flush_cache_zone *zone = owner;
-	struct flush_cache_data *cache = &zone->cache;
+	struct flush_cache_geometry *geometry = 0;
+	unsigned char signature_match = 1;
+	/* The OEM frame reserves six unused bytes behind this eight-byte
+	 * signature. Keep the private frame shape without reading them. */
+	unsigned char signature0[14];
+	unsigned char signature1[8];
+	int status;
+	struct flush_cache_data *cache;
 	struct flush_cache_node *node;
 	unsigned char *data;
 	unsigned short offset;
-	int status = 0;
-	unsigned char signature_match;
-	unsigned char signature0[8] =
-		{0x2c, 0x64, 0x44, 0x32, 0xa5, 0xff, 0xff, 0xff};
-	unsigned char signature1[8] =
-		{0x2c, 0x84, 0x44, 0x32, 0xaa, 0x04, 0x00, 0x00};
 
 	(void)ignored_count;
+	signature0[0] = 0x2c;
+	signature0[1] = 0x64;
+	signature0[2] = 0x44;
+	signature0[3] = 0x32;
+	signature0[4] = 0xa5;
+	signature0[5] = 0xff;
+	signature0[6] = 0xff;
+	signature0[7] = 0xff;
+	signature1[0] = 0x2c;
+	signature1[1] = 0x84;
+	signature1[2] = 0x44;
+	signature1[3] = 0x32;
+	signature1[4] = 0xaa;
+	signature1[5] = 0x04;
+	signature1[6] = 0x00;
+	signature1[7] = 0x00;
+	status = 0;
+	cache = &zone->cache;
 	if (!cache->write_head) {
 		nand_print(nftl_ro_lc_426);
 		return 0;
@@ -5672,10 +5691,14 @@ int flush_write_cache_to_nand(void *owner, int ignored_count)
 	status = zone->write(zone, node->page, data);
 	if (status)
 		nand_print(nftl_ro_lc_428);
+	/* OEM snapshots the geometry after the write callback. A later
+	 * comparison callback can replace zone->geometry, but both signature
+	 * checks still use this original pointer. */
+	geometry = zone->geometry;
 	/* Only the low byte of nand_memcmp's signed result is retained. */
-	signature_match = nand_memcmp(zone->geometry, signature0, 8);
+	signature_match = nand_memcmp(geometry, signature0, 8);
 	if (signature_match)
-		signature_match = nand_memcmp(zone->geometry, signature1, 8);
+		signature_match = nand_memcmp(geometry, signature1, 8);
 	if (!signature_match && zone->pages &&
 	    nand_phy_get_page_type(zone->pages - 1) == 2) {
 		status = zone->write(zone, node->page, data);
@@ -12937,7 +12960,7 @@ int nand_cache_write(struct nand_cache_write_zone *zone, int page,
 		add_to_cache_write_list_tail((struct cache_list_owner *)cache,
 					     (struct cache_list_node *)node);
 		if (cache->field1 >= zone->configuration->write_limit &&
-		    flush_write_cache_to_nand(zone, 0)) {
+		    flush_write_cache_to_nand((struct flush_cache_zone *)zone, 0)) {
 			nand_print(nftl_ro_lc_423);
 			return 1;
 		}
@@ -12946,7 +12969,7 @@ int nand_cache_write(struct nand_cache_write_zone *zone, int page,
 	/* OEM retries until the write-cache count falls below the limit.
 	 * A successful flush that does not reduce the count loops forever. */
 	while (cache->field1 >= zone->configuration->write_limit) {
-		if (flush_write_cache_to_nand(zone, 0)) {
+		if (flush_write_cache_to_nand((struct flush_cache_zone *)zone, 0)) {
 			nand_print(nftl_ro_lc_424);
 			return 1;
 		}
