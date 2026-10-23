@@ -4033,6 +4033,7 @@ int hynix20nm_getotpparam(struct otp_chip *chip, unsigned char *value)
 
 struct command_chip;
 extern int set_one_addr(struct command_chip *, unsigned int);
+#ifdef TRIMUI_NFTL_HYNIX20_OTP_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *owner)
 {
@@ -4127,6 +4128,7 @@ int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *owner)
 	nand_free_temp_buf(buffer);
 	return result;
 }
+#endif /* TRIMUI_NFTL_HYNIX20_OTP_GCC53_BUILD */
 
 extern unsigned char hynix20nm_read_retry_reg_num;
 extern unsigned char hynix20nm_read_retry_reg_adr[];
