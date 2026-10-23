@@ -63,6 +63,8 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 			effect->duration = 8000;
 		n = effect->duration / 16;
 		ramp = effect->duration / 48;
+		/* OEM finishes the type-2 ramp division before packing the start color. */
+		asm volatile("" : : "r"(ramp));
 		/* OEM assembles a four-bit-per-channel start color, then reads
 		 * its channels for the ramp. Preserve that intermediate shape.
 		 */
