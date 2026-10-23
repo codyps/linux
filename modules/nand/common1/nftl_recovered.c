@@ -4161,12 +4161,15 @@ extern int hynix20nm_init_readretry_param(struct hynix20nm_readretry_zone *);
 #endif
 
 extern int hynix20nm_vender_get_param_otp_hynix(struct otp_chip *chip);
+/* The OEM GCC 5.3 frame places attempt, column, row, result in ascending
+ * slots. Keep these declarations in reverse order for that compiler. */
+#ifdef TRIMUI_NFTL_HYNIX20_GETOTP_GCC53_BUILD
 int hynix20nm_getotpparam(struct otp_chip *chip, unsigned char *value)
 {
-	unsigned int attempt = 0;
-	unsigned int column;
-	unsigned int row;
 	int result;
+	unsigned int row;
+	unsigned int column;
+	unsigned int attempt = 0;
 
 	/* The OEM makes five attempts and reports the last vendor error.
 	 * Its debug message prints the zero-based attempt number. Stock tests
@@ -4189,6 +4192,7 @@ int hynix20nm_getotpparam(struct otp_chip *chip, unsigned char *value)
 				chip->saved[(row << 3) + column];
 	return 0;
 }
+#endif
 
 struct command_chip;
 extern int set_one_addr(struct command_chip *, unsigned int);
