@@ -3198,20 +3198,21 @@ int nftl_cache_init(void *owner)
 	cache->entries[31].links[1] = 0;
 	cache->entries[31].links[2] = 0;
 	cache->entries[31].links[3] = 0;
+	/* OEM does not clamp the count to the 32-entry array. Larger counts
+	 * write through following zone fields; preserve the unchecked walk. */
 	for (index = 0; index < cache->count; index++) {
-		struct cache_init_entry *entry = &cache->entries[index];
-
-		entry->index = index;
-		entry->status = 255;
-		entry->page = -1;
-		entry->links[0] = 0;
-		entry->links[1] = 0;
-		entry->links[2] = 0;
-		entry->links[3] = 0;
-		entry->field0 = 0;
-		entry->field1 = 0;
-		entry->allocation = nftl_malloc(zone->geometry->allocation_size);
-		if (!entry->allocation) {
+		cache->entries[index].index = index;
+		cache->entries[index].status = 255;
+		cache->entries[index].page = -1;
+		cache->entries[index].links[0] = 0;
+		cache->entries[index].links[1] = 0;
+		cache->entries[index].links[2] = 0;
+		cache->entries[index].links[3] = 0;
+		cache->entries[index].field0 = 0;
+		cache->entries[index].field1 = 0;
+		cache->entries[index].allocation = nftl_malloc(
+			zone->geometry->allocation_size);
+		if (!cache->entries[index].allocation) {
 			/* OEM leaks all earlier allocations on this failure. */
 			nand_print(nftl_ro_lc_413, nftl_ro_func_7884);
 			return 1;
