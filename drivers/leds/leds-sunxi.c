@@ -1674,15 +1674,12 @@ led_show(struct class *class, struct class_attribute *attr, char *buf)
 
 #ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
 #include "leds-trimui-board.h"
-#endif
-
+#else
 static struct class_attribute led_class_attrs[] = {
 	__ATTR(light, 0644, led_show, NULL),
-#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
-	__ATTR(tg5040_exterme_brightness, 0664, show_tg5040_max_scale, store_tg5040_max_scale),
-#endif
 	__ATTR_NULL,
 };
+#endif
 
 static struct class led_class = {
 	.name		= "led",

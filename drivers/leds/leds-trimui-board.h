@@ -1262,6 +1262,16 @@ static ssize_t store_speaker_mute(struct class *class, struct class_attribute *a
 	return saved_count;
 }
 
+/* Stock places this table after the motor, speaker and animation attributes.
+ * GCC 7 emits these static declarations in reverse order within this unit.
+ */
+static struct class_attribute led_class_attrs[] = {
+	__ATTR(light, 0644, led_show, NULL),
+	__ATTR(tg5040_exterme_brightness, 0664,
+	       show_tg5040_max_scale, store_tg5040_max_scale),
+	__ATTR_NULL,
+};
+
 static struct class_attribute trimui_led_anim_attrs[] = {
 	__ATTR(help, 0664, help_show, NULL),
 	__ATTR(enable, 0664, show_led_enable, store_led_enable),
