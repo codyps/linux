@@ -2411,7 +2411,8 @@ int check_cross_talk(struct cross_talk_zone *zone,
 	unsigned char *oobptr;
 	int result;
 
-	for (; index < zone->geometry->pages; index++) {
+	goto cross_check;
+	cross_body: {
 		data = 0;
 		oobptr = oob;
 		set_physic_op_par(&op, block->number, index,
@@ -2427,9 +2428,16 @@ int check_cross_talk(struct cross_talk_zone *zone,
 			register struct cross_talk_stats *target asm("x0") = zone->stats;
 
 			target->max = oobptr[14];
-			break;
+			goto cross_done;
 		}
 	}
+	index++;
+	cross_check:
+	/* OEM uses the unsigned pages,index compare order in this tail. */
+	asm goto("cmp %w0, %w1\n\tb.hi %l[cross_body]"
+		 : : "r"((unsigned int)zone->geometry->pages), "r"(index)
+		 : "cc" : cross_body);
+	cross_done:
 	/* OEM reports success even if every physical read failed. */
 	return 0;
 }
