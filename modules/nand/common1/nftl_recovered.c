@@ -8326,7 +8326,8 @@ int samsung_read_page_end(struct samsung_read_request *request)
 	if (result == -2) {
 		nand_print_dbg(nftl_ro_lc_37);
 		retry = 1;
-		while (samsung_read_retry_cycle > retry) {
+		goto retry_check;
+	retry_body: {
 			chip->retry = retry;
 			result = samsung_set_readretry(chip);
 			if (result == 0) {
@@ -8340,11 +8341,21 @@ int samsung_read_page_end(struct samsung_read_request *request)
 						((struct samsung_read_chip_id *)chip)->chip,
 						request->block, request->page,
 						chip->retry);
-					break;
+					goto retry_done;
 				}
+			} else {
+				/* OEM executes one NOP only when retry setup fails. */
+				asm volatile("nop");
 			}
 			retry++;
 		}
+	retry_check:
+		/* OEM compares cycle to retry and branches directly to the body.
+		 * Keep this two-instruction shape and the setter-failure NOP above. */
+		asm goto("cmp %w0, %w1\n\tb.gt %l[retry_body]"
+			 : : "r"((int)samsung_read_retry_cycle), "r"(retry)
+			 : "cc" : retry_body);
+	retry_done:;
 		/* OEM resets retry mode even after errors and ignores reset failure.
 		 * It also returns ECC_LIMIT (10) after an eventual clean retry. */
 		chip->retry = 0;
@@ -8407,7 +8418,8 @@ int micron_read_page_end(struct samsung_read_request *request)
 	if (result == -2) {
 		nand_print_dbg(nftl_ro_lc_70);
 		retry = 0;
-		while (micron_read_retry_cycle > retry) {
+		goto retry_check;
+	retry_body: {
 			chip->retry = retry;
 			result = micron_set_readretry(chip);
 			if (result == 0) {
@@ -8421,11 +8433,19 @@ int micron_read_page_end(struct samsung_read_request *request)
 						((struct samsung_read_chip_id *)chip)->chip,
 						request->block, request->page,
 						chip->retry);
-					break;
+					goto retry_done;
 				}
+			} else {
+				/* Keep the OEM retry-setup failure instruction slot. */
+				asm volatile("nop");
 			}
 			retry++;
 		}
+	retry_check:
+		asm goto("cmp %w0, %w1\n\tb.gt %l[retry_body]"
+			 : : "r"((int)micron_read_retry_cycle), "r"(retry)
+			 : "cc" : retry_body);
+	retry_done:;
 		/* OEM uses 255 as the reset step, writes after a read error,
 		 * ignores the reset failure and returns 10 after a clean retry. */
 		chip->retry = 255;
@@ -8457,7 +8477,8 @@ int toshiba_read_page_end(struct samsung_read_request *request)
 		nand_print_dbg(nftl_ro_lc_79);
 		toshiba_retry_flag_recovered = 1;
 		retry = 0;
-		while (toshiba_read_retry_cycle > retry) {
+		goto retry_check;
+	retry_body: {
 			chip->retry = retry;
 			result = toshiba_set_readretry(chip);
 			if (result == 0) {
@@ -8471,11 +8492,19 @@ int toshiba_read_page_end(struct samsung_read_request *request)
 						((struct samsung_read_chip_id *)chip)->chip,
 						request->block, request->page,
 						chip->retry);
-					break;
+					goto retry_done;
 				}
+			} else {
+				/* Keep the OEM retry-setup failure instruction slot. */
+				asm volatile("nop");
 			}
 			retry++;
 		}
+	retry_check:
+		asm goto("cmp %w0, %w1\n\tb.gt %l[retry_body]"
+			 : : "r"((int)toshiba_read_retry_cycle), "r"(retry)
+			 : "cc" : retry_body);
+	retry_done:;
 		/* OEM clears the global flag and resets retry even after failures,
 		 * then ignores the exit callback's result. */
 		toshiba_retry_flag_recovered = 0;
