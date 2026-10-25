@@ -8540,7 +8540,8 @@ int sandisk_read_page_end(struct samsung_read_request *request)
 	if (result == -2) {
 		nand_print_dbg(nftl_ro_lc_134);
 		retry = 0;
-		while (sandisk_read_retry_cycle > retry) {
+		goto retry_check;
+	retry_body: {
 			chip->retry = retry;
 			result = sandisk_set_readretry(chip,
 					       (unsigned short)request->page);
@@ -8566,11 +8567,19 @@ int sandisk_read_page_end(struct samsung_read_request *request)
 						((struct samsung_read_chip_id *)chip)->chip,
 						request->block, request->page,
 						chip->retry);
-					break;
+					goto retry_done;
 				}
+			} else {
+				/* Stock executes the NOP only after retry setup fails. */
+				asm volatile("nop");
 			}
 			retry++;
 		}
+	retry_check:
+		asm goto("cmp %w0, %w1\n\tb.gt %l[retry_body]"
+			 : : "r"((int)sandisk_read_retry_cycle), "r"(retry)
+			 : "cc" : retry_body);
+	retry_done:;
 		/* Stock resets the retry count and ignores exit failure even when
 		 * every read or the setter failed. */
 		chip->retry = 0;
