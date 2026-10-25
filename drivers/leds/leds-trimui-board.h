@@ -1340,7 +1340,6 @@ static int trimui_board_init(void)
 {
 	struct task_struct *task;
 	int result;
-	unsigned int i;
 
 	BUILD_BUG_ON(offsetof(struct trimui_stock_led_state, frame) != 0x4bc4);
 	BUILD_BUG_ON(offsetof(struct trimui_stock_led_state, motor_regulator) != 0x4dd8);
@@ -1352,10 +1351,18 @@ static int trimui_board_init(void)
 	memset(&trimui_effect_r, 0, sizeof(trimui_effect_r));
 	memset(&trimui_effect_f1, 0, sizeof(trimui_effect_f1));
 	memset(&trimui_effect_f2, 0, sizeof(trimui_effect_f2));
-	for (i = 0; i < 5; i++) {
-		trimui_led_state.effects[i].duration = 2000;
-		trimui_led_state.effects[i].cycles = 1;
-	}
+	/* Preserve the OEM store order. The LED class is already visible while
+	 * probe initializes these globals, so a reader can observe partial state. */
+	WRITE_ONCE(trimui_effect_f2.duration, 2000);
+	WRITE_ONCE(trimui_effect_m.duration, 2000);
+	WRITE_ONCE(trimui_effect_f1.duration, 2000);
+	WRITE_ONCE(trimui_effect_r.duration, 2000);
+	WRITE_ONCE(trimui_effect_l.duration, 2000);
+	WRITE_ONCE(trimui_effect_f1.cycles, 1);
+	WRITE_ONCE(trimui_effect_f2.cycles, 1);
+	WRITE_ONCE(trimui_effect_m.cycles, 1);
+	WRITE_ONCE(trimui_effect_r.cycles, 1);
+	WRITE_ONCE(trimui_effect_l.cycles, 1);
 	result = gpio_request(107, "led_5v");
 	/* Stock continues after GPIO and thread errors. TODO: unwind and return
 	 * those errors in a separate fix, and stop the thread on remove. */
