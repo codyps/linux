@@ -1258,7 +1258,8 @@ struct cache_read_delete_owner {
 };
 #if !defined(TRIMUI_NFTL_GCC7_PASS) && \
     !defined(TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_NAND_DISCARD_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_NAND_DISCARD_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_EMPTY_CACHE_GCC53_BUILD)
 struct cache_read_delete_node *del_from_cache_read_list(
 	struct cache_read_delete_owner *owner,
 	struct cache_read_delete_node *target)
@@ -1308,47 +1309,47 @@ struct cache_read_empty_zone {
 };
 /* OEM stores the walk node/index at FP+0x20/+0x2e. Keep the original
  * misspelled symbol and unchecked node_count while restoring that frame. */
-#ifndef TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_EVAL_CACHE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_GCC7_PASS)
 __attribute__((optimize("-fno-stack-protector")))
 struct cache_read_empty_node *get_empty_cahce_node(
 	struct cache_read_empty_zone *zone)
 {
-	struct {
-		struct cache_read_empty_node *node;
-		unsigned char untouched[6];
-		unsigned short index;
-	} local;
+	/* Declaration order retains OEM FP+0x2e for index and FP+0x20
+	 * for the walk node while keeping both as ordinary C locals. */
+	unsigned short index;
+	struct cache_read_empty_node *node;
 
-	local.node = 0;
+	node = 0;
 
-	for (local.index = 0; local.index < zone->node_count; local.index++) {
+	for (index = 0; index < zone->node_count; index++) {
 		/* OEM trusts node_count, even beyond the 30 in-place nodes. */
-		if (zone->nodes[local.index].state == 255)
-			return &zone->nodes[local.index];
+		if (zone->nodes[index].state == 255)
+			return &zone->nodes[index];
 	}
 	/* OEM branches into separate state-2 and state-0 walks. Neither walk
 	 * falls back to the other state or detects a list cycle. */
 	if (zone->second_count > 9) {
-		local.node = &zone->head;
-		local.node = local.node->next;
-		while (local.node) {
-			if (local.node->state == 2)
+		node = &zone->head;
+		node = node->next;
+		while (node) {
+			if (node->state == 2)
 				return (struct cache_read_empty_node *)
 					del_from_cache_read_list(
 					(struct cache_read_delete_owner *)zone,
-					(struct cache_read_delete_node *)local.node);
-			local.node = local.node->next;
+					(struct cache_read_delete_node *)node);
+			node = node->next;
 		}
 	} else {
-		local.node = &zone->head;
-		local.node = local.node->next;
-		while (local.node) {
-			if (local.node->state == 0)
+		node = &zone->head;
+		node = node->next;
+		while (node) {
+			if (node->state == 0)
 				return (struct cache_read_empty_node *)
 					del_from_cache_read_list(
 					(struct cache_read_delete_owner *)zone,
-					(struct cache_read_delete_node *)local.node);
-			local.node = local.node->next;
+					(struct cache_read_delete_node *)node);
+			node = node->next;
 		}
 	}
 	return 0;
