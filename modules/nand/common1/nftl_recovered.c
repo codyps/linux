@@ -62,7 +62,8 @@ extern void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 
 #if !defined(TRIMUI_NFTL_HYNIX_PAGE_END_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_CRC_WRONG_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_CRC_WRONG_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD)
 int is_nouse_page(const unsigned char *bytes)
 {
 	unsigned int count;
@@ -2320,6 +2321,7 @@ extern unsigned char sandisk_read_retry_cycle;
 extern unsigned char sandisk_read_retry_reg_cnt;
 extern unsigned char sandisk_read_retry_cmd_19[3];
 extern unsigned char sandisk_read_retry_cmd_1y[1];
+#ifndef TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD
 int sandisk_vender_set_param(void *chip, unsigned char *data,
 			     unsigned char *address, unsigned int ignored)
 {
@@ -2337,6 +2339,10 @@ int sandisk_vender_set_param(void *chip, unsigned char *data,
 						1, address, data, 4, 1);
 	return result;
 }
+#else
+extern int sandisk_vender_set_param(void *chip, unsigned char *data,
+				    unsigned char *address, unsigned int ignored);
+#endif
 extern unsigned char sandisk_acti_start_addr[9];
 extern const unsigned char sandisk_activation_commands[9];
 /* OEM activation has no stack-canary prologue despite its local command data. */
@@ -6745,6 +6751,7 @@ int sandisk_A19_read_retry_clock_recover(struct clock_chip *chip)
 	return 0;
 }
 
+#ifndef TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD
 int sandisk_read_retry_clock_recover(struct clock_chip *chip)
 {
 	/* OEM ignores clock-programming errors and reports success. */
@@ -6752,6 +6759,9 @@ int sandisk_read_retry_clock_recover(struct clock_chip *chip)
 		     sandisk_sclk0_bak, sandisk_sclk1_bak);
 	return 0;
 }
+#else
+extern int sandisk_read_retry_clock_recover(struct clock_chip *chip);
+#endif
 
 #ifndef TRIMUI_NFTL_TOSHIBA_RETRY_GCC53_BUILD
 int toshiba_read_retry_clock_recover(struct clock_chip *chip)
@@ -6778,7 +6788,11 @@ extern int nand_get_clk(void *controller, unsigned int channel,
 	}
 
 CLOCK_SAVE(sandisk_A19)
+#ifndef TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD
 CLOCK_SAVE(sandisk)
+#else
+extern int sandisk_read_retry_clock_save(struct clock_chip *chip);
+#endif
 #ifndef TRIMUI_NFTL_TOSHIBA_RETRY_GCC53_BUILD
 CLOCK_SAVE(toshiba)
 #else
@@ -8526,7 +8540,7 @@ int toshiba_read_page_end(struct samsung_read_request *request)
 extern int sandisk_set_readretry(struct samsung_set_chip *, unsigned short);
 extern int sandisk_end_one_read_retry(struct samsung_set_chip *);
 extern int sandisk_exit_readretry(struct samsung_set_chip *);
-#ifndef TRIMUI_NFTL_SPECIAL_GCC53_BUILD
+#ifdef TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int sandisk_read_page_end(struct samsung_read_request *request)
 {
@@ -8587,7 +8601,9 @@ int sandisk_read_page_end(struct samsung_read_request *request)
 	}
 	return result;
 }
-#endif /* TRIMUI_NFTL_SPECIAL_GCC53_BUILD */
+#else
+extern int sandisk_read_page_end(struct samsung_read_request *request);
+#endif /* TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD */
 
 extern int hynix26nm_set_readretry(struct hynix20nm_retry_chip *);
 /* Both Hynix generations use this OEM retry state machine. In particular,
@@ -9337,6 +9353,7 @@ extern unsigned char sandisk_read_retry_disable_cmd_19[];
 extern int ndfc_is_toggle_interface(void *);
 extern int ndfc_set_legacy_interface(void *);
 extern int ndfc_set_toggle_interface(void *);
+#ifndef TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD
 int sandisk_end_one_read_retry(struct samsung_set_chip *chip)
 {
 	if (sandisk_read_retry_mode != 48 && sandisk_read_retry_mode != 49)
@@ -9398,6 +9415,10 @@ int sandisk_exit_readretry(struct samsung_set_chip *chip)
 	nand_disable_chip(chip);
 	return result;
 }
+#else
+extern int sandisk_end_one_read_retry(struct samsung_set_chip *chip);
+extern int sandisk_exit_readretry(struct samsung_set_chip *chip);
+#endif
 
 extern unsigned int toshiba_toggle_mode_flag_recovered;
 extern unsigned char toshiba_p1_1[], toshiba_p1_2[], toshiba_p1_3[];
@@ -11643,6 +11664,7 @@ extern unsigned char sandisk_19_low_recovered[];
 extern unsigned char sandisk_19_high_recovered[];
 extern unsigned char sandisk_24_recovered[];
 extern unsigned char sandisk_1y_recovered[];
+#ifndef TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD
 int sandisk_set_readretry(struct samsung_set_chip *chip, unsigned short page)
 {
 	/* OEM places count at FP+0x24, addresses at +0x28, values at
@@ -11705,6 +11727,10 @@ int sandisk_set_readretry(struct samsung_set_chip *chip, unsigned short page)
 	sandisk_read_retry_clock_recover((struct clock_chip *)chip);
 	return frame.result;
 }
+#else
+extern int sandisk_set_readretry(struct samsung_set_chip *chip,
+				  unsigned short page);
+#endif
 
 /* These readonly aliases identify the OEM's two 7x4 signed delta tables. */
 extern const short hynix26nm_para0_recovered[];
