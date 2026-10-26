@@ -614,6 +614,8 @@ el0_sync:
 
 #ifdef CONFIG_COMPAT
 	.align	6
+	/* OEM symbol ends at the compat entry; exception handlers continue. */
+ENDPROC(el0_sync)
 el0_sync_compat:
 	kernel_entry 0, 32
 	mrs	x25, esr_el1			// read the syndrome register
@@ -658,6 +660,9 @@ el0_svc_compat:
 el0_irq_compat:
 	kernel_entry 0, 32
 	b	el0_irq_naked
+#endif
+#ifndef CONFIG_COMPAT
+ENDPROC(el0_sync)
 #endif
 
 el0_da:
@@ -763,11 +768,12 @@ el0_inv:
 	mov	x2, x25
 	bl	bad_el0_sync
 	b	ret_to_user
-ENDPROC(el0_sync)
 
 	.align	6
 el0_irq:
 	kernel_entry 0
+	/* OEM symbol ends at the common IRQ body entry. */
+ENDPROC(el0_irq)
 el0_irq_naked:
 	enable_dbg
 #ifdef CONFIG_TRACE_IRQFLAGS
@@ -786,7 +792,6 @@ el0_irq_naked:
 	bl	trace_hardirqs_on
 #endif
 	b	ret_to_user
-ENDPROC(el0_irq)
 
 /*
  * Register switch for AArch64. The callee-saved registers need to be saved
@@ -857,10 +862,11 @@ ret_to_user:
 	ldr	x1, [tsk, #TSK_TI_FLAGS]
 	and	x2, x1, #_TIF_WORK_MASK
 	cbnz	x2, work_pending
+	/* OEM symbol ends before the shared final return sequence. */
+ENDPROC(ret_to_user)
 finish_ret_to_user:
 	enable_step_tsk x1, x2
 	kernel_exit 0
-ENDPROC(ret_to_user)
 
 /*
  * This is how we return from a fork.
@@ -872,6 +878,8 @@ ENTRY(ret_from_fork)
 	blr	x19
 1:	get_thread_info tsk
 	b	ret_to_user
+	/* OEM counts the NOPs through the next 64-byte aligned entry. */
+	.align	6
 ENDPROC(ret_from_fork)
 
 /*
@@ -882,6 +890,8 @@ el0_svc:
 	adrp	stbl, sys_call_table		// load syscall table pointer
 	uxtw	scno, w8			// syscall number in w8
 	mov	sc_nr, #__NR_syscalls
+	/* OEM symbol ends at the common syscall body entry. */
+ENDPROC(el0_svc)
 el0_svc_naked:					// compat entry point
 	stp	x0, scno, [sp, #S_ORIG_X0]	// save the original x0 and syscall number
 	enable_dbg_and_irq
@@ -900,7 +910,6 @@ ni_sys:
 	mov	x0, sp
 	bl	do_ni_syscall
 	b	ret_fast_syscall
-ENDPROC(el0_svc)
 
 	/*
 	 * This is the really slow path.  We're going to be doing context
