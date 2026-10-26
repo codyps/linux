@@ -261,6 +261,8 @@ ENTRY(__dma_map_area)
 	cmp	w2, #DMA_FROM_DEVICE
 	b.eq	__dma_inv_area
 	b	__dma_clean_area
+	/* OEM includes the existing entry-alignment NOP in this symbol. */
+	.align	4
 ENDPIPROC(__dma_map_area)
 
 /*
@@ -273,6 +275,8 @@ ENTRY(__dma_unmap_area)
 	cmp	w2, #DMA_TO_DEVICE
 	b.ne	__dma_inv_area
 	ret
+	/* OEM includes the existing entry-alignment NOP in this symbol. */
+	.align	4
 ENDPIPROC(__dma_unmap_area)
 
 /*
