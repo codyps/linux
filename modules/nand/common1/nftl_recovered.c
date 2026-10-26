@@ -1591,7 +1591,7 @@ int current_block_at_last_page(struct current_zone *zone,
 
 struct do_after_zone;
 extern int do_after_write(struct do_after_zone *zone);
-extern int do_before_write(void *zone);
+extern int do_before_write(struct do_after_zone *zone);
 int nand_write_data_page(void *zone, unsigned int marker,
 			 unsigned int page, void *data)
 {
@@ -10372,31 +10372,42 @@ struct do_after_zone {
 	unsigned char before_flags[25];
 	unsigned char flags;
 	unsigned char before_current[502];
-	unsigned char current[64];
-	unsigned char page_map[76];
+	union {
+		unsigned char current[64];
+		struct new_write_block *current_block;
+	};
+	union __attribute__((packed)) {
+		unsigned char page_map[76];
+		struct new_write_block *page_map_block;
+	};
 	unsigned int completed;
 };
+_Static_assert(__builtin_offsetof(struct do_after_zone, current) == 528,
+	       "OEM primary page map offset");
+_Static_assert(__builtin_offsetof(struct do_after_zone, page_map) == 592,
+	       "OEM secondary page map offset");
+_Static_assert(__builtin_offsetof(struct do_after_zone, completed) == 668,
+	       "OEM completed-write counter offset");
 struct get_new_zone;
 struct get_new_current_entry;
 extern int get_new_current_block(struct get_new_zone *,
 				 struct get_new_current_entry *);
-int do_before_write(void *owner)
+int do_before_write(struct do_after_zone *zone)
 {
-	struct do_after_zone *zone = owner;
-	struct new_write_block *block;
-
-	while (current_block_at_first_page(owner,
+	while (current_block_at_first_page(zone,
 			(struct nftl_current_block *)zone->current) == 1) {
-		block = *(struct new_write_block **)zone->current;
+		/* Stock reloads the current block after each callback. Keeping
+		 * this pointer in a local changes both its frame and callback
+		 * visible behavior if the zone is updated. */
 		if (!new_block_init_for_write((struct new_write_zone *)zone,
-				block, block->tag))
+				zone->current_block, zone->current_block->tag))
 			break;
 		/* The OEM decrements the tag after a failed erase, including its
 		 * unsigned wraparound, and decrements it twice in dual-slot mode.
 		 * A corrected implementation would guard against underflow. */
-		block->tag--;
+		zone->current_block->tag--;
 		if (zone->flags & 1)
-			block->tag--;
+			zone->current_block->tag--;
 		if (get_new_current_block((struct get_new_zone *)zone,
 				(struct get_new_current_entry *)zone->current)) {
 			nand_print(nftl_ro_lc_156);
@@ -10405,15 +10416,15 @@ int do_before_write(void *owner)
 	}
 	if (zone->flags & 1) {
 		/* Stock tests exactly one above, but any nonzero here. */
-		while (current_block_at_first_page(owner,
+		while (current_block_at_first_page(zone,
 				(struct nftl_current_block *)zone->page_map)) {
-			block = *(struct new_write_block **)zone->page_map;
 			if (!new_block_init_for_write((struct new_write_zone *)zone,
-				block, block->tag))
+				zone->page_map_block,
+				zone->page_map_block->tag))
 				break;
-			block->tag--;
+			zone->page_map_block->tag--;
 			if (zone->flags & 1)
-				block->tag--;
+				zone->page_map_block->tag--;
 			if (get_new_current_block((struct get_new_zone *)zone,
 				(struct get_new_current_entry *)zone->page_map)) {
 				nand_print(nftl_ro_lc_157);
