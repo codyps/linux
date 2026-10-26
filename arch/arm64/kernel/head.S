@@ -521,6 +521,8 @@ CPU_LE(	bic	x0, x0, #(3 << 24)	)	// Clear the EE and E0E bits for EL1
 	mov_q	x0, HCR_HOST_NVHE_FLAGS
 	cbz	x2, set_hcr
 	mov_q	x0, HCR_HOST_VHE_FLAGS
+	/* OEM ELF extent ends here; the EL2 path continues at set_hcr. */
+ENDPROC(el2_setup)
 set_hcr:
 	msr	hcr_el2, x0
 	isb
@@ -612,7 +614,6 @@ install_el2_stub:
 	msr	elr_el2, lr
 	mov	w0, #BOOT_CPU_MODE_EL2		// This CPU booted in EL2
 	eret
-ENDPROC(el2_setup)
 
 /*
  * Sets the __boot_cpu_mode flag depending on the CPU boot mode passed
