@@ -2180,21 +2180,40 @@ extern int hynix16nm_get_read_retry_cfg(unsigned char *mode,
 					unsigned char *values, void *raw_buffer);
 extern int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone);
 #ifndef TRIMUI_NFTL_HYNIX16_GETOTP_GCC53_BUILD
-/* OEM's 144-byte frame has no stack canary around its OTP vote buffers. */
+/* OEM's 144-byte frame has no stack canary around its OTP vote buffers.
+ * The two scratch arrays occupy 32 bytes each even though each vote uses
+ * eight. The adjacent count is reloadable after callbacks; retain that
+ * layout and the unchecked callback buffer lengths found in the binary. */
 __attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 				 unsigned char *values, void *raw_buffer)
 {
-	const unsigned char *buffer = raw_buffer;
-	unsigned char primary[8] = {0};
-	unsigned char secondary[8] = {0};
-	unsigned int index;
-	unsigned int copy;
-	int result;
-	int error = 0;
+	struct {
+		unsigned char secondary[32];
+		unsigned char primary[32];
+		unsigned int total;
+		unsigned int copy_inner;
+		unsigned int index;
+		unsigned int copy_init;
+		int result;
+		int error;
+	} frame __attribute__((aligned(8)));
+#define buffer ((const unsigned char *)raw_buffer)
+#define primary frame.primary
+#define secondary frame.secondary
+#define total frame.total
+#define copy frame.copy_inner
+#define index frame.index
+#define result frame.result
+#define error frame.error
+	error = 0;
+	result = 0;
+	__builtin_memset(primary, 0, 32);
+	__builtin_memset(secondary, 0, 32);
+	total = 32;
 
-	for (copy = 0; copy <= 7; copy++)
-		primary[copy] = buffer[copy];
+	for (frame.copy_init = 0; frame.copy_init <= 7; frame.copy_init++)
+		primary[frame.copy_init] = buffer[frame.copy_init];
 	result = hynix16nm_major_check_byte(mode, 0, 4,
 					  primary, secondary, 8);
 	if (result < 0) {
@@ -2202,8 +2221,8 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 		return result;
 	}
 	nand_print_dbg(nftl_ro_lc_117, *mode);
-	for (copy = 0; copy <= 7; copy++)
-		primary[copy] = buffer[copy + 8];
+	for (frame.copy_init = 0; frame.copy_init <= 7; frame.copy_init++)
+		primary[frame.copy_init] = buffer[frame.copy_init + 8];
 	result = hynix16nm_major_check_byte(cycle, 0, 4,
 					  primary, secondary, 8);
 	if (result < 0) {
@@ -2216,12 +2235,12 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 			   *mode, *cycle);
 		return -81;
 	}
-	for (index = 0; index < 32; index++) {
+	for (index = 0; index < total; index++) {
 		for (copy = 0; copy <= 7; copy++) {
 			primary[copy] = 0;
 			secondary[copy] = 0;
-			primary[copy] = buffer[16 + copy * 64 + index];
-			secondary[copy] = buffer[48 + copy * 64 + index];
+			primary[copy] = buffer[2 * (copy * total + 8) + index];
+			secondary[copy] = buffer[2 * (copy * total + 8) + total + index];
 		}
 		result = hynix16nm_major_check_byte(values + index, 1, 4,
 						  primary, secondary, 8);
@@ -2232,9 +2251,9 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 			break;
 		}
 	}
-	/* OEM prints all 32 result bytes, even after the first failed vote left
-	 * the remaining output bytes untouched. Keep this stale-data exposure. */
-	for (index = 0; index < 32; index++) {
+	/* OEM prints the full (normally 32-byte) result even after the first
+	 * failed vote left later bytes untouched. Keep this stale-data exposure. */
+	for (index = 0; index < total; index++) {
 		if ((index & 7) == 0 && index != 0)
 			nand_print_dbg(nftl_ro_lc_45);
 		nand_print_dbg(nftl_ro_lc_122, values[index]);
@@ -2242,6 +2261,15 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 	nand_print_dbg(nftl_ro_lc_45);
 	return error;
 }
+#undef error
+#undef result
+#undef index
+#undef copy
+#undef total
+#undef secondary
+#undef primary
+#undef buffer
+
 /* Match OEM frame slots for the private mode, cycle and temporary buffer. */
 __attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone)
