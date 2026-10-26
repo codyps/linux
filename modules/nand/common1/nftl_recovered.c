@@ -957,7 +957,8 @@ struct nftl_phy_outer {
 
 #if !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_ZONE_PARAM_GCC53_BUILD)
 unsigned char *get_phy_block_addr(struct nftl_phy_outer *outer,
 				  unsigned short block)
 {
@@ -3248,7 +3249,8 @@ int hynix26nm_readretry_exit(struct nftl_retry_chip *chip)
     !defined(TRIMUI_NFTL_NRC_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_LAST_PAGE_ECC_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_LAST_PAGE_ECC_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_ZONE_PARAM_GCC53_BUILD)
 void *nftl_malloc(unsigned int size)
 {
 	/* OEM warns above 1.5 MiB but still attempts the allocation. */
@@ -7806,139 +7808,251 @@ void print_nftl_zone(void *zone)
 }
 #undef DIAG_ZONE
 
-/* The OEM's private zone layout is not public. These typed accessors keep
- * each recovered offset visible until the full declaration is established. */
-#define INIT_U8(p, off) (*(unsigned char *)((char *)(p) + (off)))
-#define INIT_U16(p, off) (*(unsigned short *)((char *)(p) + (off)))
-#define INIT_U32(p, off) (*(unsigned int *)((char *)(p) + (off)))
-#define INIT_PTR(p, off) (*(void **)((char *)(p) + (off)))
+/* Typed NFTL zone view recovered from the OEM field offsets. */
 struct logic_page_map_zone;
 extern int malloc_logic_page_map(struct logic_page_map_zone *, unsigned int);
-int zone_param_init(void *zone, unsigned short first_block,
+struct zone_param_chip_view {
+	unsigned char id[8];
+	unsigned char sectors_per_page;
+	unsigned char gap9[7];
+	unsigned short max_erase_times;
+	unsigned char gap18[2];
+	unsigned short pages_per_block;
+	unsigned char gap22[4];
+	unsigned short bytes_per_page;
+};
+
+struct zone_param_user_info {
+	void *buf;
+	unsigned int buf_size;
+	void *map_data;
+	unsigned int map_size;
+	void *smart;
+	unsigned int smart_size;
+};
+
+struct zone_param_current_block {
+	void *block_info;
+	struct zone_param_user_info user_info;
+	unsigned short page_used;
+	unsigned char tail[6];
+};
+
+struct zone_param_head {
+	unsigned char prefix[16];
+	void *invalid_page_next, *invalid_page_prev;
+	void *free_next, *free_prev;
+	void *block_used_next, *block_used_prev;
+};
+
+struct zone_param_gc_node {
+	unsigned short gc_no, prio_type;
+	unsigned int padding;
+	void *phy_block_info, *prio_gc_next, *prio_gc_prev;
+};
+
+struct zone_param_gc {
+	unsigned short gc_num, prio_type_now;
+	unsigned char padding[4];
+	struct zone_param_gc_node prio_gc_node[10];
+	struct zone_param_gc_node prio_gc_head;
+};
+
+struct zone_param_wear {
+	unsigned short erase_threshold, erase_span;
+	unsigned short status, start;
+	void *block;
+};
+
+struct zone_param_view {
+	void *priv;
+	struct zone_param_chip_view *nand_chip;
+	unsigned char version[8];
+	unsigned char zone_no, zone_attr;
+	unsigned short blocks, bad_block, free_block_num;
+	unsigned int logic_cap_in_sects, logic_cap_in_page, backup_cap_in_sects;
+	unsigned short zone_start_blk_no;
+	unsigned char after_start[2];
+	void *zone_start_phy_block, *zone_end_phy_block;
+	void *unknown64;
+	void *zone_logic_page_map[25];
+	struct zone_param_head free_head, invalid_page_head, block_used_head;
+	struct zone_param_user_info zone_phy_page_map_for_gc;
+	void *temp_page_buf, *logic_page_buf;
+	struct zone_param_current_block current_block, assist_block;
+	unsigned int test, read_reclaim_complete, already_read_flag, max_erase_num;
+	unsigned int gc_cycles, gc_interval;
+	unsigned char gc_strategy_tail[16];
+	struct zone_param_gc prio_gc;
+	struct zone_param_wear s_wl;
+	unsigned char before_smart[2368];
+	void *smart;
+};
+
+_Static_assert(__builtin_offsetof(struct zone_param_view, nand_chip) == 8,
+	       "NAND chip offset");
+_Static_assert(__builtin_offsetof(struct zone_param_view, zone_logic_page_map) == 72,
+	       "logic page map offset");
+_Static_assert(__builtin_offsetof(struct zone_param_view, free_head.free_next) == 304,
+	       "free list offset");
+_Static_assert(__builtin_offsetof(struct zone_param_view, zone_phy_page_map_for_gc) == 464,
+	       "GC map offset");
+_Static_assert(__builtin_offsetof(struct zone_param_view, current_block) == 528,
+	       "current block offset");
+_Static_assert(__builtin_offsetof(struct zone_param_view, assist_block) == 592,
+	       "assist block offset");
+_Static_assert(__builtin_offsetof(struct zone_param_view, prio_gc) == 696,
+	       "priority GC offset");
+_Static_assert(__builtin_offsetof(struct zone_param_view, s_wl) == 1056,
+	       "wear state offset");
+_Static_assert(__builtin_offsetof(struct zone_param_view, smart) == 3440,
+	       "SMART pointer offset");
+
+#ifndef TRIMUI_NFTL_GCC7_PASS
+int zone_param_init(void *zone_arg,
+		    unsigned short first_block,
 		    unsigned int sectors, unsigned int backup_sectors)
 {
-	char *p = zone;
-	char *chip = INIT_PTR(p, 8);
-	unsigned int map_bytes;
-	unsigned int allocation_bytes;
-	unsigned int index;
-	void *buffer;
+	unsigned int index, total_pages;
+#define zone ((struct zone_param_view *)zone_arg)
 
-	/* OEM returns from each failure without freeing earlier allocations. */
-	buffer = nftl_malloc(INIT_U16(chip, 26));
-	INIT_PTR(p, 512) = buffer;
-	if (!buffer) {
+	/* OEM returns without freeing earlier allocations. */
+	zone->temp_page_buf = nftl_malloc(zone->nand_chip->bytes_per_page);
+	if (!zone->temp_page_buf) {
 		nand_print(nftl_ro_lc_202, nftl_ro_func_7098);
 		return -2;
 	}
-	buffer = nftl_malloc(INIT_U16(chip, 26));
-	INIT_PTR(p, 520) = buffer;
-	if (!buffer) {
+	zone->logic_page_buf = nftl_malloc(zone->nand_chip->bytes_per_page);
+	if (!zone->logic_page_buf) {
 		nand_print(nftl_ro_lc_203, nftl_ro_func_7098);
 		return -2;
 	}
-	INIT_U32(p, 32) = sectors;
-	INIT_U32(p, 40) = backup_sectors;
-	INIT_U16(p, 44) = first_block;
-	INIT_PTR(p, 48) = get_phy_block_addr((struct nftl_phy_outer *)zone,
-					     first_block);
-	INIT_U16(p, 26) = 0;
-	INIT_U16(p, 28) = 0;
-	INIT_U16(p, 30) = 0;
-	INIT_PTR(p, 56) = 0;
-	/* Stock performs an unchecked division by the chip's sector factor. */
+	zone->logic_cap_in_sects = sectors;
+	zone->backup_cap_in_sects = backup_sectors;
+	zone->zone_start_blk_no = first_block;
+	zone->zone_start_phy_block = get_phy_block_addr(
+		(struct nftl_phy_outer *)zone, first_block);
+	zone->blocks = 0;
+	zone->bad_block = 0;
+	zone->free_block_num = 0;
+	zone->zone_end_phy_block = 0;
+	/* Stock leaves the divisor unchecked. AArch64 UDIV yields zero when the
+	 * factor is zero; the C expression has undefined behavior elsewhere. */
+	total_pages = zone->logic_cap_in_sects /
+		zone->nand_chip->sectors_per_page;
 	if (malloc_logic_page_map((struct logic_page_map_zone *)zone,
-				  sectors / INIT_U8(chip, 8))) {
+				  total_pages)) {
 		nand_print(nftl_ro_lc_204);
 		return -2;
 	}
-	map_bytes = (unsigned int)INIT_U16(chip, 20) << 2;
-	allocation_bytes = map_bytes + 320;
-	INIT_U32(p, 560) = map_bytes;
-	INIT_U32(p, 576) = 320;
-	INIT_U32(p, 544) = allocation_bytes;
-	buffer = nftl_malloc(allocation_bytes);
-	INIT_PTR(p, 536) = buffer;
-	if (!buffer) {
-		nand_print(nftl_ro_lc_205,
-			   nftl_ro_func_7098);
+	zone->current_block.user_info.map_size =
+		zone->nand_chip->pages_per_block << 2;
+	zone->current_block.user_info.smart_size = 320;
+	zone->current_block.user_info.buf_size =
+		zone->current_block.user_info.map_size +
+		zone->current_block.user_info.smart_size;
+	zone->current_block.user_info.buf =
+		nftl_malloc(zone->current_block.user_info.buf_size);
+	if (!zone->current_block.user_info.buf) {
+		nand_print(nftl_ro_lc_205, nftl_ro_func_7098);
 		return -2;
 	}
-	INIT_PTR(p, 552) = buffer;
-	INIT_PTR(p, 568) = (char *)buffer + map_bytes;
-	INIT_PTR(p, 3440) = INIT_PTR(p, 568);
-	nand_memset(buffer, -1, allocation_bytes);
-	INIT_U32(p, 624) = map_bytes;
-	INIT_U32(p, 608) = allocation_bytes;
-	buffer = nftl_malloc(allocation_bytes);
-	INIT_PTR(p, 600) = buffer;
-	if (!buffer) {
-		nand_print(nftl_ro_lc_206,
-			   nftl_ro_func_7098);
+	zone->current_block.user_info.map_data =
+		zone->current_block.user_info.buf;
+	zone->current_block.user_info.smart =
+		(char *)zone->current_block.user_info.buf +
+		zone->current_block.user_info.map_size;
+	zone->smart = zone->current_block.user_info.smart;
+	nand_memset(zone->current_block.user_info.buf, -1,
+		    zone->current_block.user_info.buf_size);
+	zone->assist_block.user_info.map_size =
+		zone->current_block.user_info.map_size;
+	/* OEM repeats this self assignment and leaves assist.smart_size untouched. */
+	zone->current_block.user_info.smart_size =
+		zone->current_block.user_info.smart_size;
+	zone->assist_block.user_info.buf_size =
+		zone->current_block.user_info.buf_size;
+	zone->assist_block.user_info.buf =
+		nftl_malloc(zone->assist_block.user_info.buf_size);
+	if (!zone->assist_block.user_info.buf) {
+		nand_print(nftl_ro_lc_206, nftl_ro_func_7098);
 		return -2;
 	}
-	INIT_PTR(p, 616) = buffer;
-	INIT_PTR(p, 632) = (char *)buffer + map_bytes;
-	nand_memset(buffer, -1, allocation_bytes);
-	INIT_U32(p, 488) = map_bytes;
-	INIT_U32(p, 504) = 320;
-	INIT_U32(p, 472) = allocation_bytes;
-	buffer = nftl_malloc(allocation_bytes);
-	INIT_PTR(p, 464) = buffer;
-	if (!buffer) {
-		nand_print(nftl_ro_lc_207,
-			   nftl_ro_func_7098);
+	zone->assist_block.user_info.map_data =
+		zone->assist_block.user_info.buf;
+	zone->assist_block.user_info.smart =
+		(char *)zone->assist_block.user_info.buf +
+		zone->assist_block.user_info.map_size;
+	nand_memset(zone->assist_block.user_info.buf, -1,
+		    zone->assist_block.user_info.buf_size);
+	zone->zone_phy_page_map_for_gc.map_size =
+		zone->current_block.user_info.map_size;
+	zone->zone_phy_page_map_for_gc.smart_size =
+		zone->current_block.user_info.smart_size;
+	zone->zone_phy_page_map_for_gc.buf_size =
+		zone->current_block.user_info.buf_size;
+	zone->zone_phy_page_map_for_gc.buf =
+		nftl_malloc(zone->zone_phy_page_map_for_gc.buf_size);
+	if (!zone->zone_phy_page_map_for_gc.buf) {
+		nand_print(nftl_ro_lc_207, nftl_ro_func_7098);
 		return -2;
 	}
-	INIT_PTR(p, 480) = buffer;
-	INIT_PTR(p, 496) = (char *)buffer + map_bytes;
-	INIT_U32(p, 656) = 0;
-	INIT_U32(p, 676) = 0;
-	INIT_U32(p, 660) = 0;
-	INIT_U32(p, 664) = 0;
-	INIT_U32(p, 668) = 0;
-	INIT_U32(p, 672) = 0;
-	INIT_U16(p, 1056) = INIT_U16(chip, 16) >> 1;
-	INIT_U16(p, 1058) = INIT_U16(chip, 16) / 6;
-	INIT_U16(p, 1060) = 0;
-	INIT_U16(p, 1062) = 0;
-	INIT_PTR(p, 1064) = 0;
-	INIT_PTR(p, 528) = 0;
-	INIT_U16(p, 584) = 0xffff;
-	INIT_PTR(p, 592) = 0;
-	INIT_U16(p, 648) = 0xffff;
-	for (index = 0; index < 3; index++) {
-		unsigned int base = 288 + index * 64;
-
-		INIT_PTR(p, base) = 0;
-		INIT_PTR(p, base + 8) = 0;
-		INIT_PTR(p, base + 16) = 0;
-		INIT_PTR(p, base + 24) = 0;
-		INIT_PTR(p, base + 32) = 0;
-		INIT_PTR(p, base + 40) = 0;
-	}
-	INIT_U16(p, 696) = 0;
+	zone->zone_phy_page_map_for_gc.map_data =
+		zone->zone_phy_page_map_for_gc.buf;
+	zone->zone_phy_page_map_for_gc.smart =
+		(char *)zone->zone_phy_page_map_for_gc.buf +
+		zone->zone_phy_page_map_for_gc.map_size;
+	zone->test = 0;
+	zone->gc_interval = 0;
+	zone->read_reclaim_complete = 0;
+	zone->already_read_flag = 0;
+	zone->max_erase_num = 0;
+	zone->gc_cycles = 0;
+	zone->s_wl.erase_threshold = zone->nand_chip->max_erase_times >> 1;
+	zone->s_wl.erase_span = zone->nand_chip->max_erase_times / 6;
+	zone->s_wl.status = 0;
+	zone->s_wl.start = 0;
+	zone->s_wl.block = 0;
+	zone->current_block.block_info = 0;
+	zone->current_block.page_used = 0xffff;
+	zone->assist_block.block_info = 0;
+	zone->assist_block.page_used = 0xffff;
+	zone->free_head.free_next = 0;
+	zone->free_head.free_prev = 0;
+	zone->free_head.invalid_page_next = 0;
+	zone->free_head.invalid_page_prev = 0;
+	zone->free_head.block_used_next = 0;
+	zone->free_head.block_used_prev = 0;
+	zone->invalid_page_head.free_next = 0;
+	zone->invalid_page_head.free_prev = 0;
+	zone->invalid_page_head.invalid_page_next = 0;
+	zone->invalid_page_head.invalid_page_prev = 0;
+	zone->invalid_page_head.block_used_next = 0;
+	zone->invalid_page_head.block_used_prev = 0;
+	zone->block_used_head.free_next = 0;
+	zone->block_used_head.free_prev = 0;
+	zone->block_used_head.invalid_page_next = 0;
+	zone->block_used_head.invalid_page_prev = 0;
+	zone->block_used_head.block_used_next = 0;
+	zone->block_used_head.block_used_prev = 0;
+	zone->prio_gc.gc_num = 0;
 	for (index = 0; index < 10; index++) {
-		unsigned int base = 704 + index * 32;
-
-		INIT_U16(p, base) = index;
-		INIT_U16(p, base + 2) = 0;
-		INIT_PTR(p, base + 8) = 0;
-		INIT_PTR(p, base + 16) = 0;
-		INIT_PTR(p, base + 24) = 0;
+		zone->prio_gc.prio_gc_node[index].gc_no = index;
+		zone->prio_gc.prio_gc_node[index].prio_type = 0;
+		zone->prio_gc.prio_gc_node[index].phy_block_info = 0;
+		zone->prio_gc.prio_gc_node[index].prio_gc_next = 0;
+		zone->prio_gc.prio_gc_node[index].prio_gc_prev = 0;
 	}
-	INIT_U16(p, 1024) = 255;
-	INIT_U16(p, 698) = 0;
-	INIT_U16(p, 1026) = 0;
-	INIT_PTR(p, 1032) = 0;
-	INIT_PTR(p, 1040) = 0;
-	INIT_PTR(p, 1048) = 0;
+	zone->prio_gc.prio_gc_head.gc_no = 255;
+	zone->prio_gc.prio_type_now = 0;
+	zone->prio_gc.prio_gc_head.prio_type = 0;
+	zone->prio_gc.prio_gc_head.phy_block_info = 0;
+	zone->prio_gc.prio_gc_head.prio_gc_next = 0;
+	zone->prio_gc.prio_gc_head.prio_gc_prev = 0;
 	return 0;
+#undef zone
 }
-#undef INIT_U8
-#undef INIT_U16
-#undef INIT_U32
-#undef INIT_PTR
+#endif /* !TRIMUI_NFTL_GCC7_PASS */
 
 struct wear_options {
 	unsigned char before_enabled[6];
@@ -9830,7 +9944,8 @@ struct logic_page_map_zone {
 	unsigned char before_maps[32];
 	unsigned int *maps[];
 };
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_ZONE_PARAM_GCC53_BUILD)
 extern int malloc_logic_page_map(struct logic_page_map_zone *zone,
 				 unsigned int remaining_pages);
 #else
