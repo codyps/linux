@@ -1095,6 +1095,9 @@ struct free_zone {
 	unsigned char before_head[272];
 	struct free_node head;
 };
+#ifdef TRIMUI_NFTL_STATIC_DONE_GCC53_BUILD
+extern int is_block_in_free_list(struct free_zone *zone, struct free_node *target);
+#else
 int is_block_in_free_list(struct free_zone *zone, struct free_node *target)
 {
 	struct free_node *node = &zone->head;
@@ -1107,6 +1110,7 @@ int is_block_in_free_list(struct free_zone *zone, struct free_node *target)
 	}
 	return 0;
 }
+#endif
 
 struct invalid_node {
 	unsigned char before_erase[4];
@@ -1123,6 +1127,10 @@ struct invalid_zone {
 	unsigned char before_head[336];
 	struct invalid_node head;
 };
+#ifdef TRIMUI_NFTL_STATIC_DONE_GCC53_BUILD
+extern int is_block_in_invalid_list(struct invalid_zone *zone,
+				    struct invalid_node *target);
+#else
 int is_block_in_invalid_list(struct invalid_zone *zone,
 			     struct invalid_node *target)
 {
@@ -1136,6 +1144,7 @@ int is_block_in_invalid_list(struct invalid_zone *zone,
 	}
 	return 0;
 }
+#endif
 /* Keep the OEM's private scan slots at SP+24/36/40. The gap is private
  * stack layout, not an on-media or externally visible structure. */
 struct invalid_count_scan {
@@ -3097,7 +3106,8 @@ struct no_use_data_zone {
 	unsigned char before_extent[8];
 	struct no_use_data_extent *extent;
 };
-#ifdef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_STATIC_DONE_GCC53_BUILD)
 extern int fill_no_use_data_to_current_block(struct no_use_data_zone *zone);
 #else
 __attribute__((optimize("-fno-stack-protector")))
@@ -3980,7 +3990,8 @@ struct diag_current_zone {
 };
 /* OEM GCC 5.3.1 preserves the stock equality-load order and all three
  * branches. The OEM trusts both the zone and block pointers. */
-#ifndef TRIMUI_NFTL_GCC7_PASS
+#if !defined(TRIMUI_NFTL_GCC7_PASS) && \
+    !defined(TRIMUI_NFTL_STATIC_DONE_GCC53_BUILD)
 int is_current_blcok(struct diag_current_zone *zone, void *block)
 {
 	int result = 0;
@@ -7996,49 +8007,58 @@ struct wear_done_zone {
 	unsigned char before_stats[3440 - 1072];
 	struct wear_done_stats *stats;
 };
+#ifndef TRIMUI_NFTL_STATIC_DONE_GCC53_BUILD
+extern int done_static_wear_leveling(struct wear_zone *owner);
+#else
 int done_static_wear_leveling(struct wear_zone *owner)
 {
-	struct wear_done_zone *zone = (struct wear_done_zone *)owner;
-	int result;
+	int result = 0;
+#define WEAR_DONE ((struct wear_done_zone *)owner)
 
-	if (!zone->selected)
+	if (!WEAR_DONE->selected)
 		return 2;
 	if (is_current_blcok((struct diag_current_zone *)owner,
-				zone->selected) == 1) {
-		zone->selected = 0;
+				WEAR_DONE->selected) == 1) {
+		WEAR_DONE->selected = 0;
 		return 2;
 	}
 	if (!is_block_in_invalid_list((struct invalid_zone *)owner,
-				(struct invalid_node *)zone->selected)) {
+				(struct invalid_node *)WEAR_DONE->selected)) {
 		nand_print_dbg(nftl_ro_lc_455,
-			       zone->selected->number);
-		zone->selected = 0;
+			       WEAR_DONE->selected->number);
+		WEAR_DONE->selected = 0;
 		return 2;
 	}
 	nand_print_dbg(nftl_ro_lc_456,
-		       zone->selected->number, zone->selected->erase_count);
-	zone->active = 1;
-	zone->stats->count++;
+		       WEAR_DONE->selected->number, WEAR_DONE->selected->erase_count);
+	WEAR_DONE->active = 1;
+	WEAR_DONE->stats->count++;
 	/* Stock discards this result even if the page fill failed. */
 	fill_no_use_data_to_current_block((struct no_use_data_zone *)owner);
 	result = garbage_collect_first((struct gc_one_zone *)owner,
-				zone->selected, -1);
+				WEAR_DONE->selected, -1);
 	if (result) {
 		/* OEM reports the block number as the failure value and leaves
 		 * active set; preserve both bugs for stock behavior. */
 		nand_print(nftl_ro_lc_457,
-			   zone->selected->number);
-		zone->selected = 0;
+			   WEAR_DONE->selected->number);
+		WEAR_DONE->selected = 0;
 		return 1;
 	}
-	zone->active = 0;
+	WEAR_DONE->active = 0;
 	if (!is_block_in_free_list((struct free_zone *)owner,
-				(struct free_node *)zone->selected))
+				(struct free_node *)WEAR_DONE->selected)) {
 		nand_print(nftl_ro_lc_458,
-			   zone->selected->number);
-	zone->selected = 0;
+			   WEAR_DONE->selected->number);
+		/* Keep the OEM's second cleanup return instead of a shared tail. */
+		WEAR_DONE->selected = 0;
+		return 0;
+	}
+	WEAR_DONE->selected = 0;
 	return 0;
+#undef WEAR_DONE
 }
+#endif /* TRIMUI_NFTL_STATIC_DONE_GCC53_BUILD */
 int do_static_wear_leveling(struct wear_zone *zone)
 {
 	/* OEM dereferences options unchecked and reports one when inactive. */
@@ -10860,6 +10880,10 @@ extern int recover_block_phy_page_mapping(struct page_map_recovery_zone *,
 					   struct new_write_block *,
 					   unsigned int *);
 
+#ifdef TRIMUI_NFTL_STATIC_DONE_GCC53_BUILD
+extern int garbage_collect_first(struct gc_one_zone *raw_zone,
+				 void *requested, int requested_limit);
+#else
 __attribute__((optimize("-fno-stack-protector")))
 int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 			  int requested_limit)
@@ -10991,6 +11015,7 @@ int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 	}
 	return 0;
 }
+#endif /* TRIMUI_NFTL_STATIC_DONE_GCC53_BUILD */
 
 struct sandisk_first_request {
 	unsigned int channel;
