@@ -52,6 +52,8 @@ ENTRY(cpu_do_idle)
 	dsb	sy				// WFI may enter a low-power mode
 	wfi
 	ret
+	/* OEM counts the existing entry-alignment NOP in this symbol. */
+	.align	4
 ENDPROC(cpu_do_idle)
 
 #ifdef CONFIG_CPU_PM
