@@ -9099,24 +9099,23 @@ int do_prio_gc(void *owner)
 		PRIO_CLEAR_RETURN(0);
 	}
 	/* OEM keeps four separate, identical erase calls for priority 1/2/4
-	 * and all others. Preserve the redundant branch and unchecked result. */
+	 * and all others. Calculate mode before reloading frame.removed as stock
+	 * does; the unsigned-short call argument still narrows it to 16 bits. */
+#define PRIO_ERASE() do { \
+		register unsigned int mode asm("w0") = frame.removed->erase_count + 1; \
+		erase_block((struct erase_block_zone *)owner, \
+			    (struct erase_block_info *)frame.removed, mode); \
+	} while (0)
 	if (PRIO_QUEUE->active_priority == 1)
-		erase_block((struct erase_block_zone *)owner,
-			    (struct erase_block_info *)frame.removed,
-			    (unsigned short)(frame.removed->erase_count + 1));
+		PRIO_ERASE();
 	else if (PRIO_QUEUE->active_priority == 2)
-		erase_block((struct erase_block_zone *)owner,
-			    (struct erase_block_info *)frame.removed,
-			    (unsigned short)(frame.removed->erase_count + 1));
+		PRIO_ERASE();
 	else if (PRIO_QUEUE->active_priority == 4)
-		erase_block((struct erase_block_zone *)owner,
-			    (struct erase_block_info *)frame.removed,
-			    (unsigned short)(frame.removed->erase_count + 1));
+		PRIO_ERASE();
 	else
-		erase_block((struct erase_block_zone *)owner,
-			    (struct erase_block_info *)frame.removed,
-			    (unsigned short)(frame.removed->erase_count + 1));
+		PRIO_ERASE();
 	PRIO_CLEAR_RETURN(0);
+#undef PRIO_ERASE
 #undef PRIO_CLEAR_RETURN
 #undef PRIO_BLOCK
 #undef PRIO_QUEUE
