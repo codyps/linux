@@ -11473,7 +11473,10 @@ int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
 			frame.total_invalid += invalid;
 		}
 	}
-	frame.written = nand_snprint(buffer, size,
+	/* OEM reloads the signed write count for both first-call arguments,
+	 * even though it was initialized to zero above. */
+	frame.written = nand_snprint(buffer + (long)frame.written,
+			       size - frame.written,
 			       nftl_ro_lc_468,
 			       zone->free_blocks, zone->low_threshold,
 			       zone->high_threshold, zone->smart->gc_times,
