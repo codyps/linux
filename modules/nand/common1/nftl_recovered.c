@@ -45,7 +45,8 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_FIRST_LIST_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_NO_USE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_MARK_FREE_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -3314,7 +3315,8 @@ void set_no_use_page(void *unused, unsigned char *oob)
 }
 
 #if !defined(TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_MARK_FREE_GCC53_BUILD)
 void set_oob_special_page(void *unused, unsigned char *oob,
 			  unsigned int block, unsigned int page,
 			  unsigned short erase_count)
@@ -7393,7 +7395,9 @@ struct mark_free_zone {
 	int (*write)(struct mark_free_zone *, struct physic_op_param *);
 };
 #if !defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD) && \
+    (!defined(TRIMUI_NFTL_GCC7_PASS) || \
+     defined(TRIMUI_NFTL_MARK_FREE_GCC53_BUILD))
 __attribute__((optimize("-fno-stack-protector")))
 int mark_free_block(struct erase_block_zone *owner,
 		    struct erase_block_info *block)
@@ -7403,6 +7407,10 @@ int mark_free_block(struct erase_block_zone *owner,
 #define MARK_ZONE ((struct mark_free_zone *)owner)
 	struct physic_op_param op;
 	unsigned char oob[16];
+	/* GCC 5.3's OEM body loads each tag in w0, then moves it into the
+	 * fourth argument. Keep that register schedule while reloading tag
+	 * after each write callback, since the callback may mutate block. */
+	register unsigned int tag asm("w0");
 
 	nand_memset(oob, -91, 16);
 	/* OEM rereads geometry, block metadata and callback pointers for each
@@ -7410,26 +7418,30 @@ int mark_free_block(struct erase_block_zone *owner,
 	 * Page counts below two wrap; helper/write errors are ignored. */
 	set_physic_op_par(&op, block->number, 0, MARK_ZONE->geometry->fixed_page,
 			   MARK_ZONE->page_data, oob);
+	tag = block->tag;
 	set_oob_special_page(MARK_ZONE, oob, 0x55555555,
-			     block->tag, block->erase_count);
+			     tag, block->erase_count);
 	MARK_ZONE->write(MARK_ZONE, &op);
 
 	set_physic_op_par(&op, block->number, 1, MARK_ZONE->geometry->fixed_page,
 			   MARK_ZONE->page_data, oob);
+	tag = block->tag;
 	set_oob_special_page(MARK_ZONE, oob, 0x55555555,
-			     block->tag, block->erase_count);
+			     tag, block->erase_count);
 	MARK_ZONE->write(MARK_ZONE, &op);
 
 	set_physic_op_par(&op, block->number, MARK_ZONE->geometry->pages - 2,
 			   MARK_ZONE->geometry->fixed_page, MARK_ZONE->page_data, oob);
+	tag = block->tag;
 	set_oob_special_page(MARK_ZONE, oob, 0x55555555,
-			     block->tag, block->erase_count);
+			     tag, block->erase_count);
 	MARK_ZONE->write(MARK_ZONE, &op);
 
 	set_physic_op_par(&op, block->number, MARK_ZONE->geometry->pages - 1,
 			   MARK_ZONE->geometry->fixed_page, MARK_ZONE->page_data, oob);
+	tag = block->tag;
 	set_oob_special_page(MARK_ZONE, oob, 0x55555555,
-			     block->tag, block->erase_count);
+			     tag, block->erase_count);
 	MARK_ZONE->write(MARK_ZONE, &op);
 #undef MARK_ZONE
 	return 0;
