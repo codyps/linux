@@ -2422,6 +2422,10 @@ int check_cross_talk(struct cross_talk_zone *zone,
 	cross_body: {
 		data = 0;
 		oobptr = oob;
+		/* OEM uses UXTH for index's ushort argument. This compiler uses
+		 * AND #0xffff instead; both leave flags untouched and pass the
+		 * same value for every 32-bit index. Keep the unchecked spare
+		 * buffer length in the call, as in stock. */
 		set_physic_op_par(&op, block->number, index,
 				  zone->geometry->fixed_page, data, oobptr);
 		result = zone->read(zone, &op);
