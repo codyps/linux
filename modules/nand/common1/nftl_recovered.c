@@ -2259,7 +2259,13 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 		nand_print_dbg(nftl_ro_lc_122, values[index]);
 	}
 	nand_print_dbg(nftl_ro_lc_45);
-	return error;
+	/* OEM copies the final error through result after logging, even when
+	 * both words are zero. Preserve the private write and its timing. */
+	if (error)
+		result = error;
+	else
+		result = 0;
+	return result;
 }
 #undef error
 #undef result
