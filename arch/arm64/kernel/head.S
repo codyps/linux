@@ -838,4 +838,8 @@ __primary_switch:
 	ldr	x8, =__primary_switched
 	adrp	x0, __PHYS_OFFSET
 	br	x8
+	/* OEM symbol extent includes both literal-pool entries and the eight
+	 * zero bytes that otherwise fall between this section and cpu_resume. */
+	.ltorg
+	.zero	8
 ENDPROC(__primary_switch)
