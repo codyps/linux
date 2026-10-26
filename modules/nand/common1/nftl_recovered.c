@@ -7130,48 +7130,57 @@ struct panic_backup_zone {
 	unsigned char before_geometry[8];
 	struct panic_backup_geometry *geometry;
 };
+struct panic_reservation {
+	void *blocks[3];
+	unsigned int pages;
+};
+_Static_assert(__builtin_offsetof(struct panic_reservation, pages) == 24,
+	       "panic reservation page-count offset");
+/* The OEM overwrites only the low 32 bits of panic_info[3], leaving its
+ * upper half untouched. This typed view also retains the stock store order. */
+extern struct panic_reservation panic_state __asm__("panic_info");
 struct free_block;
 struct free_block_zone;
 extern struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone);
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int panic_backup_block(struct build_zone *zone)
 {
 	/* OEM keeps geometry at FP+0x28, block at +0x30 and index at +0x3c.
-	 * A separate-locals declaration lets GCC reuse different slots across
-	 * the allocator and printer calls. Preserve the private frame layout. */
-	struct {
-		struct panic_backup_geometry *geometry;
-		struct physical_block *block;
-		unsigned char gap[4];
-		int index;
-	} local;
+	 * Separate locals reproduce the signed index load and call order. */
+	int index;
+	struct panic_backup_geometry *geometry;
+	struct physical_block *block;
 
 	if (!is_panic_enable())
 		return 0;
-	for (local.index = 0; local.index <= 2; local.index++) {
-		local.block = panic_info[local.index];
+	for (index = 0; index <= 2; index++) {
+		block = panic_info[index];
 		/* OEM returns immediately on the first existing reservation,
 		 * even if a later slot is empty. Preserve this early exit. */
-		if (local.block) {
+		if (block) {
 			nand_print(nftl_ro_lc_19,
-				   local.block->number);
+				   block->number);
 			return 0;
 		}
-		local.block = (struct physical_block *)
+		block = (struct physical_block *)
 			out_phy_block_from_free_list((struct free_block_zone *)zone);
-		if (local.block) {
+		if (block) {
 			nand_print(nftl_ro_lc_20,
-				   local.block->number);
-			panic_info[local.index] = local.block;
+				   block->number);
+			panic_info[index] = block;
 		} else {
 			nand_print(nftl_ro_lc_21);
 			return -1;
 		}
 	}
-	local.geometry = ((struct panic_backup_zone *)zone)->geometry;
+	geometry = ((struct panic_backup_zone *)zone)->geometry;
 	/* OEM stores a 32-bit page count over the fourth pointer slot. */
-	*(unsigned int *)&panic_info[3] = local.geometry->pages * 3;
+	panic_state.pages = geometry->pages * 3;
 	return 0;
 }
+#else
+extern int panic_backup_block(struct build_zone *zone);
+#endif
 int panic_recover_info(struct panic_header *header, struct panic_block *block)
 {
 	/* OEM follows both pointers unchecked and rejects indices 3 and 4\n	 * despite reserving five pointer slots. */
@@ -8313,7 +8322,8 @@ void print_block_invalid_list(struct invalid_print_zone *zone)
 	}
 }
 #if defined(TRIMUI_NFTL_GCC7_PASS) || \
-    defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD)
+    defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD) || \
+    defined(TRIMUI_NFTL_PANIC_BACKUP_GCC53_BUILD)
 extern struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone);
 #else
 struct free_block *out_phy_block_from_free_list(struct free_block_zone *zone)
