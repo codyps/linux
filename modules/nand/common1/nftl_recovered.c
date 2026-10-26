@@ -9030,89 +9030,96 @@ _Static_assert(__builtin_offsetof(struct do_prio_gc_zone,
 #ifndef TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD
 int do_prio_gc(void *owner)
 {
-	struct do_prio_gc_zone *zone = owner;
-	struct prio_gc_queue *queue = &zone->queue;
-	struct prio_gc_node *node;
-	struct do_prio_gc_block *block;
-	struct do_prio_gc_block *removed;
-	int result;
+	/* Keep OEM private slots: removed at FP+0x28, result at +0x34,
+	 * and node at +0x38. The intervening word is not initialized. */
+	struct {
+		struct do_prio_gc_block *removed;
+		unsigned int unused;
+		int result;
+		struct prio_gc_node *node;
+	} frame;
+#define PRIO_QUEUE (&((struct do_prio_gc_zone *)owner)->queue)
+#define PRIO_BLOCK ((struct do_prio_gc_block *)frame.node->block)
+/* Stock emits cleanup at each exit, including a fresh node dereference.
+ * A shared cleanup label collapses this shipped control-flow layout. */
+#define PRIO_CLEAR_RETURN(value) do { \
+		frame.node->priority = 0; \
+		PRIO_QUEUE->active_priority = 0; \
+		frame.node->block = 0; \
+		return (value); \
+	} while (0)
 
-	if (!queue->head.next)
+	if (!PRIO_QUEUE->head.next)
 		return 0;
-	node = (struct prio_gc_node *)del_from_gc_list(
-		(struct gc_zone *)queue,
-		(struct gc_node *)queue->head.next);
-	block = node->block;
-	if (is_current_blcok((struct diag_current_zone *)zone, block) == 1) {
-		add_to_gc_list_tail((struct gc_list *)queue,
-				    (struct gc_list_node *)node);
+	frame.node = (struct prio_gc_node *)del_from_gc_list(
+		(struct gc_zone *)PRIO_QUEUE,
+		(struct gc_node *)PRIO_QUEUE->head.next);
+	/* Reload the block after each callback; it may change node->block. */
+	if (is_current_blcok((struct diag_current_zone *)owner, frame.node->block) == 1) {
+		add_to_gc_list_tail((struct gc_list *)PRIO_QUEUE,
+				    (struct gc_list_node *)frame.node);
 		return 0;
 	}
-	if (!block) {
+	if (!frame.node->block) {
 		nand_print_dbg(nftl_ro_lc_447);
-		goto clear;
+		PRIO_CLEAR_RETURN(0);
 	}
-	if (!is_block_in_invalid_list((struct invalid_zone *)zone,
-				      (struct invalid_node *)block)) {
+	if (!is_block_in_invalid_list((struct invalid_zone *)owner,
+				      (struct invalid_node *)frame.node->block)) {
 		nand_print_dbg(nftl_ro_lc_448,
-			       block->number, node->priority);
-		goto clear;
+			       PRIO_BLOCK->number, frame.node->priority);
+		PRIO_CLEAR_RETURN(0);
 	}
-	queue->active_priority = node->priority;
-	if (node->priority == 5) {
-		/* OEM ignores priority-five collection failures. */
-		garbage_collect_first((struct gc_one_zone *)zone, block, 4);
-		goto clear;
+	PRIO_QUEUE->active_priority = frame.node->priority;
+	if (frame.node->priority == 5) {
+		/* OEM stores but ignores this collection result. */
+		frame.result = garbage_collect_first((struct gc_one_zone *)owner,
+					       frame.node->block, 4);
+		PRIO_CLEAR_RETURN(0);
 	}
-	result = garbage_collect_first((struct gc_one_zone *)zone, block, -1);
-	if (result) {
-		nand_print(nftl_ro_lc_449,
-			   block->number, node->priority);
-		goto clear_error;
+	frame.result = garbage_collect_first((struct gc_one_zone *)owner,
+					       frame.node->block, -1);
+	if (frame.result) {
+		nand_print(nftl_ro_lc_449, PRIO_BLOCK->number, frame.node->priority);
+		PRIO_CLEAR_RETURN(1);
 	}
-	if (!is_block_in_free_list((struct free_zone *)zone,
-				   (struct free_node *)block)) {
+	if (!is_block_in_free_list((struct free_zone *)owner,
+				   (struct free_node *)frame.node->block)) {
 		nand_print_dbg(nftl_ro_lc_450,
-			       block->number, node->priority);
-		goto clear;
+			       PRIO_BLOCK->number, frame.node->priority);
+		PRIO_CLEAR_RETURN(0);
 	}
-	removed = (struct do_prio_gc_block *)
+	frame.removed = (struct do_prio_gc_block *)
 		out_phy_block_from_free_list_by_block(
-			(struct nftl_free_erase_owner *)zone,
-			(struct nftl_free_erase_node *)block);
-	if (!removed) {
+			(struct nftl_free_erase_owner *)owner,
+			(struct nftl_free_erase_node *)frame.node->block);
+	if (!frame.removed) {
 		nand_print_dbg(nftl_ro_lc_451,
-			       block->number, node->priority);
-		goto clear;
+			       PRIO_BLOCK->number, frame.node->priority);
+		PRIO_CLEAR_RETURN(0);
 	}
-	/* Stock has four branches (priority 1, 2, 4, and other) that all
-	 * issue the same erase call. Keep the branches to record this bug. */
-	if (queue->active_priority == 1)
-		erase_block((struct erase_block_zone *)zone,
-			    (struct erase_block_info *)removed,
-			    (unsigned short)(removed->erase_count + 1));
-	else if (queue->active_priority == 2)
-		erase_block((struct erase_block_zone *)zone,
-			    (struct erase_block_info *)removed,
-			    (unsigned short)(removed->erase_count + 1));
-	else if (queue->active_priority == 4)
-		erase_block((struct erase_block_zone *)zone,
-			    (struct erase_block_info *)removed,
-			    (unsigned short)(removed->erase_count + 1));
+	/* OEM keeps four separate, identical erase calls for priority 1/2/4
+	 * and all others. Preserve the redundant branch and unchecked result. */
+	if (PRIO_QUEUE->active_priority == 1)
+		erase_block((struct erase_block_zone *)owner,
+			    (struct erase_block_info *)frame.removed,
+			    (unsigned short)(frame.removed->erase_count + 1));
+	else if (PRIO_QUEUE->active_priority == 2)
+		erase_block((struct erase_block_zone *)owner,
+			    (struct erase_block_info *)frame.removed,
+			    (unsigned short)(frame.removed->erase_count + 1));
+	else if (PRIO_QUEUE->active_priority == 4)
+		erase_block((struct erase_block_zone *)owner,
+			    (struct erase_block_info *)frame.removed,
+			    (unsigned short)(frame.removed->erase_count + 1));
 	else
-		erase_block((struct erase_block_zone *)zone,
-			    (struct erase_block_info *)removed,
-			    (unsigned short)(removed->erase_count + 1));
-clear:
-	node->priority = 0;
-	queue->active_priority = 0;
-	node->block = 0;
-	return 0;
-clear_error:
-	node->priority = 0;
-	queue->active_priority = 0;
-	node->block = 0;
-	return 1;
+		erase_block((struct erase_block_zone *)owner,
+			    (struct erase_block_info *)frame.removed,
+			    (unsigned short)(frame.removed->erase_count + 1));
+	PRIO_CLEAR_RETURN(0);
+#undef PRIO_CLEAR_RETURN
+#undef PRIO_BLOCK
+#undef PRIO_QUEUE
 }
 #endif /* TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD */
 
