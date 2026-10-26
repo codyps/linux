@@ -39,4 +39,6 @@ ENTRY(strchr)
 	cmp	w2, w1
 	csel	x0, x0, xzr, eq
 	ret
+	/* OEM symbol includes the zero-filled tail through the next object. */
+	.zero	12
 ENDPROC(strchr)

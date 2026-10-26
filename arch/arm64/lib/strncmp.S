@@ -307,4 +307,6 @@ CPU_BE( orr	syndrome, diff, has_nul )
 .Lret0:
 	mov	result, #0
 	ret
+	/* OEM symbol and PI alias include the eight zero tail bytes. */
+	.zero	8
 ENDPIPROC(strncmp)

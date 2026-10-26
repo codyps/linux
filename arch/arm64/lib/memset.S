@@ -215,5 +215,7 @@ ENTRY(memset)
 	ands	count, count, zva_bits_x
 	b.ne	.Ltail_maybe_long
 	ret
+	/* OEM main and alias symbols include the eight zero tail bytes. */
+	.zero	8
 ENDPIPROC(memset)
 ENDPROC(__memset)

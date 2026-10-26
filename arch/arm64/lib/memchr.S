@@ -41,4 +41,6 @@ ENTRY(memchr)
 	ret
 2:	mov	x0, #0
 	ret
+	/* OEM symbol includes the zero-filled tail through the next object. */
+	.zero	8
 ENDPIPROC(memchr)

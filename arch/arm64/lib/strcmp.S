@@ -231,4 +231,6 @@ CPU_BE(	orr	syndrome, diff, has_nul )
 	lsr	data1, data1, #56
 	sub	result, data1, data2, lsr #56
 	ret
+	/* OEM symbol and PI alias include the twelve zero tail bytes. */
+	.zero	12
 ENDPIPROC(strcmp)
