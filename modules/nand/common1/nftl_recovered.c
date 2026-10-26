@@ -6417,6 +6417,8 @@ struct gc_one_zone {
 extern int garbage_collect_first(struct gc_one_zone *, void *, int);
 extern const char *nand_get_cur_task_name(void);
 extern int nand_get_cur_task_pid(void);
+extern int gc_one(struct gc_one_zone *zone, unsigned short priority);
+#ifndef TRIMUI_NFTL_POWER_GC_GCC53_BUILD
 int gc_one(struct gc_one_zone *zone, unsigned short priority)
 {
 	struct gc_one_state *state = zone->state;
@@ -6441,6 +6443,7 @@ int gc_one(struct gc_one_zone *zone, unsigned short priority)
 	}
 	return 8;
 }
+#endif
 
 struct power_gc_geometry {
 	unsigned char before_divisor[8];
@@ -6462,9 +6465,10 @@ struct power_gc_zone {
 	unsigned short target;
 	unsigned short emergency;
 };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int power_on_gc(struct power_gc_zone *zone)
 {
-	unsigned short attempts = 0;
+	unsigned short attempts;
 	unsigned short priority;
 	int result;
 
@@ -6482,6 +6486,8 @@ int power_on_gc(struct power_gc_zone *zone)
 		return 0;
 	}
 	gc_src_type = 2;
+	/* OEM leaves this private slot untouched on the early-return path. */
+	attempts = 0;
 	priority = zone->geometry->pages - 10;
 	/* OEM relies on GC to increase availability; if it never does and
 	 * never returns eight, this loop does not terminate. */
@@ -6503,6 +6509,7 @@ int power_on_gc(struct power_gc_zone *zone)
 	nand_print_dbg(nftl_ro_lc_464, attempts);
 	return 0;
 }
+#endif
 
 struct gc_win_chip {
 	unsigned char before_pages[20];

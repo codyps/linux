@@ -64,6 +64,7 @@ obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_build_zone_list_first.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_toshiba_set_readretry.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53__nftl_nand_read_logic_page.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_recover_logic_page_mapping.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_power_on_gc.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_adjust_free_list.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_erase_block.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_flush_write_cache_to_nand.o
@@ -158,6 +159,7 @@ $(obj)/nftl_gcc53_build_zone_list_first.o: override CC := python3 $(srctree)/scr
 $(obj)/nftl_gcc53_toshiba_set_readretry.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) toshiba_set_readretry --
 $(obj)/nftl_gcc53__nftl_nand_read_logic_page.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) _nftl_nand_read_logic_page --
 $(obj)/nftl_gcc53_recover_logic_page_mapping.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) recover_logic_page_mapping --
+$(obj)/nftl_gcc53_power_on_gc.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) power_on_gc --
 $(obj)/nftl_gcc53_adjust_free_list.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) adjust_free_list --
 $(obj)/nftl_gcc53_erase_block.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) erase_block --
 $(obj)/nftl_gcc53_flush_write_cache_to_nand.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) flush_write_cache_to_nand --
@@ -209,6 +211,7 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_torture_block_and_mark.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_build_zone_list_first.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_toshiba_set_readretry.o
 nftl_gcc53_objects += $(addprefix $(obj)/,nftl_gcc53__nftl_nand_read_logic_page.o nftl_gcc53_recover_logic_page_mapping.o)
+nftl_gcc53_objects += $(obj)/nftl_gcc53_power_on_gc.o
 nftl_gcc53_objects += $(addprefix $(obj)/,nftl_gcc53_adjust_free_list.o nftl_gcc53_erase_block.o)
 nftl_gcc53_objects += $(obj)/nftl_gcc53_flush_write_cache_to_nand.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_write_phy_page_map_to_current_block.o
@@ -305,6 +308,7 @@ CFLAGS_nftl_gcc53_toshiba_set_readretry.o += -O0 -fno-builtin -fno-pic -mcmodel=
 CFLAGS_nftl_gcc53_nand_discard.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53__nftl_nand_read_logic_page.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_recover_logic_page_mapping.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_power_on_gc.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_adjust_free_list.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_erase_block.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_flush_write_cache_to_nand.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
