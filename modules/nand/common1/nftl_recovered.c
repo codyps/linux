@@ -9799,6 +9799,7 @@ extern int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 #endif
 #if defined(TRIMUI_NFTL_GCC7_PASS) || \
     defined(TRIMUI_NFTL_COLD_GCC53_BUILD) || \
+    defined(TRIMUI_NFTL_INVALID_PAGE_GCC53_BUILD) || \
     defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD)
 extern unsigned int *get_logic_page_map(struct logic_page_map_zone *zone,
 				 unsigned int page);
@@ -10112,7 +10113,7 @@ struct invalid_page_location {
 	unsigned short flags : 4;
 	unsigned short block;
 };
-#ifndef TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD
+#ifdef TRIMUI_NFTL_INVALID_PAGE_GCC53_BUILD
 int check_invalid_page_right(struct page_map_write_zone *zone,
 			     void *raw_map,
 			     struct page_map_write_block *block,
@@ -10120,8 +10121,12 @@ int check_invalid_page_right(struct page_map_write_zone *zone,
 {
 	struct invalid_page_location *location;
 	unsigned int logic_page;
-	unsigned int invalid = 0;
-	unsigned int page = 0;
+	/* OEM places page after invalid in the frame, but clears invalid first. */
+	unsigned int page;
+	unsigned int invalid;
+
+	invalid = 0;
+	page = 0;
 
 	while (page_count > page) {
 		logic_page = ((struct invalid_page_map_data *)raw_map)->pages[page];
@@ -10152,7 +10157,7 @@ int check_invalid_page_right(struct page_map_write_zone *zone,
 }
 #else
 extern int check_invalid_page_right(struct page_map_write_zone *zone, void *raw_map, struct page_map_write_block *block, unsigned short page_count);
-#endif /* TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD */
+#endif /* TRIMUI_NFTL_INVALID_PAGE_GCC53_BUILD */
 #ifdef TRIMUI_NFTL_GCC7_PASS
 extern int write_phy_page_map_to_current_block(struct page_map_write_zone *zone,
 					       struct page_map_write_current *current);

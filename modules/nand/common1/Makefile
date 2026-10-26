@@ -67,6 +67,7 @@ obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_adjust_free_list.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_erase_block.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_flush_write_cache_to_nand.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_write_phy_page_map_to_current_block.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_check_invalid_page_right.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix16nm_write_page_FF.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix20nm_vender_get_param_otp_hynix.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix20nm_getotpparam.o
@@ -155,6 +156,7 @@ $(obj)/nftl_gcc53_adjust_free_list.o: override CC := python3 $(srctree)/scripts/
 $(obj)/nftl_gcc53_erase_block.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) erase_block --
 $(obj)/nftl_gcc53_flush_write_cache_to_nand.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) flush_write_cache_to_nand --
 $(obj)/nftl_gcc53_write_phy_page_map_to_current_block.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) write_phy_page_map_to_current_block --
+$(obj)/nftl_gcc53_check_invalid_page_right.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) check_invalid_page_right --
 $(obj)/nftl_gcc53_hynix16nm_write_page_FF.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix16nm_write_page_FF --
 $(obj)/nftl_gcc53_hynix20nm_vender_get_param_otp_hynix.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix20nm_vender_get_param_otp_hynix --
 $(obj)/nftl_gcc53_hynix20nm_getotpparam.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix20nm_getotpparam --
@@ -199,6 +201,7 @@ nftl_gcc53_objects += $(addprefix $(obj)/,nftl_gcc53__nftl_nand_read_logic_page.
 nftl_gcc53_objects += $(addprefix $(obj)/,nftl_gcc53_adjust_free_list.o nftl_gcc53_erase_block.o)
 nftl_gcc53_objects += $(obj)/nftl_gcc53_flush_write_cache_to_nand.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_write_phy_page_map_to_current_block.o
+nftl_gcc53_objects += $(obj)/nftl_gcc53_check_invalid_page_right.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix16nm_write_page_FF.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix20nm_vender_get_param_otp_hynix.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix20nm_getotpparam.o
@@ -290,6 +293,7 @@ CFLAGS_nftl_gcc53_adjust_free_list.o += -O0 -fno-builtin -fno-pic -mcmodel=small
 CFLAGS_nftl_gcc53_erase_block.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_flush_write_cache_to_nand.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_write_phy_page_map_to_current_block.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_check_invalid_page_right.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_hynix16nm_write_page_FF.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_hynix20nm_vender_get_param_otp_hynix.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_hynix20nm_getotpparam.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
