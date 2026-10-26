@@ -44,7 +44,8 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_FIRST_LIST_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_NO_USE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_NO_USE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -65,7 +66,8 @@ extern void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 #if !defined(TRIMUI_NFTL_HYNIX_PAGE_END_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_CRC_WRONG_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD)
 int is_nouse_page(const unsigned char *bytes)
 {
 	unsigned int count;
@@ -1042,7 +1044,8 @@ int _nand_flush_write_cache(struct nftl_logic_owner *owner, int force)
 	return result;
 }
 
-#ifndef TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD)
 int is_ftl_logic_page_data(unsigned char *oob)
 {
 	/* OEM reads byte one without a buffer-length check. */
@@ -1061,7 +1064,8 @@ int _nftl_discard_logic_page(void *zone, unsigned int page)
 	return result;
 }
 
-#ifndef TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD)
 unsigned int get_logic_page_from_oob(void *oob)
 {
 	unsigned int page = get_spare_data(oob, 1, 4);
@@ -9888,7 +9892,8 @@ struct poweroff_ecc_zone {
 	unsigned char before_geometry[3448];
 	struct poweroff_ecc_geometry *geometry;
 };
-#ifndef TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD)
 int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 			     const unsigned char *data, unsigned char *oob)
 {
@@ -12558,6 +12563,8 @@ allocate_new:
 	return 0;
 }
 
+#if !defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 int recover_block_phy_page_mapping(struct page_map_recovery_zone *zone,
 				   struct new_write_block *block,
@@ -12595,19 +12602,22 @@ int recover_block_phy_page_mapping(struct page_map_recovery_zone *zone,
 					   status, block->number, page, attempt);
 		}
 		if (is_ftl_logic_page_data(oob) == 1) {
-			if (status != 0 && status != 10)
-				continue;
-			if (nand_power_off_ecc_error(
+			/* OEM drops every other read status without recording a
+			 * mapping. Keep this permissive status rule and its stock
+			 * branch layout, even if later callers expect a hard error. */
+			if (status == 0 || status == 10) {
+				if (nand_power_off_ecc_error(
 						(struct poweroff_ecc_zone *)zone,
 						zone->data, oob)) {
-				nand_print(nftl_ro_lc_271);
-				continue;
-			}
-			map[page] = get_logic_page_from_oob(oob);
-			if (map[page] >= zone->capacity) {
-				nand_print(nftl_ro_lc_264,
-					   block->number, page, map[page]);
-				map[page] = -1;
+					nand_print(nftl_ro_lc_271);
+					continue;
+				}
+				map[page] = get_logic_page_from_oob(oob);
+				if (map[page] >= zone->capacity) {
+					nand_print(nftl_ro_lc_264,
+						   block->number, page, map[page]);
+					map[page] = -1;
+				}
 			}
 		} else if (is_nouse_page(oob) != 1) {
 			nand_print(nftl_ro_lc_272,
@@ -12616,6 +12626,10 @@ int recover_block_phy_page_mapping(struct page_map_recovery_zone *zone,
 	}
 	return 0;
 }
+#else
+extern int recover_block_phy_page_mapping(struct page_map_recovery_zone *,
+					  struct new_write_block *, unsigned int *);
+#endif
 
 struct hynix16nm_otp_info_controller {
 	unsigned char before_ce[1264];

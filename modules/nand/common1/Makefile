@@ -74,6 +74,7 @@ obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_garbage_collect.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_panic_backup_block.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_sandisk_first_burn.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_get_empty_cahce_node.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_recover_block_phy_page_mapping.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_adjust_free_list.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_erase_block.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_flush_write_cache_to_nand.o
@@ -178,6 +179,7 @@ $(obj)/nftl_gcc53_garbage_collect.o: override CC := python3 $(srctree)/scripts/t
 $(obj)/nftl_gcc53_panic_backup_block.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) panic_backup_block --
 $(obj)/nftl_gcc53_sandisk_first_burn.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) sandisk_A19_check_bad_block_first_burn --
 $(obj)/nftl_gcc53_get_empty_cahce_node.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) get_empty_cahce_node --
+$(obj)/nftl_gcc53_recover_block_phy_page_mapping.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) recover_block_phy_page_mapping --
 $(obj)/nftl_gcc53_adjust_free_list.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) adjust_free_list --
 $(obj)/nftl_gcc53_erase_block.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) erase_block --
 $(obj)/nftl_gcc53_flush_write_cache_to_nand.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) flush_write_cache_to_nand --
@@ -239,6 +241,7 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_garbage_collect.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_panic_backup_block.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_sandisk_first_burn.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_get_empty_cahce_node.o
+nftl_gcc53_objects += $(obj)/nftl_gcc53_recover_block_phy_page_mapping.o
 nftl_gcc53_objects += $(addprefix $(obj)/,nftl_gcc53_adjust_free_list.o nftl_gcc53_erase_block.o)
 nftl_gcc53_objects += $(obj)/nftl_gcc53_flush_write_cache_to_nand.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_write_phy_page_map_to_current_block.o
@@ -345,6 +348,7 @@ CFLAGS_nftl_gcc53_garbage_collect.o += -O0 -fno-builtin -fno-pic -mcmodel=small 
 CFLAGS_nftl_gcc53_panic_backup_block.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_sandisk_first_burn.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_get_empty_cahce_node.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_recover_block_phy_page_mapping.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_adjust_free_list.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_erase_block.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_flush_write_cache_to_nand.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
