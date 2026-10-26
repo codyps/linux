@@ -2386,7 +2386,8 @@ extern unsigned char sandisk_read_retry_cycle;
 extern unsigned char sandisk_read_retry_reg_cnt;
 extern unsigned char sandisk_read_retry_cmd_19[3];
 extern unsigned char sandisk_read_retry_cmd_1y[1];
-#ifndef TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SANDISK_SET_RETRY_GCC53_BUILD)
 int sandisk_vender_set_param(void *chip, unsigned char *data,
 			     unsigned char *address, unsigned int ignored)
 {
@@ -6844,7 +6845,8 @@ int sandisk_A19_read_retry_clock_recover(struct clock_chip *chip)
 	return 0;
 }
 
-#ifndef TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SANDISK_SET_RETRY_GCC53_BUILD)
 int sandisk_read_retry_clock_recover(struct clock_chip *chip)
 {
 	/* OEM ignores clock-programming errors and reports success. */
@@ -6881,7 +6883,8 @@ extern int nand_get_clk(void *controller, unsigned int channel,
 	}
 
 CLOCK_SAVE(sandisk_A19)
-#ifndef TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SANDISK_SET_RETRY_GCC53_BUILD)
 CLOCK_SAVE(sandisk)
 #else
 extern int sandisk_read_retry_clock_save(struct clock_chip *chip);
@@ -11861,21 +11864,19 @@ extern unsigned char sandisk_19_low_recovered[];
 extern unsigned char sandisk_19_high_recovered[];
 extern unsigned char sandisk_24_recovered[];
 extern unsigned char sandisk_1y_recovered[];
-#ifndef TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD) && \
+    (!defined(TRIMUI_NFTL_GCC7_PASS) || \
+     defined(TRIMUI_NFTL_SANDISK_SET_RETRY_GCC53_BUILD))
 int sandisk_set_readretry(struct samsung_set_chip *chip, unsigned short page)
 {
 	/* OEM places count at FP+0x24, addresses at +0x28, values at
 	 * +0x30 and the private result at +0x3c. */
-	struct {
-		unsigned int before_count;
-		unsigned int count;
-		unsigned char *addresses;
-		unsigned char *values;
-		unsigned int before_result;
-		int result;
-	} frame;
+	int result;
+	unsigned char *values;
+	unsigned char *addresses;
+	unsigned int count;
 
-	frame.result = 0;
+	result = 0;
 
 	sandisk_read_retry_clock_save((struct clock_chip *)chip);
 	nand_enable_chip(chip);
@@ -11887,34 +11888,52 @@ int sandisk_set_readretry(struct samsung_set_chip *chip, unsigned short page)
 	if (sandisk_read_retry_mode == 48) {
 		/* OEM treats page zero as low and page 255 as high; every
 		 * other even nonzero page uses the high table. */
-		if (page != 255 && (page == 0 || (page & 1))) {
-			frame.values = sandisk_19_low_recovered +
-				 (unsigned long)chip->retry * 3;
+		if (page != 255 && (page == 0 || ({
+			register unsigned int odd asm("w0") = page & 1;
+			(unsigned short)odd;
+		}))) {
+			/* OEM uses a 32-bit offset in x0 and table base in x1,
+			 * then adds in that register order. Retain unchecked retry
+			 * indexes; a corrected implementation would validate them. */
+			register unsigned long off asm("x0") =
+				(unsigned long)chip->retry * 3;
+			register unsigned char *base asm("x1") = sandisk_19_low_recovered;
+			asm volatile("add %0, %0, %1" : "+r"(off) : "r"(base));
+			values = (unsigned char *)off;
+			addresses = sandisk_read_retry_reg_adr_19;
+			count = 3;
 			sandisk_read_retry_cycle = 16;
 		} else {
-			frame.values = sandisk_19_high_recovered +
-				 (unsigned long)chip->retry * 3;
+			register unsigned long off asm("x0") =
+				(unsigned long)chip->retry * 3;
+			register unsigned char *base asm("x1") = sandisk_19_high_recovered;
+			asm volatile("add %0, %0, %1" : "+r"(off) : "r"(base));
+			values = (unsigned char *)off;
+			addresses = sandisk_read_retry_reg_adr_19;
+			count = 3;
 			sandisk_read_retry_cycle = 20;
 		}
-		frame.addresses = sandisk_read_retry_reg_adr_19;
-		frame.count = 3;
-		frame.result = sandisk_vender_set_param(chip, frame.values,
-						frame.addresses, frame.count);
+		result = sandisk_vender_set_param(chip, values,
+						addresses, count);
 		/* OEM ignores the final command result. */
 		set_one_cmd((struct command_chip *)chip, -74, 0);
 	} else if (sandisk_read_retry_mode == 49) {
-		frame.values = sandisk_24_recovered + (unsigned long)chip->retry * 3;
-		frame.addresses = sandisk_read_retry_reg_adr_24;
-		frame.count = 3;
-		frame.result = sandisk_vender_set_param(chip, frame.values,
-						frame.addresses, frame.count);
+		register unsigned long off asm("x0") =
+			(unsigned long)chip->retry * 3;
+		register unsigned char *base asm("x1") = sandisk_24_recovered;
+		asm volatile("add %0, %0, %1" : "+r"(off) : "r"(base));
+		values = (unsigned char *)off;
+		addresses = sandisk_read_retry_reg_adr_24;
+		count = 3;
+		result = sandisk_vender_set_param(chip, values,
+						addresses, count);
 		set_one_cmd((struct command_chip *)chip, -74, 0);
 	} else if (sandisk_read_retry_mode == 50) {
-		frame.values = sandisk_1y_recovered + (unsigned long)chip->retry * 4;
-		frame.addresses = sandisk_read_retry_reg_adr_1y;
-		frame.count = 1;
-		frame.result = sandisk_vender_set_param(chip, frame.values,
-						frame.addresses, frame.count);
+		values = sandisk_1y_recovered + (unsigned long)chip->retry * 4;
+		addresses = sandisk_read_retry_reg_adr_1y;
+		count = 1;
+		result = sandisk_vender_set_param(chip, values,
+						addresses, count);
 		set_one_cmd((struct command_chip *)chip, 93, 0);
 	}
 	/* OEM's toggle flag is sticky across calls, even on another chip. */
@@ -11922,7 +11941,7 @@ int sandisk_set_readretry(struct samsung_set_chip *chip, unsigned short page)
 		ndfc_set_toggle_interface(chip->controller);
 	nand_disable_chip(chip);
 	sandisk_read_retry_clock_recover((struct clock_chip *)chip);
-	return frame.result;
+	return result;
 }
 #else
 extern int sandisk_set_readretry(struct samsung_set_chip *chip,
