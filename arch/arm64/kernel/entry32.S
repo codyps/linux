@@ -28,16 +28,20 @@
 
 /*
  * System call wrappers for the AArch32 compatibility layer.
+ * The OEM includes each wrapper's trailing 16-byte alignment NOPs in its
+ * ELF function extent. Keep the alignment before ENDPROC where needed.
  */
 
 ENTRY(compat_sys_sigreturn_wrapper)
 	mov	x0, sp
 	b	compat_sys_sigreturn
+	.align	4
 ENDPROC(compat_sys_sigreturn_wrapper)
 
 ENTRY(compat_sys_rt_sigreturn_wrapper)
 	mov	x0, sp
 	b	compat_sys_rt_sigreturn
+	.align	4
 ENDPROC(compat_sys_rt_sigreturn_wrapper)
 
 ENTRY(compat_sys_statfs64_wrapper)
@@ -67,6 +71,7 @@ ENTRY(compat_sys_mmap2_wrapper)
 	b	sys_mmap_pgoff
 1:	mov	x0, #-EINVAL
 	ret
+	.align	4
 ENDPROC(compat_sys_mmap2_wrapper)
 
 /*
@@ -77,27 +82,32 @@ ENDPROC(compat_sys_mmap2_wrapper)
 ENTRY(compat_sys_pread64_wrapper)
 	regs_to_64	x3, x4, x5
 	b	sys_pread64
+	.align	4
 ENDPROC(compat_sys_pread64_wrapper)
 
 ENTRY(compat_sys_pwrite64_wrapper)
 	regs_to_64	x3, x4, x5
 	b	sys_pwrite64
+	.align	4
 ENDPROC(compat_sys_pwrite64_wrapper)
 
 ENTRY(compat_sys_truncate64_wrapper)
 	regs_to_64	x1, x2, x3
 	b	sys_truncate
+	.align	4
 ENDPROC(compat_sys_truncate64_wrapper)
 
 ENTRY(compat_sys_ftruncate64_wrapper)
 	regs_to_64	x1, x2, x3
 	b	sys_ftruncate
+	.align	4
 ENDPROC(compat_sys_ftruncate64_wrapper)
 
 ENTRY(compat_sys_readahead_wrapper)
 	regs_to_64	x1, x2, x3
 	mov	w2, w4
 	b	sys_readahead
+	.align	4
 ENDPROC(compat_sys_readahead_wrapper)
 
 ENTRY(compat_sys_fadvise64_64_wrapper)
@@ -106,12 +116,14 @@ ENTRY(compat_sys_fadvise64_64_wrapper)
 	regs_to_64	x2, x4, x5
 	mov	w3, w6
 	b	sys_fadvise64_64
+	.align	4
 ENDPROC(compat_sys_fadvise64_64_wrapper)
 
 ENTRY(compat_sys_sync_file_range2_wrapper)
 	regs_to_64	x2, x2, x3
 	regs_to_64	x3, x4, x5
 	b	sys_sync_file_range2
+	.align	4
 ENDPROC(compat_sys_sync_file_range2_wrapper)
 
 ENTRY(compat_sys_fallocate_wrapper)
