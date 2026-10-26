@@ -35,6 +35,7 @@ struct physic_op_param {
 };
 
 #if !defined(TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_CROSS_TALK_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD) && \
@@ -2440,6 +2441,7 @@ struct cross_talk_zone {
 /* OEM's page scan has an OOB stack array but no canary prologue. The raw
  * callback receives this pointer with a geometry-derived spare length; stock
  * does not check that length against the 16-byte local array. */
+#ifndef TRIMUI_NFTL_GCC7_PASS
 __attribute__((optimize("-fno-stack-protector")))
 int check_cross_talk(struct cross_talk_zone *zone,
 		     struct physical_block *block)
@@ -2465,14 +2467,9 @@ int check_cross_talk(struct cross_talk_zone *zone,
 		result = zone->read(zone, &op);
 		if (result == 0 && oobptr[14] <= 99 &&
 		    zone->stats->max <= oobptr[14]) {
-			/* Keep the OEM's final store order: fetch stats before
-			 * reading OOB[14]. GCC 7.4.1 otherwise evaluates the OOB
-			 * byte first. Binding the temporary to x0 reproduces the
-			 * stock load order without an extra private stack write;
-			 * the unchecked 16-byte OOB buffer remains unchanged. */
-			register struct cross_talk_stats *target asm("x0") = zone->stats;
-
-			target->max = oobptr[14];
+			/* GCC 5.3 emits the OEM pointer-first load and final UXTH.
+			 * Its plain expression also retains the unchecked OOB read. */
+			zone->stats->max = oobptr[14];
 			goto cross_done;
 		}
 	}
@@ -2486,6 +2483,7 @@ int check_cross_talk(struct cross_talk_zone *zone,
 	/* OEM reports success even if every physical read failed. */
 	return 0;
 }
+#endif /* !TRIMUI_NFTL_GCC7_PASS */
 struct used_page_geometry {
 	unsigned char before_sectors[8];
 	unsigned char sectors_per_page;
