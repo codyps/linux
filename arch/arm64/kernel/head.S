@@ -705,6 +705,8 @@ __secondary_switched:
 	msr	sp_el0, x2
 	mov	x29, #0
 	b	secondary_start_kernel
+	/* OEM counts the existing entry-alignment NOP in this symbol. */
+	.align	4
 ENDPROC(__secondary_switched)
 
 /*
