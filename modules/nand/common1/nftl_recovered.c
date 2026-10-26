@@ -43,7 +43,8 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_SMART_INIT_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_FIRST_LIST_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_FIRST_LIST_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NO_USE_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -779,11 +780,15 @@ int is_power_down_info_page(void *oob)
 extern int is_power_down_info_page(void *oob);
 #endif
 
+#ifndef TRIMUI_NFTL_NO_USE_GCC53_BUILD
 int is_ftl_start_flag_page(unsigned char *oob)
 {
 	/* OEM reads bytes 1 and 2 directly, with no length or NULL check. */
 	return oob[1] == 0xaa && oob[2] == 0xee;
 }
+#else
+extern int is_ftl_start_flag_page(unsigned char *oob);
+#endif
 
 int is_ftl_end_flag_page(unsigned char *oob)
 {
@@ -888,7 +893,8 @@ unsigned int nftl_get_boot_cnt(struct nftl_boot_owner_view *input)
 unsigned int get_spare_data(void *oob, unsigned char offset,
 			    unsigned char bytes);
 #if !defined(TRIMUI_NFTL_GCC7_PASS) && \
-    !defined(TRIMUI_NFTL_PANIC_RECOVER_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_PANIC_RECOVER_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NO_USE_GCC53_BUILD)
 unsigned int get_spare_data(void *oob, unsigned char offset,
 			    unsigned char bytes)
 {
@@ -1910,7 +1916,8 @@ int do_write_error_in_build_list(struct write_error_zone *zone,
 	return 0;
 }
 #if !defined(TRIMUI_NFTL_EVAL_ORDER_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_FIRST_LIST_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_FIRST_LIST_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NO_USE_GCC53_BUILD)
 int is_last_phy_block(struct physical_block *block,
 		      struct physical_zone *zone)
 {
@@ -10695,23 +10702,26 @@ _Static_assert(__builtin_offsetof(struct no_use_zone, read) == 3464,
 	       "no-use read callback");
 _Static_assert(__builtin_offsetof(struct no_use_zone, check) == 3488,
 	       "no-use block callback");
+#ifndef TRIMUI_NFTL_GCC7_PASS
 __attribute__((optimize("-fno-stack-protector")))
 int is_no_use_device(struct no_use_zone *zone, unsigned int expected_size)
 {
-	struct no_use_block *block = zone->blocks;
-	struct physic_op_param op;
 	unsigned char oob[16];
+	struct physic_op_param op;
 	unsigned int limit;
+	struct no_use_block *block = zone->blocks;
 	int read_result;
+	unsigned int spare;
 
 	/* OEM divides by both geometry fields without checking for zero.
 	 * AArch64 UDIV returns zero on a zero divisor in the shipped build. */
-	if (zone->sector_count)
-		limit = ((zone->sector_count + zone->offset) /
-			 zone->geometry->sectors_per_page) /
-			zone->geometry->pages_per_block;
-	else
+	if (zone->sector_count) {
+		limit = (zone->sector_count + zone->offset) /
+			 zone->geometry->sectors_per_page;
+		limit /= zone->geometry->pages_per_block;
+	} else {
 		limit = -1U;
+	}
 	zone->scanned = 0;
 	while (zone->scanned < limit) {
 		zone->current = block;
@@ -10721,7 +10731,8 @@ int is_no_use_device(struct no_use_zone *zone, unsigned int expected_size)
 			read_result = zone->read(zone, &op);
 			if (is_ftl_start_flag_page(oob) == 1 &&
 			    (read_result == 0 || read_result == 10)) {
-				if (get_spare_data(oob, 3, 4) != expected_size) {
+				spare = get_spare_data(oob, 3, 4);
+				if (spare != expected_size) {
 					nand_print(nftl_ro_lc_208);
 					return 1;
 				}
@@ -10743,6 +10754,10 @@ int is_no_use_device(struct no_use_zone *zone, unsigned int expected_size)
 	}
 	return 1;
 }
+#else
+extern int is_no_use_device(struct no_use_zone *zone,
+			    unsigned int expected_size);
+#endif
 
 struct garbage_collect_geometry {
 	unsigned char before_pages[20];
