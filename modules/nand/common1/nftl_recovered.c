@@ -2179,41 +2179,39 @@ extern int hynix16nm_get_read_retry_cfg(unsigned char *mode,
 					unsigned char *cycle,
 					unsigned char *values, void *raw_buffer);
 extern int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone);
-#ifndef TRIMUI_NFTL_HYNIX16_GETOTP_GCC53_BUILD
+#if defined(TRIMUI_NFTL_HYNIX16_CFG_GCC53_BUILD) || \
+	(!defined(TRIMUI_NFTL_GCC7_PASS) && \
+	 !defined(TRIMUI_NFTL_HYNIX16_GETOTP_GCC53_BUILD))
 /* OEM's 144-byte frame has no stack canary around its OTP vote buffers.
  * The two scratch arrays occupy 32 bytes each even though each vote uses
  * eight. The adjacent count is reloadable after callbacks; retain that
- * layout and the unchecked callback buffer lengths found in the binary. */
+ * layout and the unchecked input length found in the binary. */
 __attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 				 unsigned char *values, void *raw_buffer)
 {
 	struct {
-		unsigned char secondary[32];
-		unsigned char primary[32];
 		unsigned int total;
 		unsigned int copy_inner;
 		unsigned int index;
 		unsigned int copy_init;
 		int result;
 		int error;
-	} frame __attribute__((aligned(8)));
+	} scalars;
 #define buffer ((const unsigned char *)raw_buffer)
-#define primary frame.primary
-#define secondary frame.secondary
-#define total frame.total
-#define copy frame.copy_inner
-#define index frame.index
-#define result frame.result
-#define error frame.error
+#define total scalars.total
+#define copy scalars.copy_inner
+#define index scalars.index
+#define result scalars.result
+#define error scalars.error
+	/* OEM initializes these words before zeroing either scratch array. */
 	error = 0;
 	result = 0;
-	__builtin_memset(primary, 0, 32);
-	__builtin_memset(secondary, 0, 32);
+	unsigned char primary[32] = {0};
+	unsigned char secondary[32] = {0};
 	total = 32;
-
-	for (frame.copy_init = 0; frame.copy_init <= 7; frame.copy_init++)
-		primary[frame.copy_init] = buffer[frame.copy_init];
+	for (scalars.copy_init = 0; scalars.copy_init <= 7; scalars.copy_init++)
+		primary[scalars.copy_init] = buffer[scalars.copy_init];
 	result = hynix16nm_major_check_byte(mode, 0, 4,
 					  primary, secondary, 8);
 	if (result < 0) {
@@ -2221,8 +2219,8 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 		return result;
 	}
 	nand_print_dbg(nftl_ro_lc_117, *mode);
-	for (frame.copy_init = 0; frame.copy_init <= 7; frame.copy_init++)
-		primary[frame.copy_init] = buffer[frame.copy_init + 8];
+	for (scalars.copy_init = 0; scalars.copy_init <= 7; scalars.copy_init++)
+		primary[scalars.copy_init] = buffer[scalars.copy_init + 8];
 	result = hynix16nm_major_check_byte(cycle, 0, 4,
 					  primary, secondary, 8);
 	if (result < 0) {
@@ -2266,10 +2264,10 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 #undef index
 #undef copy
 #undef total
-#undef secondary
-#undef primary
 #undef buffer
 
+#endif
+#ifndef TRIMUI_NFTL_HYNIX16_GETOTP_GCC53_BUILD
 /* Match OEM frame slots for the private mode, cycle and temporary buffer. */
 __attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_get_rr_value_otp_hynix(struct hynix16nm_otp_zone *zone)
@@ -11631,7 +11629,8 @@ extern int nand_op(unsigned char kind, struct nand_op_zone *zone,
 		   unsigned int sector, unsigned int count, void *data);
 #endif
 
-#ifndef TRIMUI_NFTL_GCC7_PASS
+#if !defined(TRIMUI_NFTL_GCC7_PASS) && \
+	!defined(TRIMUI_NFTL_HYNIX16_CFG_GCC53_BUILD)
 int hynix16nm_major_check_byte(unsigned char *value, unsigned int mode,
 			       unsigned int level, const unsigned char *primary,
 			       const unsigned char *secondary, unsigned int length)
