@@ -95,6 +95,8 @@ ENTRY(flush_cache_all)
 	mov	x0, #0
 	ic	ialluis				// I+BTB cache invalidate
 	ret	x12
+	/* OEM includes the existing entry-alignment NOPs in this extent. */
+	.align	4
 ENDPROC(flush_cache_all)
 
 /*
@@ -149,6 +151,8 @@ USER(9f, ic	ivau, x4	)		// invalidate I line PoU
 9:
 	mov	x0, #-EFAULT
 	b	1b
+	/* Both OEM aliases include their trailing alignment NOPs. */
+	.align	4
 ENDPROC(flush_icache_range)
 ENDPROC(__flush_cache_user_range)
 
@@ -164,6 +168,8 @@ ENDPROC(__flush_cache_user_range)
 ENTRY(__flush_dcache_area)
 	dcache_by_line_op civac, sy, x0, x1, x2, x3
 	ret
+	/* OEM includes the two trailing entry-alignment NOPs. */
+	.align	4
 ENDPIPROC(__flush_dcache_area)
 
 /*
@@ -188,6 +194,9 @@ ENDPROC(__clean_dcache_area_pou)
 __dma_inv_area:
 	add	x1, x1, x0
 	/* FALLTHROUGH */
+	/* The OEM ELF symbol ends here, but execution continues below. */
+	.align	4
+ENDPROC(__dma_inv_area)
 
 /*
  *	__inval_cache_range(start, end)
@@ -212,8 +221,9 @@ ENTRY(__inval_cache_range)
 	b.lo	2b
 	dsb	sy
 	ret
+	/* OEM includes the three trailing entry-alignment NOPs. */
+	.align	4
 ENDPIPROC(__inval_cache_range)
-ENDPROC(__dma_inv_area)
 
 /*
  *	__clean_dcache_area_poc(kaddr, size)
