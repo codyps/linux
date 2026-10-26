@@ -590,7 +590,8 @@ unsigned short nftl_get_bad_block_cnt(struct nftl_small_owner *owner)
 extern void nand_free(void *object);
 
 #if !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_CACHE_EXIT_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_CACHE_EXIT_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_LAST_PAGE_ECC_GCC53_BUILD)
 void nftl_free(void *object)
 {
 	nand_free(object);
@@ -3169,7 +3170,8 @@ int hynix26nm_readretry_exit(struct nftl_retry_chip *chip)
 #if !defined(TRIMUI_NFTL_CACHE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SECTOR_CACHE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_LAST_PAGE_ECC_GCC53_BUILD)
 void *nftl_malloc(unsigned int size)
 {
 	/* OEM warns above 1.5 MiB but still attempts the allocation. */
@@ -12040,6 +12042,7 @@ _Static_assert(__builtin_offsetof(struct last_page_zone, write_last) == 3456,
 _Static_assert(__builtin_offsetof(struct last_page_zone, erase) == 3496,
 	       "last-page erase callback offset");
 /* Stock does not check any allocation, even after logging a NULL result. */
+#ifdef TRIMUI_NFTL_LAST_PAGE_ECC_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 void *block_last_page_ecc_error(struct last_page_zone *zone,
 				struct last_page_block *block)
@@ -12098,6 +12101,8 @@ void *block_last_page_ecc_error(struct last_page_zone *zone,
 			(struct free_block_zone *)zone);
 		if (!block) {
 			nand_print(nftl_ro_lc_313);
+			/* OEM clears the already-null private slot before cleanup. */
+			block = 0;
 			goto cleanup;
 		}
 		set_physic_op_par(&op, block->number, page,
@@ -12118,6 +12123,10 @@ cleanup:
 	nand_print(nftl_ro_lc_326);
 	return block;
 }
+#else
+extern void *block_last_page_ecc_error(struct last_page_zone *zone,
+				       struct last_page_block *block);
+#endif
 
 struct page_map_recovery_mode {
 	unsigned char before_enabled[28];
