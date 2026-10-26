@@ -103,8 +103,9 @@ ENTRY(cpu_resume)
 	bl	__enable_mmu
 	ldr	x8, =_cpu_resume
 	br	x8
-ENDPROC(cpu_resume)
+	/* OEM includes the existing aligned resume-target literal in the extent. */
 	.ltorg
+ENDPROC(cpu_resume)
 	.popsection
 
 ENTRY(_cpu_resume)
