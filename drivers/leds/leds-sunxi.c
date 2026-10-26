@@ -1396,6 +1396,9 @@ static int sunxi_set_led_brightness(struct led_classdev *led_cdev,
 	 * Keep the fault-prone path until a separate behavior change is intended. */
 
 	/* Stock retransmits even an unchanged brightness value. */
+	/* OEM snapshots the group index before reading its color fields. The
+	 * lock-protected data store below reloads the index independently. */
+	length = pcdev_group->led_num;
 
 	if (pinfo->type != LED_TYPE_R)
 		r = pcdev_group->r.cdev.brightness;
@@ -1406,7 +1409,7 @@ static int sunxi_set_led_brightness(struct led_classdev *led_cdev,
 
 	/* LEDC treats input data as GRB by default */
 	new_data = (g << 16) | (r << 8) | b;
-	length = pcdev_group->led_num + 1;
+	length++;
 
 	spin_lock_irqsave(&led->lock, flags);
 	led->data[pcdev_group->led_num] = new_data;
