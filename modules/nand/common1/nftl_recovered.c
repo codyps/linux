@@ -11479,8 +11479,8 @@ int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
 			       zone->high_threshold, zone->smart->gc_times,
 			       zone->smart->gc_pages, frame.high_count, frame.total_count,
 			       frame.high_invalid, frame.total_invalid);
-	/* OEM reuses the total-block counter for its output line counter. */
-	frame.total_count = 0;
+	/* OEM reuses the high-block counter for its output line counter. */
+	frame.high_count = 0;
 	for (frame.node = zone->list; size - frame.written != 1;
 	     frame.node = frame.node->next) {
 		if (!frame.node || !frame.node->invalid_pages)
@@ -11488,8 +11488,8 @@ int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
 		frame.written += nand_snprint(buffer + (long)frame.written,
 					size - frame.written, nftl_ro_lc_469,
 					frame.node->block, frame.node->invalid_pages);
-		frame.total_count++;
-		if ((frame.total_count & 7) == 0)
+		frame.high_count++;
+		if ((frame.high_count & 7) == 0)
 			buffer[(long)frame.written - 1] = '\n';
 	}
 	/* OEM writes before the buffer when the first formatter returns zero
