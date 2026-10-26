@@ -71,6 +71,8 @@ ENTRY(__arch_copy_in_user)
 	uaccess_disable_not_uao x3, x4
 	mov	x0, #0
 	ret
+	/* OEM symbol includes the zero word before the fixup section. */
+	.zero	4
 ENDPROC(__arch_copy_in_user)
 
 	.section .fixup,"ax"
