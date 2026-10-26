@@ -6554,6 +6554,7 @@ struct gc_win_zone {
 };
 /* The OEM's signed progress can overflow after count - 1 wraps. Preserve
  * its two's-complement wrap rather than allowing C overflow optimization. */
+#ifndef TRIMUI_NFTL_GC_POLICY_GCC53_BUILD
 __attribute__((optimize("-fwrapv")))
 int gc_win_block(struct gc_win_zone *zone, unsigned short blocks)
 {
@@ -6587,6 +6588,9 @@ int gc_win_block(struct gc_win_zone *zone, unsigned short blocks)
 	}
 	return 0;
 }
+#else
+extern int gc_win_block(struct gc_win_zone *zone, unsigned short blocks);
+#endif
 
 #ifndef TRIMUI_NFTL_GC_FREE_GCC53_BUILD
 int gc_all_cnt(struct gc_policy_zone *zone, unsigned short pages,
@@ -10793,57 +10797,69 @@ _Static_assert(__builtin_offsetof(struct garbage_collect_zone, request) == 688,
 	       "garbage request offset");
 _Static_assert(__builtin_offsetof(struct garbage_collect_zone, state) == 3448,
 	       "garbage state offset");
+#ifdef TRIMUI_NFTL_GC_POLICY_GCC53_BUILD
+/* This call site passes the OEM's 16-bit request. AArch64 zero-extends it in
+ * w2, which is the same value received by the int-taking callee. Keep its
+ * private prototype here; other callers still pass signed int requests. */
+extern int gc_first_policy(struct gc_one_zone *, void *, unsigned short)
+	__asm__("garbage_collect_first");
 int garbage_collect(struct garbage_collect_zone *zone)
 {
 	unsigned short request;
-	unsigned short invalid_pages;
-	unsigned short pages_per_block;
+	struct garbage_collect_node *block;
 
 	if (zone->free_blocks <= zone->reset_limit)
 		zone->active = 0;
 	gc_src_type = 3;
-	if (zone->active)
-		return 0;
-	if (zone->free_blocks >= zone->start_limit) {
-		zone->active = 1;
-		zone->frequency = 0;
-		zone->request = 0;
-		return 0;
-	}
-	if (!zone->frequency) {
-		if (!zone->candidate) {
-			nand_print(nftl_ro_lc_433);
-			return 1;
+	if (!zone->active) {
+		if (zone->free_blocks < zone->start_limit) {
+			if (!zone->frequency) {
+				block = zone->candidate;
+				if (!block) {
+					nand_print(nftl_ro_lc_433);
+					return 1;
+				}
+				if (block->invalid_pages >=
+				    zone->geometry->pages_per_block >> 1)
+					zone->request = 4;
+				else if (block->invalid_pages >=
+					 zone->geometry->pages_per_block >> 2)
+					zone->request = 8;
+				else if (block->invalid_pages >=
+					 zone->geometry->pages_per_block >> 3)
+					zone->request = 16;
+				else {
+					nand_print_dbg(nftl_ro_lc_434,
+						       zone->free_blocks,
+						       block->invalid_pages);
+					zone->request = 0xffff;
+				}
+				if (zone->free_blocks <= zone->state->free_limit)
+					zone->request = 0xffff;
+			}
+			request = zone->request;
+			if (request != 0xffff) {
+				if (gc_first_policy((struct gc_one_zone *)zone,
+						    0, request)) {
+					nand_print(nftl_ro_lc_435,
+						   zone->free_blocks);
+					return 1;
+				}
+			} else {
+				/* OEM ignores this fallback GC result. */
+				gc_win_block((struct gc_win_zone *)zone, 1);
+			}
+		} else {
+			zone->active = 1;
+			zone->frequency = 0;
+			zone->request = 0;
 		}
-		invalid_pages = zone->candidate->invalid_pages;
-		pages_per_block = zone->geometry->pages_per_block;
-		if (invalid_pages >= pages_per_block >> 1)
-			zone->request = 4;
-		else if (invalid_pages >= pages_per_block >> 2)
-			zone->request = 8;
-		else if (invalid_pages >= pages_per_block >> 3)
-			zone->request = 16;
-		else {
-			nand_print_dbg(nftl_ro_lc_434,
-				       zone->free_blocks, invalid_pages);
-			zone->request = 0xffff;
-		}
-		if (zone->free_blocks <= zone->state->free_limit)
-			zone->request = 0xffff;
-	}
-	request = zone->request;
-	if (request == 0xffff) {
-		/* OEM ignores the result of the fallback GC attempt. */
-		gc_win_block((struct gc_win_zone *)zone, 1);
-		return 0;
-	}
-	if (garbage_collect_first((struct gc_one_zone *)zone, 0, request)) {
-		nand_print(nftl_ro_lc_435,
-			   zone->free_blocks);
-		return 1;
 	}
 	return 0;
 }
+#else
+extern int garbage_collect(struct garbage_collect_zone *zone);
+#endif
 
 struct gc_first_geometry {
 	unsigned char before_pages[20];
@@ -10895,7 +10911,8 @@ extern int recover_block_phy_page_mapping(struct page_map_recovery_zone *,
 					   struct new_write_block *,
 					   unsigned int *);
 
-#ifdef TRIMUI_NFTL_STATIC_DONE_GCC53_BUILD
+#if defined(TRIMUI_NFTL_STATIC_DONE_GCC53_BUILD) || \
+    defined(TRIMUI_NFTL_GC_POLICY_GCC53_BUILD)
 extern int garbage_collect_first(struct gc_one_zone *raw_zone,
 				 void *requested, int requested_limit);
 #else

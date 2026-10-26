@@ -70,6 +70,7 @@ obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_init_nrc.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_gc_all_base_on_free_blks.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_done_static_wear_leveling.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_is_no_use_device.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_garbage_collect.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_adjust_free_list.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_erase_block.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_flush_write_cache_to_nand.o
@@ -170,6 +171,7 @@ $(obj)/nftl_gcc53_init_nrc.o: override CC := python3 $(srctree)/scripts/trimui_n
 $(obj)/nftl_gcc53_gc_all_base_on_free_blks.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) gc_all_base_on_free_blks --
 $(obj)/nftl_gcc53_done_static_wear_leveling.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) done_static_wear_leveling --
 $(obj)/nftl_gcc53_is_no_use_device.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) is_no_use_device --
+$(obj)/nftl_gcc53_garbage_collect.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) garbage_collect --
 $(obj)/nftl_gcc53_adjust_free_list.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) adjust_free_list --
 $(obj)/nftl_gcc53_erase_block.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) erase_block --
 $(obj)/nftl_gcc53_flush_write_cache_to_nand.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) flush_write_cache_to_nand --
@@ -227,6 +229,7 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_init_nrc.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_gc_all_base_on_free_blks.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_done_static_wear_leveling.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_is_no_use_device.o
+nftl_gcc53_objects += $(obj)/nftl_gcc53_garbage_collect.o
 nftl_gcc53_objects += $(addprefix $(obj)/,nftl_gcc53_adjust_free_list.o nftl_gcc53_erase_block.o)
 nftl_gcc53_objects += $(obj)/nftl_gcc53_flush_write_cache_to_nand.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_write_phy_page_map_to_current_block.o
@@ -329,6 +332,7 @@ CFLAGS_nftl_gcc53_init_nrc.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-om
 CFLAGS_nftl_gcc53_gc_all_base_on_free_blks.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_done_static_wear_leveling.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_is_no_use_device.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_garbage_collect.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_adjust_free_list.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_erase_block.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_flush_write_cache_to_nand.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
