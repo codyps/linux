@@ -70,6 +70,8 @@ ENTRY(__arch_copy_from_user)
 	uaccess_disable_not_uao x3, x4
 	mov	x0, #0				// Nothing to copy
 	ret
+	/* OEM symbol includes the 100 zero bytes before the fixup section. */
+	.zero	100
 ENDPROC(__arch_copy_from_user)
 
 	.section .fixup,"ax"

@@ -85,4 +85,6 @@ alternative_else_nop_endif
 	stnp	x16, x17, [x0, #112]
 
 	ret
+	/* OEM symbol includes the 120 zero tail bytes. */
+	.zero	120
 ENDPROC(copy_page)

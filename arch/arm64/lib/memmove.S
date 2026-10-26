@@ -196,5 +196,7 @@ ENTRY(memmove)
 	tst	count, #0x3f
 	b.ne	.Ltail63
 	ret
+	/* OEM main and alias symbols include the 44 zero tail bytes. */
+	.zero	44
 ENDPIPROC(memmove)
 ENDPROC(__memmove)

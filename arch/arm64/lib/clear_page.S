@@ -36,4 +36,6 @@ ENTRY(clear_page)
 	tst	x0, #(PAGE_SIZE - 1)
 	b.ne	1b
 	ret
+	/* OEM symbol includes the twelve zero tail bytes. */
+	.zero	12
 ENDPROC(clear_page)

@@ -52,6 +52,8 @@ uao_user_alternative 9f, strb, sttrb, wzr, x0, 0
 5:	mov	x0, #0
 	uaccess_disable_not_uao x2, x3
 	ret
+	/* OEM symbol includes the 44 zero bytes before the fixup section. */
+	.zero	44
 ENDPROC(__arch_clear_user)
 
 	.section .fixup,"ax"

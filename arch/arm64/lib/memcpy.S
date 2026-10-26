@@ -73,5 +73,7 @@ ENTRY(__memcpy)
 ENTRY(memcpy)
 #include "copy_template.S"
 	ret
+	/* OEM main and alias symbols include the 44 zero tail bytes. */
+	.zero	44
 ENDPIPROC(memcpy)
 ENDPROC(__memcpy)

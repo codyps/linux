@@ -255,4 +255,6 @@ CPU_LE( rev	data2, data2 )
 .Lret0:
 	mov	result, #0
 	ret
+	/* OEM symbol and PI alias include the 72 zero tail bytes. */
+	.zero	72
 ENDPIPROC(memcmp)
