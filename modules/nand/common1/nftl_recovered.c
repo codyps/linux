@@ -13205,6 +13205,8 @@ int do_write_error(struct phy_write_zone *owner,
 {
 	#define zone ((struct do_write_zone *)owner)
 	#define state ((struct do_write_state *)current)
+	/* OEM reloads the current block after callbacks; a local snapshot would
+	 * silently change the behavior when a callback replaces that pointer. */
 	#define old (state->block)
 	struct do_write_block *replacement;
 	struct physic_op_param op;
