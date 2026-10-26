@@ -11445,6 +11445,7 @@ struct nftl_gc_info_frame {
 	unsigned int high_count;
 	int written;
 };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
 		     unsigned int size)
 {
@@ -11498,6 +11499,10 @@ int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
 	buffer[(long)frame.written - 1] = '\n';
 	return frame.written;
 }
+#else
+extern int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
+			    unsigned int size);
+#endif
 
 struct nand_op_geometry {
 	unsigned char before_sectors[8];
