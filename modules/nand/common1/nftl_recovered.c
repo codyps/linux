@@ -12104,12 +12104,26 @@ int nand_clean_zone_table2(struct nftl_clean_zone *zone)
 	zone->current_block = 0xffff;
 	zone->next = 0;
 	zone->next_block = 0xffff;
-	for (frame.index = 0; frame.index < 6; frame.index++)
-		zone->lists0[frame.index] = 0;
-	for (frame.index = 0; frame.index < 6; frame.index++)
-		zone->lists1[frame.index] = 0;
-	for (frame.index = 0; frame.index < 6; frame.index++)
-		zone->lists2[frame.index] = 0;
+	/* OEM clears the middle pair, then the head and tail pairs in each
+	 * list. Keep this observable write order. */
+	zone->lists0[2] = 0;
+	zone->lists0[3] = 0;
+	zone->lists0[0] = 0;
+	zone->lists0[1] = 0;
+	zone->lists0[4] = 0;
+	zone->lists0[5] = 0;
+	zone->lists1[2] = 0;
+	zone->lists1[3] = 0;
+	zone->lists1[0] = 0;
+	zone->lists1[1] = 0;
+	zone->lists1[4] = 0;
+	zone->lists1[5] = 0;
+	zone->lists2[2] = 0;
+	zone->lists2[3] = 0;
+	zone->lists2[0] = 0;
+	zone->lists2[1] = 0;
+	zone->lists2[4] = 0;
+	zone->lists2[5] = 0;
 	zone->flag0 = 0;
 	zone->flag1 = 0;
 	zone->list_count = 0;
