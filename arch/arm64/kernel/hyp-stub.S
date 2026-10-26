@@ -129,6 +129,8 @@ ENTRY(__hyp_get_vectors)
 	hvc	#0
 	ldr	lr, [sp], #16
 	ret
+	/* OEM includes the three existing entry-alignment NOPs in the extent. */
+	.align	4
 ENDPROC(__hyp_get_vectors)
 
 ENTRY(__hyp_set_vectors)

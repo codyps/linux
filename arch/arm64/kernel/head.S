@@ -627,6 +627,8 @@ set_cpu_boot_mode_flag:
 	dmb	sy
 	dc	ivac, x1			// Invalidate potentially stale cache line
 	ret
+	/* OEM includes the three existing entry-alignment NOPs in the extent. */
+	.align	4
 ENDPROC(set_cpu_boot_mode_flag)
 
 /*
