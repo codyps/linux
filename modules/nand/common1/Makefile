@@ -354,7 +354,7 @@ CFLAGS_nftl_gcc53_gc_info.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omi
 CFLAGS_nftl_gcc53_clean_zone.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_zone_param.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_ZONE_PARAM_GCC53_BUILD
 CFLAGS_nftl_gcc53_static_wear_check.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_STATIC_CHECK_GCC53_BUILD
-CFLAGS_nftl_gcc53_write_error.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_WRITE_ERROR_GCC53_BUILD
+CFLAGS_nftl_gcc53_write_error.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_GCC7_PASS -DTRIMUI_NFTL_WRITE_ERROR_GCC53_BUILD
 CFLAGS_nftl_gcc53_hynix16nm_init_readretry_param.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_HYNIX16_PARAM_GCC53_BUILD
 CFLAGS_nftl_gcc53_hynix26nm_set_readretry.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_HYNIX26_RETRY_GCC53_BUILD
 CFLAGS_nftl_gcc53_torture_block_and_mark.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_TORTURE_GCC53_BUILD

@@ -46,7 +46,8 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_FIRST_LIST_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_NO_USE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_MARK_FREE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_MARK_FREE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_WRITE_ERROR_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -13196,7 +13197,8 @@ _Static_assert(sizeof(struct do_write_map_entry) == 4,
 _Static_assert(__builtin_offsetof(struct do_write_map_entry, block) == 2,
 	       "write error map block offset");
 
-#ifndef TRIMUI_NFTL_GCC7_PASS
+#if !defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_WRITE_ERROR_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 int do_write_error(struct phy_write_zone *owner,
 		   struct phy_write_state *current)
