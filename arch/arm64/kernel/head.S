@@ -669,12 +669,13 @@ ENTRY(secondary_holding_pen)
 	mov_q	x1, MPIDR_HWID_BITMASK
 	and	x0, x0, x1
 	adr_l	x3, secondary_holding_pen_release
+	/* OEM symbol ends before the holding loop, which still executes. */
+ENDPROC(secondary_holding_pen)
 pen:	ldr	x4, [x3]
 	cmp	x4, x0
 	b.eq	secondary_startup
 	wfe
 	b	pen
-ENDPROC(secondary_holding_pen)
 
 	/*
 	 * Secondary entry point that jumps straight into the kernel. Only to

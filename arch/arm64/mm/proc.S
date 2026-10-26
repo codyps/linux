@@ -249,6 +249,8 @@ ENTRY(idmap_kpti_install_ng_mappings)
 	/* PGD */
 	mov	cur_pgdp, swapper_pa
 	add	end_pgdp, cur_pgdp, #(PTRS_PER_PGD * 8)
+	/* OEM symbol ends here; the table walk remains reachable below. */
+ENDPROC(idmap_kpti_install_ng_mappings)
 do_pgd:	__idmap_kpti_get_pgtable_ent	pgd
 	tbnz	pgd, #1, walk_puds
 next_pgd:
@@ -367,7 +369,6 @@ __idmap_kpti_secondary:
 	.unreq	cur_ptep
 	.unreq	end_ptep
 	.unreq	pte
-ENDPROC(idmap_kpti_install_ng_mappings)
 	.popsection
 #endif
 
