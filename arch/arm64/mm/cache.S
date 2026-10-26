@@ -38,6 +38,8 @@ __flush_dcache_all:
 	lsr	x3, x3, #23			// left align loc bit field
 	cbz	x3, finished			// if loc is 0, then no need to clean
 	mov	x10, #0				// start clean at cache level 0
+	/* OEM ELF symbol ends before the loop, but execution continues below. */
+ENDPROC(__flush_dcache_all)
 loop1:
 	add	x2, x10, x10, lsr #1		// work out 3x current cache level
 	lsr	x1, x0, x2			// extract cache type bits from clidr
@@ -78,7 +80,6 @@ finished:
 	dsb	sy
 	isb
 	ret
-ENDPROC(__flush_dcache_all)
 
 /*
  *	flush_cache_all()
