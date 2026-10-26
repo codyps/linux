@@ -2233,6 +2233,8 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 			   *mode, *cycle);
 		return -81;
 	}
+	/* OEM does not revalidate total after the vote callbacks. A corrupted
+	 * count can read beyond the 528-byte OTP buffer and overrun values. */
 	for (index = 0; index < total; index++) {
 		for (copy = 0; copy <= 7; copy++) {
 			primary[copy] = 0;
