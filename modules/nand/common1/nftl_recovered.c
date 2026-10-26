@@ -12032,6 +12032,15 @@ struct nftl_clean_slot {
 	void *second;
 	void *third;
 };
+/* The nested priority-GC view matches the public Allwinner NFTL source and
+ * the OEM slot offsets. Its shape also retains the GCC 5.3 field accesses. */
+struct nftl_clean_gc {
+	unsigned short gc_num;
+	unsigned short prio_type_now;
+	unsigned char before_slots[4];
+	struct nftl_clean_slot prio_gc_node[10];
+	struct nftl_clean_slot prio_gc_head;
+};
 struct nftl_clean_zone {
 	unsigned char before_geometry[8];
 	struct nftl_clean_geometry *geometry;
@@ -12056,10 +12065,7 @@ struct nftl_clean_zone {
 	unsigned char before_next_block[48];
 	unsigned short next_block;
 	unsigned char before_list_count[46];
-	unsigned short list_count;
-	unsigned short list_state;
-	unsigned char before_slots[4];
-	struct nftl_clean_slot slots[11];
+	struct nftl_clean_gc prio_gc;
 };
 _Static_assert(__builtin_offsetof(struct nftl_clean_zone, maps) == 72,
 	       "clean-zone map offset");
@@ -12067,38 +12073,34 @@ _Static_assert(__builtin_offsetof(struct nftl_clean_zone, lists0) == 288,
 	       "clean-zone first list offset");
 _Static_assert(__builtin_offsetof(struct nftl_clean_zone, current) == 528,
 	       "clean-zone current pointer offset");
-_Static_assert(__builtin_offsetof(struct nftl_clean_zone, slots) == 704,
+_Static_assert(__builtin_offsetof(struct nftl_clean_zone, prio_gc.prio_gc_node) == 704,
 	       "clean-zone slot offset");
 _Static_assert(sizeof(struct nftl_clean_slot) == 32,
 	       "clean-zone slot size");
-struct nftl_clean_zone_frame {
-	unsigned int tail;
-	unsigned int full;
-	unsigned int bytes;
-	unsigned int pages;
-	unsigned int index;
-};
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int nand_clean_zone_table2(struct nftl_clean_zone *zone)
 {
-	struct nftl_clean_zone_frame frame;
+	/* Keep the OEM-era scalar declaration order. len is present in the
+	 * public Allwinner source but remains unused in the shipped body. */
+	unsigned int index, full, pages, len, tail, bytes;
 
 	/* OEM executes UDIV even for a zero divisor (AArch64 yields zero).
 	 * C leaves this case undefined; non-OEM ports should guard it. */
-	frame.pages = zone->capacity / zone->geometry->sectors_per_page;
-	frame.bytes = frame.pages << 2;
+	pages = zone->capacity / zone->geometry->sectors_per_page;
+	bytes = pages << 2;
 	nand_print_dbg(nftl_ro_lc_386,
-		       zone->zone_number, frame.pages);
-	frame.full = frame.bytes >> 20;
+		       zone->zone_number, pages);
+	full = bytes >> 20;
 	/* OEM trusts the map pointer array even if the computed byte count
 	 * requires more than its 27 observed pointer slots. */
-	for (frame.index = 0; frame.index < frame.full; frame.index++) {
-		nand_memset(zone->maps[frame.index], -1, 1048576);
+	for (index = 0; index < full; index++) {
+		nand_memset(zone->maps[index], -1, 1048576);
 		nand_print_dbg(nftl_ro_lc_387, 1048576);
 	}
-	frame.tail = frame.bytes & 1048575;
-	if (frame.tail) {
-		nand_memset(zone->maps[frame.index], -1, frame.tail);
-		nand_print_dbg(nftl_ro_lc_387, frame.tail);
+	tail = bytes & 1048575;
+	if (tail) {
+		nand_memset(zone->maps[index], -1, tail);
+		nand_print_dbg(nftl_ro_lc_387, tail);
 	}
 	zone->current = 0;
 	zone->current_block = 0xffff;
@@ -12126,22 +12128,25 @@ int nand_clean_zone_table2(struct nftl_clean_zone *zone)
 	zone->lists2[5] = 0;
 	zone->flag0 = 0;
 	zone->flag1 = 0;
-	zone->list_count = 0;
-	for (frame.index = 0; frame.index < 10; frame.index++) {
-		zone->slots[frame.index].index = frame.index;
-		zone->slots[frame.index].state = 0;
-		zone->slots[frame.index].first = 0;
-		zone->slots[frame.index].second = 0;
-		zone->slots[frame.index].third = 0;
+	zone->prio_gc.gc_num = 0;
+	for (index = 0; index < 10; index++) {
+		zone->prio_gc.prio_gc_node[index].index = index;
+		zone->prio_gc.prio_gc_node[index].state = 0;
+		zone->prio_gc.prio_gc_node[index].first = 0;
+		zone->prio_gc.prio_gc_node[index].second = 0;
+		zone->prio_gc.prio_gc_node[index].third = 0;
 	}
-	zone->slots[10].index = 255;
-	zone->list_state = 0;
-	zone->slots[10].state = 0;
-	zone->slots[10].first = 0;
-	zone->slots[10].second = 0;
-	zone->slots[10].third = 0;
+	zone->prio_gc.prio_gc_head.index = 255;
+	zone->prio_gc.prio_type_now = 0;
+	zone->prio_gc.prio_gc_head.state = 0;
+	zone->prio_gc.prio_gc_head.first = 0;
+	zone->prio_gc.prio_gc_head.second = 0;
+	zone->prio_gc.prio_gc_head.third = 0;
 	return 0;
 }
+#else
+extern int nand_clean_zone_table2(struct nftl_clean_zone *zone);
+#endif
 
 struct ecc_rebuild_geometry {
 	unsigned char before_pages[20];
