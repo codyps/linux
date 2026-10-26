@@ -2021,6 +2021,10 @@ int gc_all_enhance(struct gc_enhance_zone *zone)
 struct gc_policy_zone;
 extern int gc_all_cnt(struct gc_policy_zone *zone, unsigned short pages,
 		      unsigned int count);
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    !defined(TRIMUI_NFTL_GC_FREE_GCC53_BUILD)
+extern int gc_all_base_on_free_blks(struct gc_enhance_zone *zone);
+#else
 int gc_all_base_on_free_blks(struct gc_enhance_zone *zone)
 {
 	struct gc_phyinfo_view *info = (struct gc_phyinfo_view *)phyinfo;
@@ -2028,26 +2032,27 @@ int gc_all_base_on_free_blks(struct gc_enhance_zone *zone)
 	unsigned int used = zone->used;
 	unsigned long quantity;
 	unsigned int pages;
-	unsigned int base;
 
 	if (zone->free_blocks > used)
 		return 0;
-	if ((unsigned int)zone->invalid_blocks * 3 < used)
+	/* The 16-bit count promotes to int, then the comparison with unsigned
+	 * used converts the nonnegative product to unsigned as in stock. */
+	if (zone->invalid_blocks * 3 < used)
 		return 0;
 	quantity = (unsigned int)(info->pages * info->blocks);
 	quantity *= info->chips;
 	quantity >>= 11;
 	if (quantity > 128)
 		return 0;
-	base = geometry->half_count >> 1;
-	pages = base - 3;
+	pages = (geometry->half_count >> 1) - 3;
 	pages *= used - zone->free_blocks;
 	/* OEM does not check a zero divisor. AArch64 UDIV returns zero there;
 	 * preserve the stock machine behavior under the pinned compiler. */
-	pages /= (unsigned int)zone->invalid_blocks * 3 - zone->free_blocks;
+	pages /= zone->invalid_blocks * 3 - zone->free_blocks;
 	pages += geometry->half_count >> 1;
 	return gc_all_cnt((struct gc_policy_zone *)zone, (unsigned short)pages, 3);
 }
+#endif /* TRIMUI_NFTL_GC_FREE_GCC53_BUILD */
 
 struct hynix16nm_retry_zone {
 	unsigned char before_values[56];
@@ -6565,6 +6570,7 @@ int gc_win_block(struct gc_win_zone *zone, unsigned short blocks)
 	return 0;
 }
 
+#ifndef TRIMUI_NFTL_GC_FREE_GCC53_BUILD
 int gc_all_cnt(struct gc_policy_zone *zone, unsigned short pages,
 	       unsigned int count)
 {
@@ -6580,6 +6586,7 @@ int gc_all_cnt(struct gc_policy_zone *zone, unsigned short pages,
 	}
 	return 0;
 }
+#endif /* !TRIMUI_NFTL_GC_FREE_GCC53_BUILD */
 
 #ifndef TRIMUI_NFTL_GC_ENHANCE_GCC53_BUILD
 int gc_all(void *zone, unsigned short count)
