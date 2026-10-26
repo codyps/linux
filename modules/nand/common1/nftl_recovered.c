@@ -592,6 +592,7 @@ extern void nand_free(void *object);
 
 #if !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_CACHE_EXIT_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NRC_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_LAST_PAGE_ECC_GCC53_BUILD)
 void nftl_free(void *object)
 {
@@ -2441,7 +2442,11 @@ struct cross_talk_zone {
 /* OEM's page scan has an OOB stack array but no canary prologue. The raw
  * callback receives this pointer with a geometry-derived spare length; stock
  * does not check that length against the 16-byte local array. */
-#ifndef TRIMUI_NFTL_GCC7_PASS
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    !defined(TRIMUI_NFTL_CROSS_TALK_GCC53_BUILD)
+extern int check_cross_talk(struct cross_talk_zone *zone,
+			    struct physical_block *block);
+#else
 __attribute__((optimize("-fno-stack-protector")))
 int check_cross_talk(struct cross_talk_zone *zone,
 		     struct physical_block *block)
@@ -2483,7 +2488,7 @@ int check_cross_talk(struct cross_talk_zone *zone,
 	/* OEM reports success even if every physical read failed. */
 	return 0;
 }
-#endif /* !TRIMUI_NFTL_GCC7_PASS */
+#endif /* TRIMUI_NFTL_CROSS_TALK_GCC53_BUILD */
 struct used_page_geometry {
 	unsigned char before_sectors[8];
 	unsigned char sectors_per_page;
@@ -3205,6 +3210,7 @@ int hynix26nm_readretry_exit(struct nftl_retry_chip *chip)
 
 #if !defined(TRIMUI_NFTL_CACHE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SECTOR_CACHE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NRC_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_LAST_PAGE_ECC_GCC53_BUILD)
@@ -11285,10 +11291,14 @@ struct nrc_zone {
 	unsigned char before_geometry[8];
 	struct nrc_geometry *geometry;
 };
+#if defined(TRIMUI_NFTL_GCC7_PASS) || \
+    !defined(TRIMUI_NFTL_NRC_GCC53_BUILD)
+extern int init_nrc(struct nrc_zone *zone, struct nrc_buffers **output);
+#else
 int init_nrc(struct nrc_zone *zone, struct nrc_buffers **output)
 {
 	struct nrc_buffers *buffers;
-	unsigned int pages;
+	int pages;
 
 	/* Stock zeros both private slots before the first allocation call. */
 	pages = 0;
@@ -11301,18 +11311,19 @@ int init_nrc(struct nrc_zone *zone, struct nrc_buffers **output)
 	}
 	nand_memset(buffers, 0, 32);
 	pages = zone->geometry->pages_per_block;
-	/* OEM uses wrapping 32-bit arithmetic for allocation sizes. */
+	/* OEM's signed page count and sizeof(int) produce the stock LDRSW
+	 * loads. The allocator still receives the low 32 bits of each size. */
 	buffers->second = nftl_malloc((zone->geometry->oob_bytes + 64U) * pages);
 	if (!buffers->second) {
 		nand_print(nftl_ro_lc_280, nftl_ro_func_7312, 1417);
 		goto fail;
 	}
-	buffers->third = nftl_malloc(pages * 4U);
+	buffers->third = nftl_malloc(pages * sizeof(int));
 	if (!buffers->third) {
 		nand_print(nftl_ro_lc_281, nftl_ro_func_7312, 1422);
 		goto fail;
 	}
-	nand_memset(buffers->third, -1, pages * 4U);
+	nand_memset(buffers->third, -1, pages * sizeof(int));
 	buffers->first = nftl_malloc(pages);
 	if (!buffers->first) {
 		nand_print(nftl_ro_lc_282, nftl_ro_func_7312, 1428);
@@ -11337,6 +11348,7 @@ fail:
 	*output = 0;
 	return -1;
 }
+#endif /* TRIMUI_NFTL_NRC_GCC53_BUILD */
 
 struct nand_dbg_zone_read {
 	unsigned char before_read[3464];
