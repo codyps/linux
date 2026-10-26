@@ -30,6 +30,8 @@
 ENTRY(fpsimd_save_state)
 	fpsimd_save x0, 8
 	ret
+	/* OEM includes the trailing entry-alignment NOPs in this symbol. */
+	.align	4
 ENDPROC(fpsimd_save_state)
 
 /*
@@ -52,6 +54,8 @@ ENDPROC(fpsimd_load_state)
 ENTRY(fpsimd_save_partial_state)
 	fpsimd_save_partial x0, 1, 8, 9
 	ret
+	/* OEM includes the trailing entry-alignment NOPs in this symbol. */
+	.align	4
 ENDPROC(fpsimd_save_partial_state)
 
 /*

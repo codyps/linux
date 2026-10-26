@@ -81,6 +81,8 @@ ENTRY(cpu_do_suspend)
 	stp	x9, x10, [x0, #64]
 	stp	x11, x12, [x0, #80]
 	ret
+	/* OEM includes the trailing entry-alignment NOPs in this symbol. */
+	.align	4
 ENDPROC(cpu_do_suspend)
 
 /**
