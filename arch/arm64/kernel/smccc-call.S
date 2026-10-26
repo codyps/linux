@@ -39,6 +39,8 @@
  */
 ENTRY(__arm_smccc_smc)
 	SMCCC	smc
+	/* OEM includes the NOP before the next 16-byte aligned entry. */
+	.align	4
 ENDPROC(__arm_smccc_smc)
 
 /*
@@ -49,4 +51,6 @@ ENDPROC(__arm_smccc_smc)
  */
 ENTRY(__arm_smccc_hvc)
 	SMCCC	hvc
+	/* OEM symbol includes the four zero section-padding bytes. */
+	.zero	4
 ENDPROC(__arm_smccc_hvc)
