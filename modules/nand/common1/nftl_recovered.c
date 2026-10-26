@@ -11925,18 +11925,21 @@ _Static_assert(__builtin_offsetof(struct ecc_rebuild_zone, read) == 3464,
 	       "ECC rebuild read offset");
 _Static_assert(__builtin_offsetof(struct ecc_rebuild_zone, write) == 3472,
 	       "ECC rebuild write offset");
+#ifdef TRIMUI_NFTL_CURRENT_BLOCK_ECC_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 struct new_write_block *current_block_ecc_error(struct ecc_rebuild_zone *zone,
 					struct new_write_block *old)
 {
 	struct new_write_block *replacement;
-	struct physic_op_param read_op, write_op;
+	unsigned char oob[16];
+	struct physic_op_param read_op;
+	struct physic_op_param write_op;
 	/* Stock forwards this stack buffer through the partition to raw NAND.
 	 * The raw read copies its geometry-derived spare length without checking
 	 * this 16-byte bound; preserve that potential overflow until hardware
 	 * geometry is known. The caller assumes no callback retains it. */
-	unsigned char oob[16];
-	unsigned int page, written;
+	int page;
+	unsigned int written;
 	int status;
 
 retry:
@@ -11954,8 +11957,9 @@ retry:
 		goto retry;
 	}
 	nand_print(nftl_ro_lc_314, old->number);
+	page = 0;
 	written = 0;
-	for (page = 0; page < zone->geometry->pages; page++) {
+	for (; page < zone->geometry->pages; page++) {
 		set_physic_op_par(&read_op, old->number, page,
 				  zone->geometry->fixed_page, zone->data, oob);
 		status = zone->read(zone, &read_op);
@@ -12002,6 +12006,10 @@ retry:
 		       page, written);
 	return replacement;
 }
+#else
+extern struct new_write_block *current_block_ecc_error(
+	struct ecc_rebuild_zone *zone, struct new_write_block *old);
+#endif
 
 struct last_page_geometry {
 	unsigned char before_pages[20];
