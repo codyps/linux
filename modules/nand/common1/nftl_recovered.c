@@ -13185,14 +13185,26 @@ _Static_assert(__builtin_offsetof(struct do_write_zone, copy) == 3480,
 _Static_assert(__builtin_offsetof(struct do_write_zone, mark_bad) == 3496,
 	       "write error mark-bad callback offset");
 
+/* The low twelve bits are the page, while OEM leaves the high nibble intact. */
+struct do_write_map_entry {
+	unsigned short page:12;
+	unsigned short flags:4;
+	unsigned short block;
+};
+_Static_assert(sizeof(struct do_write_map_entry) == 4,
+	       "write error map entry size");
+_Static_assert(__builtin_offsetof(struct do_write_map_entry, block) == 2,
+	       "write error map block offset");
+
+#ifndef TRIMUI_NFTL_GCC7_PASS
 __attribute__((optimize("-fno-stack-protector")))
 int do_write_error(struct phy_write_zone *owner,
 		   struct phy_write_state *current)
 {
-	struct do_write_zone *zone = (struct do_write_zone *)owner;
-	struct do_write_state *state = (struct do_write_state *)current;
+	#define zone ((struct do_write_zone *)owner)
+	#define state ((struct do_write_state *)current)
+	#define old (state->block)
 	struct do_write_block *replacement;
-	struct do_write_block *old;
 	struct physic_op_param op;
 	unsigned int *entry;
 	unsigned int page;
@@ -13221,7 +13233,6 @@ retry:
 		nand_print(nftl_ro_lc_149);
 		return 1;
 	}
-	old = state->block;
 	replacement->tag = old->tag + 1;
 	/* The current page itself is excluded from both walks. */
 	for (page = 0; page < state->page; page++) {
@@ -13252,18 +13263,22 @@ retry:
 	state->block = replacement;
 	for (page = 0; page < state->page; page++) {
 		logic_page = state->map[page];
-		if (logic_page == ~0U)
-			continue;
-		entry = get_logic_page_map((struct logic_page_map_zone *)zone,
-					   logic_page);
-		if (!entry)
-			continue;
-		((unsigned short *)entry)[1] = state->block->number;
-		((unsigned short *)entry)[0] =
-			(((unsigned short *)entry)[0] & 0xf000) | (page & 0x0fff);
+		if (logic_page != ~0U) {
+			entry = get_logic_page_map(
+				(struct logic_page_map_zone *)zone, logic_page);
+			if (entry) {
+				((struct do_write_map_entry *)entry)->block =
+					state->block->number;
+				((struct do_write_map_entry *)entry)->page = page;
+			}
+		}
 	}
 	return 0;
+	#undef old
+	#undef state
+	#undef zone
 }
+#endif
 
 /* Cross-talk recovery uses the same physical block prefix as the block
  * initialization and erase helpers. Private tail fields remain provisional. */
