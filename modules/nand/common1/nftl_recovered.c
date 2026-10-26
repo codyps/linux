@@ -412,7 +412,8 @@ struct nftl_free_erase_owner {
 	struct nftl_free_erase_node list;
 };
 struct nftl_invalid_erase_node {
-	unsigned char before_erase[6];
+	unsigned short physical_no;
+	unsigned char before_erase[4];
 	unsigned short erase_time;
 	/* The stock comparison emits the signed-field load schedule, then
 	 * compares with an unsigned limit. Negative counts rank as huge. */
@@ -456,12 +457,18 @@ struct node_type *name(struct owner_type *owner, unsigned short limit) \
 	return 0; \
 }
 
+#ifndef TRIMUI_NFTL_STATIC_CHECK_GCC53_BUILD
 NFTL_MAX_ERASE(get_block_max_erase_time_from_free_list,
 	       nftl_free_erase_owner, nftl_free_erase_node)
+#else
+extern struct nftl_free_erase_node *get_block_max_erase_time_from_free_list(
+	struct nftl_free_erase_owner *owner, unsigned short limit);
+#endif
 NFTL_MAX_ERASE(get_block_max_erase_time_from_invalid_list,
 	       nftl_invalid_erase_owner, nftl_invalid_erase_node)
 
-#ifndef TRIMUI_NFTL_GCC7_PASS
+#if !defined(TRIMUI_NFTL_GCC7_PASS) && \
+    !defined(TRIMUI_NFTL_STATIC_CHECK_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 struct nftl_invalid_erase_node *get_block_min_erase_time_from_invalid_list(
 	struct nftl_invalid_erase_owner *owner, unsigned short limit,
@@ -8072,7 +8079,7 @@ struct wear_check_geometry {
 };
 struct wear_check_stats {
 	unsigned char before_count[8];
-	unsigned int count;
+	int count;
 };
 struct wear_check_zone {
 	unsigned char before_geometry[8];
@@ -8103,32 +8110,31 @@ _Static_assert(__builtin_offsetof(struct wear_check_zone, threshold) == 1058,
 _Static_assert(__builtin_offsetof(struct wear_check_zone, selected) == 1064,
 	       "wear selected block offset");
 
+#ifndef TRIMUI_NFTL_GCC7_PASS
 int check_static_wear_leveling(struct wear_zone *owner)
 {
-	struct wear_check_zone *zone = (struct wear_check_zone *)owner;
-	struct nftl_free_erase_node *maximum;
-	struct nftl_invalid_erase_node *minimum;
-	unsigned short max_erase;
-	unsigned short min_erase;
-	unsigned short limit;
-	unsigned int blocks;
+	#define zone ((struct wear_check_zone *)owner)
+	struct nftl_invalid_erase_node *minimum = 0;
+	struct nftl_free_erase_node *maximum = 0;
+	unsigned short min_erase = 0xffff;
+	unsigned short max_erase = 0;
 
 	/* The stock pointer gates precede every geometry/list dereference. */
-	if (zone->selected || !zone->invalid_head || !zone->free_head)
+	if (zone->selected)
 		return 1;
-	if ((int)zone->stats->count < zone->blocks)
+	if (!zone->invalid_head || !zone->free_head)
 		return 1;
-	limit = zone->geometry->erase_limit;
-	blocks = limit;
+	if (zone->stats->count < zone->blocks)
+		return 1;
 	maximum = get_block_max_erase_time_from_free_list(
-		(struct nftl_free_erase_owner *)zone, limit);
+		(struct nftl_free_erase_owner *)zone, zone->geometry->erase_limit);
 	if (!maximum)
 		return 1;
 	max_erase = maximum->erase_time;
-	if (max_erase < blocks / 5)
+	if (max_erase < zone->geometry->erase_limit / 5)
 		return 1;
 	minimum = get_block_min_erase_time_from_invalid_list(
-		(struct nftl_invalid_erase_owner *)zone, limit,
+		(struct nftl_invalid_erase_owner *)zone, zone->geometry->erase_limit,
 		zone->stats->count - zone->blocks);
 	if (!minimum)
 		return 1;
@@ -8137,24 +8143,25 @@ int check_static_wear_leveling(struct wear_zone *owner)
 		return 1;
 	/* OEM selects four nonmonotonic ratios as the maximum erase count
 	 * grows. Keep the odd thresholds rather than smoothing the policy. */
-	if (blocks * 2 < (unsigned int)max_erase * 3)
-		zone->threshold = blocks / 12;
-	else if (blocks < (unsigned int)max_erase * 2)
-		zone->threshold = blocks / 10;
-	else if (blocks < (unsigned int)max_erase * 3)
-		zone->threshold = blocks / 7;
+	if (zone->geometry->erase_limit * 2 < max_erase * 3)
+		zone->threshold = zone->geometry->erase_limit / 12;
+	else if (zone->geometry->erase_limit < max_erase * 2)
+		zone->threshold = zone->geometry->erase_limit / 10;
+	else if (zone->geometry->erase_limit < max_erase * 3)
+		zone->threshold = zone->geometry->erase_limit / 7;
 	else
-		zone->threshold = blocks / 5;
-	if ((unsigned int)(max_erase - min_erase) < zone->threshold)
+		zone->threshold = zone->geometry->erase_limit / 5;
+	if (max_erase - min_erase < zone->threshold)
 		return 1;
 	nand_print_dbg(nftl_ro_lc_452,
 		       max_erase, min_erase);
-	nand_print_dbg(nftl_ro_lc_453, minimum->before_erase[0]
-		       | minimum->before_erase[1] << 8);
+	nand_print_dbg(nftl_ro_lc_453, minimum->physical_no);
 	nand_print_dbg(nftl_ro_lc_454, zone->blocks);
 	zone->selected = minimum;
 	return 0;
+	#undef zone
 }
+#endif
 
 struct wear_done_block {
 	unsigned short number;
