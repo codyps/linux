@@ -68,7 +68,8 @@ extern void set_physic_op_par(struct physic_op_param *op, unsigned short block,
     !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_CRC_WRONG_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_A19_READ_END_GCC53_BUILD)
 int is_nouse_page(const unsigned char *bytes)
 {
 	unsigned int count;
@@ -2713,6 +2714,7 @@ extern int sandisk_A19_vender_set_param(void *chip, void *value,
 					void *address, int unused);
 /* Stock keeps result/values/address/count at FP+0x34/+0x38/+0x28/+0x24;
  * GCC's stack-protector pass reorders these private slots. */
+#ifndef TRIMUI_NFTL_A19_READ_END_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int sandisk_A19_set_readretry(struct samsung_set_chip *chip,
 			      unsigned short ignored)
@@ -2740,6 +2742,10 @@ int sandisk_A19_set_readretry(struct samsung_set_chip *chip,
 	nand_disable_chip(chip);
 	return result;
 }
+#else
+extern int sandisk_A19_set_readretry(struct samsung_set_chip *,
+				     unsigned short);
+#endif
 extern int page_write(unsigned short chip, unsigned short block,
 		      unsigned short page, unsigned int mode,
 		      void *data, void *oob);
@@ -7352,6 +7358,7 @@ extern int toshiba_vender_pre_condition(void *chip);
 
 /* As above, the command byte must keep its stock table neighbors. */
 extern unsigned char sandisk_A19_read_retry_cmd_1y;
+#ifndef TRIMUI_NFTL_A19_READ_END_GCC53_BUILD
 int sandisk_A19_vender_set_param(void *chip, void *value, void *address,
 				 int unused)
 {
@@ -7362,6 +7369,10 @@ int sandisk_A19_vender_set_param(void *chip, void *value, void *address,
 				       1, address, value, 4, 1);
 	return result;
 }
+#else
+extern int sandisk_A19_vender_set_param(void *chip, void *value,
+				       void *address, int unused);
+#endif
 
 struct erase_block_geometry {
 	unsigned char before_pages[20];
@@ -8784,6 +8795,7 @@ HYNIX_READ_PAGE_END(hynix26nm_read_page_end, hynix26nm_read_retry_cycle,
 extern int set_one_cmd(struct command_chip *chip, unsigned char command,
 			unsigned int argument);
 extern unsigned char sandisk_A19_read_retry_reg_adr_1y;
+#ifndef TRIMUI_NFTL_A19_READ_END_GCC53_BUILD
 /* Keep the OEM private result and parameter slots beside the aligned buffer. */
 __attribute__((optimize("-fno-stack-protector")))
 int sandisk_A19_exit_readretry(struct samsung_set_chip *chip)
@@ -8853,37 +8865,53 @@ int sandisk_A19_set_lmflgfix_next(const unsigned int *index,
 	return 0;
 }
 
+#else
+extern int sandisk_A19_exit_readretry(struct samsung_set_chip *);
+extern int sandisk_A19_cmd25(const unsigned int *);
+extern int sandisk_A19_dsp_on(const unsigned int *);
+#endif
+
+/* The OEM caller passes signed immediates in w1; the callee consumes
+ * only the low byte. This ABI view preserves that shipped call contract
+ * without changing the exact callee body or its public prototype. */
+extern int sandisk_A19_set_lmflgfix_next_oem_call(const unsigned int *, int)
+	__asm__("sandisk_A19_set_lmflgfix_next");
+#define A19_FIX(value) do { \
+	register int fix asm("w1") = (value); \
+	sandisk_A19_set_lmflgfix_next_oem_call(&request->channel, fix); \
+} while (0)
 #define A19_REPORT(message) \
 	nand_print_dbg(message, \
-		((struct samsung_read_controller *)state.chip->controller)->channel, \
-		((struct samsung_read_chip_id *)state.chip)->chip, \
-		request->block, request->page, state.chip->retry)
-#ifndef TRIMUI_NFTL_SPECIAL_GCC53_BUILD
+		((struct samsung_read_controller *)chip->controller)->channel, \
+		((struct samsung_read_chip_id *)chip)->chip, \
+		request->block, request->page, chip->retry)
+#if !defined(TRIMUI_NFTL_SPECIAL_GCC53_BUILD) && \
+    (!defined(TRIMUI_NFTL_GCC7_PASS) || \
+     defined(TRIMUI_NFTL_A19_READ_END_GCC53_BUILD))
 int sandisk_A19_read_page_end(struct samsung_read_request *request)
 {
-	/* OEM's private 16-byte record places chip/result/retry at FP+32/40/44. */
-	struct {
-		struct samsung_set_chip *chip;
-		int result;
-		int retry;
-	} state;
+	/* Separate locals place chip/result/retry at FP+32/40/44 and
+	 * preserve OEM argument loads at each callback boundary. */
+	struct samsung_set_chip *chip;
+	int retry;
+	int result;
 
-	state.retry = 0;
-	state.result = 0;
-	state.chip = (struct samsung_set_chip *)
+	retry = 0;
+	result = 0;
+	chip = (struct samsung_set_chip *)
 		nci_get_from_nsi(g_nsi, request->channel);
-	state.result = generic_read_page_end_not_retry(request);
+	result = generic_read_page_end_not_retry(request);
 
-	if (state.result == -2) {
+	if (result == -2) {
 		nand_print_dbg(nftl_ro_lc_94);
 		/* Keep four separately expanded loops: the OEM rereads the retry-cycle
 		 * bound and mutable mode at their own call boundaries. */
 	#define A19_PHASE(phase) do { \
-			for (state.retry = 0; sandisk_A19_read_retry_cycle > state.retry; state.retry++) { \
-				state.chip->retry = state.retry; \
-				state.result = sandisk_A19_set_readretry(state.chip, \
+			for (retry = 0; sandisk_A19_read_retry_cycle > retry; retry++) { \
+				chip->retry = retry; \
+				result = sandisk_A19_set_readretry(chip, \
 						      (unsigned short)request->page); \
-				if (state.result) { \
+				if (result) { \
 					nand_print_dbg(nftl_ro_lc_95); \
 					continue; \
 				} \
@@ -8893,45 +8921,39 @@ int sandisk_A19_read_page_end(struct samsung_read_request *request)
 					sandisk_A19_cmd25(&request->channel); \
 				if (phase == 3) { \
 					if (sandisk_A19_read_retry_mode == 52) \
-						sandisk_A19_set_lmflgfix_next( \
-							&request->channel, -58); \
+						A19_FIX(-58); \
 					else if (sandisk_A19_read_retry_mode == 53) \
-						sandisk_A19_set_lmflgfix_next( \
-							&request->channel, 26); \
+						A19_FIX(26); \
 					else \
-						sandisk_A19_set_lmflgfix_next( \
-							&request->channel, -64); \
+						A19_FIX(-64); \
 					sandisk_A19_cmd25(&request->channel); \
 					if (sandisk_A19_read_retry_mode == 50 || \
 					    sandisk_A19_read_retry_mode == 52 || \
 					    sandisk_A19_read_retry_mode == 53) \
 						sandisk_A19_dsp_on(&request->channel); \
 				} \
-				state.result = generic_read_page_start(request); \
-				state.result |= generic_read_page_end_not_retry(request); \
+				result = generic_read_page_start(request); \
+				result |= generic_read_page_end_not_retry(request); \
 				if (phase == 3) { \
 					if (sandisk_A19_read_retry_mode == 52) \
-						sandisk_A19_set_lmflgfix_next( \
-							&request->channel, -62); \
+						A19_FIX(-62); \
 					else if (sandisk_A19_read_retry_mode == 53) \
-						sandisk_A19_set_lmflgfix_next( \
-							&request->channel, 10); \
+						A19_FIX(10); \
 					else \
-						sandisk_A19_set_lmflgfix_next( \
-							&request->channel, 64); \
+						A19_FIX(64); \
 				} \
 				/* OEM checks spare data even after a read error. */ \
 				if (is_nouse_page(request->data) == 1) { \
-					state.result = -2; \
+					result = -2; \
 					A19_REPORT(nftl_ro_lc_47); \
 					continue; \
 				} \
-				if (state.result == 10 || state.result == 0) { \
-					if (state.result == 0) \
+				if (result == 10 || result == 0) { \
+					if (result == 0) \
 						A19_REPORT(nftl_ro_lc_96); \
 					else \
 						A19_REPORT(nftl_ro_lc_97); \
-					state.result = 10; \
+					result = 10; \
 					goto done; \
 				} \
 			} \
@@ -8942,18 +8964,25 @@ int sandisk_A19_read_page_end(struct samsung_read_request *request)
 		if (sandisk_A19_read_retry_mode != 51) {
 			A19_PHASE(1);
 			A19_PHASE(2);
+		} else {
+			/* OEM executes this NOP only when mode 51 skips both
+			 * middle phases. Keep the shipped timing and branch join. */
+			asm volatile("nop");
 		}
 		A19_PHASE(3);
 	#undef A19_PHASE
 	done:
-		state.chip->retry = 0;
+		chip->retry = 0;
 		/* Stock ignores the reset result even when all retries failed. */
-		sandisk_A19_exit_readretry(state.chip);
+		sandisk_A19_exit_readretry(chip);
 	}
-	return state.result;
+	return result;
 }
-#endif /* TRIMUI_NFTL_SPECIAL_GCC53_BUILD */
+#else
+extern int sandisk_A19_read_page_end(struct samsung_read_request *request);
+#endif
 #undef A19_REPORT
+#undef A19_FIX
 
 extern int set_one_addr(struct command_chip *chip, unsigned int address);
 #define HYNIX_LSB_EXIT(name, message) \
