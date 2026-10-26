@@ -235,6 +235,8 @@ ENTRY(__clean_dcache_area_poc)
 __dma_clean_area:
 	dcache_by_line_op cvac, sy, x0, x1, x2, x3
 	ret
+	/* OEM includes the two trailing entry-alignment NOPs in both aliases. */
+	.align	4
 ENDPIPROC(__clean_dcache_area_poc)
 ENDPROC(__dma_clean_area)
 
@@ -249,6 +251,8 @@ ENDPROC(__dma_clean_area)
 ENTRY(__dma_flush_area)
 	dcache_by_line_op civac, sy, x0, x1, x2, x3
 	ret
+	/* OEM includes the two trailing entry-alignment NOPs here too. */
+	.align	4
 ENDPIPROC(__dma_flush_area)
 
 /*
