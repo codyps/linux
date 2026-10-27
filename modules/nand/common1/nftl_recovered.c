@@ -12686,7 +12686,7 @@ int get_current_used_block(struct current_used_zone *zone,
 			   unsigned int previous_tag)
 {
 	struct new_write_block *assist;
-	unsigned int page, tag;
+	unsigned int page;
 	unsigned short copy_limit;
 	int had_primary_ecc = 0;
 
@@ -12735,8 +12735,7 @@ int get_current_used_block(struct current_used_zone *zone,
 			zone->assist_block.page_used = 0;
 			/* OEM reads the shared assist pointer before current->tag. */
 			assist = zone->assist_block.block_info;
-			tag = zone->current_block.block_info->tag + 1;
-			assist->tag = tag;
+			assist->tag = zone->current_block.block_info->tag + 1;
 			/* OEM reloads the published tag for initialization. */
 			if (new_block_init_for_write(
 				    (struct new_write_zone *)zone,
