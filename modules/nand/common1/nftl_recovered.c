@@ -12687,7 +12687,7 @@ int get_current_used_block(struct current_used_zone *zone,
 {
 	struct new_write_block *assist;
 	unsigned int page;
-	unsigned short copy_limit;
+	unsigned int copy_limit;
 	int had_primary_ecc = 0;
 
 	if (zone->current_block.block_info)
