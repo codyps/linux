@@ -12699,20 +12699,19 @@ int get_current_used_block(struct current_used_zone *zone,
 	/* Stock emits the existing-block recovery before the no-candidate path. */
 	if (!candidate)
 		goto allocate_new;
-	for (;;) {
-		zone->current_block.page_used = (unsigned short)
-			recover_phy_page_mapping(
-				(struct page_map_recovery_zone *)zone,
-				candidate, zone->current_block.user_info.map_data);
-		if (zone->current_block.page_used != 0xffff)
-			break;
+	/* The OEM retry edge returns directly to the first recovery call. */
+primary_retry:
+	zone->current_block.page_used = (unsigned short)
+		recover_phy_page_mapping(
+			(struct page_map_recovery_zone *)zone,
+			candidate, zone->current_block.user_info.map_data);
+	if (zone->current_block.page_used == 0xffff) {
 		had_primary_ecc = 1;
-		nand_print(nftl_ro_lc_250,
-			   candidate->number);
+		nand_print(nftl_ro_lc_250, candidate->number);
 		candidate = current_block_ecc_error(
 			(struct ecc_rebuild_zone *)zone, candidate);
 		if (candidate)
-			continue;
+			goto primary_retry;
 		nand_print(nftl_ro_lc_251);
 		return 1;
 	}
