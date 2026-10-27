@@ -68,7 +68,7 @@ extern uint32 get_block_used_count_from_oob(uchar *buf);
 extern int is_nouse_page(u8 *buf);
 extern void *nftl_malloc(uint32 size);
 extern void nftl_free(const void *ptr);
-extern int nftl_initialize(struct _nftl_blk *nftl_blk, int no);
+extern int nftl_initialize(struct _nftl_blk *nftl_blk, unsigned int no);
 extern int nftl_get_bad_block_cnt(struct _nftl_blk *nftl_blk);
 
 #endif /*NAND_NFTL_H*/

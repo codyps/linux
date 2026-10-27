@@ -30,8 +30,10 @@ static void nftl_version(void)
 }
 
 __attribute__((optimize("-fno-stack-protector")))
-/* OEM forwards all 32 partition-number bits to nftl_start. */
-int nftl_initialize(struct init_nftl_owner *owner, int number)
+/* OEM forwards all 32 partition-number bits to nftl_start.  An unsigned
+ * parameter also preserves the stock stack-store order at that call site.
+ */
+int nftl_initialize(struct init_nftl_owner *owner, unsigned int number)
 {
 	struct init_partition *part = owner->partition;
 	/* Stock reserves these slots but initializes only the bytes it reads.

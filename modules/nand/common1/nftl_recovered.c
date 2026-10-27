@@ -7113,7 +7113,7 @@ extern int nftl_start(struct init_nftl_owner *, struct init_nftl_config *,
 		      unsigned int, unsigned int, struct init_partition *,
 		      unsigned int, unsigned char);
 
-extern int nftl_initialize(struct init_nftl_owner *owner, int number);
+extern int nftl_initialize(struct init_nftl_owner *owner, unsigned int number);
 
 extern int zone_param_init(void *, unsigned short, unsigned int, unsigned int);
 extern int build_zone_list_first(struct first_list_zone *, unsigned int);
