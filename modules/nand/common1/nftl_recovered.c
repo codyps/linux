@@ -11281,7 +11281,9 @@ int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 		nand_print(nftl_ro_lc_442);
 		bad = 1;
 	}
-	if (bad)
+	/* OEM tests for exactly one here and again before erase. Keep the
+	 * narrower comparison, even though this function assigns only 0 or 1. */
+	if (bad == 1)
 		limit = 0xffff;
 	for (page = 0; page < (unsigned int)zone->geometry->pages - 1;
 	     page++) {
@@ -11335,7 +11337,7 @@ int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 	}
 	if (page == (unsigned int)zone->geometry->pages - 1)
 		zone->active = 0;
-	if (bad && page == (unsigned int)zone->geometry->pages - 1) {
+	if (bad == 1 && page == (unsigned int)zone->geometry->pages - 1) {
 		nand_print(nftl_ro_lc_446);
 		erase_block((struct erase_block_zone *)zone,
 			    (struct erase_block_info *)block,
