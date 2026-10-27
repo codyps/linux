@@ -11319,8 +11319,8 @@ int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 				bad = 1;
 				limit = 0xffff;
 				block->invalid_pages++;
-			} else if (nand_write_logic_page_no_gc(zone, logic,
-						      zone->logic_buffer)) {
+			} else if ((status = nand_write_logic_page_no_gc(zone, logic,
+						      zone->logic_buffer))) {
 				nand_print(nftl_ro_lc_445);
 				return 1;
 			}
