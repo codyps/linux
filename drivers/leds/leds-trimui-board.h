@@ -417,13 +417,16 @@ static ssize_t store_frame(struct class *class, struct class_attribute *attr, co
 
 static ssize_t show_frame_hex(struct class *class, struct class_attribute *attr, char *buffer)
 {
-	int i = 0, count = 0;
-	char *position = buffer;
-	u32 *pixels = (u32 *)trimui_transfer_state.rgb;
+	/* Stock advances the index in x22 but compares its low signed word.
+	 * A mutable LED count can change between loop iterations. */
+	register long i asm("x22") = 0;
+	int count = 0;
+	register char *position asm("x21") = buffer;
+	register u32 *pixels asm("x20") = (u32 *)trimui_transfer_state.rgb;
 	/* Stock advances by the cumulative length, producing sparse output.
 	 * At 34 LEDs the newline lands beyond a 4 KiB sysfs page.
 	 * TODO: advance by the last write and bound output in a separate fix. */
-	while (i < (int)trimui_led_count) {
+	while ((int)i < (int)trimui_led_count) {
 		count += 7;
 		sprintf(position, "%06X ", pixels[i] & 0xffffff);
 		position += count;
