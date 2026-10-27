@@ -1010,21 +1010,32 @@ static ssize_t show_anim_frames_hex(struct class *class, struct class_attribute 
 
 static ssize_t store_anim_frames_hex(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	int i, colors = (int)(count / 7);
-	int offset = trimui_frames_len * 14;
-	u32 *pixels;
+	long i;
+	int colors = (int)(count / 7);
+	const char *position = buffer;
+	unsigned int offset;
+	u32 *pixels, *append;
 	/* Stock materializes the animation array base before indexed stores. */
 	asm("adrp %0, trimui_led_state+0x4ff0\n\t"
 	    "add %0, %0, :lo12:trimui_led_state+0x4ff0"
 	    : "=&r"(pixels));
 	if (colors > 4200)
 		colors = 4200;
+	/* Stock wraps the frame offset in 32 bits once, then sign-extends it
+	 * before adding the 64-bit loop index. Recomputing offset + i in an
+	 * int changes the destination around the sign boundary. The append
+	 * range is still unchecked; TODO: reject out-of-range frame counts. */
+	offset = (unsigned int)trimui_frames_len * 14u;
+	append = pixels + (int)offset;
 	/* Stock ignores append capacity and clears the start of the buffer,
 	 * even when sscanf writes at a later append offset. TODO: validate the
 	 * append and clear its actual destination in a separate fix. */
 	for (i = 0; i < colors; i++) {
 		pixels[i] = 0;
-		sscanf(buffer + 7 * i, "%X", &pixels[offset + i]);
+		sscanf(position, "%X", &append[i]);
+		position += 7;
+		/* Keep the OEM cursor separate from the color index. */
+		asm volatile("" : "+r"(position));
 	}
 	trimui_frames_len += colors / 14;
 	printk("\n anim frames:%d, pixels:%d\n", trimui_frames_len, colors);
