@@ -843,6 +843,10 @@ static ssize_t show_effect_m(struct class *class, struct class_attribute *attr, 
 	return sprintf(buffer, "%d\n", trimui_effect_m.type);
 }
 
+/* OEM ignores kstrtoint failures in all six effect setters below. Malformed
+ * input keeps the previous type, but still regenerates the effect and resets
+ * its playback state; preserve that observable bug.
+ */
 static ssize_t store_effect_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	kstrtoint(buffer, 0, (int *)&trimui_effect_m.type);
