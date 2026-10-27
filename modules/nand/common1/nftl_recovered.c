@@ -12690,6 +12690,8 @@ int get_current_used_block(struct current_used_zone *zone,
 {
 	unsigned int page;
 	unsigned int copy_limit;
+	/* OEM stages the indirect copy callback result on the stack. */
+	int copy_result;
 	int had_primary_ecc = 0;
 
 	if (zone->current_block.block_info)
@@ -12751,10 +12753,11 @@ int get_current_used_block(struct current_used_zone *zone,
 			copy_limit = zone->current_block.page_used;
 			for (page = 0; page < copy_limit; page++) {
 				/* OEM logs a copy failure but still advances to the next page. */
-				if (zone->copy_page(zone, zone->current_block.block_info,
+				copy_result = zone->copy_page(zone, zone->current_block.block_info,
 						    zone->assist_block.block_info,
 						    zone->logic_page_buf,
-						    page))
+						    page);
+				if (copy_result)
 					nand_print(nftl_ro_lc_255);
 			}
 		}
@@ -12779,21 +12782,22 @@ int get_current_used_block(struct current_used_zone *zone,
 		if (zone->assist_block.page_used > zone->current_block.page_used) {
 			nand_print(nftl_ro_lc_257,
 				   zone->assist_block.page_used, zone->current_block.page_used);
-			if (!had_primary_ecc) {
-				nand_print(nftl_ro_lc_258,
-					   zone->assist_block.page_used, zone->current_block.page_used);
-				goto return_zero;
-			}
-			erase_block((struct erase_block_zone *)zone,
+			/* OEM lays out the ECC replacement path first. */
+			if (had_primary_ecc) {
+				erase_block((struct erase_block_zone *)zone,
 				    (struct erase_block_info *)zone->current_block.block_info,
 				    (unsigned short)(zone->current_block.block_info->erase_count + 1));
-			zone->current_block.block_info = zone->assist_block.block_info;
-			zone->current_block.page_used = zone->assist_block.page_used;
-			nand_memcpy(zone->current_block.user_info.buf,
-				    zone->assist_block.user_info.buf,
-				    zone->current_block.user_info.buf_size);
-			zone->assist_block.block_info = 0;
-			continue;
+				zone->current_block.block_info = zone->assist_block.block_info;
+				zone->current_block.page_used = zone->assist_block.page_used;
+				nand_memcpy(zone->current_block.user_info.buf,
+					    zone->assist_block.user_info.buf,
+					    zone->current_block.user_info.buf_size);
+				zone->assist_block.block_info = 0;
+				continue;
+			}
+			nand_print(nftl_ro_lc_258,
+				   zone->assist_block.page_used, zone->current_block.page_used);
+			goto return_zero;
 		}
 		/* OEM makes a second comparison using >=. If current_used falls
 		 * between the two reads, it returns without erasing assist. */
@@ -12807,29 +12811,31 @@ int get_current_used_block(struct current_used_zone *zone,
 	}
 allocate_new:
 	nand_print_dbg(nftl_ro_lc_260);
-	if (!zone->free_head.free_prev) {
+	/* OEM places the nonempty free-list path before its diagnostic arm. */
+	if (zone->free_head.free_prev) {
+		zone->current_block.block_info = (struct new_write_block *)
+			out_phy_block_from_free_list((struct free_block_zone *)zone);
+		if (!zone->current_block.block_info)
+			return 1;
+		zone->current_block.page_used = 0;
+		zone->current_block.block_info->tag = previous_tag + 1;
+		if (zone->zone_attr & 1) {
+			zone->assist_block.block_info = (struct new_write_block *)
+				out_phy_block_from_free_list((struct free_block_zone *)zone);
+			if (!zone->assist_block.block_info)
+				return 1;
+			zone->assist_block.page_used = 0;
+			/* OEM reads assist before the current block's tag. */
+			zone->assist_block.block_info->tag =
+				zone->current_block.block_info->tag + 1;
+		} else {
+			zone->assist_block.block_info = 0;
+		}
+	} else {
 		nand_print(nftl_ro_lc_261);
 		print_free_list((struct free_print_zone *)zone);
 		print_block_invalid_list((struct invalid_print_zone *)zone);
 		return 1;
-	}
-	zone->current_block.block_info = (struct new_write_block *)
-		out_phy_block_from_free_list((struct free_block_zone *)zone);
-	if (!zone->current_block.block_info)
-		return 1;
-	zone->current_block.page_used = 0;
-	zone->current_block.block_info->tag = previous_tag + 1;
-	if (zone->zone_attr & 1) {
-		zone->assist_block.block_info = (struct new_write_block *)
-			out_phy_block_from_free_list((struct free_block_zone *)zone);
-		if (!zone->assist_block.block_info)
-			return 1;
-		zone->assist_block.page_used = 0;
-		/* OEM reads assist before the current block's tag. */
-		zone->assist_block.block_info->tag =
-			zone->current_block.block_info->tag + 1;
-	} else {
-		zone->assist_block.block_info = 0;
 	}
 return_zero:
 	return 0;
