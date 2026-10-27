@@ -48,7 +48,8 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_MARK_FREE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_WRITE_ERROR_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_PHY_WRITE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_PHY_WRITE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -71,7 +72,8 @@ extern void set_physic_op_par(struct physic_op_param *op, unsigned short block,
     !defined(TRIMUI_NFTL_CRC_WRONG_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_A19_READ_END_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_A19_READ_END_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD)
 int is_nouse_page(const unsigned char *bytes)
 {
 	unsigned int count;
@@ -107,8 +109,8 @@ extern unsigned char samsung_read_retry_addr[4];
 extern unsigned char samsung_read_retry_cmd[4];
 extern void nand_enable_chip(struct samsung_set_chip *);
 extern void ndfc_disable_randomize(void *);
-extern void nand_print(const char *, ...);
-extern void nand_print_dbg(const char *, ...);
+extern int nand_print(const char *, ...);
+extern int nand_print_dbg(const char *, ...);
 extern void nand_disable_chip(struct samsung_set_chip *);
 extern int set_cmd_with_nand_bus(void *, unsigned char *, int,
 				 unsigned char *, unsigned char *, int,
@@ -752,6 +754,7 @@ int is_phy_block_valid(unsigned short *block,
 	return 0;
 }
 
+#ifndef TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD
 int is_fill_page(void *oob)
 {
 	unsigned int marker = get_special_data_from_oob(oob);
@@ -759,9 +762,13 @@ int is_fill_page(void *oob)
 		return 1;
 	return 0;
 }
+#else
+extern int is_fill_page(void *oob);
+#endif
 
 #if !defined(TRIMUI_NFTL_CRC_WRONG_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_SMART_INIT_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_SMART_INIT_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD)
 int is_phy_mapping_page(void *oob)
 {
 	unsigned int marker = get_special_data_from_oob(oob);
@@ -773,6 +780,7 @@ int is_phy_mapping_page(void *oob)
 extern int is_phy_mapping_page(void *oob);
 #endif
 
+#ifndef TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD
 int is_function_info_page(void *oob)
 {
 	unsigned int marker = get_special_data_from_oob(oob);
@@ -780,6 +788,9 @@ int is_function_info_page(void *oob)
 		return 1;
 	return 0;
 }
+#else
+extern int is_function_info_page(void *oob);
+#endif
 
 #ifndef TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD
 int is_power_down_info_page(void *oob)
@@ -793,7 +804,8 @@ int is_power_down_info_page(void *oob)
 extern int is_power_down_info_page(void *oob);
 #endif
 
-#ifndef TRIMUI_NFTL_NO_USE_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_NO_USE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD)
 int is_ftl_start_flag_page(unsigned char *oob)
 {
 	/* OEM reads bytes 1 and 2 directly, with no length or NULL check. */
@@ -803,12 +815,17 @@ int is_ftl_start_flag_page(unsigned char *oob)
 extern int is_ftl_start_flag_page(unsigned char *oob);
 #endif
 
+#ifndef TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD
 int is_ftl_end_flag_page(unsigned char *oob)
 {
 	return oob[1] == 0xaa && oob[2] == 0xcc;
 }
+#else
+extern int is_ftl_end_flag_page(unsigned char *oob);
+#endif
 
-#ifndef TRIMUI_NFTL_PANIC_RECOVER_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_PANIC_RECOVER_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD)
 int is_panic_data_page(unsigned char *oob)
 {
 	return oob[1] == 0xaa && oob[2] == 0x63;
@@ -931,20 +948,29 @@ unsigned int get_spare_data(void *oob, unsigned char offset,
 #endif
 extern int block_erase(unsigned short block, unsigned short chip);
 
+#ifndef TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD
 unsigned int get_block_used_count_from_oob(void *oob)
 {
 	unsigned int value = get_spare_data(oob, 7, 4);
 	return value;
 }
+#else
+extern unsigned int get_block_used_count_from_oob(void *oob);
+#endif
 
+#ifndef TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD
 unsigned short get_erase_count_from_oob(void *oob)
 {
 	unsigned short value = get_spare_data(oob, 5, 2);
 	return value;
 }
+#else
+extern unsigned short get_erase_count_from_oob(void *oob);
+#endif
 
 #if !defined(TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD)
 unsigned int get_special_data_from_oob(void *oob)
 {
 	unsigned int value = get_spare_data(oob, 1, 4);
@@ -1063,7 +1089,8 @@ int _nand_flush_write_cache(struct nftl_logic_owner *owner, int force)
 }
 
 #if !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD)
 int is_ftl_logic_page_data(unsigned char *oob)
 {
 	/* OEM reads byte one without a buffer-length check. */
@@ -1563,6 +1590,7 @@ struct gc_search_zone {
 	unsigned char before_head[328];
 	struct gc_search_node head;
 };
+#ifndef TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD
 struct gc_search_node *search_gc_node(struct gc_search_zone *zone, void *key)
 {
 	struct gc_search_node *node = &zone->head;
@@ -1574,6 +1602,9 @@ struct gc_search_node *search_gc_node(struct gc_search_zone *zone, void *key)
 	}
 	return 0;
 }
+#else
+extern struct gc_search_node *search_gc_node(struct gc_search_zone *zone, void *key);
+#endif
 
 /* Isolated C equivalents; field names and aggregate types are inferred. */
 
@@ -4962,7 +4993,8 @@ enough_reserve:
 extern int init_zone_after_first_scan(struct scan_zone *zone,
 				      unsigned int available_blocks);
 #endif
-extern int first_scan_all_blocks(struct build_zone *);
+struct first_scan_zone;
+extern int first_scan_all_blocks(struct first_scan_zone *);
 extern int second_scan_all_blocks(struct build_zone *);
 struct power_gc_zone;
 extern int power_on_gc(struct power_gc_zone *);
@@ -4972,7 +5004,7 @@ int build_zone_list(struct build_zone *zone)
 	int result;
 
 	nand_print_dbg(nftl_ro_lc_211);
-	if (first_scan_all_blocks(zone))
+	if (first_scan_all_blocks((struct first_scan_zone *)zone))
 		return 1;
 	result = init_zone_after_first_scan((struct scan_zone *)zone,
 					    zone->block_count);
@@ -5066,172 +5098,186 @@ extern int add_prio_gc(struct prio_gc_owner *, void *, unsigned short);
 extern const char nftl_vendor_sunxi[5];
 extern const char nftl_vendor_allwinner[9];
 
+#if !defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
-int first_scan_all_blocks(struct build_zone *raw_zone)
+int first_scan_all_blocks(struct first_scan_zone *zone)
 {
-	struct first_scan_zone *zone = (struct first_scan_zone *)raw_zone;
-	struct first_scan_block *block = zone->first_block;
-	struct physic_op_param op;
-	unsigned char oob[16];
-	const char path[2] = {'/', 0};
-	char vendor[5];
-	char *compatible;
 	unsigned int last_erase = 0, used;
+	struct first_scan_block *block = zone->first_block;
+	unsigned char oob[16];
+	struct physic_op_param op;
+	char *compatible = 0;
+	char vendor[5];
+	char path[2];
 	int status;
 
 	__builtin_memcpy(vendor, nftl_vendor_sunxi, sizeof(vendor));
+	path[0] = '/';
+	path[1] = 0;
 	compatible = nand_fdt_get_prop_string_by_path(0, path, mod);
-	if (!compatible || nand_memcmp(compatible, vendor, 3))
+	if (!compatible)
+		return -1;
+	if (nand_memcmp(compatible, vendor, 3))
 		return -1;
 	nand_print_dbg(nftl_ro_lc_215);
 	zone->free_count = 0;
 	while (block->number < zone->geometry->blocks) {
 		set_physic_op_par(&op, block->number, 0, 0, 0, oob);
-		if (zone->is_good(zone, &op) != 1) {
+		if (zone->is_good(zone, &op) == 1) {
+			status = zone->read(zone, &op);
+			zone->last_read = block;
+			used = get_block_used_count_from_oob(oob);
+			if (is_ftl_end_flag_page(oob) == 1) {
+				/* OEM reports success even if printing fails. */
+				nand_print(nftl_ro_lc_216, block->number);
+				goto done;
+			}
+			if (is_panic_data_page(oob) == 1) {
+				if (oob[3] == zone->partition_id)
+					panic_recover_info((struct panic_header *)oob,
+							   (struct panic_block *)block);
+				goto next;
+			}
+			if (is_nouse_page(oob) == 1) {
+				zone->free_count++;
+				block->state = 0;
+				block->erase_count = 0;
+				block->invalid_pages = 0;
+				put_phy_block_to_free_list((struct move_zone *)zone,
+							    (struct move_node *)block);
+				goto next;
+			}
+			if ((is_ftl_logic_page_data(oob) == 1 ||
+			     is_function_info_page(oob) == 1) &&
+			    (status == 0 || status == 10)) {
+				zone->free_count++;
+				block->state = 1;
+				block->erase_count = get_erase_count_from_oob(oob);
+				last_erase = block->erase_count;
+				block->invalid_pages = 0;
+				{
+					register unsigned int value asm("w1") = used;
+					block->used_count = value;
+				}
+				block->next = 0;
+				block->previous = 0;
+				add_block_count_list((struct block_count_zone *)zone,
+						     (struct block_count_node *)block);
+				if (status == 10 && zone->gc->claim) {
+					add_prio_gc((struct prio_gc_owner *)zone, block, 1);
+					nand_print_dbg(nftl_ro_lc_217);
+				}
+				goto next;
+			}
+			if (is_ftl_start_flag_page(oob) == 1) {
+				nand_print(nftl_ro_lc_218);
+				goto next;
+			}
+			if (is_fill_page(oob) == 1) {
+				zone->free_count++;
+				block->state = 0;
+				block->erase_count = get_erase_count_from_oob(oob);
+				last_erase = block->erase_count;
+				block->invalid_pages = zone->geometry->pages;
+				put_phy_block_to_free_list((struct move_zone *)zone,
+							    (struct move_node *)block);
+				nand_print_dbg(nftl_ro_lc_219, block->number);
+				goto next;
+			}
+			/* OEM prints all 16 spare bytes, then increments the last valid
+			 * erase count even when this block has no trustworthy OOB. */
+			nand_print(nftl_ro_lc_220,
+				   block->number, oob[0], oob[1], oob[2], oob[3],
+				   oob[4], oob[5], oob[6], oob[7], oob[8], oob[9],
+				   oob[10], oob[11], oob[12], oob[13], oob[14], oob[15]);
+			block->erase_count = (unsigned short)(last_erase + 1);
+			if (status == 0 || status == 10) {
+				if (oob[0] != 255) {
+					nand_print(nftl_ro_lc_221,
+						   block->number);
+					block->state = 255;
+					zone->bad_count++;
+				} else if (erase_block((struct erase_block_zone *)zone,
+					    (struct erase_block_info *)block,
+					    (unsigned short)(block->erase_count + 1)) == 0) {
+					zone->free_count++;
+				}
+				goto next;
+			}
+			nand_print(nftl_ro_lc_222, block->number);
+			/* OEM puts the last-page index in the plane field and reads page
+			 * zero. Preserve this apparent parameter mix-up. */
+			set_physic_op_par(&op, block->number,
+					  (unsigned short)(zone->geometry->pages - 1), 0,
+					  0, oob);
+			status = zone->read(zone, &op);
+			if (status == 0 || status == 10) {
+				if (is_phy_mapping_page(oob) == 1) {
+					nand_print(nftl_ro_lc_223,
+						   block->number);
+					used = get_block_used_count_from_oob(oob);
+					zone->free_count++;
+					block->state = 1;
+					block->erase_count = get_erase_count_from_oob(oob);
+					last_erase = block->erase_count;
+					block->invalid_pages = 0;
+					{
+						register unsigned int value asm("w1") = used;
+						block->used_count = value;
+					}
+					block->next = 0;
+					block->previous = 0;
+					add_block_count_list((struct block_count_zone *)zone,
+							     (struct block_count_node *)block);
+					if (status == 10 && zone->gc->claim) {
+						add_prio_gc((struct prio_gc_owner *)zone, block, 1);
+						nand_print(nftl_ro_lc_224);
+					}
+					goto next;
+				}
+				if (is_nouse_page(oob) == 1) {
+					nand_print(nftl_ro_lc_225,
+						   block->number);
+					if (erase_block((struct erase_block_zone *)zone,
+					    (struct erase_block_info *)block,
+					    (unsigned short)(block->erase_count + 1)) == 0)
+						zone->free_count++;
+				} else {
+					nand_print(nftl_ro_lc_226,
+						   block->number);
+					if (erase_block((struct erase_block_zone *)zone,
+					    (struct erase_block_info *)block,
+					    (unsigned short)(block->erase_count + 1)) == 0)
+						zone->free_count++;
+				}
+				goto next;
+			}
+			nand_print(nftl_ro_lc_227,
+				   block->number);
+			nand_print(nftl_ro_lc_228,
+				   block->number, oob[0], oob[1], oob[2], oob[3],
+				   oob[4], oob[5], oob[6], oob[7], oob[8], oob[9],
+				   oob[10], oob[11], oob[12], oob[13], oob[14], oob[15]);
+			if (torture_block_and_mark((struct torture_zone *)zone,
+						   (struct erase_block_info *)block) == 0)
+				zone->free_count++;
+		} else {
 			nand_print(nftl_ro_lc_229, block->number);
 			block->state = 255;
 			block->erase_count = 0;
 			zone->bad_count++;
-			goto next;
-		}
-		status = zone->read(zone, &op);
-		zone->last_read = block;
-		used = get_block_used_count_from_oob(oob);
-		if (is_ftl_end_flag_page(oob) == 1) {
-			nand_print(nftl_ro_lc_216, block->number);
-			return 0;
-		}
-		if (is_panic_data_page(oob) == 1) {
-			if (oob[3] == zone->partition_id)
-				panic_recover_info((struct panic_header *)oob,
-						   (struct panic_block *)block);
-			goto next;
-		}
-		if (is_nouse_page(oob) == 1) {
-			zone->free_count++;
-			block->state = 0;
-			block->erase_count = 0;
-			block->invalid_pages = 0;
-			put_phy_block_to_free_list((struct move_zone *)zone,
-						    (struct move_node *)block);
-			goto next;
-		}
-		if ((is_ftl_logic_page_data(oob) == 1 ||
-		     is_function_info_page(oob) == 1) &&
-		    (status == 0 || status == 10))
-			goto counted;
-		if (is_ftl_start_flag_page(oob) == 1) {
-			nand_print(nftl_ro_lc_218);
-			goto next;
-		}
-		if (is_fill_page(oob) == 1) {
-			zone->free_count++;
-			block->state = 0;
-			block->erase_count = get_erase_count_from_oob(oob);
-			last_erase = block->erase_count;
-			block->invalid_pages = zone->geometry->pages;
-			put_phy_block_to_free_list((struct move_zone *)zone,
-						    (struct move_node *)block);
-			nand_print_dbg(nftl_ro_lc_219, block->number);
-			goto next;
-		}
-		/* OEM prints all 16 spare bytes, then increments the last valid
-		 * erase count even when this block has no trustworthy OOB. */
-		nand_print(nftl_ro_lc_220,
-			   block->number, oob[0], oob[1], oob[2], oob[3],
-			   oob[4], oob[5], oob[6], oob[7], oob[8], oob[9],
-			   oob[10], oob[11], oob[12], oob[13], oob[14], oob[15]);
-		block->erase_count = (unsigned short)(last_erase + 1);
-		if (status == 0 || status == 10) {
-			if (oob[0] != 255) {
-				nand_print(nftl_ro_lc_221,
-					   block->number);
-				block->state = 255;
-				zone->bad_count++;
-			} else if (erase_block((struct erase_block_zone *)zone,
-				    (struct erase_block_info *)block,
-				    (unsigned short)(block->erase_count + 1)) == 0) {
-				zone->free_count++;
-			}
-			goto next;
-		}
-		nand_print(nftl_ro_lc_222, block->number);
-		/* OEM puts the last-page index in the plane field and reads page
-		 * zero. Preserve this apparent parameter mix-up. */
-		set_physic_op_par(&op, block->number,
-				  (unsigned short)(zone->geometry->pages - 1), 0,
-				  0, oob);
-		status = zone->read(zone, &op);
-		if (status == 0 || status == 10) {
-			if (is_phy_mapping_page(oob) == 1) {
-				nand_print(nftl_ro_lc_223,
-					   block->number);
-				used = get_block_used_count_from_oob(oob);
-				goto counted_last;
-			}
-			if (is_nouse_page(oob) == 1) {
-				nand_print(nftl_ro_lc_225,
-					   block->number);
-				if (erase_block((struct erase_block_zone *)zone,
-				    (struct erase_block_info *)block,
-				    (unsigned short)(block->erase_count + 1)) == 0)
-					zone->free_count++;
-			} else {
-				nand_print(nftl_ro_lc_226,
-					   block->number);
-				if (erase_block((struct erase_block_zone *)zone,
-				    (struct erase_block_info *)block,
-				    (unsigned short)(block->erase_count + 1)) == 0)
-					zone->free_count++;
-			}
-			goto next;
-		}
-		nand_print(nftl_ro_lc_227,
-			   block->number);
-		nand_print(nftl_ro_lc_228,
-			   block->number, oob[0], oob[1], oob[2], oob[3],
-			   oob[4], oob[5], oob[6], oob[7], oob[8], oob[9],
-			   oob[10], oob[11], oob[12], oob[13], oob[14], oob[15]);
-		if (torture_block_and_mark((struct torture_zone *)zone,
-					   (struct erase_block_info *)block) == 0)
-			zone->free_count++;
-		goto next;
-counted:
-		zone->free_count++;
-		block->state = 1;
-		block->erase_count = get_erase_count_from_oob(oob);
-		last_erase = block->erase_count;
-		block->invalid_pages = 0;
-		block->used_count = used;
-		block->next = 0;
-		block->previous = 0;
-		add_block_count_list((struct block_count_zone *)zone,
-				     (struct block_count_node *)block);
-		if (status == 10 && zone->gc->claim) {
-			add_prio_gc((struct prio_gc_owner *)zone, block, 1);
-			nand_print_dbg(nftl_ro_lc_217);
-		}
-		goto next;
-counted_last:
-		zone->free_count++;
-		block->state = 1;
-		block->erase_count = get_erase_count_from_oob(oob);
-		last_erase = block->erase_count;
-		block->invalid_pages = 0;
-		block->used_count = used;
-		block->next = 0;
-		block->previous = 0;
-		add_block_count_list((struct block_count_zone *)zone,
-				     (struct block_count_node *)block);
-		if (status == 10 && zone->gc->claim) {
-			add_prio_gc((struct prio_gc_owner *)zone, block, 1);
-			nand_print(nftl_ro_lc_224);
 		}
 next:
 		block++;
 	}
+done:
 	return 0;
 }
+
+#else
+extern int first_scan_all_blocks(struct first_scan_zone *zone);
+#endif /* first block scan selection */
 
 struct second_scan_smart {
 	unsigned char before_erase_max[148];
@@ -6156,7 +6202,6 @@ int add_to_gc_list_tail(struct gc_list *list, struct gc_list_node *target)
 extern int add_to_gc_list_tail(struct gc_list *list,
 			       struct gc_list_node *target);
 #endif
-
 
 #ifndef TRIMUI_NFTL_LOGIC_WRITE_GCC53_BUILD
 struct invalid_node *del_block_invalid_list(struct invalid_zone *zone)
@@ -7222,6 +7267,7 @@ int panic_backup_block(struct build_zone *zone)
 #else
 extern int panic_backup_block(struct build_zone *zone);
 #endif
+#ifndef TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD
 int panic_recover_info(struct panic_header *header, struct panic_block *block)
 {
 	/* OEM follows both pointers unchecked and rejects indices 3 and 4\n	 * despite reserving five pointer slots. */
@@ -7235,6 +7281,9 @@ int panic_recover_info(struct panic_header *header, struct panic_block *block)
 	nand_print(nftl_ro_lc_27, index);
 	return -1;
 }
+#else
+extern int panic_recover_info(struct panic_header *header, struct panic_block *block);
+#endif
 
 union panic_recover_state {
 	void *slots[5];
@@ -8323,6 +8372,7 @@ int add_block_invalid_list(struct invalid_zone *zone,
 
 /* This signed count comparison is stock behavior, despite the 32-bit count
  * field being treated as unsigned by some other list operations. */
+#ifndef TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD
 int add_block_count_list(struct block_count_zone *zone,
 			 struct block_count_node *target)
 {
@@ -8343,6 +8393,11 @@ int add_block_count_list(struct block_count_zone *zone,
 	target->previous = node;
 	return 0;
 }
+#else
+extern int add_block_count_list(struct block_count_zone *zone,
+			 struct block_count_node *target);
+#endif
+
 struct count_delete_node {
 	unsigned char before_links[48];
 	struct count_delete_node *next;
@@ -9260,7 +9315,8 @@ struct prio_gc_node *get_empty_gc_node(struct prio_gc_pool *pool)
 extern struct prio_gc_node *get_empty_gc_node(struct prio_gc_pool *pool);
 #endif
 #if !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD)
 int add_prio_gc(struct prio_gc_owner *owner, void *block,
 		unsigned short priority)
 {
