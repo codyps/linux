@@ -5429,9 +5429,12 @@ int second_scan_all_blocks(struct second_scan_zone *zone)
 	if (zone->blocks)
 		zone->smart->used_first = zone->blocks->used_count;
 	for (block = zone->blocks; block; block = block->next) {
-		read_page = zone->scan_length_bytes >> 9;
+		/* OEM tests the remainder before reloading the length in the
+		 * selected branch, including if another actor changes it. */
 		if (zone->scan_length_bytes & 511)
-			read_page++;
+			read_page = (zone->scan_length_bytes >> 9) + 1;
+		else
+			read_page = zone->scan_length_bytes >> 9;
 		set_physic_op_par(&op, block->number,
 				  (unsigned short)(zone->geometry->pages - 1),
 				  (unsigned short)read_page, zone->data, oob);
@@ -5544,9 +5547,9 @@ int second_scan_all_blocks(struct second_scan_zone *zone)
 			   last_recorded->used_count, first->used_count);
 	zone->current = 0;
 	/* OEM reuses the exhausted scan cursor as the rebuild candidate. */
-	block = 0;
 	if (!first && !second) {
 		nand_print(nftl_ro_lc_242);
+		block = 0;
 		/* OEM has two separate call sites and reads the flag before
 		 * checking last_recorded. Keep that order even though the calls
 		 * have identical arguments. */
@@ -5559,6 +5562,8 @@ int second_scan_all_blocks(struct second_scan_zone *zone)
 				    last_recorded, 3);
 		}
 	} else if (!second) {
+		/* Stock writes this cursor even when the branch replaces it later. */
+		block = first;
 		if (zone->flags & 1) {
 			nand_print_dbg(nftl_ro_lc_243,
 				       first->number, first->used_count);
@@ -5627,8 +5632,10 @@ int second_scan_all_blocks(struct second_scan_zone *zone)
 		add_prio_gc((struct prio_gc_owner *)zone, second, 3);
 		/* OEM leaves the cursor null and asks for a new free block. */
 	}
-	if (get_current_used_block((struct current_used_zone *)zone,
-				   (struct new_write_block *)block, last_used)) {
+	/* Preserve the OEM local result store and reload before testing it. */
+	status = get_current_used_block((struct current_used_zone *)zone,
+					(struct new_write_block *)block, last_used);
+	if (status) {
 		nand_print(nftl_ro_lc_248);
 		return 1;
 	}
