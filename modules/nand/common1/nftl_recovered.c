@@ -5265,9 +5265,7 @@ int first_scan_all_blocks(struct first_scan_zone *zone)
 						add_prio_gc((struct prio_gc_owner *)zone, block, 1);
 						nand_print(nftl_ro_lc_224);
 					}
-					goto next;
-				}
-				if (is_nouse_page(oob) == 1) {
+				} else if (is_nouse_page(oob) == 1) {
 					nand_print(nftl_ro_lc_225,
 						   block->number);
 					if (erase_block((struct erase_block_zone *)zone,
