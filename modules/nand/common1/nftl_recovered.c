@@ -5402,7 +5402,7 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 	struct second_scan_zone *zone = (struct second_scan_zone *)raw_zone;
 	struct first_scan_block *block, *first = 0, *second = 0;
 	struct first_scan_block *last_recorded = 0, *last_mapping = 0;
-	struct first_scan_block *erased = 0, *candidate;
+	struct first_scan_block *erased = 0, *candidate, *retired;
 	struct physic_op_param op;
 	unsigned char oob[16];
 	unsigned int read_page, last_used = ~0U, previous_used = ~0U;
@@ -5483,9 +5483,12 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 					   second->number, second->used_count);
 				nand_print(nftl_ro_lc_237,
 					   block->number, last_used);
-				add_prio_gc((struct prio_gc_owner *)zone, first, 3);
+				/* OEM saves and rotates the private cursors before the
+				 * priority callback, including on its failure path. */
+				retired = first;
 				first = second;
 				second = block;
+				add_prio_gc((struct prio_gc_owner *)zone, retired, 3);
 			}
 		} else {
 			nand_print(nftl_ro_lc_238,
