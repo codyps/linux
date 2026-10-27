@@ -49,7 +49,8 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_MARK_FREE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_WRITE_ERROR_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PHY_WRITE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_USED_PAGE_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -73,7 +74,8 @@ extern void set_physic_op_par(struct physic_op_param *op, unsigned short block,
     !defined(TRIMUI_NFTL_SANDISK_PAGE_END_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_A19_READ_END_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_USED_PAGE_GCC53_BUILD)
 int is_nouse_page(const unsigned char *bytes)
 {
 	unsigned int count;
@@ -2903,17 +2905,25 @@ struct nrc_buffers {
 _Static_assert(sizeof(struct nrc_buffers) == sizeof(struct used_page_cache),
 	       "nrc cache prefix");
 
+#if !defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_USED_PAGE_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 unsigned int get_used_page_num(struct used_page_zone *zone,
 			       struct physical_block *block,
 			       unsigned int *read_errors,
 			       struct used_page_cache *cache)
 {
-	struct physic_op_param op;
 	unsigned char local_oob[16];
-	unsigned char *data, *oob;
+	struct physic_op_param op;
 	unsigned int page, first_unused, trailing_unused;
 	int status;
+	unsigned char *data, *oob;
+
+	/* GCC 5.3 places op at FP+0x38, local_oob at +0x50, oob/data at
+	 * +0x68/+0x70, and the two live counters at +0x78/+0x7c. Keep
+	 * this declaration order: the OEM's unchecked page count can make
+	 * cache and OOB accesses fault, and its private frame is observable
+	 * through those faults. */
 
 	*read_errors = 0;
 	trailing_unused = 0;
@@ -2989,6 +2999,12 @@ unsigned int get_used_page_num(struct used_page_zone *zone,
 	}
 	return first_unused;
 }
+#else
+extern unsigned int get_used_page_num(struct used_page_zone *zone,
+				      struct physical_block *block,
+				      unsigned int *read_errors,
+				      struct used_page_cache *cache);
+#endif
 int free_nrc(struct nrc_buffers *buffers)
 {
 	if (buffers == 0)
@@ -10132,7 +10148,8 @@ struct poweroff_ecc_zone {
 	struct poweroff_ecc_geometry *geometry;
 };
 #if !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_USED_PAGE_GCC53_BUILD)
 int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 			     const unsigned char *data, unsigned char *oob)
 {
