@@ -13565,13 +13565,14 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,
 	struct cross_rebuild_block *assist)
 {
-	struct nrc_buffers *primary_nrc = 0, *assist_nrc = 0, *selected;
-	struct cross_rebuild_block *source, *old, *replacement;
+	unsigned char *data = 0, *oob = 0;
+	struct nrc_buffers *primary_nrc = 0, *assist_nrc = 0;
+	struct nrc_buffers *selected = 0;
+	struct cross_rebuild_block *source, *replacement;
 	struct physic_op_param op;
-	unsigned int primary_used, assist_used = 0;
-	unsigned int first_good = 0, second_good = 0;
+	unsigned int primary_used, assist_used;
+	unsigned int first_good, second_good;
 	unsigned int page, compact, special;
-	unsigned char *data, *oob;
 	int status;
 
 	if (init_nrc((struct nrc_zone *)zone, &primary_nrc)) {
@@ -13587,8 +13588,7 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 		nand_print(nftl_ro_lc_294,
 			   primary->number, primary_used, primary->tag);
 		source = primary;
-		selected = primary_nrc;
-		if (!*(unsigned int *)selected) {
+		if (!*(unsigned int *)primary_nrc) {
 			free_nrc(primary_nrc);
 			nand_print(nftl_ro_lc_295);
 			erase_block((struct erase_block_zone *)zone,
@@ -13596,7 +13596,22 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 				    primary->erase_count + 1);
 			return 0;
 		}
-		goto acquire_single;
+		selected = primary_nrc;
+	acquire_single:
+		replacement = (struct cross_rebuild_block *)
+			out_phy_block_from_free_list((struct free_block_zone *)zone);
+		if (!replacement) {
+			nand_print(nftl_ro_lc_291);
+			return 0;
+		}
+		replacement->tag = source->tag;
+		if (new_block_init_for_write((struct new_write_zone *)zone,
+					     (struct new_write_block *)replacement,
+					     replacement->tag)) {
+			nand_print(nftl_ro_lc_292);
+			goto acquire_single;
+		}
+		goto replay;
 	}
 	if (init_nrc((struct nrc_zone *)zone, &assist_nrc)) {
 		free_nrc(primary_nrc);
@@ -13624,86 +13639,64 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 	}
 	if (assist_used > primary_used) {
 		source = assist;
-		old = primary;
+		replacement = primary;
 		selected = assist_nrc;
 		nand_print(nftl_ro_lc_289,
 			   primary_used, assist_used, *(unsigned int *)selected);
 	} else {
 		source = primary;
-		old = assist;
+		replacement = assist;
 		selected = primary_nrc;
 		nand_print(nftl_ro_lc_290,
 			   primary_used, assist_used, *(unsigned int *)selected);
 	}
-	set_physic_op_par(&op, old->number, 0,
+	set_physic_op_par(&op, replacement->number, 0,
 			  zone->geometry->fixed_page, 0, 0);
 	status = zone->erase(zone, &op);
 	if (status) {
-		nand_print(nftl_ro_lc_298,
-			   old->number);
+		nand_print(nftl_ro_lc_298, replacement->number);
 		zone->mark_bad(zone, &op);
 		/* OEM marks the selected source, not the block whose erase
 		 * just failed. This is a persistent metadata bug. */
 		source->page = 0;
 		source->state = 255;
 		(*(unsigned short *)((char *)zone + 28))++;
-	} else {
-		/* A successful erase reuses the old block as the replacement;
-		 * stock only takes a free block after an erase failure. */
-		replacement = old;
-		replacement->tag = source->tag;
-		goto replay;
-	}
-acquire_dual:
-	replacement = (struct cross_rebuild_block *)
-		out_phy_block_from_free_list((struct free_block_zone *)zone);
-	if (!replacement) {
-		nand_print(nftl_ro_lc_291);
-		/* OEM leaks both NRC allocations on this exit. */
-		return 0;
-	}
-	if (new_block_init_for_write((struct new_write_zone *)zone,
-				     (struct new_write_block *)replacement,
-				     replacement->tag)) {
-		nand_print(nftl_ro_lc_292);
-		goto acquire_dual;
+	acquire_dual:
+		replacement = (struct cross_rebuild_block *)
+			out_phy_block_from_free_list((struct free_block_zone *)zone);
+		if (!replacement) {
+			nand_print(nftl_ro_lc_291);
+			/* OEM leaks both NRC allocations on this exit. */
+			return 0;
+		}
+		if (new_block_init_for_write((struct new_write_zone *)zone,
+					     (struct new_write_block *)replacement,
+					     replacement->tag)) {
+			nand_print(nftl_ro_lc_292);
+			goto acquire_dual;
+		}
 	}
 	replacement->tag = source->tag;
-	goto replay;
-acquire_single:
-	replacement = (struct cross_rebuild_block *)
-		out_phy_block_from_free_list((struct free_block_zone *)zone);
-	if (!replacement) {
-		nand_print(nftl_ro_lc_291);
-		return 0;
-	}
-	replacement->tag = source->tag;
-	if (new_block_init_for_write((struct new_write_zone *)zone,
-				     (struct new_write_block *)replacement,
-				     replacement->tag)) {
-		nand_print(nftl_ro_lc_292);
-		goto acquire_single;
-	}
 replay:
 	compact = 0;
 	for (page = 0; page < *(unsigned int *)selected; page++) {
-		if (!((unsigned char *)selected->first)[page]) {
+		if (((unsigned char *)selected->first)[page]) {
+			data = (unsigned char *)selected->second +
+				(unsigned int)(page * (zone->geometry->bytes + 64U));
+			oob = data + zone->geometry->bytes;
+			set_physic_op_par(&op, replacement->number,
+					  (unsigned short)compact,
+					  zone->geometry->fixed_page, data, oob);
+			special = get_special_data_from_oob(oob);
+			set_oob_special_page(zone, oob, special,
+					     replacement->tag, replacement->erase_count);
+			/* OEM ignores replay-write failures. */
+			zone->write(zone, &op);
+			compact++;
+		} else {
 			nand_print(nftl_ro_lc_293, page,
 				   *(unsigned int *)selected);
-			continue;
 		}
-		data = (unsigned char *)selected->second +
-			(unsigned int)(page * (zone->geometry->bytes + 64U));
-		oob = data + zone->geometry->bytes;
-		set_physic_op_par(&op, replacement->number,
-				  (unsigned short)compact,
-				  zone->geometry->fixed_page, data, oob);
-		special = get_special_data_from_oob(oob);
-		set_oob_special_page(zone, oob, special,
-				     replacement->tag, replacement->erase_count);
-		/* OEM ignores replay-write failures. */
-		zone->write(zone, &op);
-		compact++;
 	}
 	erase_block((struct erase_block_zone *)zone,
 		    (struct erase_block_info *)source,
