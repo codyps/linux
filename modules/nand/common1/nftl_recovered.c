@@ -12617,10 +12617,33 @@ struct current_block_state {
 	struct current_user_info user_info;
 	unsigned short page_used;
 };
+/* The free-list sentinel is an embedded _phy_block_info in the public
+ * Allwinner zone layout. In the stock selector, its free_prev pointer is the
+ * sole field tested to decide whether the list is empty. Keep that test:
+ * testing free_next instead would change behavior for a corrupted list.
+ */
+struct current_block_link_head {
+	unsigned short block_number;
+	unsigned short info;
+	unsigned short invalid_page_count;
+	unsigned short erase_count;
+	int block_used_count;
+	struct current_block_link_head *invalid_page_next;
+	struct current_block_link_head *invalid_page_prev;
+	struct current_block_link_head *free_next;
+	struct current_block_link_head *free_prev;
+	struct current_block_link_head *block_used_next;
+	struct current_block_link_head *block_used_prev;
+};
 _Static_assert(sizeof(struct current_user_info) == 48,
 	       "current user record size");
 _Static_assert(sizeof(struct current_block_state) == 64,
 	       "current block record size");
+_Static_assert(sizeof(struct current_block_link_head) == 64,
+	       "current free-list sentinel size");
+_Static_assert(__builtin_offsetof(struct current_block_link_head,
+				  free_prev) == 40,
+	       "current free-list previous pointer offset");
 _Static_assert(__builtin_offsetof(struct current_block_state,
 				  user_info.buf) == 8, "current buffer offset");
 _Static_assert(__builtin_offsetof(struct current_block_state,
@@ -12632,11 +12655,11 @@ _Static_assert(__builtin_offsetof(struct current_block_state,
 				  page_used) == 56, "current used offset");
 struct current_used_zone {
 	unsigned char before_flag[25];
-	unsigned char flags;
-	unsigned char before_free_head[304 - 26];
-	void *free_head;
-	unsigned char before_data[512 - 312];
-	void *data;
+	unsigned char zone_attr;
+	unsigned char before_free_head[264 - 26];
+	struct current_block_link_head free_head;
+	unsigned char before_page_buffer[512 - 328];
+	void *logic_page_buf;
 	unsigned char before_current[528 - 520];
 	struct current_block_state current_block;
 	struct current_block_state assist_block;
@@ -12644,6 +12667,12 @@ struct current_used_zone {
 	int (*copy_page)(struct current_used_zone *, struct new_write_block *,
 			 struct new_write_block *, void *, unsigned short);
 };
+_Static_assert(__builtin_offsetof(struct current_used_zone,
+				  free_head.free_prev) == 304,
+	       "current free-list test offset");
+_Static_assert(__builtin_offsetof(struct current_used_zone,
+				  logic_page_buf) == 512,
+	       "current logic page buffer offset");
 _Static_assert(__builtin_offsetof(struct current_used_zone,
 				  current_block) == 528, "current block offset");
 _Static_assert(__builtin_offsetof(struct current_used_zone,
@@ -12694,7 +12723,7 @@ int get_current_used_block(struct current_used_zone *zone,
 	if (zone->current_block.page_used < zone->current_block.block_info->page)
 		nand_print(nftl_ro_lc_253,
 			   zone->current_block.page_used, zone->current_block.block_info->page);
-	if (!(zone->flags & 1))
+	if (!(zone->zone_attr & 1))
 		return 0;
 	for (;;) {
 		if (!zone->assist_block.block_info) {
@@ -12721,7 +12750,8 @@ int get_current_used_block(struct current_used_zone *zone,
 			for (page = 0; page < copy_limit; page++) {
 				/* OEM logs a copy failure but still advances to the next page. */
 				if (zone->copy_page(zone, zone->current_block.block_info,
-						    zone->assist_block.block_info, zone->data,
+						    zone->assist_block.block_info,
+						    zone->logic_page_buf,
 						    page))
 					nand_print(nftl_ro_lc_255);
 			}
@@ -12775,7 +12805,7 @@ int get_current_used_block(struct current_used_zone *zone,
 	}
 allocate_new:
 	nand_print_dbg(nftl_ro_lc_260);
-	if (!zone->free_head) {
+	if (!zone->free_head.free_prev) {
 		nand_print(nftl_ro_lc_261);
 		print_free_list((struct free_print_zone *)zone);
 		print_block_invalid_list((struct invalid_print_zone *)zone);
@@ -12787,7 +12817,7 @@ allocate_new:
 		return 1;
 	zone->current_block.page_used = 0;
 	zone->current_block.block_info->tag = previous_tag + 1;
-	if (zone->flags & 1) {
+	if (zone->zone_attr & 1) {
 		zone->assist_block.block_info = (struct new_write_block *)
 			out_phy_block_from_free_list((struct free_block_zone *)zone);
 		if (!zone->assist_block.block_info)
