@@ -107,9 +107,13 @@ int nftl_initialize(struct init_nftl_owner *owner, int number)
 	owner->config->boot_crc = 1;
 	if (!nftl_support_boot_check_crc_from_dts())
 		owner->config->boot_crc = 0;
+	/* Keep the OEM's ninth argument load ahead of the number stack slot.
+	 * The compiler fence has no runtime instruction; it preserves the
+	 * observed call setup while leaving the OEM's unsynchronized reads. */
 	result = nftl_start(owner, owner->config, &owner->zone, part->read, part->write,
 			    part->capacity, part->small, part->pages,
-			    part, number, 0);
+			    ({ __atomic_signal_fence(__ATOMIC_SEQ_CST); part; }),
+			    number, 0);
 	if (result)
 		return result;
 	owner->zone->geometry->max_erase_times =
