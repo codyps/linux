@@ -8555,6 +8555,7 @@ struct free_print_zone {
 	unsigned char before_debug[344];
 	unsigned int debug_level;
 };
+#ifndef TRIMUI_NFTL_CURRENT_USED_GCC53_BUILD
 void print_free_list(struct free_print_zone *zone)
 {
 	struct free_print_node *node = &zone->head;
@@ -8612,6 +8613,7 @@ void print_block_invalid_list(struct invalid_print_zone *zone)
 		return;
 	}
 }
+#endif
 #if defined(TRIMUI_NFTL_GCC7_PASS) || \
     defined(TRIMUI_NFTL_FREE_PAIR_GCC53_BUILD) || \
     defined(TRIMUI_NFTL_PANIC_BACKUP_GCC53_BUILD)
@@ -12680,12 +12682,12 @@ _Static_assert(__builtin_offsetof(struct current_used_zone,
 _Static_assert(__builtin_offsetof(struct current_used_zone,
 				  copy_page) == 3480, "copy callback offset");
 
-#ifndef TRIMUI_NFTL_SECOND_SCAN_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_CURRENT_USED_GCC53_BUILD)
 int get_current_used_block(struct current_used_zone *zone,
 			   struct new_write_block *candidate,
 			   unsigned int previous_tag)
 {
-	struct new_write_block *assist;
 	unsigned int page;
 	unsigned int copy_limit;
 	int had_primary_ecc = 0;
@@ -12733,9 +12735,10 @@ int get_current_used_block(struct current_used_zone *zone,
 			if (!zone->assist_block.block_info)
 				return 1;
 			zone->assist_block.page_used = 0;
-			/* OEM reads the shared assist pointer before current->tag. */
-			assist = zone->assist_block.block_info;
-			assist->tag = zone->current_block.block_info->tag + 1;
+			/* OEM reads assist before current->tag. The selected GCC 5.3
+			 * pass preserves this left-side address evaluation. */
+			zone->assist_block.block_info->tag =
+				zone->current_block.block_info->tag + 1;
 			/* OEM reloads the published tag for initialization. */
 			if (new_block_init_for_write(
 				    (struct new_write_zone *)zone,
@@ -12768,8 +12771,8 @@ int get_current_used_block(struct current_used_zone *zone,
 			continue;
 		}
 		/* Keep the OEM destination read ahead of the source-tag read. */
-		assist = zone->assist_block.block_info;
-		assist->tag = zone->current_block.block_info->tag + 1;
+		zone->assist_block.block_info->tag =
+			zone->current_block.block_info->tag + 1;
 		recover_logic_page_mapping((struct logic_page_map_zone *)zone,
 				   (struct invalid_page_node *)zone->assist_block.block_info,
 				   zone->assist_block.user_info.map_data, zone->assist_block.page_used);
@@ -12823,8 +12826,8 @@ allocate_new:
 			return 1;
 		zone->assist_block.page_used = 0;
 		/* OEM reads assist before the current block's tag. */
-		assist = zone->assist_block.block_info;
-		assist->tag = zone->current_block.block_info->tag + 1;
+		zone->assist_block.block_info->tag =
+			zone->current_block.block_info->tag + 1;
 	} else {
 		zone->assist_block.block_info = 0;
 	}

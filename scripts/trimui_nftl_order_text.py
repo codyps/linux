@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Keep the native second scan at its OEM-sized place in the NFTL text.
+"""Keep selected native GCC 5.3 bodies at their source-order NFTL places.
 
 GCC 7 emits the other recovered C functions in source order.  Per-function
 sections retain their bodies byte for byte, so this script restores that order
-while substituting the selected GCC 5.3 scan.  It reads only ELF64 little-endian
+while substituting the selected GCC 5.3 bodies. It reads only ELF64 little-endian
 section headers; no build-host Python packages are needed.
 """
 
@@ -39,14 +39,17 @@ def text_sections(path):
 
 
 def main():
-    if len(sys.argv) != 4:
-        raise SystemExit("usage: order_text.py gcc7.o native_scan.o output.lds")
-    gcc7, scan, output = map(pathlib.Path, sys.argv[1:])
-    for path in (gcc7, scan):
+    if len(sys.argv) not in (4, 5):
+        raise SystemExit("usage: order_text.py gcc7.o native_scan.o [native_selector.o] output.lds")
+    paths = list(map(pathlib.Path, sys.argv[1:]))
+    gcc7, scan, output = paths[0], paths[1], paths[-1]
+    selector = paths[2] if len(paths) == 4 else None
+    for path in (gcc7, scan, *([selector] if selector else [])):
         if not re.fullmatch(r"[A-Za-z0-9_./+-]+", str(path)):
             raise ValueError("unsafe linker-script input path: " + str(path))
     sections = text_sections(gcc7)
-    if len(sections) != 220 or len({name for name, _ in sections}) != 220:
+    count = 219 if selector else 220
+    if len(sections) != count or len({name for name, _ in sections}) != count:
         raise ValueError("recovered GCC 7 text section inventory changed")
     if sections.count((".text.build_zone_list", 200)) != 1:
         raise ValueError("missing or changed build_zone_list placement")
@@ -54,12 +57,21 @@ def main():
         raise ValueError("GCC 7 still defines second_scan_all_blocks")
     if text_sections(scan) != [(".text.second_scan_all_blocks", 3124)]:
         raise ValueError("native second scan text inventory changed")
+    if selector:
+        if any(name == ".text.get_current_used_block" for name, _ in sections):
+            raise ValueError("GCC 7 still defines current-used selector")
+        if sections.count((".text.get_new_current_block", 316)) != 1:
+            raise ValueError("missing selector insertion anchor")
+        if text_sections(selector) != [(".text.get_current_used_block", 1452)]:
+            raise ValueError("native current-used text inventory changed")
     lines = ["/* Generated from the two selected source objects. */",
              "SECTIONS {", "  .text : {"]
     for name, _ in sections:
         lines.append("    %s(%s)" % (gcc7, name))
         if name == ".text.build_zone_list":
             lines.append("    %s(.text.second_scan_all_blocks)" % scan)
+        if selector and name == ".text.get_new_current_block":
+            lines.append("    %s(.text.get_current_used_block)" % selector)
     lines.extend(["  }", "}", ""])
     output.write_text("\n".join(lines))
 
