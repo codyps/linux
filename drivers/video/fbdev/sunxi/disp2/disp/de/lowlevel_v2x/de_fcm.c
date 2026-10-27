@@ -138,8 +138,8 @@ int set_364(u32 *table)
 	volatile u8 *registers = (volatile u8 *)fcm_dev[0][0];
 	unsigned int row, column, index;
 
-	/* TODO: stock reads the next column/row even at the right/bottom edge.
-	 * Keep its plane-interleaved byte accesses, including aliased input.
+	/* OEM bug: the final cell reads table[377] beyond a 364-word grid.
+	 * TODO: validate/pad input; retain stock accesses, including aliases.
 	 */
 	for (row = 0; row < 28; row++)
 		for (column = 0; column < 13; column++) {
