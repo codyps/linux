@@ -23,7 +23,9 @@ static u32 trimui_rgb(int r, int g, int b)
 	return ((r & 255) << 16) | ((g & 255) << 8) | (b & 255);
 }
 
-static void gen_effect(struct trimui_led_effect *effect, int type,
+/* Keep these three helpers in OEM order. GCC otherwise moves the small
+ * predicate to the front of .text and pushes the generator to the tail. */
+static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *effect, int type,
 		       u32 target, u32 previous)
 {
 	int n, ramp, i, count, r, g, b, from_r, from_g, from_b;
@@ -166,7 +168,7 @@ static void gen_effect(struct trimui_led_effect *effect, int type,
 	WRITE_ONCE(effect->active_cycles, 0);
 }
 
-static u32 step_one_frame(struct trimui_led_effect *effect)
+static __attribute__((no_reorder)) u32 step_one_frame(struct trimui_led_effect *effect)
 {
 	/* Stock loads index and length as one register pair, then reads the
 	 * frame before publishing cursor and color. READ_ONCE on these inputs
@@ -188,7 +190,7 @@ static u32 step_one_frame(struct trimui_led_effect *effect)
 	return color;
 }
 
-static int is_effect_actived(struct trimui_led_effect *effect)
+static __attribute__((no_reorder)) int is_effect_actived(struct trimui_led_effect *effect)
 {
 	return (unsigned int)(effect->type - 1) < 7 && effect->active_cycles;
 }
