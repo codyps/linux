@@ -1365,6 +1365,27 @@ static struct class trimui_speaker_class = {
 };
 
 
+/* OEM probe holds these four effect addresses across the memset calls.
+ * They view existing BSS: no independent storage or change to the state ABI.
+ * Original declaration boundaries are unknown.
+ */
+extern struct trimui_led_effect trimui_probe_effect_f2;
+extern struct trimui_led_effect trimui_probe_effect_f1;
+extern struct trimui_led_effect trimui_probe_effect_r;
+extern struct trimui_led_effect trimui_probe_effect_l;
+asm(".local trimui_probe_effect_f2\n.type trimui_probe_effect_f2,%object\n"
+    ".set trimui_probe_effect_f2,trimui_led_state+0x20\n"
+    ".size trimui_probe_effect_f2,0xf20\n"
+    ".local trimui_probe_effect_f1\n.type trimui_probe_effect_f1,%object\n"
+    ".set trimui_probe_effect_f1,trimui_led_state+0xf40\n"
+    ".size trimui_probe_effect_f1,0xf20\n"
+    ".local trimui_probe_effect_r\n.type trimui_probe_effect_r,%object\n"
+    ".set trimui_probe_effect_r,trimui_led_state+0x1e60\n"
+    ".size trimui_probe_effect_r,0xf20\n"
+    ".local trimui_probe_effect_l\n.type trimui_probe_effect_l,%object\n"
+    ".set trimui_probe_effect_l,trimui_led_state+0x2d80\n"
+    ".size trimui_probe_effect_l,0xf20\n");
+
 static int trimui_board_init(void)
 {
 	struct task_struct *task;
@@ -1374,24 +1395,26 @@ static int trimui_board_init(void)
 	BUILD_BUG_ON(offsetof(struct trimui_stock_led_state, motor_regulator) != 0x4dd8);
 	BUILD_BUG_ON(offsetof(struct trimui_stock_led_state, wire_frame) != 0x4de4);
 	BUILD_BUG_ON(offsetof(struct trimui_stock_led_state, anim_frames) != 0x4ff0);
+	BUILD_BUG_ON(offsetof(struct trimui_stock_led_state, effects[0]) != 0x20);
+	BUILD_BUG_ON(sizeof(struct trimui_led_effect) != 0xf20);
 	memset(trimui_frame, 0, sizeof(trimui_frame));
 	memset(&trimui_effect_m, 0, sizeof(trimui_effect_m));
-	memset(&trimui_effect_l, 0, sizeof(trimui_effect_l));
-	memset(&trimui_effect_r, 0, sizeof(trimui_effect_r));
-	memset(&trimui_effect_f1, 0, sizeof(trimui_effect_f1));
-	memset(&trimui_effect_f2, 0, sizeof(trimui_effect_f2));
+	memset(&trimui_probe_effect_l, 0, sizeof(trimui_probe_effect_l));
+	memset(&trimui_probe_effect_r, 0, sizeof(trimui_probe_effect_r));
+	memset(&trimui_probe_effect_f1, 0, sizeof(trimui_probe_effect_f1));
+	memset(&trimui_probe_effect_f2, 0, sizeof(trimui_probe_effect_f2));
 	/* Preserve the OEM store order. The LED class is already visible while
 	 * probe initializes these globals, so a reader can observe partial state. */
-	WRITE_ONCE(trimui_effect_f2.duration, 2000);
+	WRITE_ONCE(trimui_probe_effect_f2.duration, 2000);
 	WRITE_ONCE(trimui_effect_m.duration, 2000);
-	WRITE_ONCE(trimui_effect_f1.duration, 2000);
-	WRITE_ONCE(trimui_effect_r.duration, 2000);
-	WRITE_ONCE(trimui_effect_l.duration, 2000);
-	WRITE_ONCE(trimui_effect_f1.cycles, 1);
-	WRITE_ONCE(trimui_effect_f2.cycles, 1);
+	WRITE_ONCE(trimui_probe_effect_f1.duration, 2000);
+	WRITE_ONCE(trimui_probe_effect_r.duration, 2000);
+	WRITE_ONCE(trimui_probe_effect_l.duration, 2000);
+	WRITE_ONCE(trimui_probe_effect_f1.cycles, 1);
+	WRITE_ONCE(trimui_probe_effect_f2.cycles, 1);
 	WRITE_ONCE(trimui_effect_m.cycles, 1);
-	WRITE_ONCE(trimui_effect_r.cycles, 1);
-	WRITE_ONCE(trimui_effect_l.cycles, 1);
+	WRITE_ONCE(trimui_probe_effect_r.cycles, 1);
+	WRITE_ONCE(trimui_probe_effect_l.cycles, 1);
 	result = gpio_request(107, "led_5v");
 	/* Stock continues after GPIO and thread errors. TODO: unwind and return
 	 * those errors in a separate fix, and stop the thread on remove. */
