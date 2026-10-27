@@ -5387,6 +5387,8 @@ extern struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 extern int get_current_used_block(struct current_used_zone *,
 				   struct new_write_block *, unsigned int);
 
+#if !defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_SECOND_SCAN_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 int second_scan_all_blocks(struct second_scan_zone *zone)
 {
@@ -5656,6 +5658,9 @@ int second_scan_all_blocks(struct second_scan_zone *zone)
 		       zone->smart->used_first);
 	return 0;
 }
+#else
+extern int second_scan_all_blocks(struct second_scan_zone *zone);
+#endif
 
 struct first_list_geometry {
 	unsigned char before_factor[8];
@@ -6317,7 +6322,8 @@ extern struct move_node *out_phy_block_from_invalid_page_list(
 extern int put_phy_block_to_free_list(struct move_zone *zone,
 				     struct move_node *node);
 #if !defined(TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_LOGIC_WRITE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_LOGIC_WRITE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SECOND_SCAN_GCC53_BUILD)
 int adjust_invaild_list(struct move_zone *zone)
 {
 	struct move_node *node;
@@ -7242,7 +7248,8 @@ void nftl_ops_init(struct nftl_ops *ops)
 
 extern int add_block_invalid_list(struct invalid_zone *zone,
 				  struct invalid_node *block);
-#ifndef TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_SECOND_SCAN_GCC53_BUILD)
 int put_phy_block_to_invalid_page_list(void *zone,
 				       struct invalid_node *block)
 {
@@ -12626,6 +12633,7 @@ _Static_assert(__builtin_offsetof(struct current_used_zone, assist) == 592,
 _Static_assert(__builtin_offsetof(struct current_used_zone, copy_page) == 3480,
 	       "current block copy callback offset");
 
+#ifndef TRIMUI_NFTL_SECOND_SCAN_GCC53_BUILD
 int get_current_used_block(struct current_used_zone *zone,
 			   struct new_write_block *candidate,
 			   unsigned int previous_tag)
@@ -12775,6 +12783,11 @@ allocate_new:
 	}
 	return 0;
 }
+#else
+extern int get_current_used_block(struct current_used_zone *zone,
+				   struct new_write_block *candidate,
+				   unsigned int previous_tag);
+#endif
 
 #if !defined(TRIMUI_NFTL_GCC7_PASS) || \
     defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD)
@@ -13328,6 +13341,7 @@ struct cross_rebuild_block {
 	unsigned short erase_count;
 	unsigned int tag;
 };
+#ifndef TRIMUI_NFTL_SECOND_SCAN_GCC53_BUILD
 struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,
 	struct cross_rebuild_block *assist)
@@ -13601,6 +13615,14 @@ replay:
 	free_nrc(assist_nrc);
 	return replacement;
 }
+#else
+extern struct cross_rebuild_block *cross_talk_rebuild_current_block(
+	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,
+	struct cross_rebuild_block *assist);
+extern struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
+	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,
+	struct cross_rebuild_block *assist);
+#endif
 
 struct nand_cache_write_configuration {
 	unsigned short direct;
