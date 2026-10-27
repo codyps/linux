@@ -11292,8 +11292,11 @@ int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 			continue;
 		entry = (struct invalid_page_location *)
 			get_logic_page_map((struct logic_page_map_zone *)zone, logic);
-		if (!entry || entry->block != block->number ||
-		    entry->page != page)
+		if (!entry)
+			continue;
+		if (entry->block != block->number)
+			continue;
+		if (entry->page != page)
 			continue;
 		zone->stats->copied_pages++;
 		set_physic_op_par(&op, block->number, page,
