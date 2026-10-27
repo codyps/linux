@@ -9432,85 +9432,83 @@ _Static_assert(__builtin_offsetof(struct do_prio_gc_zone,
 				  queue.head.next) == 1040,
 	       "priority GC head offset");
 
-#ifndef TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD) && \
+    (!defined(TRIMUI_NFTL_GCC7_PASS) || \
+     defined(TRIMUI_NFTL_PRIO_GC_GCC53_BUILD))
 int do_prio_gc(void *owner)
 {
 	/* Keep OEM private slots: removed at FP+0x28, result at +0x34,
-	 * and node at +0x38. The intervening word is not initialized. */
-	struct {
-		struct do_prio_gc_block *removed;
-		unsigned int unused;
-		int result;
-		struct prio_gc_node *node;
-	} frame;
+	 * and node at +0x38. GCC 5.3 keeps the intervening word unused. */
+	struct do_prio_gc_block *removed;
+	int result;
+	struct prio_gc_node *node;
 #define PRIO_QUEUE (&((struct do_prio_gc_zone *)owner)->queue)
-#define PRIO_BLOCK ((struct do_prio_gc_block *)frame.node->block)
+#define PRIO_BLOCK ((struct do_prio_gc_block *)node->block)
 /* Stock emits cleanup at each exit, including a fresh node dereference.
  * A shared cleanup label collapses this shipped control-flow layout. */
 #define PRIO_CLEAR_RETURN(value) do { \
-		frame.node->priority = 0; \
+		node->priority = 0; \
 		PRIO_QUEUE->active_priority = 0; \
-		frame.node->block = 0; \
+		node->block = 0; \
 		return (value); \
 	} while (0)
 
 	if (!PRIO_QUEUE->head.next)
 		return 0;
-	frame.node = (struct prio_gc_node *)del_from_gc_list(
+	node = (struct prio_gc_node *)del_from_gc_list(
 		(struct gc_zone *)PRIO_QUEUE,
 		(struct gc_node *)PRIO_QUEUE->head.next);
 	/* Reload the block after each callback; it may change node->block. */
-	if (is_current_blcok((struct diag_current_zone *)owner, frame.node->block) == 1) {
+	if (is_current_blcok((struct diag_current_zone *)owner, node->block) == 1) {
 		add_to_gc_list_tail((struct gc_list *)PRIO_QUEUE,
-				    (struct gc_list_node *)frame.node);
+				    (struct gc_list_node *)node);
 		return 0;
 	}
-	if (!frame.node->block) {
+	if (!node->block) {
 		nand_print_dbg(nftl_ro_lc_447);
 		PRIO_CLEAR_RETURN(0);
 	}
 	if (!is_block_in_invalid_list((struct invalid_zone *)owner,
-				      (struct invalid_node *)frame.node->block)) {
+				      (struct invalid_node *)node->block)) {
 		nand_print_dbg(nftl_ro_lc_448,
-			       PRIO_BLOCK->number, frame.node->priority);
+			       PRIO_BLOCK->number, node->priority);
 		PRIO_CLEAR_RETURN(0);
 	}
-	PRIO_QUEUE->active_priority = frame.node->priority;
-	if (frame.node->priority == 5) {
+	PRIO_QUEUE->active_priority = node->priority;
+	if (node->priority == 5) {
 		/* OEM stores but ignores this collection result. */
-		frame.result = garbage_collect_first((struct gc_first_zone *)owner,
-					       frame.node->block, 4);
+		result = garbage_collect_first((struct gc_first_zone *)owner,
+					       node->block, 4);
 		PRIO_CLEAR_RETURN(0);
 	}
-	frame.result = garbage_collect_first((struct gc_first_zone *)owner,
-					       frame.node->block, -1);
-	if (frame.result) {
-		nand_print(nftl_ro_lc_449, PRIO_BLOCK->number, frame.node->priority);
+	result = garbage_collect_first((struct gc_first_zone *)owner,
+					       node->block, -1);
+	if (result) {
+		nand_print(nftl_ro_lc_449, PRIO_BLOCK->number, node->priority);
 		PRIO_CLEAR_RETURN(1);
 	}
 	if (!is_block_in_free_list((struct free_zone *)owner,
-				   (struct free_node *)frame.node->block)) {
+				   (struct free_node *)node->block)) {
 		nand_print_dbg(nftl_ro_lc_450,
-			       PRIO_BLOCK->number, frame.node->priority);
+			       PRIO_BLOCK->number, node->priority);
 		PRIO_CLEAR_RETURN(0);
 	}
-	frame.removed = (struct do_prio_gc_block *)
+	removed = (struct do_prio_gc_block *)
 		out_phy_block_from_free_list_by_block(
 			(struct nftl_free_erase_owner *)owner,
-			(struct nftl_free_erase_node *)frame.node->block);
-	if (!frame.removed) {
+			(struct nftl_free_erase_node *)node->block);
+	if (!removed) {
 		nand_print_dbg(nftl_ro_lc_451,
-			       PRIO_BLOCK->number, frame.node->priority);
+			       PRIO_BLOCK->number, node->priority);
 		PRIO_CLEAR_RETURN(0);
 	}
 	/* OEM keeps four separate, identical erase calls for priority 1/2/4
-	 * and all others. Calculate mode before reloading frame.removed as stock
-	 * does; the unsigned-short call argument still narrows it to 16 bits. */
+	 * and all others. GCC 5.3 narrows the count before reloading removed;
+	 * the published erase_block ABI takes an unsigned short. */
 #define PRIO_ERASE() do { \
-		register unsigned int mode asm("w0") = frame.removed->erase_count + 1; \
-		erase_block((struct erase_block_zone *)owner, \
-			    (struct erase_block_info *)frame.removed, mode); \
-	} while (0)
+	erase_block((struct erase_block_zone *)owner, \
+		    (struct erase_block_info *)removed, removed->erase_count + 1); \
+} while (0)
 	if (PRIO_QUEUE->active_priority == 1)
 		PRIO_ERASE();
 	else if (PRIO_QUEUE->active_priority == 2)
@@ -9525,7 +9523,9 @@ int do_prio_gc(void *owner)
 #undef PRIO_BLOCK
 #undef PRIO_QUEUE
 }
-#endif /* TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD */
+#else
+extern int do_prio_gc(void *owner);
+#endif
 
 struct static_wear_stats {
 	unsigned char before_attempts[180];

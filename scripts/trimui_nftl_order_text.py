@@ -39,16 +39,18 @@ def text_sections(path):
 
 
 def main():
-    if len(sys.argv) not in (4, 5):
-        raise SystemExit("usage: order_text.py gcc7.o native_scan.o [native_selector.o] output.lds")
+    if len(sys.argv) not in (4, 5, 6):
+        raise SystemExit("usage: order_text.py gcc7.o native_scan.o [native_selector.o [native_prio_gc.o]] output.lds")
     paths = list(map(pathlib.Path, sys.argv[1:]))
     gcc7, scan, output = paths[0], paths[1], paths[-1]
-    selector = paths[2] if len(paths) == 4 else None
-    for path in (gcc7, scan, *([selector] if selector else [])):
+    selector = paths[2] if len(paths) >= 4 else None
+    prio_gc = paths[3] if len(paths) == 5 else None
+    for path in (gcc7, scan, *([selector] if selector else []),
+                 *([prio_gc] if prio_gc else [])):
         if not re.fullmatch(r"[A-Za-z0-9_./+-]+", str(path)):
             raise ValueError("unsafe linker-script input path: " + str(path))
     sections = text_sections(gcc7)
-    count = 219 if selector else 220
+    count = 218 if prio_gc else 219 if selector else 220
     if len(sections) != count or len({name for name, _ in sections}) != count:
         raise ValueError("recovered GCC 7 text section inventory changed")
     if sections.count((".text.build_zone_list", 200)) != 1:
@@ -64,7 +66,14 @@ def main():
             raise ValueError("missing selector insertion anchor")
         if text_sections(selector) != [(".text.get_current_used_block", 1440)]:
             raise ValueError("native current-used text inventory changed")
-    lines = ["/* Generated from the two selected source objects. */",
+    if prio_gc:
+        if any(name == ".text.do_prio_gc" for name, _ in sections):
+            raise ValueError("GCC 7 still defines priority GC")
+        if sections.count((".text.add_prio_gc", 164)) != 1:
+            raise ValueError("missing priority-GC insertion anchor")
+        if text_sections(prio_gc) != [(".text.do_prio_gc", 916)]:
+            raise ValueError("native priority-GC text inventory changed")
+    lines = ["/* Generated from selected source objects. */",
              "SECTIONS {", "  .text : {"]
     for name, _ in sections:
         lines.append("    %s(%s)" % (gcc7, name))
@@ -72,6 +81,8 @@ def main():
             lines.append("    %s(.text.second_scan_all_blocks)" % scan)
         if selector and name == ".text.get_new_current_block":
             lines.append("    %s(.text.get_current_used_block)" % selector)
+        if prio_gc and name == ".text.add_prio_gc":
+            lines.append("    %s(.text.do_prio_gc)" % prio_gc)
     lines.extend(["  }", "}", ""])
     output.write_text("\n".join(lines))
 

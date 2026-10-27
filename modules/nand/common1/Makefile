@@ -216,6 +216,7 @@ $(obj)/nftl_gcc53_logic_write.o: override CC := python3 $(srctree)/scripts/trimu
 $(obj)/nftl_gcc53_scan_blocks.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) first_scan_all_blocks --
 $(obj)/nftl_gcc53_second_scan.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) second_scan_all_blocks --
 $(obj)/nftl_gcc53_current_used.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) get_current_used_block --
+$(obj)/nftl_gcc53_do_prio_gc.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) do_prio_gc --
 $(obj)/nftl_gcc53_check_invalid_page_right.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) check_invalid_page_right --
 $(obj)/nftl_gcc53_sandisk_read_page_end.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) sandisk_read_page_end --
 $(obj)/nftl_gcc53_current_block_ecc_error.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) current_block_ecc_error --
@@ -255,6 +256,7 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_read_reclaim.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_first_scan.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_second_scan.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_current_used.o
+nftl_gcc53_objects += $(obj)/nftl_gcc53_do_prio_gc.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix16nm_major_check_byte.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix16nm_get_special_info.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix20nm_init_readretry_param.o
@@ -325,8 +327,8 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_nftl_start.o
 $(nftl_gcc53_objects): override NOSTDINC_FLAGS := -nostdinc -isystem $(shell $(TRIMUI_NFTL_GCC53) -print-file-name=include)
 $(nftl_gcc53_objects): $(srctree)/scripts/trimui_nftl_select_cc.py
 quiet_cmd_nftl_crc_merge = LD      $@
-      cmd_nftl_crc_merge = python3 $(srctree)/scripts/trimui_nftl_order_text.py $(obj)/nftl_recovered.o $(obj)/nftl_gcc53_second_scan.o $(obj)/nftl_gcc53_current_used.o $(obj)/.nftl_recovered_merged.lds && $(LD) -r -T $(obj)/.nftl_recovered_merged.lds -o $@ $(obj)/nftl_gcc53_crc_wrong.o && $(OBJCOPY) --localize-symbol=crc_wrong $@
-$(obj)/nftl_recovered_merged.o: $(obj)/nftl_recovered.o $(obj)/nftl_gcc53_second_scan.o $(obj)/nftl_gcc53_current_used.o $(obj)/nftl_gcc53_crc_wrong.o $(srctree)/scripts/trimui_nftl_order_text.py FORCE
+      cmd_nftl_crc_merge = python3 $(srctree)/scripts/trimui_nftl_order_text.py $(obj)/nftl_recovered.o $(obj)/nftl_gcc53_second_scan.o $(obj)/nftl_gcc53_current_used.o $(obj)/nftl_gcc53_do_prio_gc.o $(obj)/.nftl_recovered_merged.lds && $(LD) -r -T $(obj)/.nftl_recovered_merged.lds -o $@ $(obj)/nftl_gcc53_crc_wrong.o && $(OBJCOPY) --localize-symbol=crc_wrong $@
+$(obj)/nftl_recovered_merged.o: $(obj)/nftl_recovered.o $(obj)/nftl_gcc53_second_scan.o $(obj)/nftl_gcc53_current_used.o $(obj)/nftl_gcc53_do_prio_gc.o $(obj)/nftl_gcc53_crc_wrong.o $(srctree)/scripts/trimui_nftl_order_text.py FORCE
 	$(call if_changed,nftl_crc_merge)
 CFLAGS_nftl_cache_init_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_sector_cache_init_gcc53.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
@@ -416,6 +418,7 @@ CFLAGS_nftl_gcc53_logic_write.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno
 CFLAGS_nftl_gcc53_scan_blocks.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_GCC7_PASS
 CFLAGS_nftl_gcc53_second_scan.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_current_used.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_do_prio_gc.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_check_invalid_page_right.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_sandisk_read_page_end.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_current_block_ecc_error.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
