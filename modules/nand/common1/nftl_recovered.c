@@ -263,7 +263,8 @@ extern int set_one_cmd(struct command_chip *chip, unsigned char command,
  * arrays otherwise trigger GCC's stack-protector slot reordering. */
 #if !defined(TRIMUI_NFTL_HYNIX_LSB_ENABLE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_HYNIX20_RETRY_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_HYNIX20_PARAM_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_HYNIX20_PARAM_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_HYNIX20_DEFAULT_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_vender_set_param(void *chip, unsigned char *values,
 			      unsigned char *addresses, unsigned int count)
@@ -4533,33 +4534,33 @@ int hynix20nm_set_readretry(struct hynix20nm_retry_chip *chip)
 extern int hynix20nm_set_readretry(struct hynix20nm_retry_chip *chip);
 #endif
 /* Stock omits a canary although its unchecked count can overrun the buffer. */
-#ifndef TRIMUI_NFTL_HYNIX20_PARAM_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_HYNIX20_PARAM_GCC53_BUILD) && \
+    (!defined(TRIMUI_NFTL_GCC7_PASS) || \
+     defined(TRIMUI_NFTL_HYNIX20_DEFAULT_GCC53_BUILD))
 __attribute__((optimize("-fno-stack-protector")))
 int hynix20nm_set_default_param(struct otp_chip *chip)
 {
-	struct {
-		int result;
-		unsigned int index;
-	} locals;
+	int result;
+	unsigned int index;
 	unsigned char values[8];
 
-	locals.result = 0;
+	result = 0;
 	/* The OEM trusts the mutable register count. Past eight bytes it
-	 * overwrites the result, then the loop index, in its own stack frame.
+	 * overwrites the result, then the loop index, in the GCC 5.3 frame.
 	 * Keep the OEM's count-first comparison in both loops. */
-	for (locals.index = 0; hynix20nm_read_retry_reg_num > locals.index;
-	     locals.index++)
-		values[locals.index] = chip->saved[locals.index];
-	locals.result = hynix20nm_vender_set_param(chip, values,
+	for (index = 0; hynix20nm_read_retry_reg_num > index; index++)
+		values[index] = chip->saved[index];
+	result = hynix20nm_vender_set_param(chip, values,
 					hynix20nm_read_retry_reg_adr,
 					hynix20nm_read_retry_reg_num);
 	nand_print_dbg(nftl_ro_lc_56);
-	for (locals.index = 0; hynix20nm_read_retry_reg_num > locals.index;
-	     locals.index++)
-		nand_print_dbg(nftl_ro_lc_57, values[locals.index]);
+	for (index = 0; hynix20nm_read_retry_reg_num > index; index++)
+		nand_print_dbg(nftl_ro_lc_57, values[index]);
 	nand_print_dbg(nftl_ro_lc_45);
-	return locals.result;
+	return result;
 }
+#else
+extern int hynix20nm_set_default_param(struct otp_chip *chip);
 #endif
 
 #ifdef TRIMUI_NFTL_HYNIX20_INIT_GCC53_BUILD
