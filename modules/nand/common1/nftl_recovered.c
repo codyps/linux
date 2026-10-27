@@ -11857,77 +11857,73 @@ _Static_assert(__builtin_offsetof(struct nftl_gc_info_zone, list) == 352,
 _Static_assert(__builtin_offsetof(struct nftl_gc_info_zone, smart) == 3440,
 	       "GC info SMART offset");
 extern int nand_snprint(char *, unsigned int, const char *, ...);
-struct nftl_gc_info_frame {
-	unsigned long unused;
-	struct nftl_gc_info_geometry *geometry;
-	struct nftl_gc_info_node *node;
-	unsigned int unused_after_node;
-	unsigned int total_invalid;
-	unsigned int high_invalid;
-	unsigned int total_count;
-	unsigned int high_count;
-	int written;
-};
 #ifndef TRIMUI_NFTL_GCC7_PASS
 int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
-		     unsigned int size)
+		     int size)
 {
-	struct nftl_gc_info_frame frame;
+	/* Keep separate locals in the OEM GCC 5.3 stack order. */
+	int written;
+	unsigned int high_count;
+	unsigned int total_count;
+	unsigned int high_invalid;
+	unsigned int total_invalid;
+	struct nftl_gc_info_node *node;
+	struct nftl_gc_info_geometry *geometry;
 
-	frame.written = 0;
-	frame.geometry = zone->geometry;
-	/* Match OEM private slots at FP+0x4c/+0x50/+0x54/+0x58. */
-	frame.total_count = frame.high_count = frame.high_invalid =
-		frame.total_invalid = 0;
-	for (frame.node = zone->list; frame.node; frame.node = frame.node->next) {
-		if (frame.node->invalid_pages > frame.geometry->pages_per_block / 2) {
+	written = 0;
+	geometry = zone->geometry;
+	/* Keep OEM private slots at FP+0x4c/+0x50/+0x54/+0x58. */
+	total_count = high_count = high_invalid =
+		total_invalid = 0;
+	for (node = zone->list; node; node = node->next) {
+		if (node->invalid_pages > geometry->pages_per_block / 2) {
 			/* Stock loads the page count before the accumulator. */
 			register unsigned int invalid asm("w1") =
-				frame.node->invalid_pages;
+				node->invalid_pages;
 
-			frame.high_invalid += invalid;
-			frame.high_count++;
+			high_invalid += invalid;
+			high_count++;
 		}
-		frame.total_count++;
+		total_count++;
 		{
 			register unsigned int invalid asm("w1") =
-				frame.node->invalid_pages;
+				node->invalid_pages;
 
-			frame.total_invalid += invalid;
+			total_invalid += invalid;
 		}
 	}
 	/* OEM reloads the signed write count for both first-call arguments,
 	 * even though it was initialized to zero above. */
-	frame.written = nand_snprint(buffer + (long)frame.written,
-			       size - frame.written,
+	written = nand_snprint(buffer + (long)written,
+			       size - written,
 			       nftl_ro_lc_468,
 			       zone->free_blocks, zone->low_threshold,
 			       zone->high_threshold, zone->smart->gc_times,
-			       zone->smart->gc_pages, frame.high_count, frame.total_count,
-			       frame.high_invalid, frame.total_invalid);
+			       zone->smart->gc_pages, high_count, total_count,
+			       high_invalid, total_invalid);
 	/* OEM reuses the high-block counter for its output line counter. */
-	frame.high_count = 0;
-	for (frame.node = zone->list; size - frame.written != 1;
-	     frame.node = frame.node->next) {
-		if (!frame.node || !frame.node->invalid_pages)
+	high_count = 0;
+	for (node = zone->list; size - written != 1;
+	     node = node->next) {
+		if (!node || !node->invalid_pages)
 			break;
-		frame.written += nand_snprint(buffer + (long)frame.written,
-					size - frame.written, nftl_ro_lc_469,
-					frame.node->block, frame.node->invalid_pages);
-		frame.high_count++;
-		if ((frame.high_count & 7) == 0)
-			buffer[(long)frame.written - 1] = '\n';
+		written += nand_snprint(buffer + (long)written,
+					size - written, nftl_ro_lc_469,
+					node->block, node->invalid_pages);
+		high_count++;
+		if ((high_count & 7) == 0)
+			buffer[(long)written - 1] = '\n';
 	}
 	/* OEM writes before the buffer when the first formatter returns zero
 	 * and trusts its return even if it exceeds the remaining size. A
 	 * corrective version should validate written and remaining capacity
 	 * before either newline store; retain the shipped writes here. */
-	buffer[(long)frame.written - 1] = '\n';
-	return frame.written;
+	buffer[(long)written - 1] = '\n';
+	return written;
 }
 #else
 extern int nftl_get_gc_info(struct nftl_gc_info_zone *zone, char *buffer,
-			    unsigned int size);
+			    int size);
 #endif
 
 struct nand_op_geometry {
