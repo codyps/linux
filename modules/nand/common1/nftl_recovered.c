@@ -5207,81 +5207,81 @@ int first_scan_all_blocks(struct first_scan_zone *zone)
 							    (struct move_node *)block);
 				nand_print_dbg(nftl_ro_lc_219, block->number);
 			} else {
-			/* OEM prints all 16 spare bytes, then increments the last valid
-			 * erase count even when this block has no trustworthy OOB. */
-			nand_print(nftl_ro_lc_220,
-				   block->number, oob[0], oob[1], oob[2], oob[3],
-				   oob[4], oob[5], oob[6], oob[7], oob[8], oob[9],
-				   oob[10], oob[11], oob[12], oob[13], oob[14], oob[15]);
-			block->erase_count = (unsigned short)(last_erase + 1);
-			if (status == 0 || status == 10) {
-				if (oob[0] != 255) {
-					nand_print(nftl_ro_lc_221,
-						   block->number);
-					block->state = 255;
-					zone->bad_count++;
-				} else if (erase_block((struct erase_block_zone *)zone,
-					    (struct erase_block_info *)block,
-					    (unsigned short)(block->erase_count + 1)) == 0) {
-					zone->free_count++;
-				}
-				goto next;
-			}
-			nand_print(nftl_ro_lc_222, block->number);
-			/* OEM puts the last-page index in the plane field and reads page
-			 * zero. Preserve this apparent parameter mix-up. */
-			set_physic_op_par(&op, block->number,
-					  (unsigned short)(zone->geometry->pages - 1), 0,
-					  0, oob);
-			status = zone->read(zone, &op);
-			if (status == 0 || status == 10) {
-				if (is_phy_mapping_page(oob) == 1) {
-					nand_print(nftl_ro_lc_223,
-						   block->number);
-					used = get_block_used_count_from_oob(oob);
-					zone->free_count++;
-					block->state = 1;
-					block->erase_count = get_erase_count_from_oob(oob);
-					last_erase = block->erase_count;
-					block->invalid_pages = 0;
-					{
-						register unsigned int value asm("w1") = used;
-						block->used_count = value;
-					}
-					block->next = 0;
-					block->previous = 0;
-					add_block_count_list((struct block_count_zone *)zone,
-							     (struct block_count_node *)block);
-					if (status == 10 && zone->gc->claim) {
-						add_prio_gc((struct prio_gc_owner *)zone, block, 1);
-						nand_print(nftl_ro_lc_224);
-					}
-				} else if (is_nouse_page(oob) == 1) {
-					nand_print(nftl_ro_lc_225,
-						   block->number);
-					if (erase_block((struct erase_block_zone *)zone,
-					    (struct erase_block_info *)block,
-					    (unsigned short)(block->erase_count + 1)) == 0)
+				/* OEM prints all 16 spare bytes, then increments the last valid
+				 * erase count even when this block has no trustworthy OOB. */
+				nand_print(nftl_ro_lc_220,
+					   block->number, oob[0], oob[1], oob[2], oob[3],
+					   oob[4], oob[5], oob[6], oob[7], oob[8], oob[9],
+					   oob[10], oob[11], oob[12], oob[13], oob[14], oob[15]);
+				block->erase_count = (unsigned short)(last_erase + 1);
+				if (status == 0 || status == 10) {
+					if (oob[0] != 255) {
+						nand_print(nftl_ro_lc_221,
+							   block->number);
+						block->state = 255;
+						zone->bad_count++;
+					} else if (erase_block((struct erase_block_zone *)zone,
+						    (struct erase_block_info *)block,
+						    (unsigned short)(block->erase_count + 1)) == 0) {
 						zone->free_count++;
-				} else {
-					nand_print(nftl_ro_lc_226,
-						   block->number);
-					if (erase_block((struct erase_block_zone *)zone,
-					    (struct erase_block_info *)block,
-					    (unsigned short)(block->erase_count + 1)) == 0)
-						zone->free_count++;
+					}
+					goto next;
 				}
-				goto next;
-			}
-			nand_print(nftl_ro_lc_227,
-				   block->number);
-			nand_print(nftl_ro_lc_228,
-				   block->number, oob[0], oob[1], oob[2], oob[3],
-				   oob[4], oob[5], oob[6], oob[7], oob[8], oob[9],
-				   oob[10], oob[11], oob[12], oob[13], oob[14], oob[15]);
-			if (torture_block_and_mark((struct torture_zone *)zone,
-						   (struct erase_block_info *)block) == 0)
-				zone->free_count++;
+				nand_print(nftl_ro_lc_222, block->number);
+				/* OEM puts the last-page index in the plane field and reads page
+				 * zero. Preserve this apparent parameter mix-up. */
+				set_physic_op_par(&op, block->number,
+						  (unsigned short)(zone->geometry->pages - 1), 0,
+						  0, oob);
+				status = zone->read(zone, &op);
+				if (status == 0 || status == 10) {
+					if (is_phy_mapping_page(oob) == 1) {
+						nand_print(nftl_ro_lc_223,
+							   block->number);
+						used = get_block_used_count_from_oob(oob);
+						zone->free_count++;
+						block->state = 1;
+						block->erase_count = get_erase_count_from_oob(oob);
+						last_erase = block->erase_count;
+						block->invalid_pages = 0;
+						{
+							register unsigned int value asm("w1") = used;
+							block->used_count = value;
+						}
+						block->next = 0;
+						block->previous = 0;
+						add_block_count_list((struct block_count_zone *)zone,
+								     (struct block_count_node *)block);
+						if (status == 10 && zone->gc->claim) {
+							add_prio_gc((struct prio_gc_owner *)zone, block, 1);
+							nand_print(nftl_ro_lc_224);
+						}
+					} else if (is_nouse_page(oob) == 1) {
+						nand_print(nftl_ro_lc_225,
+							   block->number);
+						if (erase_block((struct erase_block_zone *)zone,
+						    (struct erase_block_info *)block,
+						    (unsigned short)(block->erase_count + 1)) == 0)
+							zone->free_count++;
+					} else {
+						nand_print(nftl_ro_lc_226,
+							   block->number);
+						if (erase_block((struct erase_block_zone *)zone,
+						    (struct erase_block_info *)block,
+						    (unsigned short)(block->erase_count + 1)) == 0)
+							zone->free_count++;
+					}
+					goto next;
+				}
+				nand_print(nftl_ro_lc_227,
+					   block->number);
+				nand_print(nftl_ro_lc_228,
+					   block->number, oob[0], oob[1], oob[2], oob[3],
+					   oob[4], oob[5], oob[6], oob[7], oob[8], oob[9],
+					   oob[10], oob[11], oob[12], oob[13], oob[14], oob[15]);
+				if (torture_block_and_mark((struct torture_zone *)zone,
+							   (struct erase_block_info *)block) == 0)
+					zone->free_count++;
 			}
 		} else {
 			nand_print(nftl_ro_lc_229, block->number);
