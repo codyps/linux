@@ -12724,7 +12724,7 @@ int get_current_used_block(struct current_used_zone *zone,
 		nand_print(nftl_ro_lc_253,
 			   zone->current_block.page_used, zone->current_block.block_info->page);
 	if (!(zone->zone_attr & 1))
-		return 0;
+		goto return_zero;
 	for (;;) {
 		if (!zone->assist_block.block_info) {
 			zone->assist_block.block_info = (struct new_write_block *)
@@ -12779,7 +12779,7 @@ int get_current_used_block(struct current_used_zone *zone,
 			if (!had_primary_ecc) {
 				nand_print(nftl_ro_lc_258,
 					   zone->assist_block.page_used, zone->current_block.page_used);
-				return 0;
+				goto return_zero;
 			}
 			erase_block((struct erase_block_zone *)zone,
 				    (struct erase_block_info *)zone->current_block.block_info,
@@ -12795,7 +12795,7 @@ int get_current_used_block(struct current_used_zone *zone,
 		/* OEM makes a second comparison using >=. If current_used falls
 		 * between the two reads, it returns without erasing assist. */
 		if (zone->assist_block.page_used >= zone->current_block.page_used)
-			return 0;
+			goto return_zero;
 		nand_print(nftl_ro_lc_259);
 		erase_block((struct erase_block_zone *)zone,
 			    (struct erase_block_info *)zone->assist_block.block_info,
@@ -12828,6 +12828,7 @@ allocate_new:
 	} else {
 		zone->assist_block.block_info = 0;
 	}
+return_zero:
 	return 0;
 }
 #else
