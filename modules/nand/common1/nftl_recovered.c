@@ -10236,10 +10236,6 @@ unsigned int *get_logic_page_map(struct logic_page_map_zone *zone,
 }
 #endif
 
-struct logic_page_print_entry {
-	unsigned short code;
-	unsigned short marker;
-};
 /* Recovery writes the low 12 bits as an OEM bitfield assignment. */
 struct logic_page_recover_entry {
 	unsigned short page : 12;
@@ -10363,35 +10359,40 @@ int _nftl_nand_read_logic_page(struct logic_read_zone *zone,
 }
 #endif
 
+#if defined(TRIMUI_NFTL_GCC7_PASS) && \
+    !defined(TRIMUI_NFTL_PRINT_MAP_GCC53_BUILD)
+extern int print_logic_page_map(struct logic_page_map_zone *zone,
+				unsigned int ignored);
+#else
 int print_logic_page_map(struct logic_page_map_zone *zone, unsigned int ignored)
 {
-	/* OEM keeps the map entry, total and index at FP+0x20/+0x28/+0x2c.
-	 * Grouping the private locals preserves those callback-visible slots. */
-	struct {
-		struct logic_page_print_entry *entry;
-		unsigned int total;
-		unsigned int index;
-	} local;
+	/* OEM GCC 5.3 assigns entry, total and index to FP+0x20/+0x28/+0x2c
+	 * when these are separate locals. The bitfield reads also retain the
+	 * stock zero-extension instructions in the variadic diagnostic call. */
+	struct logic_page_recover_entry *entry;
+	unsigned int total;
+	unsigned int index;
 
-	local.total = zone->summary / zone->geometry->divisor;
-	local.index = 0;
+	total = zone->summary / zone->geometry->divisor;
+	index = 0;
 
 	/* OEM divides by the unchecked geometry byte; AArch64 UDIV produces
 	 * zero when it is zero. It also walks unchecked map pointers. */
-	while (local.index < local.total) {
-		local.entry = (struct logic_page_print_entry *)
-			get_logic_page_map(zone, local.index);
-		if (!local.entry)
+	while (index < total) {
+		entry = (struct logic_page_recover_entry *)
+			get_logic_page_map(zone, index);
+		if (!entry)
 			nand_print(nftl_ro_lc_431);
-		else if (local.entry->marker != 0xffff)
-			nand_print_dbg(nftl_ro_lc_432, local.index,
-				       local.entry->marker,
-				       local.entry->code & 0xfff,
-				       (((unsigned char *)local.entry)[1] >> 4) & 1);
-		local.index++;
+		else if (entry->marker != 0xffff)
+			nand_print_dbg(nftl_ro_lc_432, index,
+				       entry->marker,
+				       entry->page,
+				       entry->read_flag);
+		index++;
 	}
 	return 0;
 }
+#endif /* TRIMUI_NFTL_PRINT_MAP_GCC53_BUILD */
 struct cold_logic_zone {
 	unsigned char before_flag[664];
 	unsigned int flag;
