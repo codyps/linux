@@ -50,7 +50,8 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_WRITE_ERROR_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PHY_WRITE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_USED_PAGE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_USED_PAGE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NO_CROSSTALK_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -75,7 +76,8 @@ extern void set_physic_op_par(struct physic_op_param *op, unsigned short block,
     !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_A19_READ_END_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_USED_PAGE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_USED_PAGE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NO_CROSSTALK_GCC53_BUILD)
 int is_nouse_page(const unsigned char *bytes)
 {
 	unsigned int count;
@@ -1113,7 +1115,8 @@ int _nftl_discard_logic_page(void *zone, unsigned int page)
 }
 
 #if !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NO_CROSSTALK_GCC53_BUILD)
 unsigned int get_logic_page_from_oob(void *oob)
 {
 	unsigned int page = get_spare_data(oob, 1, 4);
@@ -2613,21 +2616,27 @@ _Static_assert(__builtin_offsetof(struct used_page_zone, stats) == 3440,
 _Static_assert(__builtin_offsetof(struct used_page_zone, read) == 3464,
 	       "used-page read offset");
 
+#if !defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_NO_CROSSTALK_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 int get_used_page_num_no_crosstalk(struct used_page_zone *zone,
 				   struct physical_block *block,
 				   unsigned int *good_pages,
 				   struct used_page_cache *cache)
 {
-	struct physic_op_param op;
+	unsigned int page;
 	unsigned char local_oob[16];
-	unsigned char *data;
+	struct physic_op_param op;
+	unsigned char *data __attribute__((aligned(16)));
 	unsigned char *oob;
 	int first_unused = -1;
 	unsigned int good = 0;
 	unsigned int unused_count = 0;
-	unsigned int page;
 	int status;
+	int result;
+
+	/* Keep the declaration order and data alignment: stock GCC 5.3 puts
+	 * page at FP+0x9c, op at +0x48 and local_oob at +0x60. */
 
 	/* OEM zeroes this output and never writes the later good-page count. */
 	*good_pages = 0;
@@ -2647,13 +2656,10 @@ int get_used_page_num_no_crosstalk(struct used_page_zone *zone,
 				  zone->geometry->fixed_page, data, oob);
 		status = zone->read(zone, &op);
 		if (status != 0 && status != 10) {
-			nand_print(nftl_ro_lc_310,
-				   block->number, page);
+			nand_print(nftl_ro_lc_310, block->number, page);
 			if (first_unused == -1)
 				first_unused = page;
-			continue;
-		}
-		if (is_nouse_page(oob) == 1) {
+		} else if (is_nouse_page(oob) == 1) {
 			if (first_unused == -1)
 				first_unused = page;
 			/* Stock does not reset this count after a good page, so
@@ -2661,41 +2667,48 @@ int get_used_page_num_no_crosstalk(struct used_page_zone *zone,
 			unused_count++;
 			if (unused_count == 3)
 				break;
-			continue;
-		}
-		if (nand_power_off_ecc_error(
+		} else if (nand_power_off_ecc_error(
 				(struct poweroff_ecc_zone *)zone, data, oob)) {
 			nand_print(nftl_ro_lc_311);
-			continue;
-		}
-		good++;
-		if (first_unused == -1) {
-			/* OEM dereferences cache unchecked on this path. */
-			cache->valid[page] = 1;
-			cache->map[page] = get_logic_page_from_oob(oob);
-			if (cache->count < page + 1)
-				cache->count = page + 1;
+		} else {
+			good++;
+			if (first_unused == -1) {
+				/* OEM dereferences cache unchecked on this path. */
+				cache->valid[page] = 1;
+				cache->map[page] = get_logic_page_from_oob(oob);
+				if (cache->count < page + 1)
+					cache->count = page + 1;
+			}
 		}
 	}
+	/* The signed cast reproduces the OEM's GCC 5.3 load order at the
+	 * comparison; on this target it keeps the same low 32-bit value. */
 	if (first_unused == -1)
 		first_unused = zone->geometry->pages;
-	else if (good != (unsigned int)first_unused) {
+	else if ((int)good != first_unused) {
 		nand_print(nftl_ro_lc_312,
 			   block->number, good, first_unused);
 		zone->stats->cross_talk++;
 		/* OEM wraps the product at 32 bits, then widens before adding the
 		 * page size. Keep that order for oversized or corrupt cache counts. */
 		for (page = 0; page < cache->count; page++) {
-			if (cache->valid[page])
-				cache->data[
-					(unsigned long)(unsigned int)(page *
+			if (cache->valid[page]) {
+				oob = cache->data + (unsigned long)(unsigned int)(page *
 					(zone->geometry->page_bytes + 64)) +
-					zone->geometry->page_bytes + 14] =
-					zone->stats->cross_talk;
+					zone->geometry->page_bytes;
+				oob[14] = zone->stats->cross_talk;
+			}
 		}
 	}
-	return first_unused;
+	result = first_unused;
+	return result;
 }
+#else
+extern int get_used_page_num_no_crosstalk(struct used_page_zone *zone,
+					  struct physical_block *block,
+					  unsigned int *good_pages,
+					  struct used_page_cache *cache);
+#endif
 extern unsigned char sandisk_A19_read_retry_reg_adr_1y;
 extern unsigned char sandisk_A19_1z_16g[128];
 extern unsigned char sandisk_A19_1z_8g[124];
@@ -10149,7 +10162,8 @@ struct poweroff_ecc_zone {
 };
 #if !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_USED_PAGE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_USED_PAGE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NO_CROSSTALK_GCC53_BUILD)
 int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 			     const unsigned char *data, unsigned char *oob)
 {

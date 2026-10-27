@@ -58,6 +58,7 @@ obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix16nm_get_special_info.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix20nm_init_readretry_param.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix20nm_default_param.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_get_used_page_num.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_get_used_page_num_no_crosstalk.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_gc_info.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_clean_zone.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_zone_param.o
@@ -175,6 +176,7 @@ $(obj)/nftl_gcc53_hynix16nm_get_special_info.o: override CC := python3 $(srctree
 $(obj)/nftl_gcc53_hynix20nm_init_readretry_param.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix20nm_init_readretry_param --
 $(obj)/nftl_gcc53_hynix20nm_default_param.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix20nm_set_default_param --
 $(obj)/nftl_gcc53_get_used_page_num.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) get_used_page_num --
+$(obj)/nftl_gcc53_get_used_page_num_no_crosstalk.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) get_used_page_num_no_crosstalk --
 $(obj)/nftl_gcc53_gc_info.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) nftl_get_gc_info --
 $(obj)/nftl_gcc53_clean_zone.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) nand_clean_zone_table2 --
 $(obj)/nftl_gcc53_zone_param.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) zone_param_init --
@@ -250,6 +252,7 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix16nm_get_special_info.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix20nm_init_readretry_param.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_hynix20nm_default_param.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_get_used_page_num.o
+nftl_gcc53_objects += $(obj)/nftl_gcc53_get_used_page_num_no_crosstalk.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_gc_info.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_clean_zone.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_zone_param.o
@@ -364,6 +367,7 @@ CFLAGS_nftl_gcc53_hynix16nm_get_special_info.o += -O0 -fno-builtin -fno-pic -mcm
 CFLAGS_nftl_gcc53_hynix20nm_init_readretry_param.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_HYNIX20_PARAM_GCC53_BUILD
 CFLAGS_nftl_gcc53_hynix20nm_default_param.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_GCC7_PASS -DTRIMUI_NFTL_HYNIX20_DEFAULT_GCC53_BUILD
 CFLAGS_nftl_gcc53_get_used_page_num.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_GCC7_PASS -DTRIMUI_NFTL_USED_PAGE_GCC53_BUILD
+CFLAGS_nftl_gcc53_get_used_page_num_no_crosstalk.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_GCC7_PASS -DTRIMUI_NFTL_NO_CROSSTALK_GCC53_BUILD
 CFLAGS_nftl_gcc53_gc_info.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_clean_zone.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_zone_param.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_ZONE_PARAM_GCC53_BUILD
