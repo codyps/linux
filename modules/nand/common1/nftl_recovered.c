@@ -1922,59 +1922,55 @@ int init_smart_info(struct smart_info_zone *zone, struct smart_info_block *block
 extern int init_smart_info(struct smart_info_zone *zone,
 			   struct smart_info_block *block);
 #endif
-struct write_error_build_frame {
-	struct physic_op_param op;
-	unsigned char before_result[4];
-	int result;
-	struct new_write_block *retry;
-	unsigned char before_index[4];
-	unsigned int index;
-};
-_Static_assert(__builtin_offsetof(struct write_error_build_frame, result) == 28,
-	       "write-error result slot");
-_Static_assert(__builtin_offsetof(struct write_error_build_frame, retry) == 32,
-	       "write-error failed-block pointer slot");
-_Static_assert(__builtin_offsetof(struct write_error_build_frame, index) == 44,
-	       "write-error index slot");
+#if !defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_WRITE_ERROR_BUILD_GCC53_BUILD)
 int do_write_error_in_build_list(struct write_error_zone *zone,
 				 struct new_write_block *source,
 				 struct new_write_block *failed,
 				 unsigned short pages)
 {
-	/* The two gaps are OEM private-frame bytes, not initialized data. */
-	struct write_error_build_frame local;
+	/* GCC 5.3 lays these ordinary locals into the observed OEM frame. */
+	unsigned int result, index;
+	struct new_write_block *retry;
+	struct physic_op_param op;
 
-	local.retry = failed;
+	retry = failed;
 
-	set_physic_op_par(&local.op, local.retry->number, 0,
+	set_physic_op_par(&op, retry->number, 0,
 			   zone->geometry->page_bytes, 0, 0);
-	local.result = zone->erase(zone, &local.op);
+	result = zone->erase(zone, &op);
 	/* OEM updates metadata even when erase fails, without guarding the
 	 * 16-bit erase-count overflow. */
-	local.retry->page = 0;
-	local.retry->erase_count++;
-	if (local.result) {
+	retry->page = 0;
+	retry->erase_count++;
+	if (result) {
 		nand_print(nftl_ro_lc_277);
-		zone->mark_bad(zone, &local.op);
+		zone->mark_bad(zone, &op);
 		return 1;
 	}
-	for (local.index = 0; pages > local.index; local.index++) {
-		local.result = zone->copy(zone, source, local.retry, zone->data,
-				    (unsigned short)local.index);
+	for (index = 0; pages > index; index++) {
+		result = zone->copy(zone, source, retry, zone->data,
+				    (unsigned short)index);
 		/* Stock logs a failed copy and continues with the next page. */
-		if (local.result)
+		if (result)
 			nand_print(nftl_ro_lc_278);
 	}
-	set_physic_op_par(&local.op, source->number, 0,
+	set_physic_op_par(&op, source->number, 0,
 			   zone->geometry->page_bytes, 0, 0);
 	/* OEM ignores this result, including on the zero-page path. */
-	zone->mark_bad(zone, &local.op);
+	zone->mark_bad(zone, &op);
 	if (!pages) {
 		zone->current = failed;
 		zone->current_page = 0;
 	}
 	return 0;
 }
+#else
+extern int do_write_error_in_build_list(struct write_error_zone *zone,
+					struct new_write_block *source,
+					struct new_write_block *failed,
+					unsigned short pages);
+#endif
 #if !defined(TRIMUI_NFTL_EVAL_ORDER_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_FIRST_LIST_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_NO_USE_GCC53_BUILD)

@@ -39,18 +39,20 @@ def text_sections(path):
 
 
 def main():
-    if len(sys.argv) not in (4, 5, 6):
-        raise SystemExit("usage: order_text.py gcc7.o native_scan.o [native_selector.o [native_prio_gc.o]] output.lds")
+    if len(sys.argv) not in (4, 5, 6, 7):
+        raise SystemExit("usage: order_text.py gcc7.o native_scan.o [native_selector.o [native_prio_gc.o [native_write_error.o]]] output.lds")
     paths = list(map(pathlib.Path, sys.argv[1:]))
     gcc7, scan, output = paths[0], paths[1], paths[-1]
     selector = paths[2] if len(paths) >= 4 else None
-    prio_gc = paths[3] if len(paths) == 5 else None
+    prio_gc = paths[3] if len(paths) >= 5 else None
+    write_error = paths[4] if len(paths) == 6 else None
     for path in (gcc7, scan, *([selector] if selector else []),
-                 *([prio_gc] if prio_gc else [])):
+                 *([prio_gc] if prio_gc else []),
+                 *([write_error] if write_error else [])):
         if not re.fullmatch(r"[A-Za-z0-9_./+-]+", str(path)):
             raise ValueError("unsafe linker-script input path: " + str(path))
     sections = text_sections(gcc7)
-    count = 218 if prio_gc else 219 if selector else 220
+    count = 217 if write_error else 218 if prio_gc else 219 if selector else 220
     if len(sections) != count or len({name for name, _ in sections}) != count:
         raise ValueError("recovered GCC 7 text section inventory changed")
     if sections.count((".text.build_zone_list", 200)) != 1:
@@ -73,6 +75,14 @@ def main():
             raise ValueError("missing priority-GC insertion anchor")
         if text_sections(prio_gc) != [(".text.do_prio_gc", 916)]:
             raise ValueError("native priority-GC text inventory changed")
+    if write_error:
+        if any(name == ".text.do_write_error_in_build_list" for name, _ in sections):
+            raise ValueError("GCC 7 still defines write-error build-list body")
+        if sections.count((".text.print_smart", 544)) != 1:
+            raise ValueError("missing write-error insertion anchor")
+        if text_sections(write_error) != [
+                (".text.do_write_error_in_build_list", 416)]:
+            raise ValueError("native write-error text inventory changed")
     lines = ["/* Generated from selected source objects. */",
              "SECTIONS {", "  .text : {"]
     for name, _ in sections:
@@ -83,6 +93,8 @@ def main():
             lines.append("    %s(.text.get_current_used_block)" % selector)
         if prio_gc and name == ".text.add_prio_gc":
             lines.append("    %s(.text.do_prio_gc)" % prio_gc)
+        if write_error and name == ".text.print_smart":
+            lines.append("    %s(.text.do_write_error_in_build_list)" % write_error)
     lines.extend(["  }", "}", ""])
     output.write_text("\n".join(lines))
 
