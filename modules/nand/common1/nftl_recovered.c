@@ -967,6 +967,7 @@ struct nftl_phy_outer {
 #if !defined(TRIMUI_NFTL_DEBUG_READ_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SMALL_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_LOGIC_PAIR_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_LOGIC_WRITE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_ZONE_PARAM_GCC53_BUILD)
 unsigned char *get_phy_block_addr(struct nftl_phy_outer *outer,
 				  unsigned short block)
@@ -1015,7 +1016,10 @@ extern int is_ftl_special_data(unsigned char *oob);
 /* Bounded behavior-level NFTL C candidates, not original source claims. */
 
 extern int __nand_flush_write_cache(void *cache, unsigned int force);
-extern int write_logic_data_to_current_block(void *zone, void *current,
+struct write_logic_zone;
+struct do_write_state;
+extern int write_logic_data_to_current_block(struct write_logic_zone *zone,
+				     struct do_write_state *current,
 				     unsigned int marker, unsigned int page,
 				     void *data);
 struct write_page_zone {
@@ -1025,16 +1029,18 @@ struct write_page_zone {
 int write_data_to_page(void *zone, unsigned int marker,
 		       unsigned int page, void *data)
 {
-	if (write_logic_data_to_current_block(zone,
-			(unsigned char *)zone + 528, marker, page, data)) {
+	if (write_logic_data_to_current_block((struct write_logic_zone *)zone,
+			(struct do_write_state *)((unsigned char *)zone + 528),
+			marker, page, data)) {
 		nand_print(nftl_ro_lc_161);
 		return 1;
 	}
 	/* OEM writes the second plane only when bit zero of byte 25 is set.
 	 * The first plane may already have committed before a second failure. */
 	if ((((struct write_page_zone *)zone)->flags & 1) &&
-	    write_logic_data_to_current_block(zone,
-			(unsigned char *)zone + 592, marker, page, data)) {
+	    write_logic_data_to_current_block((struct write_logic_zone *)zone,
+			(struct do_write_state *)((unsigned char *)zone + 592),
+			marker, page, data)) {
 		nand_print(nftl_ro_lc_161);
 		return 1;
 	}
@@ -6152,6 +6158,7 @@ extern int add_to_gc_list_tail(struct gc_list *list,
 #endif
 
 
+#ifndef TRIMUI_NFTL_LOGIC_WRITE_GCC53_BUILD
 struct invalid_node *del_block_invalid_list(struct invalid_zone *zone)
 {
 	struct invalid_node *node = &zone->head;
@@ -6164,6 +6171,9 @@ struct invalid_node *del_block_invalid_list(struct invalid_zone *zone)
 	}
 	return node;
 }
+#else
+extern struct invalid_node *del_block_invalid_list(struct invalid_zone *zone);
+#endif
 
 /* -fstack-protector reorders pointer locals without a canary here. */
 __attribute__((optimize("-fno-stack-protector")))
@@ -6202,7 +6212,8 @@ extern struct move_node *out_phy_block_from_invalid_page_list(
 	struct move_zone *zone);
 extern int put_phy_block_to_free_list(struct move_zone *zone,
 				     struct move_node *node);
-#ifndef TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_LOGIC_WRITE_GCC53_BUILD)
 int adjust_invaild_list(struct move_zone *zone)
 {
 	struct move_node *node;
@@ -6907,6 +6918,7 @@ CLOCK_SAVE(toshiba)
 extern int toshiba_read_retry_clock_save(struct clock_chip *chip);
 #endif
 
+#ifndef TRIMUI_NFTL_LOGIC_WRITE_GCC53_BUILD
 struct move_node *out_phy_block_from_invalid_page_list(struct move_zone *zone)
 {
 	struct invalid_node *block =
@@ -6919,6 +6931,7 @@ struct move_node *out_phy_block_from_invalid_page_list(struct move_zone *zone)
 	}
 	return (struct move_node *)block;
 }
+#endif
 
 extern struct invalid_node *del_block_invalid_list_by_block(
 	struct invalid_zone *zone, struct invalid_node *target);
@@ -10411,7 +10424,8 @@ struct invalid_page_map_data {
 };
 struct invalid_page_location {
 	unsigned short page : 12;
-	unsigned short flags : 4;
+	unsigned short flags : 1;
+	unsigned short reserved : 3;
 	unsigned short block;
 };
 #ifdef TRIMUI_NFTL_INVALID_PAGE_GCC53_BUILD
@@ -13074,16 +13088,17 @@ _Static_assert(__builtin_offsetof(struct do_write_state, page) == 56,
 	       "logic-write page offset");
 _Static_assert(__builtin_offsetof(struct write_logic_zone, mode) == 664,
 	       "logic-write mode offset");
-int write_logic_data_to_current_block(void *raw_zone, void *raw_current,
+#if !defined(TRIMUI_NFTL_GCC7_PASS) || \
+    defined(TRIMUI_NFTL_LOGIC_WRITE_GCC53_BUILD)
+int write_logic_data_to_current_block(struct write_logic_zone *zone,
+				      struct do_write_state *current,
 				      unsigned int marker, unsigned int logic_page,
 				      void *data)
 {
-	struct write_logic_zone *zone = raw_zone;
-	struct do_write_state *current = raw_current;
-	struct invalid_page_location *location;
-	struct phy_write_block *old_block = 0;
-	int moved = 0;
 	int result;
+	int moved = 0;
+	struct phy_write_block *old_block;
+	struct invalid_page_location *location;
 
 	if (marker == 192) {
 		location = (struct invalid_page_location *)
@@ -13117,8 +13132,7 @@ int write_logic_data_to_current_block(void *raw_zone, void *raw_current,
 		}
 		location->block = current->block->number;
 		location->page = current->page & 0xfff;
-		location->flags = (location->flags & ~1U) |
-			(zone->mode == 0);
+		location->flags = zone->mode == 0;
 		current->map[location->page] = logic_page;
 		current->page++;
 	} else if (marker == 0xaa111111) {
@@ -13146,20 +13160,23 @@ int write_logic_data_to_current_block(void *raw_zone, void *raw_current,
 		}
 		location->block = 0xffff;
 		location->page = 0xfff;
-		location->flags |= 1;
+		location->flags = 1;
 	} else if (marker == 0xaa113333) {
 		current->block->page++;
 		result = write_phy_data_to_current_block(
 			(struct phy_write_zone *)zone,
 			(struct phy_write_state *)current,
-			data, logic_page, marker);
+			data, logic_page, 0xaa113333);
 		if (result) {
 			nand_print(nftl_ro_lc_171);
 			return result;
 		}
 		current->page++;
 	}
-	if (moved)
+	/* OEM calls the invalid-page helper only for the exact value one.
+	 * A nonzero value other than one can arise if a callback corrupts this
+	 * stack slot; retain the stock equality check. */
+	if (moved == 1)
 		phy_block_from_invalid_page_incr(
 			(struct invalid_page_zone *)zone,
 			(struct invalid_page_node *)old_block);
@@ -13168,6 +13185,7 @@ int write_logic_data_to_current_block(void *raw_zone, void *raw_current,
 	adjust_invaild_list((struct move_zone *)zone);
 	return 0;
 }
+#endif /* logical-page writer selection */
 struct do_write_zone {
 	unsigned char before_geometry[8];
 	struct do_write_geometry *geometry;

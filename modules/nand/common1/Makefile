@@ -87,6 +87,7 @@ obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_erase_block.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_flush_write_cache_to_nand.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_write_phy_page_map_to_current_block.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_phy_write.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_logic_write.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_check_invalid_page_right.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_sandisk_read_page_end.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_current_block_ecc_error.o
@@ -200,6 +201,7 @@ $(obj)/nftl_gcc53_erase_block.o: override CC := python3 $(srctree)/scripts/trimu
 $(obj)/nftl_gcc53_flush_write_cache_to_nand.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) flush_write_cache_to_nand --
 $(obj)/nftl_gcc53_write_phy_page_map_to_current_block.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) write_phy_page_map_to_current_block --
 $(obj)/nftl_gcc53_phy_write.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) write_phy_data_to_current_block --
+$(obj)/nftl_gcc53_logic_write.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) write_logic_data_to_current_block --
 $(obj)/nftl_gcc53_check_invalid_page_right.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) check_invalid_page_right --
 $(obj)/nftl_gcc53_sandisk_read_page_end.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) sandisk_read_page_end --
 $(obj)/nftl_gcc53_current_block_ecc_error.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) current_block_ecc_error --
@@ -384,6 +386,7 @@ CFLAGS_nftl_gcc53_erase_block.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno
 CFLAGS_nftl_gcc53_flush_write_cache_to_nand.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_write_phy_page_map_to_current_block.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_phy_write.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -fno-stack-protector -ffunction-sections -fdata-sections -DTRIMUI_NFTL_GCC7_PASS
+CFLAGS_nftl_gcc53_logic_write.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_GCC7_PASS
 CFLAGS_nftl_gcc53_check_invalid_page_right.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_sandisk_read_page_end.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_current_block_ecc_error.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
