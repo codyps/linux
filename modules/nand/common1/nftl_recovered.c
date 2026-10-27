@@ -5025,7 +5025,8 @@ extern int init_zone_after_first_scan(struct scan_zone *zone,
 #endif
 struct first_scan_zone;
 extern int first_scan_all_blocks(struct first_scan_zone *);
-extern int second_scan_all_blocks(struct build_zone *);
+struct second_scan_zone;
+extern int second_scan_all_blocks(struct second_scan_zone *);
 struct power_gc_zone;
 extern int power_on_gc(struct power_gc_zone *);
 extern int panic_backup_block(struct build_zone *);
@@ -5042,7 +5043,7 @@ int build_zone_list(struct build_zone *zone)
 		nand_print(nftl_ro_lc_212);
 		return 1;
 	}
-	result = second_scan_all_blocks(zone);
+	result = second_scan_all_blocks((struct second_scan_zone *)zone);
 	if (result) {
 		nand_print(nftl_ro_lc_213);
 		return 1;
@@ -5397,24 +5398,30 @@ extern int get_current_used_block(struct current_used_zone *,
 				   struct new_write_block *, unsigned int);
 
 __attribute__((optimize("-fno-stack-protector")))
-int second_scan_all_blocks(struct build_zone *raw_zone)
+int second_scan_all_blocks(struct second_scan_zone *zone)
 {
-	struct second_scan_zone *zone = (struct second_scan_zone *)raw_zone;
+	unsigned int read_page = 0;
 	struct first_scan_block *block, *first = 0, *second = 0;
 	struct first_scan_block *last_recorded = 0, *last_mapping = 0;
-	struct first_scan_block *erased = 0, *candidate, *retired;
+	struct first_scan_block *erased = 0, *retired;
 	struct physic_op_param op;
 	unsigned char oob[16];
-	unsigned int read_page, last_used = ~0U, previous_used = ~0U;
-	unsigned int controller_mode = g_nreg_base[188];
+	unsigned int last_used, previous_used;
+	unsigned int controller_mode = 0;
+	volatile unsigned int *nreg = g_nreg_base;
+	unsigned int nreg_index = 188;
+	unsigned int mode_1 = 1, mode_2 = 2, mode_30001 = 0x30001;
 	int status;
 
-	if (controller_mode != 0x30001 && controller_mode != 1 &&
-	    controller_mode != 2)
+	controller_mode = nreg[nreg_index];
+	if (controller_mode != mode_30001 && controller_mode != mode_1 &&
+	    controller_mode != mode_2)
 		return -1;
+	last_used = ~0U;
 	/* OEM divides by the geometry factor without checking for zero. */
 	zone->logical_blocks = zone->logical_pages /
 		((struct scan_page_geometry *)zone->geometry)->page_factor;
+	previous_used = ~0U;
 	for (block = zone->blocks; block; block = block->next) {
 		previous_used = block->used_count;
 		zone->smart->used_last = block->used_count;
@@ -5536,7 +5543,8 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 		nand_print(nftl_ro_lc_241,
 			   last_recorded->used_count, first->used_count);
 	zone->current = 0;
-	candidate = 0;
+	/* OEM reuses the exhausted scan cursor as the rebuild candidate. */
+	block = 0;
 	if (!first && !second) {
 		nand_print(nftl_ro_lc_242);
 		/* OEM has two separate call sites and reads the flag before
@@ -5557,11 +5565,11 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 			if (last_recorded && last_recorded->state == 170)
 				add_prio_gc((struct prio_gc_owner *)zone,
 					    last_recorded, 3);
-			candidate = (struct first_scan_block *)
+			block = (struct first_scan_block *)
 				cross_talk_rebuild_current_block(
 				    (struct cross_rebuild_zone *)zone,
 				    (struct cross_rebuild_block *)first, 0);
-			if (!candidate)
+			if (!block)
 				return 1;
 		} else {
 			if (last_recorded && last_recorded->state == 170)
@@ -5569,27 +5577,27 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 					    last_recorded, 3);
 			/* OEM assigns the cursor here on the subtype-zero path. */
 			if (!zone->subtype)
-				candidate = first;
+				block = first;
 			else
-				candidate = (struct first_scan_block *)
+				block = (struct first_scan_block *)
 					no_cross_talk_rebuild_current_block(
 					    (struct cross_rebuild_zone *)zone,
 					    (struct cross_rebuild_block *)first, 0);
 		}
 	} else if (zone->flags & 1) {
-		candidate = (struct first_scan_block *)
+		block = (struct first_scan_block *)
 			cross_talk_rebuild_current_block(
 			    (struct cross_rebuild_zone *)zone,
 			    (struct cross_rebuild_block *)first,
 			    (struct cross_rebuild_block *)second);
-		if (!candidate)
+		if (!block)
 			return 1;
 	} else if (first->used_count == second->used_count) {
 		nand_print(nftl_ro_lc_244,
 			   first->number, first->used_count);
 		nand_print_dbg(nftl_ro_lc_245,
 			       second->number, second->used_count);
-		candidate = (struct first_scan_block *)
+		block = (struct first_scan_block *)
 			no_cross_talk_rebuild_current_block(
 			    (struct cross_rebuild_zone *)zone,
 			    (struct cross_rebuild_block *)first,
@@ -5617,10 +5625,10 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 			(struct invalid_page_node *)second, zone->map,
 			zone->geometry->pages - 1);
 		add_prio_gc((struct prio_gc_owner *)zone, second, 3);
-		/* OEM leaves candidate null and asks for a new free block. */
+		/* OEM leaves the cursor null and asks for a new free block. */
 	}
 	if (get_current_used_block((struct current_used_zone *)zone,
-				   (struct new_write_block *)candidate, last_used)) {
+				   (struct new_write_block *)block, last_used)) {
 		nand_print(nftl_ro_lc_248);
 		return 1;
 	}
