@@ -12965,6 +12965,13 @@ _Static_assert(__builtin_offsetof(struct phy_write_zone, map_bytes) == 560,
 _Static_assert(__builtin_offsetof(struct phy_write_zone, write) == 3472,
 	       "physical write callback offset");
 extern int do_write_error(struct phy_write_zone *, struct phy_write_state *);
+/* The OEM GCC 5.3 body loads the tag through w0 before staging the OOB
+ * helper arguments. A fixed register variable preserves that load order
+ * without adding an instruction or changing the tag value. */
+#define PHY_WRITE_TAG(block) ({ \
+	register unsigned int value asm("x0") = (block)->tag; \
+	value; \
+})
 #if !defined(TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD) && \
     (!defined(TRIMUI_NFTL_GCC7_PASS) || \
      defined(TRIMUI_NFTL_PHY_WRITE_GCC53_BUILD))
@@ -12978,7 +12985,7 @@ int write_phy_data_to_current_block(struct phy_write_zone *zone,
 	unsigned char oob[16];
 	struct physic_op_param op;
 	int status;
-	unsigned int retry;
+	int retry;
 	unsigned short crc = 0;
 	unsigned short length = 0;
 
@@ -12997,41 +13004,45 @@ int write_phy_data_to_current_block(struct phy_write_zone *zone,
 				  zone->geometry->fixed_page, (void *)data, oob);
 		if (kind == 0xaaaaffff) {
 			set_oob_special_page(zone, oob, 0xaaaaffff,
-					     state->block->tag,
+					     PHY_WRITE_TAG(state->block),
 					     state->block->erase_count);
 		} else if (kind == 192) {
 			if (state->page == (unsigned int)zone->geometry->pages - 1)
 				nand_print_dbg(nftl_ro_lc_162,
 					       state->block->number);
 			set_oob_logic_page(zone, oob, logic_page,
-					   state->block->tag,
+					   PHY_WRITE_TAG(state->block),
 					   state->block->erase_count);
 		} else if (kind == 0xaa113333) {
 			if (state->page == (unsigned int)zone->geometry->pages - 1)
 				nand_print_dbg(nftl_ro_lc_163,
 					       state->block->number);
 			set_oob_special_page(zone, oob, 0xaa113333,
-					     state->block->tag,
+					     PHY_WRITE_TAG(state->block),
 					     state->block->erase_count);
 		}
 		state->block->active = 1;
 		status = zone->write(zone, &op);
+		/* OEM reports success after the third failed write. A behavior fix
+		 * would return an error there; retain the stock result here. */
 		if (!status || retry > 1)
-			return 0;
+			goto success;
 		nand_print_dbg(nftl_ro_lc_164,
 			       op.block);
-		if (do_write_error(zone, state)) {
-			nand_print(nftl_ro_lc_165);
-			return 1;
+		if (do_write_error(zone, state) == 0) {
+			retry++;
+			continue;
 		}
-		/* OEM retries twice, then reports success even if the third
-		 * write failed; preserve the misleading return. */
-		retry++;
+		nand_print(nftl_ro_lc_165);
+		return 1;
 	}
+success:
+	return 0;
 }
 #else
 extern int write_phy_data_to_current_block(struct phy_write_zone *zone, struct phy_write_state *state, const unsigned char *data, unsigned int logic_page, unsigned int kind);
 #endif /* physical-page writer selection */
+#undef PHY_WRITE_TAG
 
 struct do_write_geometry {
 	unsigned char before_fixed_page[28];
