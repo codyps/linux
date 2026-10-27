@@ -5551,7 +5551,6 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 				    last_recorded, 3);
 		}
 	} else if (!second) {
-		candidate = first;
 		if (zone->flags & 1) {
 			nand_print_dbg(nftl_ro_lc_243,
 				       first->number, first->used_count);
@@ -5568,7 +5567,10 @@ int second_scan_all_blocks(struct build_zone *raw_zone)
 			if (last_recorded && last_recorded->state == 170)
 				add_prio_gc((struct prio_gc_owner *)zone,
 					    last_recorded, 3);
-			if (zone->subtype)
+			/* OEM assigns the cursor here on the subtype-zero path. */
+			if (!zone->subtype)
+				candidate = first;
+			else
 				candidate = (struct first_scan_block *)
 					no_cross_talk_rebuild_current_block(
 					    (struct cross_rebuild_zone *)zone,
