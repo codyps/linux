@@ -5168,18 +5168,14 @@ int first_scan_all_blocks(struct first_scan_zone *zone)
 				if (oob[3] == zone->partition_id)
 					panic_recover_info((struct panic_header *)oob,
 							   (struct panic_block *)block);
-				goto next;
-			}
-			if (is_nouse_page(oob) == 1) {
+			} else if (is_nouse_page(oob) == 1) {
 				zone->free_count++;
 				block->state = 0;
 				block->erase_count = 0;
 				block->invalid_pages = 0;
 				put_phy_block_to_free_list((struct move_zone *)zone,
 							    (struct move_node *)block);
-				goto next;
-			}
-			if ((is_ftl_logic_page_data(oob) == 1 ||
+			} else if ((is_ftl_logic_page_data(oob) == 1 ||
 			     is_function_info_page(oob) == 1) &&
 			    (status == 0 || status == 10)) {
 				zone->free_count++;
@@ -5199,13 +5195,9 @@ int first_scan_all_blocks(struct first_scan_zone *zone)
 					add_prio_gc((struct prio_gc_owner *)zone, block, 1);
 					nand_print_dbg(nftl_ro_lc_217);
 				}
-				goto next;
-			}
-			if (is_ftl_start_flag_page(oob) == 1) {
+			} else if (is_ftl_start_flag_page(oob) == 1) {
 				nand_print(nftl_ro_lc_218);
-				goto next;
-			}
-			if (is_fill_page(oob) == 1) {
+			} else if (is_fill_page(oob) == 1) {
 				zone->free_count++;
 				block->state = 0;
 				block->erase_count = get_erase_count_from_oob(oob);
@@ -5214,8 +5206,7 @@ int first_scan_all_blocks(struct first_scan_zone *zone)
 				put_phy_block_to_free_list((struct move_zone *)zone,
 							    (struct move_node *)block);
 				nand_print_dbg(nftl_ro_lc_219, block->number);
-				goto next;
-			}
+			} else {
 			/* OEM prints all 16 spare bytes, then increments the last valid
 			 * erase count even when this block has no trustworthy OOB. */
 			nand_print(nftl_ro_lc_220,
@@ -5291,6 +5282,7 @@ int first_scan_all_blocks(struct first_scan_zone *zone)
 			if (torture_block_and_mark((struct torture_zone *)zone,
 						   (struct erase_block_info *)block) == 0)
 				zone->free_count++;
+			}
 		} else {
 			nand_print(nftl_ro_lc_229, block->number);
 			block->state = 255;
