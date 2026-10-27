@@ -47,7 +47,8 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_NO_USE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_MARK_FREE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_WRITE_ERROR_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_WRITE_ERROR_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_PHY_WRITE_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -3333,7 +3334,8 @@ void set_no_use_page(void *unused, unsigned char *oob)
 
 #if !defined(TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_MARK_FREE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_MARK_FREE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_PHY_WRITE_GCC53_BUILD)
 void set_oob_special_page(void *unused, unsigned char *oob,
 			  unsigned int block, unsigned int page,
 			  unsigned short erase_count)
@@ -12963,7 +12965,9 @@ _Static_assert(__builtin_offsetof(struct phy_write_zone, map_bytes) == 560,
 _Static_assert(__builtin_offsetof(struct phy_write_zone, write) == 3472,
 	       "physical write callback offset");
 extern int do_write_error(struct phy_write_zone *, struct phy_write_state *);
-#ifndef TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD) && \
+    (!defined(TRIMUI_NFTL_GCC7_PASS) || \
+     defined(TRIMUI_NFTL_PHY_WRITE_GCC53_BUILD))
 __attribute__((optimize("-fno-stack-protector")))
 int write_phy_data_to_current_block(struct phy_write_zone *zone,
 				    struct phy_write_state *state,
@@ -12973,14 +12977,15 @@ int write_phy_data_to_current_block(struct phy_write_zone *zone,
 {
 	unsigned char oob[16];
 	struct physic_op_param op;
+	int status;
+	unsigned int retry;
 	unsigned short crc = 0;
 	unsigned short length = 0;
-	unsigned int retry;
-	int status;
 
 	nand_memset(oob, -91, 16);
-	/* Stock keeps only the low seven bits of sectors/page here. */
-	length = (zone->geometry->sectors_per_page & 127) << 9;
+	/* OEM widens to 16 bits before shifting; the stored length keeps only
+	 * the low seven sectors/page bits. Preserve that truncation. */
+	length = (unsigned short)zone->geometry->sectors_per_page << 9;
 	if (kind == 0xaaaaffff)
 		length = zone->map_bytes;
 	crc = nand_crc16(-1, data, length);
@@ -12991,7 +12996,7 @@ int write_phy_data_to_current_block(struct phy_write_zone *zone,
 		set_physic_op_par(&op, state->block->number, state->page,
 				  zone->geometry->fixed_page, (void *)data, oob);
 		if (kind == 0xaaaaffff) {
-			set_oob_special_page(zone, oob, kind,
+			set_oob_special_page(zone, oob, 0xaaaaffff,
 					     state->block->tag,
 					     state->block->erase_count);
 		} else if (kind == 192) {
@@ -13005,7 +13010,7 @@ int write_phy_data_to_current_block(struct phy_write_zone *zone,
 			if (state->page == (unsigned int)zone->geometry->pages - 1)
 				nand_print_dbg(nftl_ro_lc_163,
 					       state->block->number);
-			set_oob_special_page(zone, oob, kind,
+			set_oob_special_page(zone, oob, 0xaa113333,
 					     state->block->tag,
 					     state->block->erase_count);
 		}
@@ -13026,7 +13031,7 @@ int write_phy_data_to_current_block(struct phy_write_zone *zone,
 }
 #else
 extern int write_phy_data_to_current_block(struct phy_write_zone *zone, struct phy_write_state *state, const unsigned char *data, unsigned int logic_page, unsigned int kind);
-#endif /* TRIMUI_NFTL_WRITE_MAP_GCC53_BUILD */
+#endif /* physical-page writer selection */
 
 struct do_write_geometry {
 	unsigned char before_fixed_page[28];
