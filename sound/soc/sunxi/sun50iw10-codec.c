@@ -635,13 +635,15 @@ static int sunxi_codec_hpspeaker_event(struct snd_soc_dapm_widget *w,
 
 			if (trimui_headphone_present) {
 				printk("hp status in, skip SPK PA\n");
-				level = !spk_cfg->pa_level;
-			} else if (trimui_speaker_mute) {
-				printk("spk status mute, skip SPK PA\n");
-				level = !spk_cfg->pa_level;
 			} else {
-				level = spk_cfg->pa_level;
+				if (!trimui_speaker_mute) {
+					level = spk_cfg->pa_level;
+					goto drive;
+				}
+				printk("spk status mute, skip SPK PA\n");
 			}
+			level = !spk_cfg->pa_level;
+	drive:
 			gpio_set_value(spk_cfg->spk_gpio, level);
 			/* time delay to wait spk pa work fine */
 			msleep(spk_cfg->pa_msleep);
