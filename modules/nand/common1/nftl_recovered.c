@@ -5400,18 +5400,36 @@ extern int get_current_used_block(struct current_used_zone *,
 __attribute__((optimize("-fno-stack-protector")))
 int second_scan_all_blocks(struct second_scan_zone *zone)
 {
-	unsigned int read_page = 0;
-	struct first_scan_block *block, *first = 0, *second = 0;
-	struct first_scan_block *last_recorded = 0, *last_mapping = 0;
-	struct first_scan_block *erased = 0, *retired;
-	struct physic_op_param op;
-	unsigned char oob[16];
-	unsigned int last_used, previous_used;
-	unsigned int controller_mode = 0;
-	volatile unsigned int *nreg = g_nreg_base;
-	unsigned int nreg_index = 188;
-	unsigned int mode_1 = 1, mode_2 = 2, mode_30001 = 0x30001;
+	unsigned int last_used;
 	int status;
+	unsigned int previous_used;
+	unsigned int read_page;
+	struct first_scan_block *block;
+	struct first_scan_block *retired;
+	struct first_scan_block *erased;
+	struct first_scan_block *last_recorded;
+	struct first_scan_block *last_mapping;
+	struct first_scan_block *first;
+	struct first_scan_block *second;
+	unsigned int controller_mode;
+	volatile unsigned int *nreg;
+	unsigned int nreg_index;
+	unsigned int mode_1, mode_2, mode_30001;
+	unsigned char oob[16];
+	struct physic_op_param op;
+
+	read_page = 0;
+	first = 0;
+	second = 0;
+	last_recorded = 0;
+	erased = 0;
+	last_mapping = 0;
+	controller_mode = 0;
+	nreg = g_nreg_base;
+	nreg_index = 188;
+	mode_1 = 1;
+	mode_2 = 2;
+	mode_30001 = 0x30001;
 
 	controller_mode = nreg[nreg_index];
 	if (controller_mode != mode_30001 && controller_mode != mode_1 &&
@@ -5535,10 +5553,11 @@ int second_scan_all_blocks(struct second_scan_zone *zone)
 	}
 	init_smart_info((struct smart_info_zone *)zone,
 			(struct smart_info_block *)last_mapping);
-	for (block = zone->blocks; block; block = block->next) {
-		if (block != first && block != second && block != erased)
+	/* OEM reuses the retired-block cursor for this invalid-list pass. */
+	for (retired = zone->blocks; retired; retired = retired->next) {
+		if (retired != first && retired != second && retired != erased)
 			put_phy_block_to_invalid_page_list(zone,
-					 (struct invalid_node *)block);
+					 (struct invalid_node *)retired);
 	}
 	adjust_invaild_list((struct move_zone *)zone);
 	if (last_recorded && first &&
