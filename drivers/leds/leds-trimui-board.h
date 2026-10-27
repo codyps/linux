@@ -1015,35 +1015,44 @@ static ssize_t show_anim_frames_hex(struct class *class, struct class_attribute 
 
 static ssize_t store_anim_frames_hex(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	long i;
+	register long i asm("x24");
 	int colors = (int)(count / 7);
-	const char *position = buffer;
+	register const char *position asm("x25") = buffer;
 	unsigned int offset;
-	u32 *pixels, *append;
-	/* Stock materializes the animation array base before indexed stores. */
-	asm("adrp %0, trimui_led_state+0x4ff0\n\t"
-	    "add %0, %0, :lo12:trimui_led_state+0x4ff0"
-	    : "=&r"(pixels));
+	register const char *format asm("x26") = "%X";
+	register u32 *pixels asm("x22");
+	register u32 *root asm("x1");
+	register u32 *append asm("x23");
+
+	/* These register lifetimes reproduce the OEM loop and pointer schedule. */
 	if (colors > 4200)
 		colors = 4200;
 	/* Stock wraps the frame offset in 32 bits once, then sign-extends it
 	 * before adding the 64-bit loop index. Recomputing offset + i in an
 	 * int changes the destination around the sign boundary. The append
 	 * range is still unchecked; TODO: reject out-of-range frame counts. */
-	offset = (unsigned int)trimui_frames_len * 14u;
+	offset = (unsigned int)trimui_frame_controls.len * 14u;
+	/* Stock forms this root after the frame offset multiplication. */
+	asm("adrp %0, trimui_led_state+0x4ff0\n\t"
+	    "add %0, %0, :lo12:trimui_led_state+0x4ff0"
+	    : "=&r"(root));
+	pixels = root;
 	append = pixels + (int)offset;
 	/* Stock ignores append capacity and clears the start of the buffer,
 	 * even when sscanf writes at a later append offset. TODO: validate the
 	 * append and clear its actual destination in a separate fix. */
-	for (i = 0; i < colors; i++) {
-		pixels[i] = 0;
-		sscanf(position, "%X", &append[i]);
+	for (i = 0; (int)i < colors; ) {
+		unsigned long byte_offset = (unsigned long)i << 2;
+		const char *scan = position;
+
 		position += 7;
-		/* Keep the OEM cursor separate from the color index. */
+		i++;
+		*(u32 *)((char *)pixels + byte_offset) = 0;
+		sscanf(scan, format, (u32 *)((char *)append + byte_offset));
 		asm volatile("" : "+r"(position));
 	}
-	trimui_frames_len += colors / 14;
-	printk("\n anim frames:%d, pixels:%d\n", trimui_frames_len, colors);
+	trimui_frame_controls.len += colors / 14;
+	printk("\n anim frames:%d, pixels:%d\n", trimui_frame_controls.len, colors);
 	return count;
 }
 
