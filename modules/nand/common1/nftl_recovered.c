@@ -12600,6 +12600,36 @@ int recover_phy_page_mapping(struct page_map_recovery_zone *zone,
 }
 #endif /* TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD */
 
+/* The stock field offsets and 64-byte stride agree with the public Allwinner
+ * _current_block/_user_info layout. The OEM revision of these declarations is
+ * unknown; retain typed fields even where this function does not use them.
+ */
+struct current_user_info {
+	void *buf;
+	unsigned int buf_size;
+	unsigned int *map_data;
+	unsigned int map_size;
+	void *smart;
+	unsigned int smart_size;
+};
+struct current_block_state {
+	struct new_write_block *block_info;
+	struct current_user_info user_info;
+	unsigned short page_used;
+};
+_Static_assert(sizeof(struct current_user_info) == 48,
+	       "current user record size");
+_Static_assert(sizeof(struct current_block_state) == 64,
+	       "current block record size");
+_Static_assert(__builtin_offsetof(struct current_block_state,
+				  user_info.buf) == 8, "current buffer offset");
+_Static_assert(__builtin_offsetof(struct current_block_state,
+				  user_info.buf_size) == 16,
+	       "current byte-count offset");
+_Static_assert(__builtin_offsetof(struct current_block_state,
+				  user_info.map_data) == 24, "current map offset");
+_Static_assert(__builtin_offsetof(struct current_block_state,
+				  page_used) == 56, "current used offset");
 struct current_used_zone {
 	unsigned char before_flag[25];
 	unsigned char flags;
@@ -12608,30 +12638,18 @@ struct current_used_zone {
 	unsigned char before_data[512 - 312];
 	void *data;
 	unsigned char before_current[528 - 520];
-	struct new_write_block *current;
-	void *current_map_buffer;
-	unsigned int map_copy_bytes;
-	unsigned char before_current_map[552 - 548];
-	unsigned int *current_map;
-	unsigned char before_current_used[584 - 560];
-	unsigned short current_used;
-	unsigned char before_assist[592 - 586];
-	struct new_write_block *assist;
-	void *assist_map_buffer;
-	unsigned char before_assist_map[616 - 608];
-	unsigned int *assist_map;
-	unsigned char before_assist_used[648 - 624];
-	unsigned short assist_used;
-	unsigned char before_copy[3480 - 650];
+	struct current_block_state current_block;
+	struct current_block_state assist_block;
+	unsigned char before_copy[3480 - 656];
 	int (*copy_page)(struct current_used_zone *, struct new_write_block *,
 			 struct new_write_block *, void *, unsigned short);
 };
-_Static_assert(__builtin_offsetof(struct current_used_zone, current) == 528,
-	       "current block offset");
-_Static_assert(__builtin_offsetof(struct current_used_zone, assist) == 592,
-	       "assist block offset");
-_Static_assert(__builtin_offsetof(struct current_used_zone, copy_page) == 3480,
-	       "current block copy callback offset");
+_Static_assert(__builtin_offsetof(struct current_used_zone,
+				  current_block) == 528, "current block offset");
+_Static_assert(__builtin_offsetof(struct current_used_zone,
+				  assist_block) == 592, "assist block offset");
+_Static_assert(__builtin_offsetof(struct current_used_zone,
+				  copy_page) == 3480, "copy callback offset");
 
 #ifndef TRIMUI_NFTL_SECOND_SCAN_GCC53_BUILD
 int get_current_used_block(struct current_used_zone *zone,
@@ -12643,17 +12661,17 @@ int get_current_used_block(struct current_used_zone *zone,
 	unsigned short copy_limit;
 	int had_primary_ecc = 0;
 
-	if (zone->current)
+	if (zone->current_block.block_info)
 		return 0;
 	/* Stock emits the existing-block recovery before the no-candidate path. */
 	if (!candidate)
 		goto allocate_new;
 	for (;;) {
-		zone->current_used = (unsigned short)
+		zone->current_block.page_used = (unsigned short)
 			recover_phy_page_mapping(
 				(struct page_map_recovery_zone *)zone,
-				candidate, zone->current_map);
-		if (zone->current_used != 0xffff)
+				candidate, zone->current_block.user_info.map_data);
+		if (zone->current_block.page_used != 0xffff)
 			break;
 		had_primary_ecc = 1;
 		nand_print(nftl_ro_lc_250,
@@ -12665,95 +12683,95 @@ int get_current_used_block(struct current_used_zone *zone,
 		nand_print(nftl_ro_lc_251);
 		return 1;
 	}
-	zone->current = candidate;
+	zone->current_block.block_info = candidate;
 	/* OEM reloads the shared current pointer after publishing it. A
 	 * concurrent replacement can change the following reads and callback. */
-	nand_print_dbg(nftl_ro_lc_252, zone->current->number,
-		       zone->current_used);
+	nand_print_dbg(nftl_ro_lc_252, zone->current_block.block_info->number,
+		       zone->current_block.page_used);
 	recover_logic_page_mapping((struct logic_page_map_zone *)zone,
-			   (struct invalid_page_node *)zone->current,
-			   zone->current_map, zone->current_used);
-	if (zone->current_used < zone->current->page)
+			   (struct invalid_page_node *)zone->current_block.block_info,
+			   zone->current_block.user_info.map_data, zone->current_block.page_used);
+	if (zone->current_block.page_used < zone->current_block.block_info->page)
 		nand_print(nftl_ro_lc_253,
-			   zone->current_used, zone->current->page);
+			   zone->current_block.page_used, zone->current_block.block_info->page);
 	if (!(zone->flags & 1))
 		return 0;
 	for (;;) {
-		if (!zone->assist) {
-			zone->assist = (struct new_write_block *)
+		if (!zone->assist_block.block_info) {
+			zone->assist_block.block_info = (struct new_write_block *)
 				out_phy_block_from_free_list(
 					(struct free_block_zone *)zone);
-			if (!zone->assist)
+			if (!zone->assist_block.block_info)
 				return 1;
-			zone->assist_used = 0;
+			zone->assist_block.page_used = 0;
 			/* OEM reads the shared assist pointer before current->tag. */
-			assist = zone->assist;
-			tag = zone->current->tag + 1;
+			assist = zone->assist_block.block_info;
+			tag = zone->current_block.block_info->tag + 1;
 			assist->tag = tag;
 			/* OEM reloads the published tag for initialization. */
 			if (new_block_init_for_write(
 				    (struct new_write_zone *)zone,
-				    zone->assist, zone->assist->tag)) {
+				    zone->assist_block.block_info, zone->assist_block.block_info->tag)) {
 				nand_print(nftl_ro_lc_254);
-				zone->assist = 0;
+				zone->assist_block.block_info = 0;
 				continue;
 			}
 			/* OEM snapshots the copy bound before invoking copy_page. */
-			copy_limit = zone->current_used;
+			copy_limit = zone->current_block.page_used;
 			for (page = 0; page < copy_limit; page++) {
 				/* OEM logs a copy failure but still advances to the next page. */
-				if (zone->copy_page(zone, zone->current,
-						    zone->assist, zone->data,
+				if (zone->copy_page(zone, zone->current_block.block_info,
+						    zone->assist_block.block_info, zone->data,
 						    page))
 					nand_print(nftl_ro_lc_255);
 			}
 		}
-		zone->assist_used = (unsigned short)
+		zone->assist_block.page_used = (unsigned short)
 			recover_phy_page_mapping(
 				(struct page_map_recovery_zone *)zone,
-				zone->assist, zone->assist_map);
-		if (zone->assist_used == 0xffff) {
+				zone->assist_block.block_info, zone->assist_block.user_info.map_data);
+		if (zone->assist_block.page_used == 0xffff) {
 			nand_print(nftl_ro_lc_256);
 			erase_block((struct erase_block_zone *)zone,
-				    (struct erase_block_info *)zone->assist,
-				    (unsigned short)(zone->assist->erase_count + 1));
-			zone->assist = 0;
+				    (struct erase_block_info *)zone->assist_block.block_info,
+				    (unsigned short)(zone->assist_block.block_info->erase_count + 1));
+			zone->assist_block.block_info = 0;
 			continue;
 		}
 		/* Keep the OEM destination read ahead of the source-tag read. */
-		assist = zone->assist;
-		assist->tag = zone->current->tag + 1;
+		assist = zone->assist_block.block_info;
+		assist->tag = zone->current_block.block_info->tag + 1;
 		recover_logic_page_mapping((struct logic_page_map_zone *)zone,
-				   (struct invalid_page_node *)zone->assist,
-				   zone->assist_map, zone->assist_used);
-		if (zone->assist_used > zone->current_used) {
+				   (struct invalid_page_node *)zone->assist_block.block_info,
+				   zone->assist_block.user_info.map_data, zone->assist_block.page_used);
+		if (zone->assist_block.page_used > zone->current_block.page_used) {
 			nand_print(nftl_ro_lc_257,
-				   zone->assist_used, zone->current_used);
+				   zone->assist_block.page_used, zone->current_block.page_used);
 			if (!had_primary_ecc) {
 				nand_print(nftl_ro_lc_258,
-					   zone->assist_used, zone->current_used);
+					   zone->assist_block.page_used, zone->current_block.page_used);
 				return 0;
 			}
 			erase_block((struct erase_block_zone *)zone,
-				    (struct erase_block_info *)zone->current,
-				    (unsigned short)(zone->current->erase_count + 1));
-			zone->current = zone->assist;
-			zone->current_used = zone->assist_used;
-			nand_memcpy(zone->current_map_buffer,
-				    zone->assist_map_buffer,
-				    zone->map_copy_bytes);
-			zone->assist = 0;
+				    (struct erase_block_info *)zone->current_block.block_info,
+				    (unsigned short)(zone->current_block.block_info->erase_count + 1));
+			zone->current_block.block_info = zone->assist_block.block_info;
+			zone->current_block.page_used = zone->assist_block.page_used;
+			nand_memcpy(zone->current_block.user_info.buf,
+				    zone->assist_block.user_info.buf,
+				    zone->current_block.user_info.buf_size);
+			zone->assist_block.block_info = 0;
 			continue;
 		}
 		/* OEM makes a second comparison using >=. If current_used falls
 		 * between the two reads, it returns without erasing assist. */
-		if (zone->assist_used >= zone->current_used)
+		if (zone->assist_block.page_used >= zone->current_block.page_used)
 			return 0;
 		nand_print(nftl_ro_lc_259);
 		erase_block((struct erase_block_zone *)zone,
-			    (struct erase_block_info *)zone->assist,
-			    (unsigned short)(zone->assist->erase_count + 1));
-		zone->assist = 0;
+			    (struct erase_block_info *)zone->assist_block.block_info,
+			    (unsigned short)(zone->assist_block.block_info->erase_count + 1));
+		zone->assist_block.block_info = 0;
 	}
 allocate_new:
 	nand_print_dbg(nftl_ro_lc_260);
@@ -12763,23 +12781,23 @@ allocate_new:
 		print_block_invalid_list((struct invalid_print_zone *)zone);
 		return 1;
 	}
-	zone->current = (struct new_write_block *)
+	zone->current_block.block_info = (struct new_write_block *)
 		out_phy_block_from_free_list((struct free_block_zone *)zone);
-	if (!zone->current)
+	if (!zone->current_block.block_info)
 		return 1;
-	zone->current_used = 0;
-	zone->current->tag = previous_tag + 1;
+	zone->current_block.page_used = 0;
+	zone->current_block.block_info->tag = previous_tag + 1;
 	if (zone->flags & 1) {
-		zone->assist = (struct new_write_block *)
+		zone->assist_block.block_info = (struct new_write_block *)
 			out_phy_block_from_free_list((struct free_block_zone *)zone);
-		if (!zone->assist)
+		if (!zone->assist_block.block_info)
 			return 1;
-		zone->assist_used = 0;
+		zone->assist_block.page_used = 0;
 		/* OEM reads assist before the current block's tag. */
-		assist = zone->assist;
-		assist->tag = zone->current->tag + 1;
+		assist = zone->assist_block.block_info;
+		assist->tag = zone->current_block.block_info->tag + 1;
 	} else {
-		zone->assist = 0;
+		zone->assist_block.block_info = 0;
 	}
 	return 0;
 }
