@@ -30,6 +30,9 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 {
 	int n, ramp, i, count, r, g, b, from_r, from_g, from_b;
 	int to_r, to_g, to_b;
+	/* OEM clamps before validating type. An unsupported type can therefore
+	 * change duration even though no frames or metadata are published.
+	 */
 	if (effect->duration < 200)
 		effect->duration = 200;
 	/* Stock leaves linear/static effects unbounded and can overwrite the
