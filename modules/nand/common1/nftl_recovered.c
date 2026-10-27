@@ -6553,7 +6553,9 @@ struct gc_one_zone {
 	unsigned short second_stat;
 	unsigned short third_stat;
 };
-extern int garbage_collect_first(struct gc_one_zone *, void *, int);
+struct gc_first_zone;
+extern int garbage_collect_first(struct gc_first_zone *, void *,
+				 unsigned short);
 extern const char *nand_get_cur_task_name(void);
 extern int nand_get_cur_task_pid(void);
 extern int gc_one(struct gc_one_zone *zone, unsigned short priority);
@@ -6566,7 +6568,7 @@ int gc_one(struct gc_one_zone *zone, unsigned short priority)
 	if (!state)
 		return 8;
 	if (priority < state->limit) {
-		result = garbage_collect_first(zone, 0, -1);
+		result = garbage_collect_first((struct gc_first_zone *)zone, 0, -1);
 		if (result == 8)
 			return 8;
 		if (result == 0) {
@@ -8302,7 +8304,7 @@ int done_static_wear_leveling(struct wear_zone *owner)
 	WEAR_DONE->stats->count++;
 	/* Stock discards this result even if the page fill failed. */
 	fill_no_use_data_to_current_block((struct no_use_data_zone *)owner);
-	result = garbage_collect_first((struct gc_one_zone *)owner,
+	result = garbage_collect_first((struct gc_first_zone *)owner,
 				WEAR_DONE->selected, -1);
 	if (result) {
 		/* OEM reports the block number as the failure value and leaves
@@ -9438,11 +9440,11 @@ int do_prio_gc(void *owner)
 	PRIO_QUEUE->active_priority = frame.node->priority;
 	if (frame.node->priority == 5) {
 		/* OEM stores but ignores this collection result. */
-		frame.result = garbage_collect_first((struct gc_one_zone *)owner,
+		frame.result = garbage_collect_first((struct gc_first_zone *)owner,
 					       frame.node->block, 4);
 		PRIO_CLEAR_RETURN(0);
 	}
-	frame.result = garbage_collect_first((struct gc_one_zone *)owner,
+	frame.result = garbage_collect_first((struct gc_first_zone *)owner,
 					       frame.node->block, -1);
 	if (frame.result) {
 		nand_print(nftl_ro_lc_449, PRIO_BLOCK->number, frame.node->priority);
@@ -11094,9 +11096,8 @@ _Static_assert(__builtin_offsetof(struct garbage_collect_zone, request) == 688,
 _Static_assert(__builtin_offsetof(struct garbage_collect_zone, state) == 3448,
 	       "garbage state offset");
 #ifdef TRIMUI_NFTL_GC_POLICY_GCC53_BUILD
-/* This call site passes the OEM's 16-bit request. AArch64 zero-extends it in
- * w2, which is the same value received by the int-taking callee. Keep its
- * private prototype here; other callers still pass signed int requests. */
+/* This call site passes the OEM's 16-bit request. Keep the local zone type
+ * while binding the call to the separately compiled first-GC function. */
 extern int gc_first_policy(struct gc_one_zone *, void *, unsigned short)
 	__asm__("garbage_collect_first");
 int garbage_collect(struct garbage_collect_zone *zone)
@@ -11208,150 +11209,12 @@ extern int recover_block_phy_page_mapping(struct page_map_recovery_zone *,
 					   unsigned int *);
 
 #if defined(TRIMUI_NFTL_STATIC_DONE_GCC53_BUILD) || \
-    defined(TRIMUI_NFTL_GC_POLICY_GCC53_BUILD)
-extern int garbage_collect_first(struct gc_one_zone *raw_zone,
-				 void *requested, int requested_limit);
+    defined(TRIMUI_NFTL_GC_POLICY_GCC53_BUILD) || \
+    defined(TRIMUI_NFTL_GC_FIRST_EXTERNAL)
+extern int garbage_collect_first(struct gc_first_zone *zone,
+				 void *requested, unsigned short limit);
 #else
-__attribute__((optimize("-fno-stack-protector")))
-int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
-			  int requested_limit)
-{
-	struct gc_first_zone *zone = (struct gc_first_zone *)raw_zone;
-	struct gc_first_block *block;
-	struct invalid_page_location *entry;
-	struct physic_op_param op;
-	unsigned char oob[16];
-	unsigned short limit = requested_limit;
-	unsigned int page, logic, observed, retry;
-	int status, bad = 0;
-
-	nand_memset(oob, 0x5a, 16);
-	if (!requested)
-		block = (struct gc_first_block *)
-			out_phy_block_from_invalid_page_list((struct move_zone *)zone);
-	else {
-		if (is_current_blcok((struct diag_current_zone *)zone,
-				      requested) == 1)
-			return 0;
-		block = (struct gc_first_block *)
-			out_phy_block_from_invalid_page_list_by_block(
-				(struct invalid_zone *)zone,
-				(struct invalid_node *)requested);
-	}
-	if (!block) {
-		nand_print(nftl_ro_lc_436);
-		return 8;
-	}
-	zone->stats->runs++;
-	set_physic_op_par(&op, block->number, zone->geometry->pages - 1,
-			  zone->geometry->fixed_page, zone->data, oob);
-	status = zone->read(zone, &op);
-	if (is_phy_mapping_page(oob) != 1) {
-		nand_print_dbg(nftl_ro_lc_437);
-		nand_print_dbg(nftl_ro_lc_438,
-			       block->number, zone->geometry->pages - 1, 0,
-			       zone->geometry->fixed_page);
-		/* Stock supplies only fifteen values for sixteen %x conversions.
-		 * The final diagnostic word comes from its uninitialized frame. */
-		nand_print_dbg(nftl_ro_lc_439,
-			       oob[1], oob[2], oob[3], oob[4], oob[5],
-			       oob[6], oob[7], oob[8], oob[9], oob[10],
-			       oob[11], oob[12], oob[13], oob[14], oob[15]);
-		nand_print_dbg(nftl_ro_lc_440,
-			       zone->mode, block->number);
-		recover_block_phy_page_mapping(
-			(struct page_map_recovery_zone *)zone,
-			(struct new_write_block *)block, zone->map.pages);
-		bad = 1;
-	} else if (status && status != 10) {
-		nand_print_dbg(nftl_ro_lc_441,
-			       block->number);
-		recover_block_phy_page_mapping(
-			(struct page_map_recovery_zone *)zone,
-			(struct new_write_block *)block, zone->map.pages);
-		bad = 1;
-	} else {
-		nand_memcpy(zone->map.pages, zone->data, zone->map.bytes);
-	}
-	status = check_invalid_page_right((struct page_map_write_zone *)zone,
-					  &zone->map,
-					  (struct page_map_write_block *)block,
-					  zone->geometry->pages);
-	if (status) {
-		nand_print(nftl_ro_lc_442);
-		bad = 1;
-	}
-	/* OEM tests for exactly one here and again before erase. Keep the
-	 * narrower comparison, even though this function assigns only 0 or 1. */
-	if (bad == 1)
-		limit = 0xffff;
-	for (page = 0; page < (unsigned int)zone->geometry->pages - 1;
-	     page++) {
-		logic = zone->map.pages[page];
-		if (logic == ~0U)
-			continue;
-		entry = (struct invalid_page_location *)
-			get_logic_page_map((struct logic_page_map_zone *)zone, logic);
-		if (!entry)
-			continue;
-		if (entry->block != block->number)
-			continue;
-		if (entry->page != page)
-			continue;
-		zone->stats->copied_pages++;
-		set_physic_op_par(&op, block->number, page,
-				  zone->geometry->fixed_page,
-				  zone->logic_buffer, oob);
-		/* OEM tests an unsigned retry counter against one, but breaks
-		 * unconditionally after its first read. Preserve this broken retry
-		 * loop: a read error never causes another physical read. */
-		for (retry = 0; retry < 2; retry++) {
-			status = zone->read(zone, &op);
-			break;
-		}
-		observed = get_logic_page_from_oob(oob);
-		if (status == 0 || status == 10) {
-			if (observed != logic) {
-				nand_print_dbg(nftl_ro_lc_443,
-					       block->number, page, observed, logic);
-				nand_print(nftl_ro_lc_444,
-					   oob[0], oob[1], oob[2], oob[3],
-					   oob[4], oob[5], oob[6], oob[7],
-					   oob[8], oob[9], oob[10], oob[11],
-					   oob[12], oob[13], oob[14], oob[15]);
-				entry->block = 0xffff;
-				entry->page = 0xfff;
-				bad = 1;
-				limit = 0xffff;
-				block->invalid_pages++;
-			} else if ((status = nand_write_logic_page_no_gc(zone, logic,
-						      zone->logic_buffer))) {
-				nand_print(nftl_ro_lc_445);
-				return 1;
-			}
-		} else {
-			block->invalid_pages++;
-			bad = 1;
-			limit = 0xffff;
-		}
-		limit--;
-		if (!limit)
-			break;
-	}
-	if (page == (unsigned int)zone->geometry->pages - 1)
-		zone->active = 0;
-	if (bad == 1 && page == (unsigned int)zone->geometry->pages - 1) {
-		nand_print(nftl_ro_lc_446);
-		erase_block((struct erase_block_zone *)zone,
-			    (struct erase_block_info *)block,
-			    (unsigned short)(block->erase_count + 1));
-	} else {
-		put_phy_block_to_invalid_page_list(zone,
-					(struct invalid_node *)block);
-		adjust_invaild_list((struct move_zone *)zone);
-	}
-	return 0;
-}
+#include "../common1/nftl_gc_first_body.h"
 #endif /* TRIMUI_NFTL_STATIC_DONE_GCC53_BUILD */
 
 struct sandisk_first_request {

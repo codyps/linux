@@ -78,6 +78,7 @@ obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_gc_all_base_on_free_blks.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_done_static_wear_leveling.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_is_no_use_device.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_garbage_collect.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_garbage_collect_first.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_panic_backup_block.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_sandisk_first_burn.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_get_empty_cahce_node.o
@@ -121,7 +122,7 @@ obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_smart_init.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_eval_order_three.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_eval_cache_three.o
 endif
-CFLAGS_nftl_recovered.o += -O0 -fno-builtin -fno-pic -mcmodel=small -DTRIMUI_NFTL_GCC7_PASS
+CFLAGS_nftl_recovered.o += -O0 -fno-builtin -fno-pic -mcmodel=small -DTRIMUI_NFTL_GCC7_PASS -DTRIMUI_NFTL_GC_FIRST_EXTERNAL
 # The stock NFTL object identifies Linaro GCC 5.3.1 (2016.05). These
 # recovered bodies need its field-address code generation; the rest of NFTL
 # remains on the established compiler to retain previously matched bodies.
@@ -196,6 +197,7 @@ $(obj)/nftl_gcc53_gc_all_base_on_free_blks.o: override CC := python3 $(srctree)/
 $(obj)/nftl_gcc53_done_static_wear_leveling.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) done_static_wear_leveling --
 $(obj)/nftl_gcc53_is_no_use_device.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) is_no_use_device --
 $(obj)/nftl_gcc53_garbage_collect.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) garbage_collect --
+$(obj)/nftl_gcc53_garbage_collect_first.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) garbage_collect_first --
 $(obj)/nftl_gcc53_panic_backup_block.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) panic_backup_block --
 $(obj)/nftl_gcc53_sandisk_first_burn.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) sandisk_A19_check_bad_block_first_burn --
 $(obj)/nftl_gcc53_get_empty_cahce_node.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) get_empty_cahce_node --
@@ -271,6 +273,7 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_gc_all_base_on_free_blks.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_done_static_wear_leveling.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_is_no_use_device.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_garbage_collect.o
+nftl_gcc53_objects += $(obj)/nftl_gcc53_garbage_collect_first.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_panic_backup_block.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_sandisk_first_burn.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_get_empty_cahce_node.o
@@ -388,6 +391,7 @@ CFLAGS_nftl_gcc53_gc_all_base_on_free_blks.o += -O0 -fno-builtin -fno-pic -mcmod
 CFLAGS_nftl_gcc53_done_static_wear_leveling.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_is_no_use_device.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_garbage_collect.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_garbage_collect_first.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_panic_backup_block.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_sandisk_first_burn.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_get_empty_cahce_node.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
