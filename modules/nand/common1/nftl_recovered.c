@@ -13402,7 +13402,7 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	struct physic_op_param op;
 	unsigned int primary_used, assist_used = 0;
 	unsigned int primary_flag = 0, assist_flag = 0;
-	unsigned int first_erase = 0, second_erase = 0;
+	unsigned int first_erase = 0, second_erase = 0; /* OEM ignores erase failures. */
 	unsigned int page, compact, special;
 	unsigned char *data, *oob;
 
