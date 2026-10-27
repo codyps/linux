@@ -154,6 +154,10 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 			count = 20;
 		else
 			count = 10;
+		/* OEM always writes the fixed pattern extent after the zero fill.
+		 * If duration changes before the count reread, this can write
+		 * beyond the newly published length. Preserve that ordering.
+		 */
 		for (i = 0; i < count; i++)
 			if (trimui_blink_pattern[i])
 				effect->frames[i] = target;
