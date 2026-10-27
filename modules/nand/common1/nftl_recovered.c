@@ -13642,6 +13642,9 @@ replay:
 	compact = 0;
 	for (page = 0; page < *(unsigned int *)selected; page++) {
 		if (((unsigned char *)selected->first)[page]) {
+			/* OEM wraps the page-byte product at 32 bits here too.
+			 * TODO: bound page and stride in a separate behavior change.
+			 */
 			data = (unsigned char *)selected->second +
 				(unsigned int)(page * (zone->geometry->bytes + 64U));
 			oob = data + zone->geometry->bytes;
