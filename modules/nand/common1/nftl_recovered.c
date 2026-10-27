@@ -13616,7 +13616,7 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 	status = zone->erase(zone, &op);
 	if (status) {
 		nand_print(nftl_ro_lc_298, replacement->number);
-		zone->mark_bad(zone, &op);
+		zone->mark_bad(zone, &op); /* OEM ignores mark_bad failure. */
 		/* OEM marks the selected source, not the block whose erase
 		 * just failed. This is a persistent metadata bug. */
 		source->page = 0;
