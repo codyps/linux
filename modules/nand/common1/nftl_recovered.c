@@ -11222,7 +11222,7 @@ int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 	struct physic_op_param op;
 	unsigned char oob[16];
 	unsigned short limit = requested_limit;
-	unsigned int page, logic, observed;
+	unsigned int page, logic, observed, retry;
 	int status, bad = 0;
 
 	nand_memset(oob, 0x5a, 16);
@@ -11297,9 +11297,13 @@ int garbage_collect_first(struct gc_one_zone *raw_zone, void *requested,
 		set_physic_op_par(&op, block->number, page,
 				  zone->geometry->fixed_page,
 				  zone->logic_buffer, oob);
-		/* OEM's retry counter is initialized to zero and never changed;
-		 * only one physical read is made. */
-		status = zone->read(zone, &op);
+		/* OEM tests an unsigned retry counter against one, but breaks
+		 * unconditionally after its first read. Preserve this broken retry
+		 * loop: a read error never causes another physical read. */
+		for (retry = 0; retry < 2; retry++) {
+			status = zone->read(zone, &op);
+			break;
+		}
 		observed = get_logic_page_from_oob(oob);
 		if (status == 0 || status == 10) {
 			if (observed != logic) {
