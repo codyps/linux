@@ -112,7 +112,9 @@ static void sunxi_clk_deinit(struct sunxi_led *led)
 	sunxi_clk_put(led);
 }
 
-static u32 sunxi_get_reg(int offset)
+/* The OEM object places these register helpers immediately before the
+ * TrimUI effect helpers. Keep that order for linked call and data layout. */
+static __attribute__((no_reorder)) u32 sunxi_get_reg(int offset)
 {
 	struct sunxi_led *led = sunxi_led;
 	u32 value = ioread32(((u8 *)led->iomem_reg_base) + offset);
@@ -120,7 +122,7 @@ static u32 sunxi_get_reg(int offset)
 	return value;
 }
 
-static void sunxi_set_reg(int offset, u32 value)
+static __attribute__((no_reorder)) void sunxi_set_reg(int offset, u32 value)
 {
 	struct sunxi_led *led = sunxi_led;
 
@@ -377,7 +379,7 @@ static void sunxi_ledc_enable_irq(u32 mask)
 	sunxi_set_reg(LEDC_INT_CTRL_REG_OFFSET, reg_val);
 }
 
-static void sunxi_ledc_disable_irq(u32 mask)
+static __attribute__((no_reorder)) void sunxi_ledc_disable_irq(u32 mask)
 {
 	u32 reg_val = 0;
 
