@@ -12725,117 +12725,117 @@ primary_retry:
 		if (zone->current_block.page_used < zone->current_block.block_info->page)
 			nand_print(nftl_ro_lc_253,
 				   zone->current_block.page_used, zone->current_block.block_info->page);
-		if (!(zone->zone_attr & 1))
-			goto return_zero;
-		for (;;) {
-			if (!zone->assist_block.block_info) {
-				zone->assist_block.block_info = (struct new_write_block *)
-					out_phy_block_from_free_list(
-						(struct free_block_zone *)zone);
-				if (!zone->assist_block.block_info)
-					return 1;
-				zone->assist_block.page_used = 0;
-				/* OEM reads assist before current->tag. The selected GCC 5.3
-				 * pass preserves this left-side address evaluation. */
-				zone->assist_block.block_info->tag =
-					zone->current_block.block_info->tag + 1;
-				/* OEM reloads the published tag for initialization. */
-				if (new_block_init_for_write(
-					    (struct new_write_zone *)zone,
-					    zone->assist_block.block_info, zone->assist_block.block_info->tag)) {
-					nand_print(nftl_ro_lc_254);
+		if (zone->zone_attr & 1) {
+			for (;;) {
+				if (!zone->assist_block.block_info) {
+					zone->assist_block.block_info = (struct new_write_block *)
+						out_phy_block_from_free_list(
+							(struct free_block_zone *)zone);
+					if (!zone->assist_block.block_info)
+						return 1;
+					zone->assist_block.page_used = 0;
+					/* OEM reads assist before current->tag. The selected GCC 5.3
+					 * pass preserves this left-side address evaluation. */
+					zone->assist_block.block_info->tag =
+						zone->current_block.block_info->tag + 1;
+					/* OEM reloads the published tag for initialization. */
+					if (new_block_init_for_write(
+						    (struct new_write_zone *)zone,
+						    zone->assist_block.block_info, zone->assist_block.block_info->tag)) {
+						nand_print(nftl_ro_lc_254);
+						zone->assist_block.block_info = 0;
+						continue;
+					}
+					/* OEM snapshots the copy bound before invoking copy_page. */
+					copy_limit = zone->current_block.page_used;
+					for (page = 0; page < copy_limit; page++) {
+						/* OEM logs a copy failure but still advances to the next page. */
+						copy_result = zone->copy_page(zone, zone->current_block.block_info,
+								    zone->assist_block.block_info,
+								    zone->logic_page_buf,
+								    page);
+						if (copy_result)
+							nand_print(nftl_ro_lc_255);
+					}
+				}
+				zone->assist_block.page_used = (unsigned short)
+					recover_phy_page_mapping(
+						(struct page_map_recovery_zone *)zone,
+						zone->assist_block.block_info, zone->assist_block.user_info.map_data);
+				if (zone->assist_block.page_used == 0xffff) {
+					nand_print(nftl_ro_lc_256);
+					erase_block((struct erase_block_zone *)zone,
+						    (struct erase_block_info *)zone->assist_block.block_info,
+						    (unsigned short)(zone->assist_block.block_info->erase_count + 1));
 					zone->assist_block.block_info = 0;
 					continue;
 				}
-				/* OEM snapshots the copy bound before invoking copy_page. */
-				copy_limit = zone->current_block.page_used;
-				for (page = 0; page < copy_limit; page++) {
-					/* OEM logs a copy failure but still advances to the next page. */
-					copy_result = zone->copy_page(zone, zone->current_block.block_info,
-							    zone->assist_block.block_info,
-							    zone->logic_page_buf,
-							    page);
-					if (copy_result)
-						nand_print(nftl_ro_lc_255);
+				/* Keep the OEM destination read ahead of the source-tag read. */
+				zone->assist_block.block_info->tag =
+					zone->current_block.block_info->tag + 1;
+				recover_logic_page_mapping((struct logic_page_map_zone *)zone,
+						   (struct invalid_page_node *)zone->assist_block.block_info,
+						   zone->assist_block.user_info.map_data, zone->assist_block.page_used);
+				if (zone->assist_block.page_used > zone->current_block.page_used) {
+					nand_print(nftl_ro_lc_257,
+						   zone->assist_block.page_used, zone->current_block.page_used);
+					/* OEM lays out the ECC replacement path first. */
+					if (had_primary_ecc) {
+						erase_block((struct erase_block_zone *)zone,
+						    (struct erase_block_info *)zone->current_block.block_info,
+						    (unsigned short)(zone->current_block.block_info->erase_count + 1));
+						zone->current_block.block_info = zone->assist_block.block_info;
+						zone->current_block.page_used = zone->assist_block.page_used;
+						nand_memcpy(zone->current_block.user_info.buf,
+							    zone->assist_block.user_info.buf,
+							    zone->current_block.user_info.buf_size);
+						zone->assist_block.block_info = 0;
+						continue;
+					}
+					nand_print(nftl_ro_lc_258,
+						   zone->assist_block.page_used, zone->current_block.page_used);
+					break;
 				}
-			}
-			zone->assist_block.page_used = (unsigned short)
-				recover_phy_page_mapping(
-					(struct page_map_recovery_zone *)zone,
-					zone->assist_block.block_info, zone->assist_block.user_info.map_data);
-			if (zone->assist_block.page_used == 0xffff) {
-				nand_print(nftl_ro_lc_256);
+				/* OEM makes a second comparison using >=. If current_used falls
+				 * between the two reads, it returns without erasing assist. */
+				if (zone->assist_block.page_used >= zone->current_block.page_used)
+					break;
+				nand_print(nftl_ro_lc_259);
 				erase_block((struct erase_block_zone *)zone,
 					    (struct erase_block_info *)zone->assist_block.block_info,
 					    (unsigned short)(zone->assist_block.block_info->erase_count + 1));
 				zone->assist_block.block_info = 0;
-				continue;
 			}
-			/* Keep the OEM destination read ahead of the source-tag read. */
-			zone->assist_block.block_info->tag =
-				zone->current_block.block_info->tag + 1;
-			recover_logic_page_mapping((struct logic_page_map_zone *)zone,
-					   (struct invalid_page_node *)zone->assist_block.block_info,
-					   zone->assist_block.user_info.map_data, zone->assist_block.page_used);
-			if (zone->assist_block.page_used > zone->current_block.page_used) {
-				nand_print(nftl_ro_lc_257,
-					   zone->assist_block.page_used, zone->current_block.page_used);
-				/* OEM lays out the ECC replacement path first. */
-				if (had_primary_ecc) {
-					erase_block((struct erase_block_zone *)zone,
-					    (struct erase_block_info *)zone->current_block.block_info,
-					    (unsigned short)(zone->current_block.block_info->erase_count + 1));
-					zone->current_block.block_info = zone->assist_block.block_info;
-					zone->current_block.page_used = zone->assist_block.page_used;
-					nand_memcpy(zone->current_block.user_info.buf,
-						    zone->assist_block.user_info.buf,
-						    zone->current_block.user_info.buf_size);
-					zone->assist_block.block_info = 0;
-					continue;
-				}
-				nand_print(nftl_ro_lc_258,
-					   zone->assist_block.page_used, zone->current_block.page_used);
-				goto return_zero;
-			}
-			/* OEM makes a second comparison using >=. If current_used falls
-			 * between the two reads, it returns without erasing assist. */
-			if (zone->assist_block.page_used >= zone->current_block.page_used)
-				goto return_zero;
-			nand_print(nftl_ro_lc_259);
-			erase_block((struct erase_block_zone *)zone,
-				    (struct erase_block_info *)zone->assist_block.block_info,
-				    (unsigned short)(zone->assist_block.block_info->erase_count + 1));
-			zone->assist_block.block_info = 0;
-		}
-	}
-	nand_print_dbg(nftl_ro_lc_260);
-	/* OEM places the nonempty free-list path before its diagnostic arm. */
-	if (zone->free_head.free_prev) {
-		zone->current_block.block_info = (struct new_write_block *)
-			out_phy_block_from_free_list((struct free_block_zone *)zone);
-		if (!zone->current_block.block_info)
-			return 1;
-		zone->current_block.page_used = 0;
-		zone->current_block.block_info->tag = previous_tag + 1;
-		if (zone->zone_attr & 1) {
-			zone->assist_block.block_info = (struct new_write_block *)
-				out_phy_block_from_free_list((struct free_block_zone *)zone);
-			if (!zone->assist_block.block_info)
-				return 1;
-			zone->assist_block.page_used = 0;
-			/* OEM reads assist before the current block's tag. */
-			zone->assist_block.block_info->tag =
-				zone->current_block.block_info->tag + 1;
-		} else {
-			zone->assist_block.block_info = 0;
 		}
 	} else {
-		nand_print(nftl_ro_lc_261);
-		print_free_list((struct free_print_zone *)zone);
-		print_block_invalid_list((struct invalid_print_zone *)zone);
-		return 1;
+		nand_print_dbg(nftl_ro_lc_260);
+		/* OEM places the nonempty free-list path before its diagnostic arm. */
+		if (zone->free_head.free_prev) {
+			zone->current_block.block_info = (struct new_write_block *)
+				out_phy_block_from_free_list((struct free_block_zone *)zone);
+			if (!zone->current_block.block_info)
+				return 1;
+			zone->current_block.page_used = 0;
+			zone->current_block.block_info->tag = previous_tag + 1;
+			if (zone->zone_attr & 1) {
+				zone->assist_block.block_info = (struct new_write_block *)
+					out_phy_block_from_free_list((struct free_block_zone *)zone);
+				if (!zone->assist_block.block_info)
+					return 1;
+				zone->assist_block.page_used = 0;
+				/* OEM reads assist before the current block's tag. */
+				zone->assist_block.block_info->tag =
+					zone->current_block.block_info->tag + 1;
+			} else {
+				zone->assist_block.block_info = 0;
+			}
+		} else {
+			nand_print(nftl_ro_lc_261);
+			print_free_list((struct free_print_zone *)zone);
+			print_block_invalid_list((struct invalid_print_zone *)zone);
+			return 1;
+		}
 	}
-return_zero:
 	return 0;
 }
 #else

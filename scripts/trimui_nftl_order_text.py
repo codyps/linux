@@ -62,7 +62,7 @@ def main():
             raise ValueError("GCC 7 still defines current-used selector")
         if sections.count((".text.get_new_current_block", 316)) != 1:
             raise ValueError("missing selector insertion anchor")
-        if text_sections(selector) != [(".text.get_current_used_block", 1452)]:
+        if text_sections(selector) != [(".text.get_current_used_block", 1444)]:
             raise ValueError("native current-used text inventory changed")
     lines = ["/* Generated from the two selected source objects. */",
              "SECTIONS {", "  .text : {"]
