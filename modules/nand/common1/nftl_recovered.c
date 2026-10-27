@@ -10886,7 +10886,7 @@ struct nand_discard_view {
 	struct smart_print_payload *smart;
 	unsigned short *write_cache_active;
 	unsigned char before_discard[3520 - 3456];
-	void (*discard_page)(struct nand_discard_view *, unsigned int);
+	void (*discard_page)(struct nand_discard_view *, int);
 };
 _Static_assert(__builtin_offsetof(struct nand_discard_view, cache) == 1072,
 	       "discard cache offset");
@@ -10894,15 +10894,6 @@ _Static_assert(__builtin_offsetof(struct nand_discard_view, smart) == 3440,
 	       "discard SMART offset");
 _Static_assert(__builtin_offsetof(struct nand_discard_view, discard_page) == 3520,
 	       "discard callback offset");
-struct nand_discard_frame {
-	void *node;
-	unsigned int unused;
-	unsigned short first_page_sectors;
-	unsigned short remainder;
-	struct cache_write_zone *cache;
-	int result;
-	unsigned int page;
-};
 #ifdef TRIMUI_NFTL_NAND_DISCARD_GCC53_BUILD
 /* Keep this selected body in ordinary text. Function-section sorting moves
  * it far ahead of the stock NFTL call sites despite identical instructions. */
@@ -10910,11 +10901,17 @@ __attribute__((section(".text")))
 int nand_discard(struct nand_discard_view *zone, unsigned int sector,
 		 unsigned int count)
 {
-	struct nand_discard_frame frame;
+	/* OEM GCC 5.3 allocates these private slots in reverse declaration order. */
+	int page;
+	int result;
+	struct cache_write_zone *cache;
+	unsigned short remainder;
+	unsigned short first_page_sectors;
+	void *node;
 
 	/* Keep OEM's private slots and its single reused cache-node pointer. */
-	frame.result = 0;
-	frame.cache = (struct cache_write_zone *)zone->cache;
+	result = 0;
+	cache = (struct cache_write_zone *)zone->cache;
 
 	/* OEM's 32-bit addition wraps, allowing an out-of-range request through. */
 	if (sector + count > zone->sector_count) {
@@ -10925,44 +10922,45 @@ int nand_discard(struct nand_discard_view *zone, unsigned int sector,
 	 * target for this expression. Keep its unsynchronized pointer race;
 	 * repairing the race would change the shipped result. */
 	zone->smart->recv_discard_sectors += count;
-	frame.page = sector / zone->geometry->sectors_per_page;
-	frame.remainder = sector % zone->geometry->sectors_per_page;
-	frame.first_page_sectors = zone->geometry->sectors_per_page - frame.remainder;
-	if (frame.remainder) {
-		frame.page++;
-		if (frame.first_page_sectors > count)
+	page = sector / zone->geometry->sectors_per_page;
+	remainder = sector % zone->geometry->sectors_per_page;
+	first_page_sectors = zone->geometry->sectors_per_page - remainder;
+	if (remainder) {
+		page++;
+		if (first_page_sectors > count)
 			count = 0;
 		else
-			count -= frame.first_page_sectors;
+			count -= first_page_sectors;
 	} else if (zone->geometry->sectors_per_page > count) {
 		count = 0;
 	}
 	count /= zone->geometry->sectors_per_page;
 	if (!count)
 		return 0;
-	do {
+	/* OEM retests the count at the loop tail before the first pass. */
+	while (count) {
 		if (*zone->write_cache_active == 0) {
-			frame.node = search_from_cache_write_list(frame.cache, frame.page);
-			if (frame.node)
+			node = search_from_cache_write_list(cache, page);
+			if (node)
 				del_from_cache_write_list(
-					(struct cache_list_owner *)frame.cache,
-					(struct cache_list_node *)frame.node);
-			frame.node = search_from_cache_read_list(
-					(struct cache_read_zone *)frame.cache, frame.page);
-			if (frame.node)
+					(struct cache_list_owner *)cache,
+					(struct cache_list_node *)node);
+			node = search_from_cache_read_list(
+					(struct cache_read_zone *)cache, page);
+			if (node)
 				del_from_cache_read_list(
-					(struct cache_read_delete_owner *)frame.cache,
-					(struct cache_read_delete_node *)frame.node);
+					(struct cache_read_delete_owner *)cache,
+					(struct cache_read_delete_node *)node);
 		}
 		/* OEM ignores callback failures and still counts the page. */
-		zone->discard_page(zone, frame.page);
+		zone->discard_page(zone, page);
 		count--;
-		frame.page++;
+		page++;
 		/* GCC 5.3.1 also samples this write target before its read. */
 		zone->smart->real_discard_sectors +=
 			zone->geometry->sectors_per_page;
-	} while (count);
-	return frame.result;
+	}
+	return result;
 }
 #endif /* TRIMUI_NFTL_NAND_DISCARD_GCC53_BUILD */
 
