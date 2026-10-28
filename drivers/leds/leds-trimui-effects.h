@@ -180,7 +180,12 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 	WRITE_ONCE(effect->active_cycles, 0);
 }
 
-static __attribute__((no_reorder)) u32 step_one_frame(struct trimui_led_effect *effect)
+/* GCC otherwise makes and discards a partial clone here. Suppress that
+ * compiler-only clone to retain the OEM clone numbering of the neighboring
+ * power, output-mode, and RGB helpers; the emitted frame body is unchanged.
+ * The original source-level cause of the OEM clone order is unknown.
+ */
+static __attribute__((no_reorder, noclone)) u32 step_one_frame(struct trimui_led_effect *effect)
 {
 	/* Stock loads index and length as one register pair, then reads the
 	 * frame before publishing cursor and color. READ_ONCE on these inputs

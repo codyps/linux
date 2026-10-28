@@ -116,12 +116,17 @@ static noinline void check_battery(void)
 		trimui_transfer_state.low_battery = 0;
 }
 
-static noinline void trimui_led_power_disable(void)
+static void trimui_led_power_enable(int enable)
 {
-	/* Stock ignores GPIO direction/output failures, including at shutdown.
+	/* Both shipped callers pass zero. GCC partially inlines this condition
+	 * and leaves the same 32-byte out-of-line GPIO helper found in stock.
+	 * The uncalled enable path's original C is not recoverable from this
+	 * clone; the shipped resume path drives the GPIO high directly.
+	 * Stock ignores GPIO direction/output failures at shutdown.
 	 * TODO: handle those failures separately from this reconstruction.
 	 */
-	gpio_direction_output(107, 0);
+	if (!enable)
+		gpio_direction_output(107, 0);
 }
 
 static void commit_static_frame(void)

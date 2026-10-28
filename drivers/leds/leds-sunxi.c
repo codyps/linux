@@ -1937,7 +1937,7 @@ static int sunxi_led_suspend_noirq(struct device *dev)
 
 #ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
 	trimui_suspended = 1;
-	trimui_led_power_disable();
+	trimui_led_power_enable(0);
 	commit_static_frame();
 #endif
 	sunxi_clk_disable(led);
@@ -1983,7 +1983,7 @@ static void sunxi_led_shutdown(struct platform_device *pdev)
 {
 	printk("%s\n", trimui_ro_writes.sunxi_led_shutdown);
 	trimui_suspended = 1;
-	trimui_led_power_disable();
+	trimui_led_power_enable(0);
 }
 #endif
 
