@@ -13,19 +13,6 @@ import subprocess
 import sys
 import tempfile
 
-from trimui_nftl_order_text import text_sections
-
-
-# These five selected objects feed the source-order linker script. Their named
-# sections must stay separate until nftl_recovered_merged.o is constructed.
-MERGED_TEXT_INPUTS = {
-    'nftl_gcc53_second_scan.o',
-    'nftl_gcc53_current_used.o',
-    'nftl_gcc53_do_prio_gc.o',
-    'nftl_gcc53_write_error_build.o',
-    'nftl_gcc53_crc_wrong.o',
-}
-
 
 def main():
     compiler, linker, objcopy, entry = sys.argv[1:5]
@@ -62,18 +49,6 @@ def main():
                         *['--keep-symbol=' + name for name in keep_symbols],
                         str(retained),
                         str(final)], check=True)
-        if (target.parent.name == 'sun50iw10p1' and
-                target.name not in MERGED_TEXT_INPUTS):
-            # GCC 5's selected functions are already isolated by the GC pass.
-            # Keep their C code in .text at this NAND object's normal link
-            # position. Leaving .text.<name> orphaned moves 130 stock NAND
-            # functions after the rest of the kernel's main text.
-            names = [name for name, size in text_sections(final)
-                     if name.startswith('.text.')]
-            if names:
-                subprocess.run([objcopy, *[
-                    '--rename-section=' + name + '=.text'
-                    for name in names], str(final)], check=True)
         os.replace(final, target)
 
 

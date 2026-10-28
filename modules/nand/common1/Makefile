@@ -10,118 +10,15 @@ else
 obj-$(CONFIG_SUNXI_NAND) += nftl_tables_recovered.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_bss_recovered.o
 obj-$(CONFIG_SUNXI_NAND) += nftl_rodata_recovered.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_recovered_merged.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_cache_init_gcc53.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_sector_cache_init_gcc53.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_invalid_page_incr_gcc53.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_micron_init_gcc53.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_copy_page_gcc53.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_dump_buf.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nftl_read.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nftl_write.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nftl_discard.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nand_discard.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_samsung_readretry_init.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_toshiba_readretry_init.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_sandisk_A19_readretry_init.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_get_logic_page_map.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nftl_support_boot_check_crc_from_dts.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nftl_initialize.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nftl_start.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_gc_all_enhance.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_out_phy_block_from_free_list.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_out_phy_block_from_free_list_by_block.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_get_cold_logic_page.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_fill_no_use_data_to_current_block.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_set_oob_logic_page.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix26nm_getdefaultparam.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix16nm_set_readretry.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_sandisk_readretry_init.o
+obj-$(CONFIG_SUNXI_NAND) += nftl_all_recovered.o
 nftl_special_names := samsung_special_init micron_special_init toshiba_special_init sandisk_special_init sandisk_A19_special_init
 nftl_special_objects := $(addprefix nftl_gcc53_,$(addsuffix .o,$(nftl_special_names)))
-obj-$(CONFIG_SUNXI_NAND) += $(nftl_special_objects)
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nand_dbg_phy_read.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_nand_dbg_zone_phy_read.o
 nftl_hynix_special_names := hynix16nm_special_init hynix20nm_special_init hynix26nm_special_init
 nftl_hynix_special_objects := $(addprefix nftl_gcc53_,$(addsuffix .o,$(nftl_hynix_special_names)))
-obj-$(CONFIG_SUNXI_NAND) += $(nftl_hynix_special_objects)
 nftl_small_names := hynix16nm_readretry_init malloc_logic_page_map prio_gc_one put_phy_block_to_free_list
 nftl_small_objects := $(addprefix nftl_gcc53_,$(addsuffix .o,$(nftl_small_names)))
-obj-$(CONFIG_SUNXI_NAND) += $(nftl_small_objects)
 nftl_hynix_end_names := hynix16nm_read_page_end hynix20nm_read_page_end hynix26nm_read_page_end
 nftl_hynix_end_objects := $(addprefix nftl_gcc53_,$(addsuffix .o,$(nftl_hynix_end_names)))
-obj-$(CONFIG_SUNXI_NAND) += $(nftl_hynix_end_objects)
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_read_reclaim.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_first_scan.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix16nm_major_check_byte.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix16nm_get_special_info.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix20nm_init_readretry_param.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix20nm_default_param.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_get_used_page_num.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_get_used_page_num_no_crosstalk.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_gc_info.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_clean_zone.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_zone_param.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_static_wear_check.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_write_error.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix16nm_init_readretry_param.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix26nm_set_readretry.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_torture_block_and_mark.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_build_zone_list_first.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_toshiba_set_readretry.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53__nftl_nand_read_logic_page.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_recover_logic_page_mapping.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_power_on_gc.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_check_cross_talk.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_init_nrc.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_gc_all_base_on_free_blks.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_done_static_wear_leveling.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_is_no_use_device.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_garbage_collect.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_garbage_collect_first.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_print_logic_page_map.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_panic_backup_block.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_sandisk_first_burn.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_get_empty_cahce_node.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_recover_block_phy_page_mapping.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_mark_free_block.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_sandisk_a19_read_page_end.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_sandisk_set_readretry.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_adjust_free_list.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_erase_block.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_flush_write_cache_to_nand.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_write_phy_page_map_to_current_block.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_phy_write.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_logic_write.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_scan_blocks.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_check_invalid_page_right.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_sandisk_read_page_end.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_current_block_ecc_error.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_block_last_page_ecc_error.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix16nm_write_page_FF.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix20nm_vender_get_param_otp_hynix.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix20nm_getotpparam.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix16nm_get_otp_param.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix16nm_cfg.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_recover_phy_page_mapping.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_get_spare_data.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_crc16_pair.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_panic_flags.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_check_bit_nums.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_min_invalid_erase.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_list_nine.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix_lsb_init_pair.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix_lsb_enable_pair.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix_default_pair.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix20_retry.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix20_init.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_hynix26_init.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_panic_write.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_panic_recover.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_cache_exit.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_smart_init.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_eval_order_three.o
-obj-$(CONFIG_SUNXI_NAND) += nftl_gcc53_eval_cache_three.o
 endif
 CFLAGS_nftl_recovered.o += -O0 -fno-builtin -fno-pic -mcmodel=small -ffunction-sections -fdata-sections -DTRIMUI_NFTL_GCC7_PASS -DTRIMUI_NFTL_GC_FIRST_EXTERNAL
 # The stock NFTL object identifies Linaro GCC 5.3.1 (2016.05). These
@@ -328,6 +225,30 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_nftl_initialize.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_nftl_start.o
 $(nftl_gcc53_objects): override NOSTDINC_FLAGS := -nostdinc -isystem $(shell $(TRIMUI_NFTL_GCC53) -print-file-name=include)
 $(nftl_gcc53_objects): $(srctree)/scripts/trimui_nftl_select_cc.py
+# Keep selected C bodies as separate sections until this partial link. The
+# stock NAND text interleaves functions from these objects; the manifest
+# records that order and the merge script rejects source-size drift.
+nftl_all_text_objects := $(addprefix $(obj)/, \
+	nftl_recovered.o nftl_gcc53_second_scan.o nftl_gcc53_current_used.o nftl_gcc53_do_prio_gc.o nftl_gcc53_write_error_build.o nftl_gcc53_crc_wrong.o nftl_cache_init_gcc53.o nftl_sector_cache_init_gcc53.o \
+	nftl_invalid_page_incr_gcc53.o nftl_micron_init_gcc53.o nftl_copy_page_gcc53.o nftl_gcc53_dump_buf.o nftl_gcc53_nftl_read.o nftl_gcc53_nftl_write.o nftl_gcc53_nftl_discard.o nftl_gcc53_nand_discard.o \
+	nftl_gcc53_samsung_readretry_init.o nftl_gcc53_toshiba_readretry_init.o nftl_gcc53_sandisk_A19_readretry_init.o nftl_gcc53_get_logic_page_map.o nftl_gcc53_nftl_support_boot_check_crc_from_dts.o nftl_gcc53_nftl_initialize.o nftl_gcc53_nftl_start.o nftl_gcc53_gc_all_enhance.o \
+	nftl_gcc53_out_phy_block_from_free_list.o nftl_gcc53_out_phy_block_from_free_list_by_block.o nftl_gcc53_get_cold_logic_page.o nftl_gcc53_fill_no_use_data_to_current_block.o nftl_gcc53_set_oob_logic_page.o nftl_gcc53_hynix26nm_getdefaultparam.o nftl_gcc53_hynix16nm_set_readretry.o nftl_gcc53_sandisk_readretry_init.o \
+	nftl_gcc53_samsung_special_init.o nftl_gcc53_micron_special_init.o nftl_gcc53_toshiba_special_init.o nftl_gcc53_sandisk_special_init.o nftl_gcc53_sandisk_A19_special_init.o nftl_gcc53_nand_dbg_phy_read.o nftl_gcc53_nand_dbg_zone_phy_read.o nftl_gcc53_hynix16nm_special_init.o \
+	nftl_gcc53_hynix20nm_special_init.o nftl_gcc53_hynix26nm_special_init.o nftl_gcc53_hynix16nm_readretry_init.o nftl_gcc53_malloc_logic_page_map.o nftl_gcc53_prio_gc_one.o nftl_gcc53_put_phy_block_to_free_list.o nftl_gcc53_hynix16nm_read_page_end.o nftl_gcc53_hynix20nm_read_page_end.o \
+	nftl_gcc53_hynix26nm_read_page_end.o nftl_gcc53_read_reclaim.o nftl_gcc53_first_scan.o nftl_gcc53_hynix16nm_major_check_byte.o nftl_gcc53_hynix16nm_get_special_info.o nftl_gcc53_hynix20nm_init_readretry_param.o nftl_gcc53_hynix20nm_default_param.o nftl_gcc53_get_used_page_num.o \
+	nftl_gcc53_get_used_page_num_no_crosstalk.o nftl_gcc53_gc_info.o nftl_gcc53_clean_zone.o nftl_gcc53_zone_param.o nftl_gcc53_static_wear_check.o nftl_gcc53_write_error.o nftl_gcc53_hynix16nm_init_readretry_param.o nftl_gcc53_hynix26nm_set_readretry.o \
+	nftl_gcc53_torture_block_and_mark.o nftl_gcc53_build_zone_list_first.o nftl_gcc53_toshiba_set_readretry.o nftl_gcc53__nftl_nand_read_logic_page.o nftl_gcc53_recover_logic_page_mapping.o nftl_gcc53_power_on_gc.o nftl_gcc53_check_cross_talk.o nftl_gcc53_init_nrc.o \
+	nftl_gcc53_gc_all_base_on_free_blks.o nftl_gcc53_done_static_wear_leveling.o nftl_gcc53_is_no_use_device.o nftl_gcc53_garbage_collect.o nftl_gcc53_garbage_collect_first.o nftl_gcc53_print_logic_page_map.o nftl_gcc53_panic_backup_block.o nftl_gcc53_sandisk_first_burn.o \
+	nftl_gcc53_get_empty_cahce_node.o nftl_gcc53_recover_block_phy_page_mapping.o nftl_gcc53_mark_free_block.o nftl_gcc53_sandisk_a19_read_page_end.o nftl_gcc53_sandisk_set_readretry.o nftl_gcc53_adjust_free_list.o nftl_gcc53_erase_block.o nftl_gcc53_flush_write_cache_to_nand.o \
+	nftl_gcc53_write_phy_page_map_to_current_block.o nftl_gcc53_phy_write.o nftl_gcc53_logic_write.o nftl_gcc53_scan_blocks.o nftl_gcc53_check_invalid_page_right.o nftl_gcc53_sandisk_read_page_end.o nftl_gcc53_current_block_ecc_error.o nftl_gcc53_block_last_page_ecc_error.o \
+	nftl_gcc53_hynix16nm_write_page_FF.o nftl_gcc53_hynix20nm_vender_get_param_otp_hynix.o nftl_gcc53_hynix20nm_getotpparam.o nftl_gcc53_hynix16nm_get_otp_param.o nftl_gcc53_hynix16nm_cfg.o nftl_gcc53_recover_phy_page_mapping.o nftl_gcc53_get_spare_data.o nftl_gcc53_crc16_pair.o \
+	nftl_gcc53_panic_flags.o nftl_gcc53_check_bit_nums.o nftl_gcc53_min_invalid_erase.o nftl_gcc53_list_nine.o nftl_gcc53_hynix_lsb_init_pair.o nftl_gcc53_hynix_lsb_enable_pair.o nftl_gcc53_hynix_default_pair.o nftl_gcc53_hynix20_retry.o \
+	nftl_gcc53_hynix20_init.o nftl_gcc53_hynix26_init.o nftl_gcc53_panic_write.o nftl_gcc53_panic_recover.o nftl_gcc53_cache_exit.o nftl_gcc53_smart_init.o nftl_gcc53_eval_order_three.o nftl_gcc53_eval_cache_three.o)
+quiet_cmd_nftl_all_merge = LD      $@
+      cmd_nftl_all_merge = python3 $(srctree)/scripts/trimui_nftl_merge_all.py $(srctree)/modules/nand/sun50iw10p1/nftl_stock_text_order.txt $(obj)/.nftl_all_recovered.lds $(nftl_all_text_objects) && $(LD) -r -T $(obj)/.nftl_all_recovered.lds -o $@ $(nftl_all_text_objects) && $(OBJCOPY) --localize-symbol=panic_mark_panic --localize-symbol=crc_wrong $@
+$(obj)/nftl_all_recovered.o: $(nftl_all_text_objects) $(srctree)/modules/nand/sun50iw10p1/nftl_stock_text_order.txt $(srctree)/scripts/trimui_nftl_merge_all.py FORCE
+	$(call if_changed,nftl_all_merge)
+
 quiet_cmd_nftl_crc_merge = LD      $@
       cmd_nftl_crc_merge = python3 $(srctree)/scripts/trimui_nftl_order_text.py $(obj)/nftl_recovered.o $(obj)/nftl_gcc53_second_scan.o $(obj)/nftl_gcc53_current_used.o $(obj)/nftl_gcc53_do_prio_gc.o $(obj)/nftl_gcc53_write_error_build.o $(obj)/.nftl_recovered_merged.lds && $(LD) -r -T $(obj)/.nftl_recovered_merged.lds -o $@ $(obj)/nftl_gcc53_crc_wrong.o && $(OBJCOPY) --localize-symbol=crc_wrong $@
 $(obj)/nftl_recovered_merged.o: $(obj)/nftl_recovered.o $(obj)/nftl_gcc53_second_scan.o $(obj)/nftl_gcc53_current_used.o $(obj)/nftl_gcc53_do_prio_gc.o $(obj)/nftl_gcc53_write_error_build.o $(obj)/nftl_gcc53_crc_wrong.o $(srctree)/scripts/trimui_nftl_order_text.py FORCE
@@ -435,7 +356,7 @@ CFLAGS_nftl_gcc53_recover_phy_page_mapping.o += -O0 -fno-builtin -fno-pic -mcmod
 CFLAGS_nftl_gcc53_get_spare_data.o += -O0 -fno-builtin -fno-pic -mcmodel=small -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_crc16_pair.o += -O0 -fno-builtin -fno-pic -mcmodel=small
 CFLAGS_nftl_gcc53_crc_wrong.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
-CFLAGS_nftl_gcc53_panic_flags.o += -O0 -fno-builtin -fno-pic -mcmodel=small
+CFLAGS_nftl_gcc53_panic_flags.o += -O0 -fno-builtin -fno-pic -mcmodel=small -ffunction-sections
 CFLAGS_nftl_gcc53_check_bit_nums.o += -O0 -fno-builtin -fno-pic -mcmodel=small
 CFLAGS_nftl_gcc53_min_invalid_erase.o += -O0 -fno-builtin -fno-pic -mcmodel=small -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_list_nine.o += -O0 -fno-builtin -fno-pic -mcmodel=small -ffunction-sections -fdata-sections

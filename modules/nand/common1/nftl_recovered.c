@@ -6381,13 +6381,15 @@ extern unsigned int nand_on_panic;
 extern unsigned int panic_enable;
 
 #ifdef TRIMUI_NFTL_PANIC_WRITE_GCC53_BUILD
-/* Panic write needs leaf frames, but this local flag setter does not. */
-__attribute__((optimize("-fomit-frame-pointer")))
-#endif
-static void panic_mark_panic(void)
+/* This selected pass calls the shared helper. The combined object localizes
+ * its symbol after resolving the call, matching the OEM's local binding. */
+extern void panic_mark_panic(void);
+#else
+void panic_mark_panic(void)
 {
 	nand_on_panic = 1;
 }
+#endif
 
 void panic_mark_enable(void)
 {
