@@ -141,7 +141,11 @@ static void commit_static_frame(void)
  struct timeval start,end;
  struct trimui_transfer_state_view *state;
  const volatile u8 *src;
- u32 *out;
+ /* OEM branches on the pixel group before its single wire-frame store.
+  * A volatile view keeps that branch in this compiler and preserves the
+  * same one-store-per-pixel observation, including unchecked overflow.
+  * TODO: bound the count in a separate behavior change. */
+ volatile u32 *out;
  mutex_lock(access);
  state=RELOC_HIDE(&trimui_transfer_state,0);
  /* OEM starts one pixel ahead, then reads this pixel with negative byte
