@@ -102,6 +102,11 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		return;
 	} else if (type == 3) {
 		u32 start_rgb;
+		/* OEM leaves x14/x15 intact across this generator path. Keep
+		 * the target channels in its w10/w11/w2 register schedule; the
+		 * paired-effect caller historically retains pointers in x14.
+		 */
+		register int to_r asm("w10"), to_g asm("w11"), to_b asm("w2");
 
 		/* OEM has an independent type-3 clamp, fill and ramp path. The
 		 * same two loops retain its initial writes and mirrored ramp order.
