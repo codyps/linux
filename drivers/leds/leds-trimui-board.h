@@ -852,7 +852,7 @@ static ssize_t show_effect_m(struct class *class, struct class_attribute *attr, 
 
 static ssize_t store_effect_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	register unsigned char *root asm("x20") =
+	register unsigned char *root asm("x19") =
 		(unsigned char *)&trimui_led_state + 0x32f8;
 	register struct trimui_led_effect *argument asm("x14");
 	register size_t saved_count asm("x21") = count;
@@ -887,7 +887,7 @@ static ssize_t show_effect_l(struct class *class, struct class_attribute *attr, 
 
 static ssize_t store_effect_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	register unsigned char *root asm("x20") =
+	register unsigned char *root asm("x19") =
 		(unsigned char *)&trimui_led_state + 0x21f8;
 	register struct trimui_led_effect *argument asm("x14");
 	register size_t saved_count asm("x21") = count;
@@ -920,7 +920,7 @@ static ssize_t show_effect_r(struct class *class, struct class_attribute *attr, 
 
 static ssize_t store_effect_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	register unsigned char *root asm("x20") =
+	register unsigned char *root asm("x19") =
 		(unsigned char *)&trimui_led_state + 0x10f8;
 	register struct trimui_led_effect *argument asm("x14");
 	register size_t saved_count asm("x21") = count;
