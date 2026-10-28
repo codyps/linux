@@ -718,6 +718,9 @@ static int __vin_pipeline_open(struct vin_pipeline *p,
 	struct vin_md *vind;
 	int ret;
 
+	/* The shipped WARN record names line 708. Retain the BSP license
+	 * header above while reproducing its observable diagnostic metadata. */
+#line 708
 	if (WARN_ON(p == NULL || me == NULL))
 		return -EINVAL;
 
@@ -811,6 +814,10 @@ static int __vin_pipeline_s_stream(struct vin_pipeline *p, int on_idx)
 		return -ENODEV;
 	}
 
+	/* The OEM stream-order table has a shorter source layout. Its WARN
+	 * record names line 797; preserve that diagnostic without removing
+	 * the explanation of the recovered table above. */
+#line 797
 	if (WARN_ON(p->sd[VIN_IND_SENSOR] == NULL))
 		return -ENODEV;
 
