@@ -430,13 +430,23 @@ static ssize_t show_frame_hex(struct class *class, struct class_attribute *attr,
 	register long i asm("x22") = 0;
 	int count = 0;
 	register char *position asm("x21") = buffer;
-	register u32 *pixels asm("x20") = (u32 *)trimui_transfer_state.rgb;
+	register u32 *pixels asm("x20") =
+		(u32 *)((u8 *)RELOC_HIDE(&trimui_transfer_state, 0) + 0x7cc);
+	register const char *format_page asm("x24");
+	/* Keep the OEM frame root and late format-page offset while retaining
+	 * the compiler's pooled format literal. */
+	asm("adrp %0, %1" : "=r"(format_page) : "S"("%06X "));
 	/* Stock advances by the cumulative length, producing sparse output.
 	 * At 34 LEDs the newline lands beyond a 4 KiB sysfs page.
 	 * TODO: advance by the last write and bound output in a separate fix. */
 	while ((int)i < (int)trimui_led_count) {
 		count += 7;
-		sprintf(position, "%06X ", pixels[i] & 0xffffff);
+		{
+			const char *format;
+			asm("add %0, %1, :lo12:%2"
+			    : "=r"(format) : "r"(format_page), "S"("%06X "));
+			sprintf(position, format, pixels[i] & 0xffffff);
+		}
 		position += count;
 		/* Keep the cumulative count live across the next LED-count read. */
 		asm volatile("" : "+r"(count));
