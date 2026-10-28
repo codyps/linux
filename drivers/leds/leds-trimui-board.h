@@ -187,6 +187,14 @@ static void commit_static_frame(void)
 
 static int trimui_ledc_run_thread(void *unused)
 {
+	/* Keep these effect roots live through their generator calls.  Stock
+	 * retains the left pointer in x22 and F2 pointer in x18.  The register
+	 * bindings recover the daemon's 824-byte body size with the OEM GCC.
+	 */
+	register struct trimui_led_effect *left asm("x22") = &trimui_effect_l;
+	register struct trimui_led_effect *front2 asm("x18") = &trimui_effect_f2;
+	asm volatile("" : "+r"(left));
+	asm volatile("" : "+r"(front2));
 	unsigned int battery_ticks = 0;
 	u32 rgb;
 	trimui_scale_m = 14;
@@ -222,10 +230,10 @@ static int trimui_ledc_run_thread(void *unused)
 	/* The OEM generator receives these fixed boot colors.  It does not
 	 * reread target_rgb between initialization and each call.
 	 */
-	gen_effect(&trimui_effect_l, 2, 0xffffff, 0xffffff);
+	gen_effect(left, 2, 0xffffff, 0xffffff);
 	gen_effect(&trimui_effect_r, 2, 0xffffff, 0xffffff);
 	gen_effect(&trimui_effect_f1, 2, 0x00ff33, 0x00ff33);
-	gen_effect(&trimui_effect_f2, 2, 0x00ff33, 0x00ff33);
+	gen_effect(front2, 2, 0x00ff33, 0x00ff33);
 	gen_effect(&trimui_effect_m, 2, 0xffffff, 0xffffff);
 	/* Keep the OEM's odd reset order.  A concurrent control read can see
 	 * these partially reset effects; do not collapse this into a loop.
@@ -243,8 +251,8 @@ static int trimui_ledc_run_thread(void *unused)
 	WRITE_ONCE(trimui_effect_m.active_cycles, rgb);
 	while (!kthread_should_stop()) {
 		if (trimui_effect_enable) {
-			if (is_effect_actived(&trimui_effect_l)) {
-				rgb = step_one_frame(&trimui_effect_l);
+			if (is_effect_actived(left)) {
+				rgb = step_one_frame(left);
 				trimui_frame[10] = trimui_frame[11] = rgb;
 			}
 			if (is_effect_actived(&trimui_effect_r)) {
@@ -258,8 +266,8 @@ static int trimui_ledc_run_thread(void *unused)
 			}
 			if (is_effect_actived(&trimui_effect_f1))
 				trimui_frame[9] = step_one_frame(&trimui_effect_f1);
-			if (is_effect_actived(&trimui_effect_f2))
-				trimui_frame[8] = step_one_frame(&trimui_effect_f2);
+			if (is_effect_actived(front2))
+				trimui_frame[8] = step_one_frame(front2);
 		} else if (trimui_frames_enable) {
 			int offset = trimui_frame_index * 14;
 			if (trimui_frames_len <= 0)
