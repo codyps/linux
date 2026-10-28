@@ -436,6 +436,9 @@ void xradio_version_show(void)
 /* return 0: failed*/
 static inline int xradio_macaddr_val2char(char *c_mac, const u8 *v_mac)
 {
+	/* OEM BUG line metadata is observable. Bind the recovered line while
+	 * retaining the maintained source's explanatory context elsewhere. */
+#line 437
 	SYS_BUG(!v_mac || !c_mac);
 	return sprintf(c_mac, "%02x:%02x:%02x:%02x:%02x:%02x\n",
 		       v_mac[0], v_mac[1], v_mac[2],
@@ -481,6 +484,8 @@ static void xradio_get_mac_addrs(u8 *macaddr)
 {
 	int ret = 0;
 	u32 serial;
+	/* Shipped BUG record: main.c:509. */
+#line 509
 	SYS_BUG(!macaddr);
 	/* Check mac addrs param, if exsist, use it first.*/
 #ifdef XRADIO_MACPARAM_HEX
@@ -613,6 +618,8 @@ static void xradio_set_ifce_comb(struct xradio_common *hw_priv,
 static int xradio_device_init(struct xradio_common *hw_priv)
 {
 	int ret = 0;
+	/* Shipped BUG record: main.c:637. */
+#line 637
 	SYS_BUG(!hw_priv);
 	/* Add pm device. */
 	hw_priv->plat_device = platform_device_alloc(XRADIO_PLAT_DEVICE, 0);

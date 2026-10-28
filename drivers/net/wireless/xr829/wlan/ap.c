@@ -2036,6 +2036,8 @@ static int xradio_update_beaconing(struct xradio_vif *priv)
 			if (priv->join_status != XRADIO_JOIN_STATUS_PASSIVE)
 				SYS_WARN(wsm_reset(hw_priv, &reset, priv->if_id));
 			priv->join_status = XRADIO_JOIN_STATUS_PASSIVE;
+			/* Preserve the shipped WARN line despite recovered source spacing. */
+#line 2040
 			SYS_WARN(xradio_start_ap(priv));
 			wsm_unlock_tx(hw_priv);
 		} else
@@ -2151,6 +2153,8 @@ void xradio_link_id_gc_work(struct work_struct *work)
 			memcpy(map_link.mac_addr, priv->link_id_db[i].mac, ETH_ALEN);
 			spin_unlock_bh(&priv->ps_state_lock);
 			if (need_reset) {
+				/* Shipped WARN record: ap.c:2162. */
+#line 2162
 				SYS_WARN(xrwl_unmap_link(priv, i + 1));
 			}
 			map_link.link_id = i + 1;
