@@ -1563,6 +1563,7 @@ static void sunxi_get_para_of_property(struct sunxi_led *led)
 	int err;
 	u32 val;
 	const char *str;
+	struct sunxi_led *lookup_led;
 
 	err = sunxi_get_u32_of_property("led_count", &val);
 	if (!err)
@@ -1572,8 +1573,18 @@ static void sunxi_get_para_of_property(struct sunxi_led *led)
 #endif
 
 	memcpy(led->output_mode.str, "GRB", 3);
-	led->output_mode.val = SUNXI_OUTPUT_GRB;
-	err = sunxi_get_str_of_property("output_mode", &str);
+	/* Stock snapshots the global pointer before publishing the default mode.
+	 * Keep this race-prone order; TODO: synchronize the pointer's lifetime.
+	 */
+	lookup_led = READ_ONCE(sunxi_led);
+	WRITE_ONCE(led->output_mode.val, SUNXI_OUTPUT_GRB);
+	err = of_property_read_string(lookup_led->dev->of_node,
+				      "output_mode", &str);
+	if (err < 0)
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_get_str_of_property,
+					  1568,
+					  "failed to get the string of propname %s!\n",
+					  "output_mode");
 	if (!err)
 		if (!strncmp(str, "BRG", 3) ||
 			!strncmp(str, "GBR", 3) ||
