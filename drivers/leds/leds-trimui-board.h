@@ -1020,24 +1020,68 @@ static ssize_t show_effect_lr(struct class *class, struct class_attribute *attr,
 	return sprintf(buffer, "%d\n", trimui_effect_l.type);
 }
 
-static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+#define TRIMUI_PAIR_LEFT(root) \
+	((struct trimui_led_effect *)((root) + 0xb88))
+#define TRIMUI_PAIR_RIGHT(root) \
+	((struct trimui_led_effect *)((root) + 0xd68))
+static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr,
+			       const char *buffer, size_t count)
 {
-	int right_cycles;
+	register unsigned char *left_root asm("x20") =
+		(unsigned char *)&trimui_led_state + 0x21f8;
+	register unsigned char *right_root asm("x18");
+	register struct trimui_led_effect *left_argument asm("x15");
+	register struct trimui_led_effect *right_argument asm("x14");
+	register size_t saved_count asm("x21") = count;
+	register int parser_base asm("w1") = 0;
+	int right_cycles, left_type, left_target, left_current;
+	int right_type, right_target, right_current;
+	struct trimui_led_effect *left_effect;
 
-	kstrtoint(buffer, 0, (int *)&trimui_effect_l.type);
-	if ((unsigned int)trimui_effect_l.type > 7) trimui_effect_l.type = 0;
-	trimui_effect_r.type = trimui_effect_l.type;
-	gen_effect(&trimui_effect_l, trimui_effect_l.type, trimui_effect_l.target_rgb, trimui_effect_l.current_rgb);
-	gen_effect(&trimui_effect_r, trimui_effect_r.type, trimui_effect_r.target_rgb, trimui_effect_r.current_rgb);
-	WRITE_ONCE(trimui_effect_l.index, 0);
-	WRITE_ONCE(trimui_effect_l.active_cycles, READ_ONCE(trimui_effect_l.cycles));
-	/* OEM reads right cycles before resetting right index, unlike the
-	 * five single-effect setters. Keep this observable ordering. */
-	right_cycles = READ_ONCE(trimui_effect_r.cycles);
-	WRITE_ONCE(trimui_effect_r.index, 0);
-	WRITE_ONCE(trimui_effect_r.active_cycles, right_cycles);
-	return count;
+	/* OEM ignores parser errors and still regenerates both effects. */
+	asm volatile("" : "+r"(saved_count));
+	kstrtoint(buffer, parser_base, (int *)&TRIMUI_PAIR_LEFT(left_root)->type);
+	if ((unsigned int)TRIMUI_PAIR_LEFT(left_root)->type > 7)
+		TRIMUI_PAIR_LEFT(left_root)->type = 0;
+	right_root = (unsigned char *)&trimui_led_state + 0x10f8;
+	left_effect = TRIMUI_PAIR_LEFT(left_root);
+	asm volatile("" : "+r"(left_effect));
+	left_argument = left_effect;
+	right_argument = TRIMUI_PAIR_RIGHT(right_root);
+	asm volatile("" : "+r"(left_argument), "+r"(right_argument));
+	left_type = READ_ONCE(left_effect->type);
+	left_current = READ_ONCE(left_effect->current_rgb);
+	left_target = READ_ONCE(left_effect->target_rgb);
+	WRITE_ONCE(TRIMUI_PAIR_RIGHT(right_root)->type, left_type);
+	{
+		register struct trimui_led_effect *call asm("x0") = left_argument;
+
+		asm volatile("" : "+r"(call));
+		gen_effect(call, left_type, left_target, left_current);
+	}
+	/* Re-form the right pointer after gen_effect: the rebuilt generator
+	 * writes x14 for type 3. Keeping it there would corrupt this call. */
+	right_argument = TRIMUI_PAIR_RIGHT(right_root);
+	right_type = READ_ONCE(TRIMUI_PAIR_RIGHT(right_root)->type);
+	right_current = READ_ONCE(TRIMUI_PAIR_RIGHT(right_root)->current_rgb);
+	right_target = READ_ONCE(TRIMUI_PAIR_RIGHT(right_root)->target_rgb);
+	{
+		register struct trimui_led_effect *call asm("x0") = right_argument;
+
+		asm volatile("" : "+r"(call));
+		gen_effect(call, right_type, right_target, right_current);
+	}
+	WRITE_ONCE(left_effect->index, 0);
+	WRITE_ONCE(left_effect->active_cycles,
+		READ_ONCE(left_effect->cycles));
+	/* OEM reads right cycles before resetting right index. */
+	right_cycles = READ_ONCE(TRIMUI_PAIR_RIGHT(right_root)->cycles);
+	WRITE_ONCE(TRIMUI_PAIR_RIGHT(right_root)->index, 0);
+	WRITE_ONCE(TRIMUI_PAIR_RIGHT(right_root)->active_cycles, right_cycles);
+	return saved_count;
 }
+#undef TRIMUI_PAIR_LEFT
+#undef TRIMUI_PAIR_RIGHT
 
 /* This view begins eight bytes before the LED state. The adjacent scalar
  * fields share the address root used by the stock sysfs setters. */
