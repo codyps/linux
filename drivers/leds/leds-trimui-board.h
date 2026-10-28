@@ -847,15 +847,37 @@ static ssize_t show_effect_m(struct class *class, struct class_attribute *attr, 
  * input keeps the previous type, but still regenerates the effect and resets
  * its playback state; preserve that observable bug.
  */
+#define TRIMUI_EFFECT_AT(root, offset) \
+	((struct trimui_led_effect *)((root) + (offset)))
+
 static ssize_t store_effect_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_m.type);
-	if ((unsigned int)trimui_effect_m.type > 7) trimui_effect_m.type = 0;
-	gen_effect(&trimui_effect_m, trimui_effect_m.type, trimui_effect_m.target_rgb, trimui_effect_m.current_rgb);
+	register unsigned char *root asm("x20") =
+		(unsigned char *)&trimui_led_state + 0x32f8;
+	register struct trimui_led_effect *argument asm("x14");
+	register size_t saved_count asm("x21") = count;
+	register int parser_base asm("w1") = 0;
+
+	/* The OEM uses a page-local root, then rereads the effect from it. */
+	asm volatile("" : "+r"(saved_count));
+	kstrtoint(buffer, parser_base, (int *)&TRIMUI_EFFECT_AT(root, 0x9a8)->type);
+	if ((unsigned int)TRIMUI_EFFECT_AT(root, 0x9a8)->type > 7)
+		TRIMUI_EFFECT_AT(root, 0x9a8)->type = 0;
+	argument = TRIMUI_EFFECT_AT(root, 0x9a8);
+	asm volatile("" : "+r"(argument));
+	{
+		register struct trimui_led_effect *call asm("x0") = argument;
+
+		asm volatile("" : "+r"(call));
+		gen_effect(call, TRIMUI_EFFECT_AT(root, 0x9a8)->type,
+			TRIMUI_EFFECT_AT(root, 0x9a8)->target_rgb,
+			TRIMUI_EFFECT_AT(root, 0x9a8)->current_rgb);
+	}
 	/* OEM resets the index before reading cycles, even if state changes. */
-	WRITE_ONCE(trimui_effect_m.index, 0);
-	WRITE_ONCE(trimui_effect_m.active_cycles, READ_ONCE(trimui_effect_m.cycles));
-	return count;
+	WRITE_ONCE(TRIMUI_EFFECT_AT(root, 0x9a8)->index, 0);
+	WRITE_ONCE(TRIMUI_EFFECT_AT(root, 0x9a8)->active_cycles,
+		READ_ONCE(TRIMUI_EFFECT_AT(root, 0x9a8)->cycles));
+	return saved_count;
 }
 
 static ssize_t show_effect_l(struct class *class, struct class_attribute *attr, char *buffer)
@@ -865,12 +887,30 @@ static ssize_t show_effect_l(struct class *class, struct class_attribute *attr, 
 
 static ssize_t store_effect_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_l.type);
-	if ((unsigned int)trimui_effect_l.type > 7) trimui_effect_l.type = 0;
-	gen_effect(&trimui_effect_l, trimui_effect_l.type, trimui_effect_l.target_rgb, trimui_effect_l.current_rgb);
-	WRITE_ONCE(trimui_effect_l.index, 0);
-	WRITE_ONCE(trimui_effect_l.active_cycles, READ_ONCE(trimui_effect_l.cycles));
-	return count;
+	register unsigned char *root asm("x20") =
+		(unsigned char *)&trimui_led_state + 0x21f8;
+	register struct trimui_led_effect *argument asm("x14");
+	register size_t saved_count asm("x21") = count;
+	register int parser_base asm("w1") = 0;
+
+	asm volatile("" : "+r"(saved_count));
+	kstrtoint(buffer, parser_base, (int *)&TRIMUI_EFFECT_AT(root, 0xb88)->type);
+	if ((unsigned int)TRIMUI_EFFECT_AT(root, 0xb88)->type > 7)
+		TRIMUI_EFFECT_AT(root, 0xb88)->type = 0;
+	argument = TRIMUI_EFFECT_AT(root, 0xb88);
+	asm volatile("" : "+r"(argument));
+	{
+		register struct trimui_led_effect *call asm("x0") = argument;
+
+		asm volatile("" : "+r"(call));
+		gen_effect(call, TRIMUI_EFFECT_AT(root, 0xb88)->type,
+			TRIMUI_EFFECT_AT(root, 0xb88)->target_rgb,
+			TRIMUI_EFFECT_AT(root, 0xb88)->current_rgb);
+	}
+	WRITE_ONCE(TRIMUI_EFFECT_AT(root, 0xb88)->index, 0);
+	WRITE_ONCE(TRIMUI_EFFECT_AT(root, 0xb88)->active_cycles,
+		READ_ONCE(TRIMUI_EFFECT_AT(root, 0xb88)->cycles));
+	return saved_count;
 }
 
 static ssize_t show_effect_r(struct class *class, struct class_attribute *attr, char *buffer)
@@ -880,13 +920,32 @@ static ssize_t show_effect_r(struct class *class, struct class_attribute *attr, 
 
 static ssize_t store_effect_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_r.type);
-	if ((unsigned int)trimui_effect_r.type > 7) trimui_effect_r.type = 0;
-	gen_effect(&trimui_effect_r, trimui_effect_r.type, trimui_effect_r.target_rgb, trimui_effect_r.current_rgb);
-	WRITE_ONCE(trimui_effect_r.index, 0);
-	WRITE_ONCE(trimui_effect_r.active_cycles, READ_ONCE(trimui_effect_r.cycles));
-	return count;
+	register unsigned char *root asm("x20") =
+		(unsigned char *)&trimui_led_state + 0x10f8;
+	register struct trimui_led_effect *argument asm("x14");
+	register size_t saved_count asm("x21") = count;
+	register int parser_base asm("w1") = 0;
+
+	asm volatile("" : "+r"(saved_count));
+	kstrtoint(buffer, parser_base, (int *)&TRIMUI_EFFECT_AT(root, 0xd68)->type);
+	if ((unsigned int)TRIMUI_EFFECT_AT(root, 0xd68)->type > 7)
+		TRIMUI_EFFECT_AT(root, 0xd68)->type = 0;
+	argument = TRIMUI_EFFECT_AT(root, 0xd68);
+	asm volatile("" : "+r"(argument));
+	{
+		register struct trimui_led_effect *call asm("x0") = argument;
+
+		asm volatile("" : "+r"(call));
+		gen_effect(call, TRIMUI_EFFECT_AT(root, 0xd68)->type,
+			TRIMUI_EFFECT_AT(root, 0xd68)->target_rgb,
+			TRIMUI_EFFECT_AT(root, 0xd68)->current_rgb);
+	}
+	WRITE_ONCE(TRIMUI_EFFECT_AT(root, 0xd68)->index, 0);
+	WRITE_ONCE(TRIMUI_EFFECT_AT(root, 0xd68)->active_cycles,
+		READ_ONCE(TRIMUI_EFFECT_AT(root, 0xd68)->cycles));
+	return saved_count;
 }
+#undef TRIMUI_EFFECT_AT
 
 static ssize_t show_effect_f1(struct class *class, struct class_attribute *attr, char *buffer)
 {
