@@ -27,6 +27,11 @@ int de_fcm_set_reg_base(unsigned int sel, unsigned int channel, void *base)
 
 int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 {
+	/* OEM bug: the selectors and shadow pointer are used unchecked. A bad
+	 * caller can index beyond fcm_dev or dereference NULL. Preserve that
+	 * behavior here; TODO: validate both before accessing the shadow buffer.
+	 * The linked A133 feature query bypasses normal FCM initialization.
+	 */
 	volatile union fcm_word *reg = fcm_dev[sel][channel];
 	int i;
 
