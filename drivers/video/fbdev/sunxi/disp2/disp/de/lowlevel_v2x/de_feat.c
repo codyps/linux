@@ -1201,6 +1201,12 @@ int de_feat_is_support_wb(unsigned int disp)
 	return de_cur_features->is_support_wb[disp];
 }
 
+/* The TG3040 A133 feature table advertises no FCM channels. */
+int de_feat_is_support_fcm_by_chn(unsigned int disp, unsigned int chn)
+{
+	return 0;
+}
+
 int de_feat_is_support_scale(unsigned int disp)
 {
 	unsigned int i, index = 0, num_channels = 0;
@@ -1315,12 +1321,6 @@ int de_feat_init(void)
 }
 
 int de_feat_exit(void)
-{
-	return 0;
-}
-
-/* The TG3040 A133 feature table advertises no FCM channels. */
-int de_feat_is_support_fcm_by_chn(unsigned int disp, unsigned int chn)
 {
 	return 0;
 }
