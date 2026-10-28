@@ -366,6 +366,13 @@ struct iommu_stock_dma_node {
 static int __full_va_sweep(struct device *dev, struct seq_file *s,
 			   const size_t size, struct iommu_domain *domain)
 {
+	/* Keep the OEM device pointer in x19 across both allocation and sweep.
+	 * A volatile empty asm changes the early spill order; GCC's ordinary
+	 * register constraint reproduces the stock 516-byte function body.
+	 * The source mechanism that yielded the stock register choice is unknown.
+	 */
+	register struct device *device asm("x19") = dev;
+	asm("" : "+r"(device));
 	struct iommu_stock_dma_node *head, *node, *next;
 	unsigned long iova;
 	void *virt;
@@ -384,7 +391,7 @@ static int __full_va_sweep(struct device *dev, struct seq_file *s,
 	virt = (void *)__get_free_pages(GFP_KERNEL, get_order(size));
 	if (!virt) {
 		if (size > SZ_8K) {
-			dev_err(dev,
+			dev_err(device,
 				"Failed to allocate %s of memory, which is a lot. Skipping test for this size\n",
 				_size_to_string(size));
 			return 0;
@@ -394,19 +401,19 @@ static int __full_va_sweep(struct device *dev, struct seq_file *s,
 	phys = virt_to_phys(virt);
 
 	for (iova = 0, node = head; iova < max; iova += size) {
-		node->address = dma_map_single(dev, virt, size, DMA_TO_DEVICE);
+		node->address = dma_map_single(device, virt, size, DMA_TO_DEVICE);
 		next = kmalloc(sizeof(*next), GFP_KERNEL);
 		node->next = next;
 		next->address = 0;
 		next->next = NULL;
 		if (!node->address || node->address == DMA_ERROR_CODE) {
-			dev_err(dev, "Failed to map dma, out of iova space\n");
+			dev_err(device, "Failed to map dma, out of iova space\n");
 			return -ENOMEM;
 		}
 		node = node->next;
 	}
 	for (node = head; node->address; node = next) {
-		dma_unmap_single(dev, node->address, size, DMA_TO_DEVICE);
+		dma_unmap_single(device, node->address, size, DMA_TO_DEVICE);
 		next = node->next;
 		kfree(node);
 	}
