@@ -71,6 +71,33 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 	return 0;
 }
 
+int set_364(u32 *table)
+{
+	volatile u8 *registers = (volatile u8 *)fcm_dev[0][0];
+	unsigned int row, column, index;
+
+	/* OEM bug: the final cell reads table[377] beyond a 364-word grid.
+	 * TODO: validate/pad input; retain stock accesses, including aliases.
+	 */
+	for (row = 0; row < 28; row++)
+		for (column = 0; column < 13; column++) {
+			index = row * 13 + column;
+			registers[0x300 + 4 * index] = table[index];
+			registers[0x900 + 4 * index] = table[index];
+			registers[0xf00 + 4 * index] = table[index];
+			registers[0x301 + 4 * index] = table[index + 1];
+			registers[0x901 + 4 * index] = table[index + 1];
+			registers[0xf01 + 4 * index] = table[index + 1];
+			registers[0x302 + 4 * index] = table[index + 13];
+			registers[0x902 + 4 * index] = table[index + 13];
+			registers[0xf02 + 4 * index] = table[index + 13];
+			registers[0x303 + 4 * index] = table[index + 14];
+			registers[0x903 + 4 * index] = table[index + 14];
+			registers[0xf03 + 4 * index] = table[index + 14];
+		}
+	return 0;
+}
+
 int de_fcm_init(unsigned int sel, unsigned int channel, uintptr_t reg_base)
 {
 	uintptr_t base = reg_base + (sel + 1) * 0x100000 + 0xaa000;
@@ -135,32 +162,5 @@ int de_fcm_set_window(unsigned int sel, unsigned int channel,
 		reg[4].pair13.high = window.y + window.h - 1;
 	}
 	fcm_block[sel][channel].dirty = 1;
-	return 0;
-}
-
-int set_364(u32 *table)
-{
-	volatile u8 *registers = (volatile u8 *)fcm_dev[0][0];
-	unsigned int row, column, index;
-
-	/* OEM bug: the final cell reads table[377] beyond a 364-word grid.
-	 * TODO: validate/pad input; retain stock accesses, including aliases.
-	 */
-	for (row = 0; row < 28; row++)
-		for (column = 0; column < 13; column++) {
-			index = row * 13 + column;
-			registers[0x300 + 4 * index] = table[index];
-			registers[0x900 + 4 * index] = table[index];
-			registers[0xf00 + 4 * index] = table[index];
-			registers[0x301 + 4 * index] = table[index + 1];
-			registers[0x901 + 4 * index] = table[index + 1];
-			registers[0xf01 + 4 * index] = table[index + 1];
-			registers[0x302 + 4 * index] = table[index + 13];
-			registers[0x902 + 4 * index] = table[index + 13];
-			registers[0xf02 + 4 * index] = table[index + 13];
-			registers[0x303 + 4 * index] = table[index + 14];
-			registers[0x903 + 4 * index] = table[index + 14];
-			registers[0xf03 + 4 * index] = table[index + 14];
-		}
 	return 0;
 }
