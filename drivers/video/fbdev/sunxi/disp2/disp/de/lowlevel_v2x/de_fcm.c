@@ -39,8 +39,20 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 	memcpy((void *)(reg + 0xa0 / 4), fcm_angle_sat, sizeof(fcm_angle_sat));
 	memcpy((void *)(reg + 0xe0 / 4), fcm_angle_lum, sizeof(fcm_angle_lum));
 	for (i = 0; i < 28; i++) {
-		reg[0x120 / 4 + i].pair13.low = fcm_hbh[i];
-		reg[0x1a0 / 4 + i].pair11.low = fcm_sbh[i];
+		union fcm_word hue_word;
+		u32 hue, sat;
+
+		/* Stock reads the saturation table between the hue shadow read
+		 * and write. Keep that order even if the unchecked shadow pointer
+		 * aliases another mapped region. TODO: validate the shadow pointer
+		 * in a separate behavior change.
+		 */
+		hue = READ_ONCE(fcm_hbh[i]);
+		hue_word.value = reg[0x120 / 4 + i].value;
+		sat = READ_ONCE(fcm_sbh[i]);
+		hue_word.pair13.low = hue;
+		reg[0x120 / 4 + i].value = hue_word.value;
+		reg[0x1a0 / 4 + i].pair11.low = sat;
 		reg[0x220 / 4 + i].pair9.low = fcm_ybh[i];
 		if (i == 27) {
 			reg[0x120 / 4 + i].pair13.high = 0;
