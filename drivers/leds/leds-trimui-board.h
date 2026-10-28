@@ -159,7 +159,10 @@ static void commit_static_frame(void)
  for(i=0;i<count;i++) {
   /* Stock observes the scale before the three color-byte reads. */
   scale=READ_ONCE(*trimui_scale_by_led[i]);
-  if(low && scale>3)scale=3;
+  /* OEM skips the clamp entirely when the low-battery snapshot is clear. */
+  if(low) {
+   if(scale>3)scale=3;
+  }
   /* Preserve byte observation order, wrap, and arithmetic blue shift.
    * TODO: normalize channel widths only as a separate fix. */
   blue=(u32)src[-4]*scale; red=(u32)src[-2]*scale; green=(u32)src[-3]*scale;
