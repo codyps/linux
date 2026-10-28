@@ -300,6 +300,17 @@ static inline void sunxi_set_wait_data_time_ns(struct sunxi_led *led)
 #endif /* SUNXI_FPGA_LEDC */
 }
 
+#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
+#include "leds-trimui-help.h"
+/* Stock places the large help literal before the LEDC timing diagnostics. */
+static __attribute__((no_reorder)) ssize_t help_show(struct class *class,
+		struct class_attribute *attr, char *buffer)
+{
+	sprintf(buffer, "%s\n", trimui_led_help);
+	return sizeof(trimui_led_help);
+}
+#endif
+
 /* Keep these controller literals before the OEM animation string group.
  * This constrains emission order without changing their generated text.
  */

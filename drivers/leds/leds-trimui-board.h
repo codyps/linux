@@ -3,7 +3,6 @@
 #include <linux/gpio.h>
 #include <linux/kthread.h>
 #include "leds-trimui-effects.h"
-#include "leds-trimui-help.h"
 
 extern int trimui_axp2202_get_bat_cap(void);
 extern int trimui_set_speaker_enable(int enable);
@@ -480,12 +479,6 @@ static __attribute__((no_reorder)) ssize_t show_max_scale(struct class *class, s
 static __attribute__((no_reorder)) ssize_t show_led_enable(struct class *class, struct class_attribute *attr, char *buffer)
 {
 	return sprintf(buffer, "%d\n", trimui_led_enable);
-}
-
-static __attribute__((no_reorder)) ssize_t help_show(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	sprintf(buffer, "%s\n", trimui_led_help);
-	return sizeof(trimui_led_help);
 }
 
 static __attribute__((no_reorder)) ssize_t show_speaker_mute(struct class *class, struct class_attribute *attr, char *buffer)
