@@ -72,7 +72,20 @@ obj-$(CONFIG_LEDS_IS31FL32XX)		+= leds-is31fl32xx.o
 obj-$(CONFIG_LEDS_IS31FL3736)		+= leds-is31fl3736.o
 obj-$(CONFIG_LEDS_PM8058)		+= leds-pm8058.o
 obj-$(CONFIG_LEDS_MLXCPLD)		+= leds-mlxcpld.o
+ifeq ($(CONFIG_LEDS_SUNXI),y)
+obj-y				+= leds-sunxi-ordered.o
+# Each stock LED C body is contiguous, but the OEM text order differs from
+# the compiler's source order for a few functions. Preserve separate C
+# sections until the verified stock-order partial link.
+CFLAGS_leds-sunxi.o += -ffunction-sections
+quiet_cmd_trimui_led_order = LD      $@
+      cmd_trimui_led_order = python3 $(srctree)/scripts/trimui_led_order_text.py $(srctree)/drivers/leds/leds-trimui-stock-text-order.txt $(obj)/leds-sunxi.o $(obj)/.leds-sunxi-ordered.lds && $(LD) -r -T $(obj)/.leds-sunxi-ordered.lds -o $@ $(obj)/leds-sunxi.o && $(OBJCOPY) --rename-section=.text.unlikely.output_mode_write.part.7=.text.unlikely $@
+$(obj)/leds-sunxi-ordered.o: $(obj)/leds-sunxi.o $(srctree)/drivers/leds/leds-trimui-stock-text-order.txt $(srctree)/scripts/trimui_led_order_text.py FORCE
+	$(call if_changed,trimui_led_order)
+else
+# Retain the conventional module name for non-stock, modular configurations.
 obj-$(CONFIG_LEDS_SUNXI)		+= leds-sunxi.o
+endif
 obj-$(CONFIG_LEDS_PWM_SUNXI)		+= leds-pwm-sunxi.o
 
 #for AW2016 LED Driver
