@@ -1691,6 +1691,31 @@ led_show(struct class *class, struct class_attribute *attr, char *buf)
 	return 0;
 }
 
+#ifdef CONFIG_PM
+/* OEM pinctrl diagnostics precede the animation literals. Keep this helper
+ * in the controller emission group without changing its fault returns.
+ */
+static __attribute__((no_reorder)) int led_select_gpio_state(struct pinctrl *pctrl, char *name)
+{
+	int ret = 0;
+	struct pinctrl_state *pctrl_state = NULL;
+
+	pctrl_state = pinctrl_lookup_state(pctrl, name);
+	if (IS_ERR(pctrl_state)) {
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_early.led_select_gpio_state, 3416, "pinctrl_lookup_state(%s) failed! return %p\n",
+				name, pctrl_state);
+		return -1;
+	}
+
+	ret = pinctrl_select_state(pctrl, pctrl_state);
+	if (ret < 0)
+		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_early.led_select_gpio_state, 3423, "pinctrl_select_state(%s) failed! return %d\n",
+				name, ret);
+
+	return ret;
+}
+#endif
+
 #ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
 #include "leds-trimui-board.h"
 #else
@@ -1888,26 +1913,6 @@ static int sunxi_led_remove(struct platform_device *pdev)
 }
 
 #ifdef CONFIG_PM
-static int led_select_gpio_state(struct pinctrl *pctrl, char *name)
-{
-	int ret = 0;
-	struct pinctrl_state *pctrl_state = NULL;
-
-	pctrl_state = pinctrl_lookup_state(pctrl, name);
-	if (IS_ERR(pctrl_state)) {
-		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_early.led_select_gpio_state, 3416, "pinctrl_lookup_state(%s) failed! return %p\n",
-				name, pctrl_state);
-		return -1;
-	}
-
-	ret = pinctrl_select_state(pctrl, pctrl_state);
-	if (ret < 0)
-		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_early.led_select_gpio_state, 3423, "pinctrl_select_state(%s) failed! return %d\n",
-				name, ret);
-
-	return ret;
-}
-
 static int led_regulator_enable(struct sunxi_led *led)
 {
 	if (led->regulator == NULL)
