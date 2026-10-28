@@ -962,7 +962,6 @@ static ssize_t store_effect_f1(struct class *class, struct class_attribute *attr
 
 	/* The OEM uses the pointer slot eight bytes before trimui_led_state as
 	 * its address root. Keep its parser and generator pointer lifetimes. */
-	asm volatile("" : "+r"(saved_count));
 	/* OEM ignores parse errors, then clamps any type above 7 to zero. */
 	kstrtoint(buffer, parser_base, (int *)&effect->type);
 	if ((unsigned int)effect->type > 7)
@@ -996,7 +995,6 @@ static ssize_t store_effect_f2(struct class *class, struct class_attribute *attr
 
 	/* The OEM uses the pointer slot eight bytes before trimui_led_state as
 	 * its address root. Keep its parser and generator pointer lifetimes. */
-	asm volatile("" : "+r"(saved_count));
 	/* OEM ignores parse errors, then clamps any type above 7 to zero. */
 	kstrtoint(buffer, parser_base, (int *)&effect->type);
 	if ((unsigned int)effect->type > 7)
