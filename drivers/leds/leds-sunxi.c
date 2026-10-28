@@ -1446,7 +1446,7 @@ static int sunxi_register_led_classdev(struct sunxi_led *led)
 
 	if (!led->led_count)
 		led->led_count = SUNXI_DEFAULT_LED_COUNT;
-
+	/* OEM bug: callbacks can change the live count after sizing; TODO: snapshot and validate it. */
 	size = sizeof(struct sunxi_led_classdev_group) * led->led_count;
 	led->pcdev_group = kzalloc(size, GFP_KERNEL);
 	if (!led->pcdev_group)
