@@ -300,7 +300,10 @@ static inline void sunxi_set_wait_data_time_ns(struct sunxi_led *led)
 #endif /* SUNXI_FPGA_LEDC */
 }
 
-static void sunxi_ledc_set_time(struct sunxi_led *led)
+/* Keep these controller literals before the OEM animation string group.
+ * This constrains emission order without changing their generated text.
+ */
+static __attribute__((no_reorder)) void sunxi_ledc_set_time(struct sunxi_led *led)
 {
 	sunxi_set_reset_ns(led);
 	sunxi_set_t1h_ns(led);
@@ -334,7 +337,7 @@ static void sunxi_ledc_set_length(struct sunxi_led *led)
 	sunxi_set_reg(LED_RESET_TIMING_CTRL_REG_OFFSET, reg_val);
 }
 
-static void sunxi_ledc_set_output_mode(struct sunxi_led *led, const char *str)
+static __attribute__((no_reorder)) void sunxi_ledc_set_output_mode(struct sunxi_led *led, const char *str)
 {
 	u32 val;
 	u32 mask = 0x7;
