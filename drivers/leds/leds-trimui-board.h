@@ -764,7 +764,7 @@ static noinline int dump_rgb_hex(char *buffer, u32 rgb)
 	return 8;
 }
 
-static noinline u32 get_rgb_hex(const char *buffer)
+static noinline u32 get_rgb_hex(struct class *class, const char *buffer)
 {
 	u32 rgb = 0;
 
@@ -782,7 +782,7 @@ static ssize_t show_effect_rgb_hex_m(struct class *class, struct class_attribute
 
 static ssize_t store_effect_rgb_hex_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	u32 rgb = get_rgb_hex(buffer);
+	u32 rgb = get_rgb_hex(class, buffer);
 	trimui_effect_m.target_rgb = rgb;
 	return count;
 }
@@ -794,7 +794,7 @@ static ssize_t show_effect_rgb_hex_l(struct class *class, struct class_attribute
 
 static ssize_t store_effect_rgb_hex_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	u32 rgb = get_rgb_hex(buffer);
+	u32 rgb = get_rgb_hex(class, buffer);
 	trimui_effect_l.target_rgb = rgb;
 	return count;
 }
@@ -806,7 +806,7 @@ static ssize_t show_effect_rgb_hex_r(struct class *class, struct class_attribute
 
 static ssize_t store_effect_rgb_hex_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	u32 rgb = get_rgb_hex(buffer);
+	u32 rgb = get_rgb_hex(class, buffer);
 	trimui_effect_r.target_rgb = rgb;
 	return count;
 }
@@ -818,7 +818,7 @@ static ssize_t show_effect_rgb_hex_f1(struct class *class, struct class_attribut
 
 static ssize_t store_effect_rgb_hex_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	u32 rgb = get_rgb_hex(buffer);
+	u32 rgb = get_rgb_hex(class, buffer);
 	trimui_effect_f1.target_rgb = rgb;
 	return count;
 }
@@ -830,7 +830,7 @@ static ssize_t show_effect_rgb_hex_f2(struct class *class, struct class_attribut
 
 static ssize_t store_effect_rgb_hex_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	u32 rgb = get_rgb_hex(buffer);
+	u32 rgb = get_rgb_hex(class, buffer);
 	trimui_effect_f2.target_rgb = rgb;
 	return count;
 }
@@ -847,7 +847,7 @@ __asm__(".local trimui_target_l\n.type trimui_target_l,%object\n.set trimui_targ
         ".local trimui_target_r\n.type trimui_target_r,%object\n.set trimui_target_r,trimui_led_state+0x1e7c\n.size trimui_target_r,4\n");
 static ssize_t store_effect_rgb_hex_lr(struct class *class,struct class_attribute *attr,const char *buffer,size_t count)
 {
- u32 rgb=get_rgb_hex(buffer);
+ u32 rgb=get_rgb_hex(class, buffer);
  /* Stock publishes left before right without synchronization, even after
   * malformed input produced zero. TODO: reject invalid input and protect
   * the pair only in a separate behavior change. */

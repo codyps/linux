@@ -1015,7 +1015,7 @@ static const struct file_operations hwversion_fops __attribute__((no_reorder)) =
 	.read  = hwversion_read,
 };
 
-static void sunxi_led_create_debugfs(struct sunxi_led *led)
+static void sunxi_led_create_debugfs(struct dentry **debugfs_slot)
 {
 	struct dentry *debugfs_dir, *debugfs_file;
 
@@ -1025,7 +1025,7 @@ static void sunxi_led_create_debugfs(struct sunxi_led *led)
 		return;
 	}
 
-	led->debugfs_dir = debugfs_dir;
+	*debugfs_slot = debugfs_dir;
 
 	debugfs_file = debugfs_create_file("reset_ns", 0660,
 				debugfs_dir, NULL, &reset_ns_fops);
@@ -1793,7 +1793,7 @@ static int sunxi_led_probe(struct platform_device *pdev)
 	}
 
 #ifdef CONFIG_DEBUG_FS
-		sunxi_led_create_debugfs(led);
+		sunxi_led_create_debugfs(&led->debugfs_dir);
 #endif /* CONFIG_DEBUG_FS */
 
 	err = class_register(&led_class);
