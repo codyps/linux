@@ -273,7 +273,7 @@ static int trimui_ledc_run_thread(void *unused)
 			if (trimui_frames_len <= 0)
 				goto battery;
 			/* TODO: bound the animation length/index in a corrective patch.
-			 * Stock reads beyond anim_frames when sysfs supplies such state.
+			 * Stock's 32-bit offset wraps; sysfs can read before/after anim_frames.
 			 */
 			if (++trimui_frame_index >= trimui_frames_len) {
 				trimui_frame_index = 0;
