@@ -895,12 +895,31 @@ static ssize_t show_effect_f1(struct class *class, struct class_attribute *attr,
 
 static ssize_t store_effect_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	kstrtoint(buffer, 0, (int *)&trimui_effect_f1.type);
-	if ((unsigned int)trimui_effect_f1.type > 7) trimui_effect_f1.type = 0;
-	gen_effect(&trimui_effect_f1, trimui_effect_f1.type, trimui_effect_f1.target_rgb, trimui_effect_f1.current_rgb);
-	WRITE_ONCE(trimui_effect_f1.index, 0);
-	WRITE_ONCE(trimui_effect_f1.active_cycles, READ_ONCE(trimui_effect_f1.cycles));
-	return count;
+	register unsigned char *root asm("x20") = (unsigned char *)&sunxi_led;
+	struct trimui_led_effect *effect = (struct trimui_led_effect *)(root + 0xf48);
+	register struct trimui_led_effect *argument asm("x14");
+	register size_t saved_count asm("x21") = count;
+	register int parser_base asm("w1") = 0;
+
+	/* The OEM uses the pointer slot eight bytes before trimui_led_state as
+	 * its address root. Keep its parser and generator pointer lifetimes. */
+	asm volatile("" : "+r"(saved_count));
+	/* OEM ignores parse errors, then clamps any type above 7 to zero. */
+	kstrtoint(buffer, parser_base, (int *)&effect->type);
+	if ((unsigned int)effect->type > 7)
+		effect->type = 0;
+	argument = effect;
+	asm volatile("" : "+r"(argument));
+	/* Keep the OEM x0 setup before its reread of type. */
+	{
+		register struct trimui_led_effect *call asm("x0") = argument;
+
+		asm volatile("" : "+r"(call));
+		gen_effect(call, effect->type, effect->target_rgb, effect->current_rgb);
+	}
+	WRITE_ONCE(effect->index, 0);
+	WRITE_ONCE(effect->active_cycles, READ_ONCE(effect->cycles));
+	return saved_count;
 }
 
 static ssize_t show_effect_f2(struct class *class, struct class_attribute *attr, char *buffer)
