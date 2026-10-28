@@ -12135,8 +12135,8 @@ int hynix26nm_readretry_init(struct hynix26nm_init_chip *chip)
 			   hynix26nm_read_retry_mode);
 		return -54;
 	}
-	/* OEM's source rows have only four entries and its destination has 28;
-	 * both loops above can cross those bounds when global counts change. */
+	/* OEM uses 7x4 source tables and a 28-halfword destination without
+	 * count checks; cycle >= 7 or reg_num >= 5 can overrun or misalign. */
 	chip->retry = 0;
 	for (row = 0; row < 128; row++)
 		chip->saved[row] = 0;
