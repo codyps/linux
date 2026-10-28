@@ -448,9 +448,15 @@ static ssize_t show_frame_hex(struct class *class, struct class_attribute *attr,
 		count += 7;
 		{
 			const char *format;
+			/* Stock puts the destination in x0 before forming the
+			 * pooled format address. This constrains only argument order;
+			 * the OEM sparse-output and overflow behavior remains.
+			 */
+			register char *destination asm("x0") = position;
+			asm("" : "+r"(destination));
 			asm("add %0, %1, :lo12:%2"
 			    : "=r"(format) : "r"(format_page), "S"("%06X "));
-			sprintf(position, format, pixels[i] & 0xffffff);
+			sprintf(destination, format, pixels[i] & 0xffffff);
 		}
 		position += count;
 		/* Keep the cumulative count live across the next LED-count read. */
