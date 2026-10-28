@@ -69,30 +69,8 @@ static int sunxi_ths_reg2temp(struct ths_device *tmdev, int reg)
 	return (reg + tmdev->chip->offset) * tmdev->chip->scale;
 }
 
-static int sunxi_ths_get_temp(void *data, int *temp)
-{
-	struct tsensor *s = data;
-	struct ths_device *tmdev = s->tmdev;
-	int val = 0;
 
-	regmap_read(tmdev->regmap, tmdev->chip->temp_data_base +
-		    0x4 * s->id, &val);
-
-	/* ths have no data yet */
-	if (unlikely(!val))
-		return -EAGAIN;
-
-	*temp = sunxi_ths_reg2temp(tmdev, val);
-	/*
-	 * There are problems with the calibration values of some platforms,
-	 * which makes the temperature calculated by the original temperature
-	 * calculation formula inaccurate. If the chip is calibrated, this
-	 * value is added by default.*/
-	if (tmdev->has_calibration)
-		*temp += tmdev->chip->ft_deviation;
-
-	return 0;
-}
+static int sunxi_ths_get_temp(void *data, int *temp);
 
 static const struct thermal_zone_of_device_ops ths_ops = {
 	.get_temp = sunxi_ths_get_temp,
@@ -105,7 +83,91 @@ static const struct regmap_config config = {
 	.fast_io = true,
 };
 
-static int sun50i_h616_ths_calibrate(struct ths_device *tmdev,
+/* Match the OEM thermal .text order used by kallsyms. These attributes
+ * constrain this reconstruction; the original declaration order is unknown.
+ */
+static int __attribute__((no_reorder)) sunxi_ths_calibrate(struct ths_device *tmdev)
+{
+	struct nvmem_cell *calcell;
+	struct device *dev = tmdev->dev;
+	u16 *caldata;
+	size_t callen;
+	int ret = 0;
+
+	calcell = devm_nvmem_cell_get(dev, "calibration");
+	if (IS_ERR(calcell)) {
+		if (PTR_ERR(calcell) == -EPROBE_DEFER)
+			return -EPROBE_DEFER;
+		goto out;
+	}
+
+	caldata = nvmem_cell_read(calcell, &callen);
+	if (IS_ERR(caldata)) {
+		ret = PTR_ERR(caldata);
+		goto put;
+	}
+
+	tmdev->chip->calibrate(tmdev, caldata, callen);
+
+
+	kfree(caldata);
+put:
+	devm_nvmem_cell_put(dev, calcell);
+out:
+	return ret;
+}
+
+static int __attribute__((no_reorder)) __maybe_unused sunxi_thermal_resume(struct device *dev)
+{
+	struct ths_device *tmdev = dev_get_drvdata(dev);
+
+	clk_prepare_enable(tmdev->bus_clk);
+	sunxi_ths_calibrate(tmdev);
+	tmdev->chip->init(tmdev);
+
+	return 0;
+}
+
+static int __attribute__((no_reorder)) sunxi_ths_remove(struct platform_device *pdev)
+{
+	struct ths_device *tmdev = platform_get_drvdata(pdev);
+
+	clk_disable_unprepare(tmdev->bus_clk);
+
+	return 0;
+}
+
+static int __attribute__((no_reorder)) __maybe_unused sunxi_thermal_suspend(struct device *dev)
+{
+	struct ths_device *tmdev = dev_get_drvdata(dev);
+
+	clk_disable_unprepare(tmdev->bus_clk);
+
+	return 0;
+}
+
+static int __attribute__((no_reorder)) sun50i_h616_thermal_init(struct ths_device *tmdev)
+{
+	int val;
+
+	/*
+	 * For sun50iw9p1:
+	 * It is necessary that reg[0x03000000] bit[16] is 0.
+	 */
+	regmap_write(tmdev->regmap, SUN50I_H616_THS_CTRL0,
+		     SUN50I_THS_CTRL0_T_ACQ(47) | SUN50I_THS_CTRL0_FS_DIV(479));
+	regmap_write(tmdev->regmap, SUN50I_H616_THS_MFC,
+		     SUN50I_THS_FILTER_EN |
+		     SUN50I_THS_FILTER_TYPE(1));
+	regmap_write(tmdev->regmap, SUN50I_H616_THS_PC,
+		     SUN50I_H616_THS_PC_TEMP_PERIOD(365));
+	val = GENMASK(tmdev->chip->sensor_num - 1, 0);
+	regmap_write(tmdev->regmap, SUN50I_H616_THS_ENABLE, val);
+
+	return 0;
+}
+
+static int __attribute__((no_reorder)) sun50i_h616_ths_calibrate(struct ths_device *tmdev,
 				   u16 *caldata, int callen)
 {
 	struct device *dev = tmdev->dev;
@@ -188,6 +250,120 @@ static int sun50i_h616_ths_calibrate(struct ths_device *tmdev,
 	return 0;
 }
 
+static int sunxi_ths_resource_init(struct ths_device *tmdev)
+{
+	struct device *dev = tmdev->dev;
+	struct platform_device *pdev = to_platform_device(dev);
+	struct resource *mem;
+	void __iomem *base;
+	int ret;
+
+	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	base = devm_ioremap_resource(dev, mem);
+	if (IS_ERR(base))
+		return PTR_ERR(base);
+
+	tmdev->regmap = devm_regmap_init_mmio(dev, base, &config);
+	if (IS_ERR(tmdev->regmap))
+		return PTR_ERR(tmdev->regmap);
+
+	if (tmdev->chip->has_bus_clk) {
+		tmdev->bus_clk = devm_clk_get(&pdev->dev, "bus");
+		if (IS_ERR(tmdev->bus_clk))
+			return PTR_ERR(tmdev->bus_clk);
+	}
+
+	ret = clk_prepare_enable(tmdev->bus_clk);
+	if (ret)
+		return ret;
+
+	ret = sunxi_ths_calibrate(tmdev);
+	if (ret)
+		goto bus_disable;
+
+	return 0;
+
+bus_disable:
+	clk_disable_unprepare(tmdev->bus_clk);
+
+	return ret;
+}
+
+static int sunxi_ths_register(struct ths_device *tmdev)
+{
+	int i;
+
+	for (i = 0; i < tmdev->chip->sensor_num; i++) {
+		tmdev->sensor[i].tmdev = tmdev;
+		tmdev->sensor[i].id = i;
+		tmdev->sensor[i].tzd =
+			devm_thermal_zone_of_sensor_register(tmdev->dev,
+							     i,
+							     &tmdev->sensor[i],
+							     &ths_ops);
+		if (IS_ERR(tmdev->sensor[i].tzd))
+			return PTR_ERR(tmdev->sensor[i].tzd);
+	}
+
+	return 0;
+}
+
+static int __attribute__((no_reorder)) sunxi_ths_probe(struct platform_device *pdev)
+{
+	struct ths_device *tmdev;
+	struct device *dev = &pdev->dev;
+	int ret;
+
+	tmdev = devm_kzalloc(dev, sizeof(*tmdev), GFP_KERNEL);
+	if (!tmdev)
+		return -ENOMEM;
+
+	tmdev->dev = dev;
+	tmdev->chip = of_device_get_match_data(&pdev->dev);
+	if (!tmdev->chip)
+		return -EINVAL;
+
+	platform_set_drvdata(pdev, tmdev);
+
+	ret = sunxi_ths_resource_init(tmdev);
+	if (ret)
+		return ret;
+
+	ret = tmdev->chip->init(tmdev);
+	if (ret)
+		return ret;
+
+	ret = sunxi_ths_register(tmdev);
+	if (ret)
+		return ret;
+
+	return ret;
+}
+
+static int __attribute__((no_reorder)) sunxi_ths_get_temp(void *data, int *temp)
+{
+	struct tsensor *s = data;
+	struct ths_device *tmdev = s->tmdev;
+	int val = 0;
+
+	regmap_read(tmdev->regmap, tmdev->chip->temp_data_base +
+		    0x4 * s->id, &val);
+
+	/* ths have no data yet */
+	if (unlikely(!val))
+		return -EAGAIN;
+
+	*temp = sunxi_ths_reg2temp(tmdev, val);
+	/*
+	 * There are problems with the calibration values of some platforms,
+	 * which makes the temperature calculated by the original temperature
+	 * calculation formula inaccurate. If the chip is calibrated, this
+	 * value is added by default.*/
+	if (tmdev->has_calibration)
+		*temp += tmdev->chip->ft_deviation;
+
+	return 0;
+}
 
 /* #860 uses the SID revision-dependent trim path for the four-sensor part. */
 static int sun50i_h616_ths_calibrate_wrap(struct ths_device *tmdev,
@@ -242,177 +418,6 @@ fallback:
 	 * TODO: handle failed writes separately.
 	 */
 	devm_nvmem_device_put(dev, sid);
-	return 0;
-}
-
-static int sunxi_ths_calibrate(struct ths_device *tmdev)
-{
-	struct nvmem_cell *calcell;
-	struct device *dev = tmdev->dev;
-	u16 *caldata;
-	size_t callen;
-	int ret = 0;
-
-	calcell = devm_nvmem_cell_get(dev, "calibration");
-	if (IS_ERR(calcell)) {
-		if (PTR_ERR(calcell) == -EPROBE_DEFER)
-			return -EPROBE_DEFER;
-		goto out;
-	}
-
-	caldata = nvmem_cell_read(calcell, &callen);
-	if (IS_ERR(caldata)) {
-		ret = PTR_ERR(caldata);
-		goto put;
-	}
-
-	tmdev->chip->calibrate(tmdev, caldata, callen);
-
-
-	kfree(caldata);
-put:
-	devm_nvmem_cell_put(dev, calcell);
-out:
-	return ret;
-}
-
-static int sunxi_ths_resource_init(struct ths_device *tmdev)
-{
-	struct device *dev = tmdev->dev;
-	struct platform_device *pdev = to_platform_device(dev);
-	struct resource *mem;
-	void __iomem *base;
-	int ret;
-
-	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	base = devm_ioremap_resource(dev, mem);
-	if (IS_ERR(base))
-		return PTR_ERR(base);
-
-	tmdev->regmap = devm_regmap_init_mmio(dev, base, &config);
-	if (IS_ERR(tmdev->regmap))
-		return PTR_ERR(tmdev->regmap);
-
-	if (tmdev->chip->has_bus_clk) {
-		tmdev->bus_clk = devm_clk_get(&pdev->dev, "bus");
-		if (IS_ERR(tmdev->bus_clk))
-			return PTR_ERR(tmdev->bus_clk);
-	}
-
-	ret = clk_prepare_enable(tmdev->bus_clk);
-	if (ret)
-		return ret;
-
-	ret = sunxi_ths_calibrate(tmdev);
-	if (ret)
-		goto bus_disable;
-
-	return 0;
-
-bus_disable:
-	clk_disable_unprepare(tmdev->bus_clk);
-
-	return ret;
-}
-
-static int sun50i_h616_thermal_init(struct ths_device *tmdev)
-{
-	int val;
-
-	/*
-	 * For sun50iw9p1:
-	 * It is necessary that reg[0x03000000] bit[16] is 0.
-	 */
-	regmap_write(tmdev->regmap, SUN50I_H616_THS_CTRL0,
-		     SUN50I_THS_CTRL0_T_ACQ(47) | SUN50I_THS_CTRL0_FS_DIV(479));
-	regmap_write(tmdev->regmap, SUN50I_H616_THS_MFC,
-		     SUN50I_THS_FILTER_EN |
-		     SUN50I_THS_FILTER_TYPE(1));
-	regmap_write(tmdev->regmap, SUN50I_H616_THS_PC,
-		     SUN50I_H616_THS_PC_TEMP_PERIOD(365));
-	val = GENMASK(tmdev->chip->sensor_num - 1, 0);
-	regmap_write(tmdev->regmap, SUN50I_H616_THS_ENABLE, val);
-
-	return 0;
-}
-
-static int sunxi_ths_register(struct ths_device *tmdev)
-{
-	int i;
-
-	for (i = 0; i < tmdev->chip->sensor_num; i++) {
-		tmdev->sensor[i].tmdev = tmdev;
-		tmdev->sensor[i].id = i;
-		tmdev->sensor[i].tzd =
-			devm_thermal_zone_of_sensor_register(tmdev->dev,
-							     i,
-							     &tmdev->sensor[i],
-							     &ths_ops);
-		if (IS_ERR(tmdev->sensor[i].tzd))
-			return PTR_ERR(tmdev->sensor[i].tzd);
-	}
-
-	return 0;
-}
-
-static int sunxi_ths_probe(struct platform_device *pdev)
-{
-	struct ths_device *tmdev;
-	struct device *dev = &pdev->dev;
-	int ret;
-
-	tmdev = devm_kzalloc(dev, sizeof(*tmdev), GFP_KERNEL);
-	if (!tmdev)
-		return -ENOMEM;
-
-	tmdev->dev = dev;
-	tmdev->chip = of_device_get_match_data(&pdev->dev);
-	if (!tmdev->chip)
-		return -EINVAL;
-
-	platform_set_drvdata(pdev, tmdev);
-
-	ret = sunxi_ths_resource_init(tmdev);
-	if (ret)
-		return ret;
-
-	ret = tmdev->chip->init(tmdev);
-	if (ret)
-		return ret;
-
-	ret = sunxi_ths_register(tmdev);
-	if (ret)
-		return ret;
-
-	return ret;
-}
-
-static int sunxi_ths_remove(struct platform_device *pdev)
-{
-	struct ths_device *tmdev = platform_get_drvdata(pdev);
-
-	clk_disable_unprepare(tmdev->bus_clk);
-
-	return 0;
-}
-
-static int __maybe_unused sunxi_thermal_suspend(struct device *dev)
-{
-	struct ths_device *tmdev = dev_get_drvdata(dev);
-
-	clk_disable_unprepare(tmdev->bus_clk);
-
-	return 0;
-}
-
-static int __maybe_unused sunxi_thermal_resume(struct device *dev)
-{
-	struct ths_device *tmdev = dev_get_drvdata(dev);
-
-	clk_prepare_enable(tmdev->bus_clk);
-	sunxi_ths_calibrate(tmdev);
-	tmdev->chip->init(tmdev);
-
 	return 0;
 }
 
