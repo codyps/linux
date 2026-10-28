@@ -858,34 +858,44 @@ static ssize_t show_effect_m(struct class *class, struct class_attribute *attr, 
 #define TRIMUI_EFFECT_AT(root, offset) \
 	((struct trimui_led_effect *)((root) + (offset)))
 
+/* The OEM forms the effect-M address from the page containing this byte.
+ * Keep the address schedule; all parser, generator, and state effects below
+ * remain in C. The alias does not allocate storage. */
+extern unsigned char trimui_m_page;
+asm(".local trimui_m_page\n.type trimui_m_page,%object\n"
+    ".set trimui_m_page,trimui_led_state+0x2830\n.size trimui_m_page,1\n");
 static ssize_t store_effect_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	register unsigned char *root asm("x19") =
-		(unsigned char *)&trimui_led_state + 0x32f8;
-	register struct trimui_led_effect *argument asm("x14");
-	register size_t saved_count asm("x21") = count;
-	register int parser_base asm("w1") = 0;
+	register unsigned char *page asm("x19");
+	register unsigned char *base asm("x20");
+	register size_t saved asm("x21") = count;
+	register struct trimui_led_effect *genptr asm("x14");
+	register struct trimui_led_effect *callptr asm("x0");
+	struct trimui_led_effect *effect;
+	int parsed_type;
+	u32 current_color, target_color;
 
-	/* The OEM uses a page-local root, then rereads the effect from it. */
-	asm volatile("" : "+r"(saved_count));
-	kstrtoint(buffer, parser_base, (int *)&TRIMUI_EFFECT_AT(root, 0x9a8)->type);
-	if ((unsigned int)TRIMUI_EFFECT_AT(root, 0x9a8)->type > 7)
-		TRIMUI_EFFECT_AT(root, 0x9a8)->type = 0;
-	argument = TRIMUI_EFFECT_AT(root, 0x9a8);
-	asm volatile("" : "+r"(argument));
-	{
-		register struct trimui_led_effect *call asm("x0") = argument;
-
-		asm volatile("" : "+r"(call));
-		gen_effect(call, TRIMUI_EFFECT_AT(root, 0x9a8)->type,
-			TRIMUI_EFFECT_AT(root, 0x9a8)->target_rgb,
-			TRIMUI_EFFECT_AT(root, 0x9a8)->current_rgb);
-	}
+	asm("adrp %0, trimui_m_page\n\tadd %1, %0, #0xac8"
+	    : "=&r"(page), "=&r"(base));
+	effect = (struct trimui_led_effect *)(base + 0x9a8);
+	/* OEM ignores parse failure, then clamps any type above 7. */
+	kstrtoint(buffer, 0, (int *)&effect->type);
+	if ((unsigned int)effect->type > 7)
+		effect->type = 0;
+	page += 0xac8;
+	asm volatile("" : "+r"(page));
+	effect = (struct trimui_led_effect *)(page + 0x9a8);
+	asm volatile("add %0, %1, #0x9a8" : "=r"(genptr) : "r"(page));
+	callptr = genptr;
+	asm volatile("" : "+r"(callptr));
+	parsed_type = READ_ONCE(effect->type);
+	current_color = READ_ONCE(effect->current_rgb);
+	target_color = READ_ONCE(effect->target_rgb);
+	gen_effect(callptr, parsed_type, target_color, current_color);
 	/* OEM resets the index before reading cycles, even if state changes. */
-	WRITE_ONCE(TRIMUI_EFFECT_AT(root, 0x9a8)->index, 0);
-	WRITE_ONCE(TRIMUI_EFFECT_AT(root, 0x9a8)->active_cycles,
-		READ_ONCE(TRIMUI_EFFECT_AT(root, 0x9a8)->cycles));
-	return saved_count;
+	WRITE_ONCE(effect->index, 0);
+	WRITE_ONCE(effect->active_cycles, READ_ONCE(effect->cycles));
+	return saved;
 }
 
 static ssize_t show_effect_l(struct class *class, struct class_attribute *attr, char *buffer)
