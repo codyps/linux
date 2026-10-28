@@ -323,14 +323,179 @@ static int trimui_ledc_run_thread(void *unused)
 	return 0;
 }
 
-/* Stock ignores conversion failures, still returns count, and still performs
- * the callback's subsequent side effects. TODO: report parse errors in a fix.
+/* Keep these small readers in the order found in the stock KALLSYMS table.
+ * GCC otherwise reorders them even when their definitions appear in this order.
+ * This preserves the linked callback addresses and the OEM's existing reads.
  */
-static ssize_t show_tg5040_max_scale(struct class *class, struct class_attribute *attr, char *buffer)
+static __attribute__((no_reorder)) ssize_t show_tg5040_max_scale(struct class *class, struct class_attribute *attr, char *buffer)
 {
 	return sprintf(buffer, "%d\n", trimui_limit);
 }
 
+static __attribute__((no_reorder)) ssize_t show_frames_override_lr_enable(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_mask_lr);
+}
+
+static __attribute__((no_reorder)) ssize_t show_frames_override_f1f2_enable(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_mask_f);
+}
+
+static __attribute__((no_reorder)) ssize_t show_frames_override_m_enable(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_mask_m);
+}
+
+static __attribute__((no_reorder)) ssize_t show_frames_enable(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_frames_enable);
+}
+
+static __attribute__((no_reorder)) ssize_t show_frames_cycles(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_frames_cycles);
+}
+
+static __attribute__((no_reorder)) ssize_t show_frames_fps(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_frames_fps);
+}
+
+static __attribute__((no_reorder)) ssize_t show_frames_len(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_frames_len);
+}
+
+static __attribute__((no_reorder)) ssize_t show_effect_enable(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_enable);
+}
+
+static __attribute__((no_reorder)) ssize_t show_effect_f2(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_f2.type);
+}
+
+static __attribute__((no_reorder)) ssize_t show_effect_f1(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_f1.type);
+}
+
+static __attribute__((no_reorder)) ssize_t show_effect_r(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_r.type);
+}
+
+static __attribute__((no_reorder)) ssize_t show_effect_l(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.type);
+}
+
+static __attribute__((no_reorder)) ssize_t show_effect_lr(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.type);
+}
+
+static __attribute__((no_reorder)) ssize_t show_effect_m(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_m.type);
+}
+
+static __attribute__((no_reorder)) ssize_t show_cycles(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.cycles);
+}
+
+static __attribute__((no_reorder)) ssize_t show_cycles_l(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.cycles);
+}
+
+static __attribute__((no_reorder)) ssize_t show_cycles_f2(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_f2.cycles);
+}
+
+static __attribute__((no_reorder)) ssize_t show_cycles_f1(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_f1.cycles);
+}
+
+static __attribute__((no_reorder)) ssize_t show_cycles_r(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_r.cycles);
+}
+
+static __attribute__((no_reorder)) ssize_t show_cycles_m(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_m.cycles);
+}
+
+static __attribute__((no_reorder)) ssize_t show_duration(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.duration);
+}
+
+static __attribute__((no_reorder)) ssize_t show_duration_l(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_l.duration);
+}
+
+static __attribute__((no_reorder)) ssize_t show_duration_f2(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_f2.duration);
+}
+
+static __attribute__((no_reorder)) ssize_t show_duration_f1(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_f1.duration);
+}
+
+static __attribute__((no_reorder)) ssize_t show_duration_r(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_r.duration);
+}
+
+static __attribute__((no_reorder)) ssize_t show_duration_m(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_effect_m.duration);
+}
+
+static __attribute__((no_reorder)) ssize_t show_max_scale_f1f2(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_scale_f);
+}
+
+static __attribute__((no_reorder)) ssize_t show_max_scale_lr(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_scale_lr);
+}
+
+static __attribute__((no_reorder)) ssize_t show_max_scale(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_scale_m);
+}
+
+static __attribute__((no_reorder)) ssize_t show_led_enable(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_led_enable);
+}
+
+static __attribute__((no_reorder)) ssize_t help_show(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	sprintf(buffer, "%s\n", trimui_led_help);
+	return sizeof(trimui_led_help);
+}
+
+static __attribute__((no_reorder)) ssize_t show_speaker_mute(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	return sprintf(buffer, "%d\n", trimui_mute_requested);
+}
+
+/* Stock ignores conversion failures, still returns count, and still performs
+ * the callback's subsequent side effects. TODO: report parse errors in a fix.
+ */
 static ssize_t store_tg5040_max_scale(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	kstrtoint(buffer, 0, (int *)&trimui_limit);
@@ -338,24 +503,11 @@ static ssize_t store_tg5040_max_scale(struct class *class, struct class_attribut
 	return count;
 }
 
-static ssize_t help_show(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	sprintf(buffer, "%s\n", trimui_led_help);
-	return sizeof(trimui_led_help);
-}
-
-static ssize_t show_led_enable(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_led_enable);
-}
-
 static ssize_t store_led_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	kstrtoint(buffer, 0, (int *)&trimui_led_enable);
 	return count;
 }
-
-
 
 static ssize_t help_show_effect(struct class *class, struct class_attribute *attr, char *buffer)
 {
@@ -370,11 +522,6 @@ static ssize_t help_show_effect(struct class *class, struct class_attribute *att
 	return strlen(buffer);
 }
 
-static ssize_t show_max_scale(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_scale_m);
-}
-
 static ssize_t store_max_scale(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	kstrtoint(buffer, 0, (int *)&trimui_scale_m);
@@ -382,21 +529,11 @@ static ssize_t store_max_scale(struct class *class, struct class_attribute *attr
 	return count;
 }
 
-static ssize_t show_max_scale_lr(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_scale_lr);
-}
-
 static ssize_t store_max_scale_lr(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	kstrtoint(buffer, 0, (int *)&trimui_scale_lr);
 	if (trimui_scale_lr > trimui_limit) trimui_scale_lr = trimui_limit;
 	return count;
-}
-
-static ssize_t show_max_scale_f1f2(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_scale_f);
 }
 
 static ssize_t store_max_scale_f1f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
@@ -501,16 +638,6 @@ static ssize_t store_frame_hex(struct class *class, struct class_attribute *attr
 	return count;
 }
 
-static ssize_t show_duration(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_l.duration);
-}
-
-static ssize_t show_duration_m(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_m.duration);
-}
-
 /* OEM scalar setters form the field address before saving the return count.
  * F1/F2 use the BSS pointer immediately before the LED state. The L/R/M
  * setters use interior effect-frame addresses as roots; these frames are
@@ -544,11 +671,6 @@ static ssize_t store_duration_m(struct class *class, struct class_attribute *att
 	return saved_count;
 }
 
-static ssize_t show_duration_l(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_l.duration);
-}
-
 static ssize_t store_duration_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[2].frames[222];
@@ -563,11 +685,6 @@ static ssize_t store_duration_l(struct class *class, struct class_attribute *att
 	asm volatile("" : "+r"(saved_count));
 	kstrtoint(buffer, 0, value);
 	return saved_count;
-}
-
-static ssize_t show_duration_r(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_r.duration);
 }
 
 static ssize_t store_duration_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
@@ -586,11 +703,6 @@ static ssize_t store_duration_r(struct class *class, struct class_attribute *att
 	return saved_count;
 }
 
-static ssize_t show_duration_f1(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_f1.duration);
-}
-
 static ssize_t store_duration_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	unsigned char *anchor = (unsigned char *)&sunxi_led;
@@ -605,11 +717,6 @@ static ssize_t store_duration_f1(struct class *class, struct class_attribute *at
 	asm volatile("" : "+r"(saved_count));
 	kstrtoint(buffer, 0, value);
 	return saved_count;
-}
-
-static ssize_t show_duration_f2(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_f2.duration);
 }
 
 static ssize_t store_duration_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
@@ -645,16 +752,6 @@ static ssize_t store_duration(struct class *class, struct class_attribute *attr,
 	return count;
 }
 
-static ssize_t show_cycles(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_l.cycles);
-}
-
-static ssize_t show_cycles_m(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_m.cycles);
-}
-
 static ssize_t store_cycles_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[3].frames[342];
@@ -669,11 +766,6 @@ static ssize_t store_cycles_m(struct class *class, struct class_attribute *attr,
 	asm volatile("" : "+r"(saved_count));
 	kstrtoint(buffer, 0, value);
 	return saved_count;
-}
-
-static ssize_t show_cycles_l(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_l.cycles);
 }
 
 static ssize_t store_cycles_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
@@ -692,11 +784,6 @@ static ssize_t store_cycles_l(struct class *class, struct class_attribute *attr,
 	return saved_count;
 }
 
-static ssize_t show_cycles_r(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_r.cycles);
-}
-
 static ssize_t store_cycles_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[1].frames[102];
@@ -713,11 +800,6 @@ static ssize_t store_cycles_r(struct class *class, struct class_attribute *attr,
 	return saved_count;
 }
 
-static ssize_t show_cycles_f1(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_f1.cycles);
-}
-
 static ssize_t store_cycles_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	unsigned char *anchor = (unsigned char *)&sunxi_led;
@@ -732,11 +814,6 @@ static ssize_t store_cycles_f1(struct class *class, struct class_attribute *attr
 	asm volatile("" : "+r"(saved_count));
 	kstrtoint(buffer, 0, value);
 	return saved_count;
-}
-
-static ssize_t show_cycles_f2(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_f2.cycles);
 }
 
 static ssize_t store_cycles_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
@@ -874,11 +951,6 @@ static ssize_t store_effect_rgb_hex_lr(struct class *class,struct class_attribut
  return count;
 }
 
-static ssize_t show_effect_m(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_m.type);
-}
-
 /* OEM ignores kstrtoint failures in all six effect setters below. Malformed
  * input keeps the previous type, but still regenerates the effect and resets
  * its playback state; preserve that observable bug.
@@ -926,11 +998,6 @@ static ssize_t store_effect_m(struct class *class, struct class_attribute *attr,
 	return saved;
 }
 
-static ssize_t show_effect_l(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_l.type);
-}
-
 extern unsigned char trimui_l_page;
 asm(".local trimui_l_page\n.type trimui_l_page,%object\n"
     ".set trimui_l_page,trimui_led_state+0x1830\n.size trimui_l_page,1\n");
@@ -965,11 +1032,6 @@ static ssize_t store_effect_l(struct class *class, struct class_attribute *attr,
 	WRITE_ONCE(effect->index, 0);
 	WRITE_ONCE(effect->active_cycles, READ_ONCE(effect->cycles));
 	return saved;
-}
-
-static ssize_t show_effect_r(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_r.type);
 }
 
 extern unsigned char trimui_r_page;
@@ -1009,11 +1071,6 @@ static ssize_t store_effect_r(struct class *class, struct class_attribute *attr,
 }
 #undef TRIMUI_EFFECT_AT
 
-static ssize_t show_effect_f1(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_f1.type);
-}
-
 static ssize_t store_effect_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	register unsigned char *root asm("x20") = (unsigned char *)&sunxi_led;
@@ -1042,11 +1099,6 @@ static ssize_t store_effect_f1(struct class *class, struct class_attribute *attr
 	return saved_count;
 }
 
-static ssize_t show_effect_f2(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_f2.type);
-}
-
 static ssize_t store_effect_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	register unsigned char *root asm("x20") = (unsigned char *)&sunxi_led;
@@ -1073,11 +1125,6 @@ static ssize_t store_effect_f2(struct class *class, struct class_attribute *attr
 	WRITE_ONCE(effect->index, 0);
 	WRITE_ONCE(effect->active_cycles, READ_ONCE(effect->cycles));
 	return saved_count;
-}
-
-static ssize_t show_effect_lr(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_l.type);
 }
 
 #define TRIMUI_PAIR_LEFT(root) \
@@ -1150,11 +1197,6 @@ struct trimui_frame_control_view {
 	int enable, cycles, fps, len, effect_enable;
 };
 extern struct trimui_frame_control_view trimui_frame_controls;
-
-static ssize_t show_effect_enable(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_effect_enable);
-}
 
 static ssize_t store_effect_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
@@ -1260,11 +1302,6 @@ static ssize_t store_anim_frames_hex(struct class *class, struct class_attribute
 	return count;
 }
 
-static ssize_t show_frames_len(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_frames_len);
-}
-
 static ssize_t store_frames_len(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	unsigned char *anchor = (unsigned char *)&sunxi_led;
@@ -1281,11 +1318,6 @@ static ssize_t store_frames_len(struct class *class, struct class_attribute *att
 	return saved_count;
 }
 
-static ssize_t show_frames_fps(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_frames_fps);
-}
-
 static ssize_t store_frames_fps(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	unsigned char *anchor = (unsigned char *)&sunxi_led;
@@ -1300,11 +1332,6 @@ static ssize_t store_frames_fps(struct class *class, struct class_attribute *att
 	asm volatile("" : "+r"(saved_count));
 	kstrtoint(buffer, 0, value);
 	return saved_count;
-}
-
-static ssize_t show_frames_cycles(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_frames_cycles);
 }
 
 /* Compatible address views, not independent allocations or recovered types.
@@ -1348,11 +1375,6 @@ static ssize_t store_frames_cycles(struct class *class, struct class_attribute *
 	return result;
 }
 
-static ssize_t show_frames_enable(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_frames_enable);
-}
-
 static ssize_t store_frames_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
  struct trimui_frame_control_view *control;
@@ -1372,11 +1394,6 @@ static ssize_t store_frames_enable(struct class *class, struct class_attribute *
  return result;
 }
 
-static ssize_t show_frames_override_m_enable(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_mask_m);
-}
-
 static ssize_t store_frames_override_m_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	unsigned char *anchor = (unsigned char *)&sunxi_led;
@@ -1393,11 +1410,6 @@ static ssize_t store_frames_override_m_enable(struct class *class, struct class_
 	return saved_count;
 }
 
-static ssize_t show_frames_override_f1f2_enable(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_mask_f);
-}
-
 static ssize_t store_frames_override_f1f2_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	unsigned char *anchor = (unsigned char *)&sunxi_led;
@@ -1412,11 +1424,6 @@ static ssize_t store_frames_override_f1f2_enable(struct class *class, struct cla
 	asm volatile("" : "+r"(saved_count));
 	kstrtoint(buffer, 0, value);
 	return saved_count;
-}
-
-static ssize_t show_frames_override_lr_enable(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_mask_lr);
 }
 
 static ssize_t store_frames_override_lr_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
@@ -1458,11 +1465,6 @@ static ssize_t store_motor_voltage(struct class *class, struct class_attribute *
 	regulator_set_voltage(state->regulator, state->voltage,
 		state->voltage + 100000);
 	return saved_count;
-}
-
-static ssize_t show_speaker_mute(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	return sprintf(buffer, "%d\n", trimui_mute_requested);
 }
 
 static ssize_t store_speaker_mute(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
@@ -1563,7 +1565,6 @@ static struct class_attribute trimui_speaker_attrs[] = {
 static struct class trimui_speaker_class = {
 	.name = "speaker", .owner = THIS_MODULE, .class_attrs = trimui_speaker_attrs,
 };
-
 
 /* OEM probe holds these four effect addresses across the memset calls.
  * They view existing BSS: no independent storage or change to the state ABI.
