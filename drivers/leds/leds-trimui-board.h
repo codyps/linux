@@ -509,19 +509,6 @@ static ssize_t store_led_enable(struct class *class, struct class_attribute *att
 	return count;
 }
 
-static ssize_t help_show_effect(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	char line[32];
-	unsigned long i;
-
-	strcpy(buffer, "TRIMUI LED Animation Effect names:\n");
-	for (i = 0; i < ARRAY_SIZE(trimui_effect_names); i++) {
-		sprintf(line, "%d - %s\n", (int)i, trimui_effect_names[i]);
-		strcat(buffer, line);
-	}
-	return strlen(buffer);
-}
-
 static ssize_t store_max_scale(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	kstrtoint(buffer, 0, (int *)&trimui_scale_m);
@@ -570,45 +557,6 @@ static ssize_t store_frame(struct class *class, struct class_attribute *attr, co
 	else
 		memcpy(frame, buffer, (int)(trimui_led_count << 2));
 	return count;
-}
-
-static ssize_t show_frame_hex(struct class *class, struct class_attribute *attr, char *buffer)
-{
-	/* Stock advances the index in x22 but compares its low signed word.
-	 * A mutable LED count can change between loop iterations. */
-	register long i asm("x22") = 0;
-	int count = 0;
-	register char *position asm("x21") = buffer;
-	register u32 *pixels asm("x20") =
-		(u32 *)((u8 *)RELOC_HIDE(&trimui_transfer_state, 0) + 0x7cc);
-	register const char *format_page asm("x24");
-	/* Keep the OEM frame root and late format-page offset while retaining
-	 * the compiler's pooled format literal. */
-	asm("adrp %0, %1" : "=r"(format_page) : "S"("%06X "));
-	/* Stock advances by the cumulative length, producing sparse output.
-	 * At 34 LEDs the newline lands beyond a 4 KiB sysfs page.
-	 * TODO: advance by the last write and bound output in a separate fix. */
-	while ((int)i < (int)trimui_led_count) {
-		count += 7;
-		{
-			const char *format;
-			/* Stock puts the destination in x0 before forming the
-			 * pooled format address. This constrains only argument order;
-			 * the OEM sparse-output and overflow behavior remains.
-			 */
-			register char *destination asm("x0") = position;
-			asm("" : "+r"(destination));
-			asm("add %0, %1, :lo12:%2"
-			    : "=r"(format) : "r"(format_page), "S"("%06X "));
-			sprintf(destination, format, pixels[i] & 0xffffff);
-		}
-		position += count;
-		/* Keep the cumulative count live across the next LED-count read. */
-		asm volatile("" : "+r"(count));
-		i++;
-	}
-	strcpy(position, "\n");
-	return count + 1;
 }
 
 static ssize_t store_frame_hex(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
@@ -1259,7 +1207,10 @@ static ssize_t show_anim_frames_hex(struct class *class, struct class_attribute 
 	return count + 1;
 }
 
-static ssize_t store_anim_frames_hex(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
+/* OEM text and its animation/format/help literals follow this declaration
+ * order. Keep the three functions together when changing the recovered C.
+ */
+static __attribute__((no_reorder)) ssize_t store_anim_frames_hex(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	register long i asm("x24");
 	int colors = (int)(count / 7);
@@ -1300,6 +1251,58 @@ static ssize_t store_anim_frames_hex(struct class *class, struct class_attribute
 	trimui_frame_controls.len += colors / 14;
 	printk("\n anim frames:%d, pixels:%d\n", trimui_frame_controls.len, colors);
 	return count;
+}
+
+static __attribute__((no_reorder)) ssize_t show_frame_hex(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	/* Stock advances the index in x22 but compares its low signed word.
+	 * A mutable LED count can change between loop iterations. */
+	register long i asm("x22") = 0;
+	int count = 0;
+	register char *position asm("x21") = buffer;
+	register u32 *pixels asm("x20") =
+		(u32 *)((u8 *)RELOC_HIDE(&trimui_transfer_state, 0) + 0x7cc);
+	register const char *format_page asm("x24");
+	/* Keep the OEM frame root and late format-page offset while retaining
+	 * the compiler's pooled format literal. */
+	asm("adrp %0, %1" : "=r"(format_page) : "S"("%06X "));
+	/* Stock advances by the cumulative length, producing sparse output.
+	 * At 34 LEDs the newline lands beyond a 4 KiB sysfs page.
+	 * TODO: advance by the last write and bound output in a separate fix. */
+	while ((int)i < (int)trimui_led_count) {
+		count += 7;
+		{
+			const char *format;
+			/* Stock puts the destination in x0 before forming the
+			 * pooled format address. This constrains only argument order;
+			 * the OEM sparse-output and overflow behavior remains.
+			 */
+			register char *destination asm("x0") = position;
+			asm("" : "+r"(destination));
+			asm("add %0, %1, :lo12:%2"
+			    : "=r"(format) : "r"(format_page), "S"("%06X "));
+			sprintf(destination, format, pixels[i] & 0xffffff);
+		}
+		position += count;
+		/* Keep the cumulative count live across the next LED-count read. */
+		asm volatile("" : "+r"(count));
+		i++;
+	}
+	strcpy(position, "\n");
+	return count + 1;
+}
+
+static __attribute__((no_reorder)) ssize_t help_show_effect(struct class *class, struct class_attribute *attr, char *buffer)
+{
+	char line[32];
+	unsigned long i;
+
+	strcpy(buffer, "TRIMUI LED Animation Effect names:\n");
+	for (i = 0; i < ARRAY_SIZE(trimui_effect_names); i++) {
+		sprintf(line, "%d - %s\n", (int)i, trimui_effect_names[i]);
+		strcat(buffer, line);
+	}
+	return strlen(buffer);
 }
 
 static ssize_t store_frames_len(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
