@@ -10,6 +10,11 @@ u8 gTrimuiSerialNumber[5];
 EXPORT_SYMBOL_GPL(gTrimuiSerialNumber);
 static char serial_text[32];
 
+void faaes128_decode(const u8 *input, u8 *output)
+{
+	arelink_req_enc_dec(input, output, 1);
+}
+
 char *get_trimui_serialno(void)
 {
 	memset(serial_text, 0, sizeof(serial_text));
@@ -18,9 +23,31 @@ char *get_trimui_serialno(void)
 	return serial_text;
 }
 
-void faaes128_decode(const u8 *input, u8 *output)
+void arelink_main(void)
 {
-	arelink_req_enc_dec(input, output, 1);
+	u8 challenge[16], input[32], decoded[32], encrypted[32];
+	unsigned int i;
+	I2CSetInitial();
+	arelink_power_on();
+	arelink_delay(2);
+	arelink_init(gTrimuiSerialNumber);
+	pr_info("serial: %02X%02X%02X%02X%02X\n", gTrimuiSerialNumber[4],
+		gTrimuiSerialNumber[3], gTrimuiSerialNumber[2], gTrimuiSerialNumber[1], gTrimuiSerialNumber[0]);
+	for (i = 0; i < 16; i++)
+		challenge[i] = arelink_random();
+	arelink_authentication(2, 0, challenge);
+	/* #860 clears the self-test buffers only after authentication. */
+	memset(input, 0, sizeof(input));
+	memset(decoded, 0, sizeof(decoded));
+	memset(encrypted, 0, sizeof(encrypted));
+	strcpy(input, "TEST 123456789");
+	/* Preserve the stock 32-bit NULL store when the cipher API fails.
+	 * TODO: report an initialization error instead in a separate fix.
+	 */
+	if (arelink_req_enc_dec(input, encrypted, 0))
+		*(volatile u32 *)0 = 1;
+	if (arelink_req_enc_dec(encrypted, decoded, 1))
+		*(volatile u32 *)0 = 1;
 }
 
 void are_enc_path256(const u8 *input, u8 *output)
@@ -49,33 +76,6 @@ void are_dec_path256(const u8 *input, u8 *output)
 		if (result)
 			printk("ret:%d\n", result);
 	}
-}
-
-void arelink_main(void)
-{
-	u8 challenge[16], input[32], decoded[32], encrypted[32];
-	unsigned int i;
-	I2CSetInitial();
-	arelink_power_on();
-	arelink_delay(2);
-	arelink_init(gTrimuiSerialNumber);
-	pr_info("serial: %02X%02X%02X%02X%02X\n", gTrimuiSerialNumber[4],
-		gTrimuiSerialNumber[3], gTrimuiSerialNumber[2], gTrimuiSerialNumber[1], gTrimuiSerialNumber[0]);
-	for (i = 0; i < 16; i++)
-		challenge[i] = arelink_random();
-	arelink_authentication(2, 0, challenge);
-	/* #860 clears the self-test buffers only after authentication. */
-	memset(input, 0, sizeof(input));
-	memset(decoded, 0, sizeof(decoded));
-	memset(encrypted, 0, sizeof(encrypted));
-	strcpy(input, "TEST 123456789");
-	/* Preserve the stock 32-bit NULL store when the cipher API fails.
-	 * TODO: report an initialization error instead in a separate fix.
-	 */
-	if (arelink_req_enc_dec(input, encrypted, 0))
-		*(volatile u32 *)0 = 1;
-	if (arelink_req_enc_dec(encrypted, decoded, 1))
-		*(volatile u32 *)0 = 1;
 }
 
 static int __init alpu_init(void)
