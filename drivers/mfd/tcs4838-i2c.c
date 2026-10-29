@@ -11,6 +11,19 @@
 #include <linux/regmap.h>
 #include <linux/slab.h>
 
+/* GCC 7 emits these local tables in reverse declaration order. Keep this
+ * order to match the Brick's regmap, volatile, range, ID and OF table layout.
+ */
+static const struct of_device_id tcs4838_i2c_of_match_table[] = {
+	{ .compatible = "ti,tcs4838" },
+	{ /* sentinel */ }
+};
+MODULE_DEVICE_TABLE(of, tcs4838_i2c_of_match_table);
+
+static const struct i2c_device_id tcs4838_i2c_id_table[] = {
+	{ /* sentinel */ }
+};
+MODULE_DEVICE_TABLE(i2c, tcs4838_i2c_id_table);
 
 static const struct regmap_range tcs4838_yes_ranges[] = {
 	regmap_reg_range(TCS4838_VSEL0, TCS4838_PGOOD),
@@ -27,12 +40,6 @@ const struct regmap_config tcs4838_regmap_config = {
 	.cache_type = REGCACHE_NONE,
 };
 EXPORT_SYMBOL_GPL(tcs4838_regmap_config);
-
-static const struct of_device_id tcs4838_i2c_of_match_table[] = {
-	{ .compatible = "ti,tcs4838" },
-	{ /* sentinel */ }
-};
-MODULE_DEVICE_TABLE(of, tcs4838_i2c_of_match_table);
 
 static int tcs4838_i2c_probe(struct i2c_client *client,
 			      const struct i2c_device_id *ids)
@@ -61,11 +68,6 @@ static int tcs4838_i2c_remove(struct i2c_client *client)
 
 	return tcs4838_device_exit(ext);
 }
-
-static const struct i2c_device_id tcs4838_i2c_id_table[] = {
-	{ /* sentinel */ }
-};
-MODULE_DEVICE_TABLE(i2c, tcs4838_i2c_id_table);
 
 static const struct acpi_device_id tcs4838_i2c_acpi_match[] = {
 	{ },
