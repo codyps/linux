@@ -134,19 +134,25 @@ int set_364(u32 *table)
 	 */
 	for (row = 0; row < 28; row++)
 		for (column = 0; column < 13; column++) {
+			/* OEM keeps separate row/column values for source indexing.
+			 * They are bounded here, even though the final source word is
+			 * still table[377] and can fault. Do not fold the expressions
+			 * into index: that changes the emitted access schedule.
+			 */
+			int m = row, n = column;
 			index = row * 13 + column;
-			bank->hbh_sat[index].b[0] = table[index];
-			bank->sbh_sat[index].b[0] = table[index];
-			bank->vbh_sat[index].b[0] = table[index];
-			bank->hbh_sat[index].b[1] = table[index + 1];
-			bank->sbh_sat[index].b[1] = table[index + 1];
-			bank->vbh_sat[index].b[1] = table[index + 1];
-			bank->hbh_sat[index].b[2] = table[index + 13];
-			bank->sbh_sat[index].b[2] = table[index + 13];
-			bank->vbh_sat[index].b[2] = table[index + 13];
-			bank->hbh_sat[index].b[3] = table[index + 14];
-			bank->sbh_sat[index].b[3] = table[index + 14];
-			bank->vbh_sat[index].b[3] = table[index + 14];
+			bank->hbh_sat[index].b[0] = table[m * 13 + n];
+			bank->sbh_sat[index].b[0] = table[m * 13 + n];
+			bank->vbh_sat[index].b[0] = table[m * 13 + n];
+			bank->hbh_sat[index].b[1] = table[m * 13 + n + 1];
+			bank->sbh_sat[index].b[1] = table[m * 13 + n + 1];
+			bank->vbh_sat[index].b[1] = table[m * 13 + n + 1];
+			bank->hbh_sat[index].b[2] = table[(m + 1) * 13 + n];
+			bank->sbh_sat[index].b[2] = table[(m + 1) * 13 + n];
+			bank->vbh_sat[index].b[2] = table[(m + 1) * 13 + n];
+			bank->hbh_sat[index].b[3] = table[(m + 1) * 13 + n + 1];
+			bank->sbh_sat[index].b[3] = table[(m + 1) * 13 + n + 1];
+			bank->vbh_sat[index].b[3] = table[(m + 1) * 13 + n + 1];
 		}
 	return 0;
 }
