@@ -16,6 +16,17 @@ union fcm_word {
 	struct { u32 low:9, reserved0:7, high:9, reserved1:7; } pair9;
 	struct { u32 enable:1, reserved0:3, window:1, reserved1:27; } control;
 };
+/* Partial Allwinner v2x hue-bank view. The holes are real register space;
+ * they are not scratch storage. The arrays match offsets 0x120/0x1a0/0x220.
+ */
+struct fcm_hue_registers {
+	u8 reserved0[0x120];
+	union fcm_word hbh_hue[28];
+	u8 reserved1[0x10];
+	union fcm_word sbh_hue[28];
+	u8 reserved2[0x10];
+	union fcm_word vbh_hue[28];
+};
 static volatile union fcm_word *fcm_dev[DE_NUM][CHN_NUM];
 static struct de_reg_blocks fcm_block[DE_NUM][CHN_NUM];
 
@@ -33,11 +44,13 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 	 * The linked A133 feature query bypasses normal FCM initialization.
 	 */
 	volatile union fcm_word *reg = fcm_dev[sel][channel];
+	volatile struct fcm_hue_registers *bank;
 	int i;
 
 	memcpy((void *)(reg + 0x20 / 4), fcm_angle_hue, sizeof(fcm_angle_hue));
 	memcpy((void *)(reg + 0xa0 / 4), fcm_angle_sat, sizeof(fcm_angle_sat));
 	memcpy((void *)(reg + 0xe0 / 4), fcm_angle_lum, sizeof(fcm_angle_lum));
+	bank = (volatile struct fcm_hue_registers *)reg;
 	for (i = 0; i < 28; i++) {
 		union fcm_word hue_word;
 		u32 hue, sat;
@@ -48,20 +61,21 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 		 * in a separate behavior change.
 		 */
 		hue = READ_ONCE(fcm_hbh[i]);
-		hue_word.value = reg[0x120 / 4 + i].value;
+		hue_word.value = bank->hbh_hue[i].value;
 		sat = READ_ONCE(fcm_sbh[i]);
 		hue_word.pair13.low = hue;
-		reg[0x120 / 4 + i].value = hue_word.value;
-		reg[0x1a0 / 4 + i].pair11.low = sat;
-		reg[0x220 / 4 + i].pair9.low = fcm_ybh[i];
+		bank->hbh_hue[i].value = hue_word.value;
+		bank->sbh_hue[i].pair11.low = sat;
+		/* Preserve the OEM read/write schedule for shadow/table aliases. */
+		bank->vbh_hue[i].pair9.low = READ_ONCE(fcm_ybh[i]);
 		if (i == 27) {
-			reg[0x120 / 4 + i].pair13.high = 0;
-			reg[0x1a0 / 4 + i].pair11.high = 200;
-			reg[0x220 / 4 + i].pair9.high = 50;
+			bank->hbh_hue[i].pair13.high = 0;
+			bank->sbh_hue[i].pair11.high = 200;
+			bank->vbh_hue[i].pair9.high = 50;
 		} else {
-			reg[0x120 / 4 + i].pair13.high = fcm_hbh[i + 1];
-			reg[0x1a0 / 4 + i].pair11.high = fcm_sbh[i + 1];
-			reg[0x220 / 4 + i].pair9.high = fcm_ybh[i + 1];
+			bank->hbh_hue[i].pair13.high = fcm_hbh[i + 1];
+			bank->sbh_hue[i].pair11.high = READ_ONCE(fcm_sbh[i + 1]);
+			bank->vbh_hue[i].pair9.high = fcm_ybh[i + 1];
 		}
 	}
 	/* Stock reloads the base after the LUT updates, then fills each plane. */
