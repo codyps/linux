@@ -136,7 +136,7 @@ ffffff80082f98ac .text.sunxi_ledc_trans_data 812
 ffffff80082f9bd8 .text.led_dump_reg 276
 ffffff80082f9cec .text.sunxi_ledc_irq_handler 740
 ffffff80082f9fd0 .text.sunxi_set_led_brightness 380
-ffffff80082fa14c .text.commit_static_frame 528
+ffffff80082fa14c .text.commit_static_frame.constprop.16 528
 ffffff80082fa35c .text.trimui_ledc_run_thread 824
 ffffff80082fa694 .text.sunxi_led_suspend_noirq 176
 ffffff80082fa744 .text.sunxi_led_set_all 292
