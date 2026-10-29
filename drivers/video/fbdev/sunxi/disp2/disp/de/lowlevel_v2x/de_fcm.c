@@ -27,6 +27,18 @@ struct fcm_hue_registers {
 	u8 reserved2[0x10];
 	union fcm_word vbh_hue[28];
 };
+/* The three saturation planes used by set_364 are 364 four-byte cells each.
+ * The 0x50-byte gaps are register space, not available scratch storage.
+ */
+struct fcm_byte_word { u8 b[4]; };
+struct fcm_grid_registers {
+	u8 reserved0[0x300];
+	struct fcm_byte_word hbh_sat[364];
+	u8 reserved1[0x50];
+	struct fcm_byte_word sbh_sat[364];
+	u8 reserved2[0x50];
+	struct fcm_byte_word vbh_sat[364];
+};
 static volatile union fcm_word *fcm_dev[DE_NUM][CHN_NUM];
 static struct de_reg_blocks fcm_block[DE_NUM][CHN_NUM];
 
@@ -99,7 +111,8 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 
 int set_364(u32 *table)
 {
-	volatile u8 *registers = (volatile u8 *)fcm_dev[0][0];
+	volatile struct fcm_grid_registers *bank =
+		(volatile struct fcm_grid_registers *)fcm_dev[0][0];
 	unsigned int row, column, index;
 
 	/* OEM bug: the final cell reads table[377] beyond a 364-word grid.
@@ -108,18 +121,18 @@ int set_364(u32 *table)
 	for (row = 0; row < 28; row++)
 		for (column = 0; column < 13; column++) {
 			index = row * 13 + column;
-			registers[0x300 + 4 * index] = table[index];
-			registers[0x900 + 4 * index] = table[index];
-			registers[0xf00 + 4 * index] = table[index];
-			registers[0x301 + 4 * index] = table[index + 1];
-			registers[0x901 + 4 * index] = table[index + 1];
-			registers[0xf01 + 4 * index] = table[index + 1];
-			registers[0x302 + 4 * index] = table[index + 13];
-			registers[0x902 + 4 * index] = table[index + 13];
-			registers[0xf02 + 4 * index] = table[index + 13];
-			registers[0x303 + 4 * index] = table[index + 14];
-			registers[0x903 + 4 * index] = table[index + 14];
-			registers[0xf03 + 4 * index] = table[index + 14];
+			bank->hbh_sat[index].b[0] = table[index];
+			bank->sbh_sat[index].b[0] = table[index];
+			bank->vbh_sat[index].b[0] = table[index];
+			bank->hbh_sat[index].b[1] = table[index + 1];
+			bank->sbh_sat[index].b[1] = table[index + 1];
+			bank->vbh_sat[index].b[1] = table[index + 1];
+			bank->hbh_sat[index].b[2] = table[index + 13];
+			bank->sbh_sat[index].b[2] = table[index + 13];
+			bank->vbh_sat[index].b[2] = table[index + 13];
+			bank->hbh_sat[index].b[3] = table[index + 14];
+			bank->sbh_sat[index].b[3] = table[index + 14];
+			bank->vbh_sat[index].b[3] = table[index + 14];
 		}
 	return 0;
 }
