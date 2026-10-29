@@ -402,7 +402,8 @@ static const struct regulator_desc axp22x_regulators[] = {
 
 static const struct regulator_desc axp22x_drivevbus_regulator = {
 	.name		= "drivevbus",
-	.supply_name	= "drivevbus",
+	/* The Brick image names this input supply drivevbusin. */
+	.supply_name	= "drivevbusin",
 	.of_match	= of_match_ptr("drivevbus"),
 	.regulators_node = of_match_ptr("regulators"),
 	.type		= REGULATOR_VOLTAGE,
@@ -905,7 +906,8 @@ static const struct regulator_desc axp2202_regulators[] = {
 
 static const struct regulator_desc axp803_drivevbus_regulator = {
 	.name		= "drivevbus",
-	.supply_name	= "drivevbus",
+	/* Preserve the same stock input-supply name as the AXP22x variant. */
+	.supply_name	= "drivevbusin",
 	.of_match	= of_match_ptr("drivevbus"),
 	.regulators_node = of_match_ptr("regulators"),
 	.type		= REGULATOR_VOLTAGE,
