@@ -53,8 +53,20 @@ ifneq ($(wildcard $(obj)/.initramfs_data.cpio.d),)
 	include $(obj)/.initramfs_data.cpio.d
 endif
 
+# The Brick #860 Image embeds the default three-entry archive from
+# 2025-11-11 08:35:17 UTC. Its kernel build banner is from 2025-11-26.
+# Preserve the older archive timestamp: the OEM apparently reused a
+# generated archive, and its CPIO mtimes and compressed bytes are observable.
+# Apply this only to the stock empty archive; a configured custom archive
+# retains its own build timestamp.
+trimui_stock_initramfs_env :=
+ifeq ($(CONFIG_TRIMUI_BOARD_ALPU_ARELINK),y)
+ifeq ($(CONFIG_INITRAMFS_SOURCE),"")
+trimui_stock_initramfs_env := KBUILD_BUILD_TIMESTAMP="Tue Nov 11 08:35:17 UTC 2025"
+endif
+endif
 quiet_cmd_initfs = GEN     $@
-      cmd_initfs = $(initramfs) -o $@ $(ramfs-args) $(ramfs-input)
+      cmd_initfs = $(trimui_stock_initramfs_env) $(initramfs) -o $@ $(ramfs-args) $(ramfs-input)
 
 targets := initramfs_data.cpio.gz initramfs_data.cpio.bz2 \
 	initramfs_data.cpio.lzma initramfs_data.cpio.xz \
