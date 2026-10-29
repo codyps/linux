@@ -127,7 +127,7 @@ static void trimui_led_power_enable(int enable)
 	if (!enable)
 		gpio_direction_output(107, 0);
 }
-
+static void commit_static_frame(void) __asm__("commit_static_frame.constprop.16"); /* OEM clone name, not original C. */
 static void commit_static_frame(void)
 {
  /* Stock keeps this initial mutex even if the global device changes.
