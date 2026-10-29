@@ -27,6 +27,12 @@ struct fcm_hue_registers {
 	u8 reserved2[0x10];
 	union fcm_word vbh_hue[28];
 };
+_Static_assert(__builtin_offsetof(struct fcm_hue_registers, hbh_hue) == 0x120,
+	       "FCM H hue register offset");
+_Static_assert(__builtin_offsetof(struct fcm_hue_registers, sbh_hue) == 0x1a0,
+	       "FCM S hue register offset");
+_Static_assert(__builtin_offsetof(struct fcm_hue_registers, vbh_hue) == 0x220,
+	       "FCM V hue register offset");
 /* The three saturation planes used by set_364 are 364 four-byte cells each.
  * The 0x50-byte gaps are register space, not available scratch storage.
  */
@@ -39,6 +45,14 @@ struct fcm_grid_registers {
 	u8 reserved2[0x50];
 	struct fcm_byte_word vbh_sat[364];
 };
+_Static_assert(sizeof(struct fcm_byte_word) == 4,
+	       "FCM saturation cell stride");
+_Static_assert(__builtin_offsetof(struct fcm_grid_registers, hbh_sat) == 0x300,
+	       "FCM H saturation register offset");
+_Static_assert(__builtin_offsetof(struct fcm_grid_registers, sbh_sat) == 0x900,
+	       "FCM S saturation register offset");
+_Static_assert(__builtin_offsetof(struct fcm_grid_registers, vbh_sat) == 0xf00,
+	       "FCM V saturation register offset");
 static volatile union fcm_word *fcm_dev[DE_NUM][CHN_NUM];
 static struct de_reg_blocks fcm_block[DE_NUM][CHN_NUM];
 
