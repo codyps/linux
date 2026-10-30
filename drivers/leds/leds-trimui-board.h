@@ -1106,25 +1106,21 @@ static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr
 	left_target = READ_ONCE(TRIMUI_PAIR_LEFT(page)->target_rgb);
 	WRITE_ONCE(TRIMUI_PAIR_RIGHT(right_root)->type, left_type);
 	gen_effect(left_call, left_type, left_target, left_current);
-	/* Stock's generator preserves x14, but C calls may clobber it. Re-form
-	 * the right pointer before the second call to keep the OEM result. */
-	right_argument = TRIMUI_PAIR_RIGHT(right_root);
+	/* OEM carries x14 across the first generator call. This relies on the
+	 * pinned gen_effect body not writing x14; a generic ABI call may clobber it. */
 	right_type = READ_ONCE(TRIMUI_PAIR_RIGHT(right_root)->type);
 	right_current = READ_ONCE(TRIMUI_PAIR_RIGHT(right_root)->current_rgb);
 	right_target = READ_ONCE(TRIMUI_PAIR_RIGHT(right_root)->target_rgb);
-	{
-		register struct trimui_led_effect *call asm("x0") = right_argument;
-
-		asm volatile("" : "+r"(call));
-		gen_effect(call, right_type, right_target, right_current);
-	}
+	gen_effect(right_argument, right_type, right_target, right_current);
 	WRITE_ONCE(TRIMUI_PAIR_LEFT(page)->index, 0);
 	WRITE_ONCE(TRIMUI_PAIR_LEFT(page)->active_cycles,
 		READ_ONCE(TRIMUI_PAIR_LEFT(page)->cycles));
 	/* OEM reads right cycles before resetting right index. */
 	right_cycles = READ_ONCE(TRIMUI_PAIR_RIGHT(right_root)->cycles);
 	WRITE_ONCE(TRIMUI_PAIR_RIGHT(right_root)->index, 0);
-	WRITE_ONCE(TRIMUI_PAIR_RIGHT(right_root)->active_cycles, right_cycles);
+	/* OEM's ordinary final store is scheduled after the x19/x20 restore.
+	 * WRITE_ONCE moves it before the restore with this compiler. */
+	TRIMUI_PAIR_RIGHT(right_root)->active_cycles = right_cycles;
 	return saved_count;
 }
 #undef TRIMUI_PAIR_LEFT
