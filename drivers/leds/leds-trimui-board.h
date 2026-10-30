@@ -553,14 +553,14 @@ static ssize_t store_frame(struct class *class, struct class_attribute *attr, co
 
 static ssize_t store_frame_hex(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	int i = 0, bytes = (int)count;
+	register int i asm("w23") = 0; int bytes = (int)count;
 	int rounded;
 	const char *position = buffer;
-	u32 *pixels;
-	asm("adrp %0, trimui_transfer_state\n\t"
-	    "add %0, %0, :lo12:trimui_transfer_state\n\t"
-	    "add %0, %0, #0x7cc"
-	    : "=&r"(pixels));
+	register u32 *pixels asm("x20");
+	/* Integer root preserves the OEM frame address and x20 role.
+	 * It also retains GCC's separate page and 0x7cc ADDs. */
+	pixels = (u32 *)((unsigned long)&trimui_transfer_state + 0x7cc);
+	/* Keep this line count for later OEM __LINE__ diagnostics. */
 	if (bytes > (int)trimui_led_count * 7)
 		bytes = trimui_led_count * 7;
 	rounded = bytes / 7 * 7;
