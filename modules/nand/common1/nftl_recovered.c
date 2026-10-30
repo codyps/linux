@@ -13387,13 +13387,19 @@ struct cross_rebuild_geometry {
 struct cross_rebuild_zone {
 	unsigned char before_geometry[8];
 	struct cross_rebuild_geometry *geometry;
-	unsigned char before_write[3440];
+	unsigned char before_bad_block_count[12];
+	unsigned short bad_block_count;
+	unsigned char after_bad_block_count[3426];
 	int (*erase)(struct cross_rebuild_zone *, struct physic_op_param *);
 	void *read_callback;
 	int (*write)(struct cross_rebuild_zone *, struct physic_op_param *);
 	unsigned char before_mark_bad[16];
 	int (*mark_bad)(struct cross_rebuild_zone *, struct physic_op_param *);
 };
+_Static_assert(__builtin_offsetof(struct cross_rebuild_zone, bad_block_count) == 28,
+	       "stock bad-block counter offset");
+_Static_assert(__builtin_offsetof(struct cross_rebuild_zone, erase) == 3456,
+	       "stock erase callback offset");
 struct cross_rebuild_block {
 	unsigned short number;
 	unsigned short state;
@@ -13634,7 +13640,7 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 		 * just failed. This is a persistent metadata bug. */
 		source->page = 0;
 		source->state = 255;
-		(*(unsigned short *)((char *)zone + 28))++;
+		zone->bad_block_count++;
 	acquire_dual:
 		replacement = (struct cross_rebuild_block *)
 			out_phy_block_from_free_list((struct free_block_zone *)zone);
