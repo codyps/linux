@@ -13524,6 +13524,7 @@ retry:
 	return replacement;
 }
 
+#if !defined(TRIMUI_NFTL_GCC7_PASS) || defined(TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD)
 struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,
 	struct cross_rebuild_block *assist)
@@ -13674,6 +13675,11 @@ replay:
 	free_nrc(assist_nrc);
 	return replacement;
 }
+#else
+extern struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
+	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,
+	struct cross_rebuild_block *assist);
+#endif
 #else
 extern struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,

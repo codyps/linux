@@ -87,7 +87,7 @@ ffffff80083f2328 nftl_gcc53_write_error_build.o .text.do_write_error_in_build_li
 ffffff80083f24c8 nftl_gcc53_init_nrc.o .text.init_nrc 584
 ffffff80083f2710 nftl_recovered.o .text.free_nrc 88
 ffffff80083f2768 nftl_recovered.o .text.cross_talk_rebuild_current_block 1276
-ffffff80083f2c64 nftl_recovered.o .text.no_cross_talk_rebuild_current_block 1456
+ffffff80083f2c64 nftl_gcc53_no_cross_rebuild.o .text.no_cross_talk_rebuild_current_block 1456
 ffffff80083f3214 nftl_gcc53_erase_block.o .text.erase_block 312
 ffffff80083f334c nftl_recovered.o .text.nftl_check_pattern 100
 ffffff80083f33b0 nftl_gcc53_torture_block_and_mark.o .text.torture_block_and_mark 1256
