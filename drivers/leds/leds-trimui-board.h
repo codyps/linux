@@ -569,7 +569,10 @@ static ssize_t store_frame_hex(struct class *class, struct class_attribute *attr
 	 * TODO: bound the destination and use a non-wrapping length separately. */
 	while ((int)((u32)(unsigned long)buffer + (u32)rounded -
 		     (u32)(unsigned long)position) > 0) {
-		int parsed = sscanf(position, "%X", &pixels[i]); /* OEM ignores errors. */
+		int parsed; register u32 *slot asm("x2") = &pixels[i];
+		asm volatile("" : "+r"(slot));
+		register const char *scan asm("x0") = position;
+		asm volatile("" : "+r"(scan) : "r"(slot)); parsed = sscanf(scan, "%X", slot);
 		position += 7; asm volatile("" : : "r"(parsed)); /* Pin index after call. */
 		i++;
 		/* Preserve stock's two-step end-minus-cursor comparison. */
@@ -577,12 +580,9 @@ static ssize_t store_frame_hex(struct class *class, struct class_attribute *attr
 	}
 	return count;
 }
-
-/* OEM scalar setters form the field address before saving the return count.
- * F1/F2 use the BSS pointer immediately before the LED state. The L/R/M
- * setters use interior effect-frame addresses as roots; these frames are
- * not read by the setters. The parser errors are ignored and count is
- * returned even for bad input; TODO: report errors in a separate fix. */
+/* OEM scalar setters form field addresses before saving count. F1/F2 use the
+ * BSS pointer before LED state; L/R/M use unread interior effect-frame roots.
+ * Parser errors are ignored and count returned; TODO: report errors. */
 _Static_assert(sizeof(sunxi_led) +
 	__builtin_offsetof(struct trimui_stock_led_state,
 			   effects[1].frames[102]) == 0x1100,
