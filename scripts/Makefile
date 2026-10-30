@@ -12,6 +12,12 @@
 HOST_EXTRACFLAGS += -I$(srctree)/tools/include
 
 hostprogs-$(CONFIG_KALLSYMS)     += kallsyms
+
+# The Brick's stock KALLSYMS records one GCC clone suffix differently from
+# this source rebuild. Keep the correction specific to the stock board build.
+ifeq ($(CONFIG_TRIMUI_BOARD_ALPU_ARELINK),y)
+HOSTCFLAGS_kallsyms.o += -DTRIMUI_BRICK_STOCK_KALLSYMS
+endif
 hostprogs-$(CONFIG_LOGO)         += pnmtologo
 hostprogs-$(CONFIG_VT)           += conmakehash
 hostprogs-$(BUILD_C_RECORDMCOUNT) += recordmcount

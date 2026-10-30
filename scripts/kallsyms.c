@@ -165,6 +165,19 @@ static int read_symbol(FILE *in, struct sym_entry *s)
 	else if (!strncmp(sym, ".LASANPC", 8))
 		return -1;
 
+	/* The stock Brick calls the byte-identical 516-byte clone at this
+	 * address __full_va_sweep.isra.4. Rebuilding its C with the OEM GCC
+	 * instead assigns .isra.2. Preserve the OEM /proc/kallsyms spelling;
+	 * this changes generated metadata only, not the linked function.
+	 * TODO: Recover the original IPA clone-number provenance and remove
+	 * this exact-address correction if the source can generate .isra.4.
+	 */
+#ifdef TRIMUI_BRICK_STOCK_KALLSYMS
+	if (s->addr == 0xffffff80083762acULL && stype == 't' &&
+	    strcmp(str, "__full_va_sweep.isra.2") == 0)
+		str[strlen(str) - 1] = '4';
+#endif
+
 	/* include the type field in the symbol name, so that it gets
 	 * compressed together */
 	s->len = strlen(str) + 1;
