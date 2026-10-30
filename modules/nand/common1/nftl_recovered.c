@@ -13431,7 +13431,7 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	unsigned char spare_data[16] __attribute__((unused));
 	struct physic_op_param op;
 	unsigned int first_erase, second_erase = 0; /* OEM ignores erase failures. */
-	unsigned int page, compact, special, tag_copy;
+	unsigned int page, compact, special;
 	/* Stock initializes both replay pointers before init_nrc, although each
 	 * is overwritten before replay. This order also places them at the OEM
 	 * FP+0x88 and FP+0x90 slots. */
@@ -13536,9 +13536,12 @@ retry:
 					  (unsigned short)compact,
 					  zone->geometry->fixed_page, data, oob);
 			special = get_special_data_from_oob(oob);
-			tag_copy = replacement->tag;
+			/* The first erase count is dead after block selection. Reuse
+			 * its stack slot for the tag so the two callback flag pointers
+			 * stay at the OEM FP+0x70 and FP+0x6c addresses. */
+			first_erase = replacement->tag;
 			set_oob_special_page(zone, oob, special,
-					     tag_copy, replacement->erase_count);
+					     first_erase, replacement->erase_count);
 			/* OEM ignores every replay-write result. */
 			zone->write(zone, &op);
 			compact++;
