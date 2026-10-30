@@ -13533,6 +13533,9 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 	struct nrc_buffers *selected = 0;
 	struct cross_rebuild_block *source, *replacement;
 	struct physic_op_param op;
+	/* OEM uses a distinct replay operation slot: callbacks can retain its
+	 * address separately from the erase operation. Preserve both. */
+	struct physic_op_param op2;
 	unsigned int primary_used, assist_used;
 	unsigned int first_good, second_good;
 	unsigned int page, compact, special;
@@ -13650,14 +13653,14 @@ replay:
 			data = (unsigned char *)selected->second +
 				(unsigned int)(page * (zone->geometry->bytes + 64U));
 			oob = data + zone->geometry->bytes;
-			set_physic_op_par(&op, replacement->number,
+			set_physic_op_par(&op2, replacement->number,
 					  (unsigned short)compact,
 					  zone->geometry->fixed_page, data, oob);
 			special = get_special_data_from_oob(oob);
 			set_oob_special_page(zone, oob, special,
 					     replacement->tag, replacement->erase_count);
 			/* OEM ignores replay-write failures. */
-			zone->write(zone, &op);
+			zone->write(zone, &op2);
 			compact++;
 		} else {
 			nand_print(nftl_ro_lc_293, page,
