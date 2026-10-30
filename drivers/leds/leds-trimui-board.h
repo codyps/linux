@@ -1374,14 +1374,17 @@ static ssize_t store_frames_enable(struct class *class, struct class_attribute *
 {
  struct trimui_frame_control_view *control;
  size_t result;
+ int parser_base = 0;
  int left;
- /* Compatible native address/count lifetime, not recovered original C.
-  * These symbolic relocations allocate no data and add no locking. */
- asm("adrp %0, trimui_frame_controls\n\tadd %0, %0, :lo12:trimui_frame_controls\n\tmov %1, %2"
-     : "=&r"(control), "=r"(result) : "r"(count));
+ /* Preserve the OEM parser and count-save order around this C BSS root.
+  * GCC otherwise moves the count save ahead of the address calculation. */
+ asm volatile("" : "+r"(parser_base));
+ control = &trimui_frame_controls;
+ asm volatile("" : "+r"(control));
+ asm volatile("mov %0, %1" : "=r"(result) : "r"(count));
  /* Stock ignores parse errors and still resets/decrements state.
   * TODO: reject errors only in a separate behavior change. */
- kstrtoint(buffer,0,&control->enable);
+ kstrtoint(buffer,parser_base,&control->enable);
  left=control->cycles-1;
  trimui_frame_counters.index=0;
  trimui_frame_counters.left=left;
