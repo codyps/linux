@@ -40,6 +40,13 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 	 * a separate fix; preserve the shipped writes during reconstruction.
 	 */
 	if (type == 1) {
+		/* Stock keeps the source channels in w5/w6/w3 and the target
+		 * channels in w9/w8/w2 while forming the ramp deltas. These C
+		 * register roles reproduce its arithmetic schedule without adding
+		 * executable assembly.
+		 */
+		register int from_r asm("w5"), from_g asm("w6"), from_b asm("w3");
+		register int to_r asm("w9"), to_g asm("w8"), to_b asm("w2");
 		n = effect->duration / 16;
 		from_r = (previous >> 16) & 255;
 		from_g = (previous >> 8) & 255;
@@ -53,10 +60,14 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		to_b = target & 255;
 		/* OEM materializes target blue before starting the accumulators. */
 		asm volatile("" : "+r"(to_b));
+		int delta_r, delta_g, delta_b;
+		delta_r = to_r - from_r;
+		delta_g = to_g - from_g;
+		delta_b = to_b - from_b;
 		r = n * from_r; g = n * from_g; b = n * from_b;
 		for (i = 0; i < n; i++) {
 			effect->frames[i] = trimui_rgb(r / n, g / n, b / n);
-			r += to_r - from_r; g += to_g - from_g; b += to_b - from_b;
+			r += delta_r; g += delta_g; b += delta_b;
 		}
 	} else if (type == 2) {
 		u32 start_rgb;
