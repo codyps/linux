@@ -37,7 +37,13 @@ static const struct trimui_led_ro_early {
 	.sunxi_ledc_complete = "sunxi_ledc_complete",
 	.led_select_gpio_state = "led_select_gpio_state",
 };
-static const char * const trimui_effect_names[8] __attribute__((no_reorder)) = { "disable", "linear", "breath", "sniff", "static", "blink1", "blink2", "blink3" };
+#include "leds-trimui-effect-name-text.h"
+static const char * const trimui_effect_names[8] __attribute__((no_reorder)) = {
+	"disable", trimui_effect_name_text.linear, trimui_effect_name_text.breath,
+	trimui_effect_name_text.sniff, trimui_effect_name_text.static_effect,
+	trimui_effect_name_text.blink1, trimui_effect_name_text.blink2,
+	trimui_effect_name_text.blink3,
+};
 static const struct trimui_led_ro_writes {
 	char wait_data_time_ns_write[24];
 	char wait_time0_ns_write[20];
