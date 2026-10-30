@@ -1087,8 +1087,8 @@ static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr
 	int right_type, right_target, right_current;
 
 	/* OEM ignores parser errors and still regenerates both effects. */
-	asm("adrp %0, trimui_l_page\n\tadd %1, %0, #0x9c8"
-	    : "=&r"(page), "=&r"(left_root));
+	left_root = (unsigned char *)&trimui_l_page + 0x9c8;
+	page = (unsigned char *)&trimui_l_page;
 	kstrtoint(buffer, parser_base, (int *)&TRIMUI_PAIR_LEFT(left_root)->type);
 	if ((unsigned int)TRIMUI_PAIR_LEFT(left_root)->type > 7)
 		TRIMUI_PAIR_LEFT(left_root)->type = 0;
