@@ -542,8 +542,8 @@ static ssize_t store_frame(struct class *class, struct class_attribute *attr, co
 {
 	/* Stock compares count with the buffer address, not its size.
 	 * TODO: use sizeof(frame) in a separate corrective patch. */
-	/* Keep the same rooted frame address used by the OEM read callback. */
-	u8 *frame = (u8 *)RELOC_HIDE(&trimui_transfer_state, 0) + 0x7cc;
+	/* Integer address form keeps the OEM frame/count save order. */
+	u8 *frame = (u8 *)((unsigned long)&trimui_transfer_state + 0x7cc);
 	if (count < (unsigned long)frame)
 		memcpy(frame, buffer, count);
 	else
