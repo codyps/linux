@@ -916,8 +916,8 @@ static ssize_t store_effect_m(struct class *class, struct class_attribute *attr,
 	int parsed_type;
 	u32 current_color, target_color;
 
-	asm("adrp %0, trimui_m_page\n\tadd %1, %0, #0xac8"
-	    : "=&r"(page), "=&r"(base));
+	base = (unsigned char *)&trimui_m_page + 0xac8;
+	page = (unsigned char *)&trimui_m_page;
 	effect = (struct trimui_led_effect *)(base + 0x9a8);
 	/* OEM ignores parse failure, then clamps any type above 7. */
 	kstrtoint(buffer, 0, (int *)&effect->type);
@@ -953,8 +953,8 @@ static ssize_t store_effect_l(struct class *class, struct class_attribute *attr,
 	int parsed_type;
 	u32 current_color, target_color;
 
-	asm("adrp %0, trimui_l_page\n\tadd %1, %0, #0x9c8"
-	    : "=&r"(page), "=&r"(base));
+	base = (unsigned char *)&trimui_l_page + 0x9c8;
+	page = (unsigned char *)&trimui_l_page;
 	effect = (struct trimui_led_effect *)(base + 0xb88);
 	/* OEM ignores parse failure, then clamps any type above 7. */
 	kstrtoint(buffer, 0, (int *)&effect->type);
@@ -989,8 +989,8 @@ static ssize_t store_effect_r(struct class *class, struct class_attribute *attr,
 	int parsed_type;
 	u32 current_color, target_color;
 
-	asm("adrp %0, trimui_r_page\n\tadd %1, %0, #0x8c8"
-	    : "=&r"(page), "=&r"(base));
+	base = (unsigned char *)&trimui_r_page + 0x8c8;
+	page = (unsigned char *)&trimui_r_page;
 	effect = (struct trimui_led_effect *)(base + 0xd68);
 	/* OEM ignores parse failure, then clamps any type above 7. */
 	kstrtoint(buffer, 0, (int *)&effect->type);
