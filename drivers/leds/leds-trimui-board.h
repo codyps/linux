@@ -927,7 +927,9 @@ static ssize_t store_effect_m(struct class *class, struct class_attribute *attr,
 	page += 0xac8;
 	asm volatile("" : "+r"(page));
 	effect = (struct trimui_led_effect *)(page + 0x9a8);
-	asm volatile("add %0, %1, #0x9a8" : "=r"(genptr) : "r"(page));
+	/* Retain OEM's separate x14 address calculation for the generator. */
+	genptr = (struct trimui_led_effect *)(page + 0x9a8);
+	asm volatile("" : "+r"(genptr));
 	callptr = genptr;
 	asm volatile("" : "+r"(callptr));
 	parsed_type = READ_ONCE(effect->type);
@@ -964,7 +966,8 @@ static ssize_t store_effect_l(struct class *class, struct class_attribute *attr,
 	page += 0x9c8;
 	asm volatile("" : "+r"(page));
 	effect = (struct trimui_led_effect *)(page + 0xb88);
-	asm volatile("add %0, %1, #0xb88" : "=r"(genptr) : "r"(page));
+	genptr = (struct trimui_led_effect *)(page + 0xb88);
+	asm volatile("" : "+r"(genptr));
 	callptr = genptr;
 	asm volatile("" : "+r"(callptr));
 	parsed_type = READ_ONCE(effect->type);
@@ -1000,7 +1003,8 @@ static ssize_t store_effect_r(struct class *class, struct class_attribute *attr,
 	page += 0x8c8;
 	asm volatile("" : "+r"(page));
 	effect = (struct trimui_led_effect *)(page + 0xd68);
-	asm volatile("add %0, %1, #0xd68" : "=r"(genptr) : "r"(page));
+	genptr = (struct trimui_led_effect *)(page + 0xd68);
+	asm volatile("" : "+r"(genptr));
 	callptr = genptr;
 	asm volatile("" : "+r"(callptr));
 	parsed_type = READ_ONCE(effect->type);
