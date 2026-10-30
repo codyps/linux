@@ -79,10 +79,6 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 	memcpy((void *)(reg + 0xe0 / 4), fcm_angle_lum, sizeof(fcm_angle_lum));
 	bank = (volatile struct fcm_hue_registers *)reg;
 	for (i = 0, next_byte = 4; i < 28; i++, next_byte += 4) {
-		/* OEM advances a separate byte offset for the next H/Y table
-		 * samples. Keep it materialized without changing memory order.
-		 */
-		asm volatile("" : "+r"(next_byte));
 		union fcm_word hue_word;
 		u32 hue, sat;
 
@@ -110,6 +106,10 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 			bank->vbh_hue[i].pair9.high =
 				*(const u32 *)((const char *)fcm_ybh + next_byte);
 		}
+		/* OEM carries the separate next-row byte offset through the LUT
+		 * body. This read-only constraint has no memory or runtime effect.
+		 */
+		asm volatile("" : : "r"(next_byte));
 	}
 	/* Stock reloads the base after the LUT updates, then fills each plane. */
 	reg = fcm_dev[sel][channel];
