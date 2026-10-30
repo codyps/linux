@@ -2269,28 +2269,19 @@ __attribute__((optimize("-fno-stack-protector")))
 int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 				 unsigned char *values, void *raw_buffer)
 {
-	struct {
-		unsigned int total;
-		unsigned int copy_inner;
-		unsigned int index;
-		unsigned int copy_init;
-		int result;
-		int error;
-	} scalars;
+	int error;
+	int result;
+	unsigned int copy_init, index, copy;
 #define buffer ((const unsigned char *)raw_buffer)
-#define total scalars.total
-#define copy scalars.copy_inner
-#define index scalars.index
-#define result scalars.result
-#define error scalars.error
 	/* OEM initializes these words before zeroing either scratch array. */
 	error = 0;
 	result = 0;
 	unsigned char primary[32] = {0};
 	unsigned char secondary[32] = {0};
+	unsigned int total;
 	total = 32;
-	for (scalars.copy_init = 0; scalars.copy_init <= 7; scalars.copy_init++)
-		primary[scalars.copy_init] = buffer[scalars.copy_init];
+	for (copy_init = 0; copy_init <= 7; copy_init++)
+		primary[copy_init] = buffer[copy_init];
 	result = hynix16nm_major_check_byte(mode, 0, 4,
 					  primary, secondary, 8);
 	if (result < 0) {
@@ -2298,8 +2289,8 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 		return result;
 	}
 	nand_print_dbg(nftl_ro_lc_117, *mode);
-	for (scalars.copy_init = 0; scalars.copy_init <= 7; scalars.copy_init++)
-		primary[scalars.copy_init] = buffer[scalars.copy_init + 8];
+	for (copy_init = 0; copy_init <= 7; copy_init++)
+		primary[copy_init] = buffer[copy_init + 8];
 	result = hynix16nm_major_check_byte(cycle, 0, 4,
 					  primary, secondary, 8);
 	if (result < 0) {
@@ -2346,12 +2337,21 @@ int hynix16nm_get_read_retry_cfg(unsigned char *mode, unsigned char *cycle,
 		result = 0;
 	return result;
 }
-#undef error
-#undef result
-#undef index
-#undef copy
-#undef total
 #undef buffer
+/*
+ * Stock GCC 5.3 emits the exact 968-byte OEM body only with these plain
+ * scalar declarations and ordering. The private total, result and error
+ * words retain their stock callback-visible frame locations. In particular,
+ * do not collapse result/error or fold total into a compile-time constant:
+ * callbacks can mutate them while voting on the raw OTP contents.
+ * The buffer cast remains a macro: a pointer local adds eight bytes and
+ * changes the emitted body. The OEM bug is preserved: total can become
+ * larger than the raw OTP buffer or caller's values allocation.
+ * Keep this comment's line count: subsequent NAND source line numbers are
+ * intentionally stable for OEM diagnostic and build-data comparison.
+ */
+
+
 
 #endif
 #ifndef TRIMUI_NFTL_HYNIX16_GETOTP_GCC53_BUILD
