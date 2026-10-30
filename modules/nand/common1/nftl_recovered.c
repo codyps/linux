@@ -13432,11 +13432,11 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	struct physic_op_param op;
 	unsigned int first_erase, second_erase = 0; /* OEM ignores erase failures. */
 	unsigned int page, compact, special;
+	struct nrc_buffers *nrc = 0;
 	/* Stock initializes both replay pointers before init_nrc, although each
 	 * is overwritten before replay. This order also places them at the OEM
 	 * FP+0x88 and FP+0x90 slots. */
 	unsigned char *oob = 0, *data = 0;
-	struct nrc_buffers *nrc = 0;
 
 	if (init_nrc((struct nrc_zone *)zone, &nrc)) {
 		free_nrc(nrc);
