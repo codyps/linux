@@ -13537,17 +13537,17 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 	struct cross_rebuild_block *assist)
 {
 	unsigned char *data = 0, *oob = 0;
-	struct nrc_buffers *primary_nrc = 0, *assist_nrc = 0;
-	struct nrc_buffers *selected = 0;
+	unsigned int primary_used, assist_used;
+	unsigned int first_good, second_good;
+	unsigned int page, compact, special;
+	int status;
 	struct cross_rebuild_block *source, *replacement;
 	struct physic_op_param op;
 	/* OEM uses a distinct replay operation slot: callbacks can retain its
 	 * address separately from the erase operation. Preserve both. */
 	struct physic_op_param op2;
-	unsigned int primary_used, assist_used;
-	unsigned int first_good, second_good;
-	unsigned int page, compact, special;
-	int status;
+	struct nrc_buffers *primary_nrc = 0, *assist_nrc = 0;
+	struct nrc_buffers *selected = 0;
 
 	if (init_nrc((struct nrc_zone *)zone, &primary_nrc)) {
 		free_nrc(primary_nrc);
