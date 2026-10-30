@@ -1254,7 +1254,9 @@ static __attribute__((no_reorder)) ssize_t show_frame_hex(struct class *class, s
 	int count = 0;
 	register char *position asm("x21") = buffer;
 	register u32 *pixels asm("x20") =
-		(u32 *)((u8 *)RELOC_HIDE(&trimui_transfer_state, 0) + 0x7cc);
+		(u32 *)((unsigned long)&trimui_transfer_state + 0x7cc);
+	/* The integer address form keeps GCC's page ADD beside its ADRP, as
+	 * shipped. The 0x7cc offset is still added separately to x20. */
 	register const char *format_page asm("x24");
 	/* Keep the OEM frame root and late format-page offset while retaining
 	 * the compiler's pooled format literal. */
