@@ -13618,88 +13618,93 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 			nand_print(nftl_ro_lc_292);
 			goto acquire_single;
 		}
-		goto replay;
-	}
-	if (init_nrc((struct nrc_zone *)zone, &assist_nrc)) {
-		free_nrc(primary_nrc);
-		free_nrc(assist_nrc);
-		nand_print(nftl_ro_lc_288);
-		return 0;
-	}
-	assist_used = get_used_page_num_no_crosstalk(
-		(struct used_page_zone *)zone, (struct physical_block *)assist,
-		&second_good, (struct used_page_cache *)assist_nrc);
-	nand_print(nftl_ro_lc_296,
-		   primary->number, primary_used, primary->tag,
-		   assist->number, assist_used, assist->tag);
-	if (!*(unsigned int *)assist_nrc) {
-		free_nrc(primary_nrc);
-		free_nrc(assist_nrc);
-		nand_print(nftl_ro_lc_297);
-		erase_block((struct erase_block_zone *)zone,
-			    (struct erase_block_info *)primary,
-			    primary->erase_count + 1);
-		erase_block((struct erase_block_zone *)zone,
-			    (struct erase_block_info *)assist,
-			    assist->erase_count + 1);
-		return 0;
-	}
-	if (assist_used > primary_used) {
-		source = assist;
-		replacement = primary;
-		selected = assist_nrc;
-		nand_print(nftl_ro_lc_289,
-			   primary_used, assist_used, *(unsigned int *)selected);
 	} else {
-		source = primary;
-		replacement = assist;
-		selected = primary_nrc;
-		nand_print(nftl_ro_lc_290,
-			   primary_used, assist_used, *(unsigned int *)selected);
-	}
-	set_physic_op_par(&op, replacement->number, 0,
-			  zone->geometry->fixed_page, 0, 0);
-	status = zone->erase(zone, &op);
-	if (status) {
-		nand_print(nftl_ro_lc_298, replacement->number);
-		zone->mark_bad(zone, &op); /* OEM ignores mark_bad failure. */
-		/* OEM marks the selected source, not the block whose erase
-		 * just failed. This is a persistent metadata bug. */
-		source->page = 0;
-		source->state = 255;
-		zone->bad_block_count++;
-	acquire_dual:
-		replacement = (struct cross_rebuild_block *)
-			out_phy_block_from_free_list((struct free_block_zone *)zone);
-		if (!replacement) {
-			nand_print(nftl_ro_lc_291);
-			/* OEM leaks both NRC allocations on this exit. */
+		if (init_nrc((struct nrc_zone *)zone, &assist_nrc)) {
+			free_nrc(primary_nrc);
+			free_nrc(assist_nrc);
+			nand_print(nftl_ro_lc_288);
 			return 0;
 		}
-		if (new_block_init_for_write((struct new_write_zone *)zone,
-					     (struct new_write_block *)replacement,
-					     replacement->tag)) {
-			nand_print(nftl_ro_lc_292);
-			goto acquire_dual;
+		assist_used = get_used_page_num_no_crosstalk(
+			(struct used_page_zone *)zone, (struct physical_block *)assist,
+			&second_good, (struct used_page_cache *)assist_nrc);
+		nand_print(nftl_ro_lc_296,
+			   primary->number, primary_used, primary->tag,
+			   assist->number, assist_used, assist->tag);
+		if (!*(unsigned int *)assist_nrc) {
+			free_nrc(primary_nrc);
+			free_nrc(assist_nrc);
+			nand_print(nftl_ro_lc_297);
+			erase_block((struct erase_block_zone *)zone,
+				    (struct erase_block_info *)primary,
+				    primary->erase_count + 1);
+			erase_block((struct erase_block_zone *)zone,
+				    (struct erase_block_info *)assist,
+				    assist->erase_count + 1);
+			return 0;
 		}
+		if (assist_used > primary_used) {
+			source = assist;
+			replacement = primary;
+			selected = assist_nrc;
+			nand_print(nftl_ro_lc_289,
+				   primary_used, assist_used, *(unsigned int *)selected);
+		} else {
+			source = primary;
+			replacement = assist;
+			selected = primary_nrc;
+			nand_print(nftl_ro_lc_290,
+				   primary_used, assist_used, *(unsigned int *)selected);
+		}
+		set_physic_op_par(&op, replacement->number, 0,
+				  zone->geometry->fixed_page, 0, 0);
+		status = zone->erase(zone, &op);
+		if (status) {
+			nand_print(nftl_ro_lc_298, replacement->number);
+			zone->mark_bad(zone, &op); /* OEM ignores mark_bad failure. */
+			/* OEM marks the selected source, not the block whose erase
+			 * just failed. This is a persistent metadata bug. */
+			source->page = 0;
+			source->state = 255;
+			zone->bad_block_count++;
+		acquire_dual:
+			replacement = (struct cross_rebuild_block *)
+				out_phy_block_from_free_list((struct free_block_zone *)zone);
+			if (!replacement) {
+				nand_print(nftl_ro_lc_291);
+				/* OEM leaks both NRC allocations on this exit. */
+				return 0;
+			}
+			if (new_block_init_for_write((struct new_write_zone *)zone,
+						     (struct new_write_block *)replacement,
+						     replacement->tag)) {
+				nand_print(nftl_ro_lc_292);
+				goto acquire_dual;
+			}
+		}
+		replacement->tag = source->tag;
 	}
-	replacement->tag = source->tag;
-replay:
+	page = 0;
 	compact = 0;
-	for (page = 0; page < *(unsigned int *)selected; page++) {
+	for (; page < *(unsigned int *)selected; page++) {
 		if (((unsigned char *)selected->first)[page]) {
 			/* OEM wraps the page-byte product at 32 bits here too.
 			 * TODO: bound page and stride in a separate behavior change.
 			 */
 			data = (unsigned char *)selected->second +
-				(unsigned int)(page * (zone->geometry->bytes + 64U));
+				(unsigned int)(page * (zone->geometry->bytes + 64));
 			oob = data + zone->geometry->bytes;
 			set_physic_op_par(&op2, replacement->number,
 					  (unsigned short)compact,
 					  zone->geometry->fixed_page, data, oob);
 			special = get_special_data_from_oob(oob);
+			/* OEM reloads the replacement tag after callbacks; a stale
+			 * cached value would change behavior if a callback mutates it.
+			 * TODO: recover the exact OEM load/move sequence so an
+			 * invalid replacement pointer also faults at the same PC.
+			 */
 			set_oob_special_page(zone, oob, special,
-					     replacement->tag, replacement->erase_count);
+					     *(volatile unsigned int *)&replacement->tag, replacement->erase_count);
 			/* OEM ignores replay-write failures. */
 			zone->write(zone, &op2);
 			compact++;
