@@ -13417,7 +13417,6 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,
 	struct cross_rebuild_block *assist)
 {
-	struct nrc_buffers *nrc = 0;
 	struct cross_rebuild_block *source, *replacement;
 	struct physic_op_param op;
 	unsigned int primary_used, assist_used = 0;
@@ -13425,6 +13424,7 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	unsigned int first_erase = 0, second_erase = 0; /* OEM ignores erase failures. */
 	unsigned int page, compact, special;
 	unsigned char *data, *oob;
+	struct nrc_buffers *nrc = 0;
 
 	if (init_nrc((struct nrc_zone *)zone, &nrc)) {
 		free_nrc(nrc);
