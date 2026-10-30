@@ -1348,16 +1348,17 @@ static ssize_t store_frames_cycles(struct class *class, struct class_attribute *
 	struct trimui_frame_control_view *control;
 	struct trimui_frame_counter_view *counter;
 	size_t result;
+	int parser_base = 0;
 
-	/* These compatible aliases recover stock's two BSS address roots and
-	 * keep the count in a callee-saved register across the parser call. */
-	asm("adrp %0, trimui_frame_controls\n\t"
-	    "add %0, %0, :lo12:trimui_frame_controls\n\t"
-	    "mov %1, %2"
-	    : "=&r"(control), "=r"(result) : "r"(count));
+	/* Keep OEM's parser zero, BSS root, and saved-count schedule. */
+	asm volatile("" : "+r"(parser_base));
+	control = &trimui_frame_controls;
+	asm volatile("" : "+r"(control));
+	result = count;
+	asm volatile("" : "+r"(result));
 	/* OEM ignores parse errors and clears enable regardless.  TODO: reject
 	 * invalid input only in a separate behavior-changing fix. */
-	kstrtoint(buffer, 0, &control->cycles);
+	kstrtoint(buffer, parser_base, &control->cycles);
 	/* OEM materializes the counter root before clearing enable.  This C
 	 * reference retains the same instruction order with the pinned compiler. */
 	counter = &trimui_frame_counters;
