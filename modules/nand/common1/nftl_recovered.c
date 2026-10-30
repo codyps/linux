@@ -51,7 +51,8 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_PHY_WRITE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_USED_PAGE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_NO_CROSSTALK_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_NO_CROSSTALK_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -975,7 +976,8 @@ extern unsigned short get_erase_count_from_oob(void *oob);
 
 #if !defined(TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD)
 unsigned int get_special_data_from_oob(void *oob)
 {
 	unsigned int value = get_spare_data(oob, 1, 4);
@@ -3014,6 +3016,7 @@ extern unsigned int get_used_page_num(struct used_page_zone *zone,
 				      unsigned int *read_errors,
 				      struct used_page_cache *cache);
 #endif
+#ifndef TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD
 int free_nrc(struct nrc_buffers *buffers)
 {
 	if (buffers == 0)
@@ -3024,6 +3027,9 @@ int free_nrc(struct nrc_buffers *buffers)
 	nftl_free(buffers);
 	return 0;
 }
+#else
+extern int free_nrc(struct nrc_buffers *buffers);
+#endif
 
 #if !defined(TRIMUI_NFTL_OOB_LOGIC_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_GCC7_PASS) && \
@@ -3398,7 +3404,8 @@ void set_no_use_page(void *unused, unsigned char *oob)
 #if !defined(TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_MARK_FREE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_PHY_WRITE_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_PHY_WRITE_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD)
 void set_oob_special_page(void *unused, unsigned char *oob,
 			  unsigned int block, unsigned int page,
 			  unsigned short erase_count)
