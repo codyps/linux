@@ -132,20 +132,27 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 				(target >> 12) & 15, (target >> 4) & 15);
 		/* Keep OEM's type-3 packed start color materialized here. */
 		asm volatile("" : "+r"(start_rgb));
+		for (i = 0; i < n; i++)
+			effect->frames[i] = start_rgb;
 		from_r = (start_rgb >> 16) & 255;
 		from_g = (start_rgb >> 8) & 255;
 		from_b = start_rgb & 255;
-		for (i = 0; i < n; i++)
-			effect->frames[i] = start_rgb;
 		to_r = (target >> 16) & 255;
 		to_g = (target >> 8) & 255;
 		to_b = target & 255;
+		/* OEM keeps these deltas across the mirrored ramp. The frame
+		 * stores below retain its unchecked duration/frame bound bug.
+		 */
+		int delta_r, delta_g, delta_b;
+		delta_r = to_r - from_r;
+		delta_g = to_g - from_g;
+		delta_b = to_b - from_b;
 		r = ramp * from_r; g = ramp * from_g; b = ramp * from_b;
 		for (i = 0; i < ramp; i++) {
 			u32 rgb = trimui_rgb(r / ramp, g / ramp, b / ramp);
 			effect->frames[i] = rgb;
 			effect->frames[2 * ramp - 1 - i] = rgb;
-			r += to_r - from_r; g += to_g - from_g; b += to_b - from_b;
+			r += delta_r; g += delta_g; b += delta_b;
 		}
 	} else if (type == 4) {
 		n = effect->duration / 16;
