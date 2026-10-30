@@ -13419,7 +13419,11 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 {
 	struct cross_rebuild_block *source, *replacement;
 	unsigned int primary_used, assist_used;
-	unsigned int primary_flag = 0, assist_flag = 0;
+	/* OEM passes both flag locals to get_used_page_num without first
+	 * initializing them. A callback that reads before writing sees stack
+	 * garbage; keep that bug here. TODO: initialize them in a corrected
+	 * implementation after separating it from the stock reconstruction. */
+	unsigned int primary_flag, assist_flag;
 	/* A related Allwinner source declares a spare-data array. Keeping the
 	 * local gives the stock 0xb0-byte frame: init_nrc sees FP+0x38 and
 	 * set_physic_op_par sees op at FP+0x40. The Brick binary has no OOB
@@ -13427,7 +13431,7 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	unsigned char spare_data[16] __attribute__((unused));
 	struct physic_op_param op;
 	unsigned int first_erase, second_erase = 0; /* OEM ignores erase failures. */
-	unsigned int page, compact, special;
+	unsigned int page, compact, special, tag_copy;
 	/* Stock initializes both replay pointers before init_nrc, although each
 	 * is overwritten before replay. This order also places them at the OEM
 	 * FP+0x88 and FP+0x90 slots. */
@@ -13523,16 +13527,18 @@ retry:
 	compact = 0;
 	for (page = 0; page < *(unsigned int *)nrc; page++) {
 		if (((unsigned char *)nrc->first)[page]) {
-			/* Stock multiplies in 32 bits before extending the result. */
+			/* The signed literal preserves OEM's stride temporary. The
+			 * multiplication wraps in 32 bits before pointer extension. */
 			data = (unsigned char *)nrc->second +
-				(unsigned int)(page * (zone->geometry->bytes + 64U));
+				(unsigned int)(page * (zone->geometry->bytes + 64));
 			oob = data + zone->geometry->bytes;
 			set_physic_op_par(&op, replacement->number,
 					  (unsigned short)compact,
 					  zone->geometry->fixed_page, data, oob);
 			special = get_special_data_from_oob(oob);
+			tag_copy = replacement->tag;
 			set_oob_special_page(zone, oob, special,
-					     replacement->tag, replacement->erase_count);
+					     tag_copy, replacement->erase_count);
 			/* OEM ignores every replay-write result. */
 			zone->write(zone, &op);
 			compact++;
