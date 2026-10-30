@@ -569,8 +569,8 @@ static ssize_t store_frame_hex(struct class *class, struct class_attribute *attr
 	 * TODO: bound the destination and use a non-wrapping length separately. */
 	while ((int)((u32)(unsigned long)buffer + (u32)rounded -
 		     (u32)(unsigned long)position) > 0) {
-		sscanf(position, "%X", &pixels[i]);
-		position += 7;
+		int parsed = sscanf(position, "%X", &pixels[i]); /* OEM ignores errors. */
+		position += 7; asm volatile("" : : "r"(parsed)); /* Pin index after call. */
 		i++;
 		/* Preserve stock's two-step end-minus-cursor comparison. */
 		asm volatile("" : "+r"(rounded));
