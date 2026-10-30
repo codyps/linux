@@ -113,6 +113,8 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		return;
 	} else if (type == 3) {
 		u32 start_rgb;
+		/* Match OEM's red accumulator source in w5 during type-3 ramp. */
+		register int start_r asm("w5");
 		/* OEM leaves x14/x15 intact across this generator path. Keep
 		 * the target channels in its w10/w11/w2 register schedule; the
 		 * paired-effect caller historically retains pointers in x14.
@@ -134,7 +136,7 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		asm volatile("" : "+r"(start_rgb));
 		for (i = 0; i < n; i++)
 			effect->frames[i] = start_rgb;
-		from_r = (start_rgb >> 16) & 255;
+		start_r = (start_rgb >> 16) & 255;
 		from_g = (start_rgb >> 8) & 255;
 		from_b = start_rgb & 255;
 		to_r = (target >> 16) & 255;
@@ -144,10 +146,10 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		 * stores below retain its unchecked duration/frame bound bug.
 		 */
 		int delta_r, delta_g, delta_b;
-		delta_r = to_r - from_r;
+		delta_r = to_r - start_r;
 		delta_g = to_g - from_g;
 		delta_b = to_b - from_b;
-		r = ramp * from_r; g = ramp * from_g; b = ramp * from_b;
+		r = ramp * start_r; g = ramp * from_g; b = ramp * from_b;
 		for (i = 0; i < ramp; i++) {
 			u32 rgb = trimui_rgb(r / ramp, g / ramp, b / ramp);
 			effect->frames[i] = rgb;
