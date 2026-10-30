@@ -1358,11 +1358,9 @@ static ssize_t store_frames_cycles(struct class *class, struct class_attribute *
 	/* OEM ignores parse errors and clears enable regardless.  TODO: reject
 	 * invalid input only in a separate behavior-changing fix. */
 	kstrtoint(buffer, 0, &control->cycles);
-	/* Materialize the counter root before clearing enable as stock does.
-	 * The memory clobber keeps these observable operations ordered. */
-	asm volatile("adrp %0, trimui_frame_counters\n\t"
-		     "add %0, %0, :lo12:trimui_frame_counters"
-		     : "=&r"(counter) : : "memory");
+	/* OEM materializes the counter root before clearing enable.  This C
+	 * reference retains the same instruction order with the pinned compiler. */
+	counter = &trimui_frame_counters;
 	control->enable = 0;
 	/* Stock issues two separate 32-bit resets.  A frame worker can observe
 	 * the intermediate state; TODO: synchronize only in a separate fix. */
