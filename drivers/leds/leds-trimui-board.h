@@ -1100,8 +1100,7 @@ static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr
 	page += 0x9c8;
 	asm volatile("" : "+r"(page));
 	right_root = (unsigned char *)&trimui_led_state + 0x10f8;
-	asm volatile("add %0, %1, #0xb88"
-		     : "=r"(left_argument) : "r"(page));
+	left_argument = TRIMUI_PAIR_LEFT(page);
 	right_argument = TRIMUI_PAIR_RIGHT(right_root);
 	asm volatile("" : "+r"(left_argument), "+r"(right_argument));
 	left_call = left_argument;
