@@ -13417,7 +13417,6 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,
 	struct cross_rebuild_block *assist)
 {
-	struct cross_rebuild_block *source, *replacement;
 	unsigned int primary_used, assist_used;
 	/* OEM passes both flag locals to get_used_page_num without first
 	 * initializing them. A callback that reads before writing sees stack
@@ -13430,8 +13429,9 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	 * copy here, so do not infer that part of the related source. */
 	unsigned char spare_data[16] __attribute__((unused));
 	struct physic_op_param op;
-	unsigned int first_erase, second_erase = 0; /* OEM ignores erase failures. */
 	unsigned int page, compact, special;
+	unsigned int first_erase, second_erase = 0; /* OEM ignores erase failures. */
+	struct cross_rebuild_block *source, *replacement;
 	struct nrc_buffers *nrc = 0;
 	/* Stock initializes both replay pointers before init_nrc, although each
 	 * is overwritten before replay. This order also places them at the OEM
@@ -13524,9 +13524,12 @@ retry:
 		/* OEM does not return the failed block to the free list. */
 		goto retry;
 	}
+	page = 0;
 	compact = 0;
-	for (page = 0; page < *(unsigned int *)nrc; page++) {
+	for (; page < *(unsigned int *)nrc; page++) {
 		if (((unsigned char *)nrc->first)[page]) {
+			register unsigned int tag asm("w0");
+
 			/* The signed literal preserves OEM's stride temporary. The
 			 * multiplication wraps in 32 bits before pointer extension. */
 			data = (unsigned char *)nrc->second +
@@ -13536,12 +13539,11 @@ retry:
 					  (unsigned short)compact,
 					  zone->geometry->fixed_page, data, oob);
 			special = get_special_data_from_oob(oob);
-			/* The first erase count is dead after block selection. Reuse
-			 * its stack slot for the tag so the two callback flag pointers
-			 * stay at the OEM FP+0x70 and FP+0x6c addresses. */
-			first_erase = replacement->tag;
+			/* OEM reads the tag after the special-data helper. The register
+			 * local preserves its load/move sequence and fault site. */
+			tag = replacement->tag;
 			set_oob_special_page(zone, oob, special,
-					     first_erase, replacement->erase_count);
+					     tag, replacement->erase_count);
 			/* OEM ignores every replay-write result. */
 			zone->write(zone, &op);
 			compact++;
