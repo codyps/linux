@@ -680,10 +680,11 @@ static ssize_t store_duration(struct class *class, struct class_attribute *attr,
 	struct trimui_effect_pair_view *pair;
 	struct trimui_led_effect *left;
 
-	asm("adrp %0, trimui_effect_pair\n\t"
-	    "add %0, %0, :lo12:trimui_effect_pair"
-	    : "=&r"(pair));
+	/* Keep the C pair root and parser target live before saving count. */
+	pair = &trimui_effect_pair;
+	asm volatile("" : "+r"(pair));
 	left = &pair->left;
+	asm volatile("" : "+r"(count) : "r"(&left->duration));
 
 	/* OEM copies the stale value to the right on parse failure too.
 	 * TODO: reject invalid input only in a separate behavior change. */
@@ -777,10 +778,11 @@ static ssize_t store_cycles(struct class *class, struct class_attribute *attr, c
 	struct trimui_effect_pair_view *pair;
 	struct trimui_led_effect *left;
 
-	asm("adrp %0, trimui_effect_pair\n\t"
-	    "add %0, %0, :lo12:trimui_effect_pair"
-	    : "=&r"(pair));
+	/* Match the duration setter's C root and callback argument order. */
+	pair = &trimui_effect_pair;
+	asm volatile("" : "+r"(pair));
 	left = &pair->left;
+	asm volatile("" : "+r"(count) : "r"(&left->cycles));
 
 	/* OEM copies the stale value to the right on parse failure too.
 	 * TODO: reject invalid input only in a separate behavior change. */
