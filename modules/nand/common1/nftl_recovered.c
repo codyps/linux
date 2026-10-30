@@ -13542,7 +13542,7 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,
 	struct cross_rebuild_block *assist)
 {
-	unsigned char *data = 0, *oob = 0;
+	unsigned char *oob = 0, *data = 0;
 	unsigned int primary_used, assist_used;
 	unsigned int first_good, second_good;
 	unsigned int page, compact, special;
