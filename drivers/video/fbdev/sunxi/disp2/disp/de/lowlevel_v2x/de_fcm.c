@@ -100,8 +100,16 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 			bank->sbh_hue[i].pair11.high = 200;
 			bank->vbh_hue[i].pair9.high = 50;
 		} else {
-			bank->hbh_hue[i].pair13.high =
-				*(const u32 *)((const char *)fcm_hbh + next_byte);
+			/* OEM reads the H shadow before its next-row table value.
+			 * Preserve that order when the unchecked shadow aliases a table.
+			 */
+			volatile union fcm_word *dst_h = bank->hbh_hue + i;
+			union fcm_word current_h;
+			current_h.value = dst_h->value;
+			u32 next_h = READ_ONCE(
+				*(const u32 *)((const char *)fcm_hbh + next_byte));
+			current_h.pair13.high = next_h;
+			dst_h->value = current_h.value;
 			bank->sbh_hue[i].pair11.high = READ_ONCE(fcm_sbh[i + 1]);
 			bank->vbh_hue[i].pair9.high =
 				*(const u32 *)((const char *)fcm_ybh + next_byte);
