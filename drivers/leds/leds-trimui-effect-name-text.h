@@ -11,6 +11,7 @@ struct trimui_effect_name_text {
 	char blink1[7];
 	char blink2[7];
 	char blink3[7];
+	char extreme_brightness[26];
 };
 
 extern const struct trimui_effect_name_text trimui_effect_name_text;

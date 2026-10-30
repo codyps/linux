@@ -4,7 +4,7 @@
 GCC 7 emits a named const struct in .rodata.str1.1 with SHF_ALLOC but no
 SHF_MERGE/SHF_STRINGS. objcopy can set those flags, but it leaves sh_entsize
 zero. The ELF linker then drops merging for the entire combined section.
-Validate the exact 48-byte C object and set its entry size to one byte before
+Validate the exact 74-byte C object and set its entry size to one byte before
 Kbuild's partial link. This is build metadata, not a patch to kernel code.
 TODO: Recover an original source arrangement that emits the OEM section
 without this post-compile metadata correction.
@@ -17,7 +17,8 @@ import sys
 import tempfile
 
 
-TAIL = b"linear\0breath\0sniff\0static\0blink1\0blink2\0blink3\0"
+TAIL = (b"linear\0breath\0sniff\0static\0blink1\0blink2\0blink3\0"
+        b"tg5040_exterme_brightness\0")
 SECTION = b".rodata.str1.1"
 
 
@@ -47,7 +48,7 @@ def main(path):
             matches.append((offset, row))
     assert len(matches) == 1
     offset, row = matches[0]
-    assert row[1] == 1 and row[2] == 0x32 and row[5] == len(TAIL) == 48
+    assert row[1] == 1 and row[2] == 0x32 and row[5] == len(TAIL) == 74
     assert row[8] == 1 and row[9] == 0
     assert data[row[4]:row[4] + row[5]] == TAIL
     struct.pack_into("<Q", data, offset + 56, 1)

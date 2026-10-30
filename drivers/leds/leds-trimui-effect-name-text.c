@@ -14,4 +14,5 @@ const struct trimui_effect_name_text trimui_effect_name_text
 	.blink1 = "blink1",
 	.blink2 = "blink2",
 	.blink3 = "blink3",
+	.extreme_brightness = "tg5040_exterme_brightness",
 };

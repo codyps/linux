@@ -1496,8 +1496,17 @@ static ssize_t store_speaker_mute(struct class *class, struct class_attribute *a
  */
 static struct class_attribute led_class_attrs[] = {
 	__ATTR(light, 0644, led_show, NULL),
-	__ATTR(tg5040_exterme_brightness, 0664,
-	       show_tg5040_max_scale, store_tg5040_max_scale),
+	/* Same __ATTR fields; name comes from the OEM-ordered C string pool.
+	 * Preserve the OEM spelling, including "exterme".
+	 */
+	{
+		.attr = {
+			.name = trimui_effect_name_text.extreme_brightness,
+			.mode = VERIFY_OCTAL_PERMISSIONS(0664),
+		},
+		.show = show_tg5040_max_scale,
+		.store = store_tg5040_max_scale,
+	},
 	__ATTR_NULL,
 };
 
