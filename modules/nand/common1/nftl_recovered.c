@@ -52,7 +52,8 @@ struct physic_op_param {
     !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_USED_PAGE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_NO_CROSSTALK_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_CROSS_REBUILD_GCC53_BUILD)
 void set_physic_op_par(struct physic_op_param *op, unsigned short block,
 		       unsigned short plane, unsigned short page,
 		       void *data, void *oob)
@@ -977,7 +978,8 @@ extern unsigned short get_erase_count_from_oob(void *oob);
 #if !defined(TRIMUI_NFTL_COPY_PAGE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_SCAN_BLOCKS_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_CROSS_REBUILD_GCC53_BUILD)
 unsigned int get_special_data_from_oob(void *oob)
 {
 	unsigned int value = get_spare_data(oob, 1, 4);
@@ -3016,7 +3018,8 @@ extern unsigned int get_used_page_num(struct used_page_zone *zone,
 				      unsigned int *read_errors,
 				      struct used_page_cache *cache);
 #endif
-#ifndef TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_CROSS_REBUILD_GCC53_BUILD)
 int free_nrc(struct nrc_buffers *buffers)
 {
 	if (buffers == 0)
@@ -3405,7 +3408,8 @@ void set_no_use_page(void *unused, unsigned char *oob)
     !defined(TRIMUI_NFTL_TORTURE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_MARK_FREE_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PHY_WRITE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_CROSS_REBUILD_GCC53_BUILD)
 void set_oob_special_page(void *unused, unsigned char *oob,
 			  unsigned int block, unsigned int page,
 			  unsigned short erase_count)
@@ -13408,6 +13412,7 @@ struct cross_rebuild_block {
 	unsigned int tag;
 };
 #ifndef TRIMUI_NFTL_SECOND_SCAN_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_GCC7_PASS) || defined(TRIMUI_NFTL_CROSS_REBUILD_GCC53_BUILD)
 struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,
 	struct cross_rebuild_block *assist)
@@ -13536,6 +13541,11 @@ retry:
 	free_nrc(nrc);
 	return replacement;
 }
+#else
+extern struct cross_rebuild_block *cross_talk_rebuild_current_block(
+	struct cross_rebuild_zone *zone, struct cross_rebuild_block *primary,
+	struct cross_rebuild_block *assist);
+#endif
 
 #if !defined(TRIMUI_NFTL_GCC7_PASS) || defined(TRIMUI_NFTL_NO_CROSS_REBUILD_GCC53_BUILD)
 struct cross_rebuild_block *no_cross_talk_rebuild_current_block(

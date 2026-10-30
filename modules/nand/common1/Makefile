@@ -113,6 +113,7 @@ $(obj)/nftl_gcc53_logic_write.o: override CC := python3 $(srctree)/scripts/trimu
 $(obj)/nftl_gcc53_scan_blocks.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) first_scan_all_blocks --
 $(obj)/nftl_gcc53_second_scan.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) second_scan_all_blocks --
 $(obj)/nftl_gcc53_no_cross_rebuild.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) no_cross_talk_rebuild_current_block --
+$(obj)/nftl_gcc53_cross_rebuild.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) cross_talk_rebuild_current_block --
 $(obj)/nftl_gcc53_current_used.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) get_current_used_block --
 $(obj)/nftl_gcc53_do_prio_gc.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) do_prio_gc --
 $(obj)/nftl_gcc53_write_error_build.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) do_write_error_in_build_list --
@@ -155,6 +156,7 @@ nftl_gcc53_objects += $(obj)/nftl_gcc53_read_reclaim.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_first_scan.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_second_scan.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_no_cross_rebuild.o
+nftl_gcc53_objects += $(obj)/nftl_gcc53_cross_rebuild.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_current_used.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_do_prio_gc.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_write_error_build.o
@@ -231,7 +233,7 @@ $(nftl_gcc53_objects): $(srctree)/scripts/trimui_nftl_select_cc.py
 # stock NAND text interleaves functions from these objects; the manifest
 # records that order and the merge script rejects source-size drift.
 nftl_all_text_objects := $(addprefix $(obj)/, \
-	nftl_recovered.o nftl_gcc53_no_cross_rebuild.o nftl_gcc53_second_scan.o nftl_gcc53_current_used.o nftl_gcc53_do_prio_gc.o nftl_gcc53_write_error_build.o nftl_gcc53_crc_wrong.o nftl_cache_init_gcc53.o nftl_sector_cache_init_gcc53.o \
+	nftl_recovered.o nftl_gcc53_no_cross_rebuild.o nftl_gcc53_cross_rebuild.o nftl_gcc53_second_scan.o nftl_gcc53_current_used.o nftl_gcc53_do_prio_gc.o nftl_gcc53_write_error_build.o nftl_gcc53_crc_wrong.o nftl_cache_init_gcc53.o nftl_sector_cache_init_gcc53.o \
 	nftl_invalid_page_incr_gcc53.o nftl_micron_init_gcc53.o nftl_copy_page_gcc53.o nftl_gcc53_dump_buf.o nftl_gcc53_nftl_read.o nftl_gcc53_nftl_write.o nftl_gcc53_nftl_discard.o nftl_gcc53_nand_discard.o \
 	nftl_gcc53_samsung_readretry_init.o nftl_gcc53_toshiba_readretry_init.o nftl_gcc53_sandisk_A19_readretry_init.o nftl_gcc53_get_logic_page_map.o nftl_gcc53_nftl_support_boot_check_crc_from_dts.o nftl_gcc53_nftl_initialize.o nftl_gcc53_nftl_start.o nftl_gcc53_gc_all_enhance.o \
 	nftl_gcc53_out_phy_block_from_free_list.o nftl_gcc53_out_phy_block_from_free_list_by_block.o nftl_gcc53_get_cold_logic_page.o nftl_gcc53_fill_no_use_data_to_current_block.o nftl_gcc53_set_oob_logic_page.o nftl_gcc53_hynix26nm_getdefaultparam.o nftl_gcc53_hynix16nm_set_readretry.o nftl_gcc53_sandisk_readretry_init.o \
@@ -343,6 +345,7 @@ CFLAGS_nftl_gcc53_logic_write.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno
 CFLAGS_nftl_gcc53_scan_blocks.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections -DTRIMUI_NFTL_GCC7_PASS
 CFLAGS_nftl_gcc53_second_scan.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_no_cross_rebuild.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_cross_rebuild.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_current_used.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_do_prio_gc.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_write_error_build.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
