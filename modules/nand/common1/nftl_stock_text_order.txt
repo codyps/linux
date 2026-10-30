@@ -262,7 +262,7 @@ ffffff80083fed70 nftl_gcc53_hynix16nm_read_page_end.o .text.hynix16nm_read_page_
 ffffff80083fef00 nftl_gcc53_hynix16nm_write_page_FF.o .text.hynix16nm_write_page_FF 1164
 ffffff80083ff38c nftl_recovered.o .text.hynix16nm_vender_get_param 160
 ffffff80083ff42c nftl_gcc53_hynix16nm_major_check_byte.o .text.hynix16nm_major_check_byte 664
-ffffff80083ff6c4 nftl_gcc53_hynix16nm_cfg.o .text.hynix16nm_get_read_retry_cfg 1004
+ffffff80083ff6c4 nftl_gcc53_hynix16nm_cfg.o .text.hynix16nm_get_read_retry_cfg 968
 ffffff80083ffa8c nftl_recovered.o .text.hynix16nm_read_otp_info_hynix 728
 ffffff80083ffd64 nftl_recovered.o .text.hynix16nm_get_rr_value_otp_hynix 212
 ffffff80083ffe38 nftl_recovered.o .text.hynix16nm_save_otp_value 92
