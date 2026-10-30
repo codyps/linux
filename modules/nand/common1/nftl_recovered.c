@@ -13688,6 +13688,8 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 	compact = 0;
 	for (; page < *(unsigned int *)selected; page++) {
 		if (((unsigned char *)selected->first)[page]) {
+			register unsigned int tag asm("w0");
+
 			/* OEM wraps the page-byte product at 32 bits here too.
 			 * TODO: bound page and stride in a separate behavior change.
 			 */
@@ -13700,11 +13702,12 @@ struct cross_rebuild_block *no_cross_talk_rebuild_current_block(
 			special = get_special_data_from_oob(oob);
 			/* OEM reloads the replacement tag after callbacks; a stale
 			 * cached value would change behavior if a callback mutates it.
-			 * TODO: recover the exact OEM load/move sequence so an
-			 * invalid replacement pointer also faults at the same PC.
+			 * Bind the temporary to w0 to retain OEM's load/move sequence,
+			 * including the fault PC for an unreadable tag field.
 			 */
+			tag = *(volatile unsigned int *)&replacement->tag;
 			set_oob_special_page(zone, oob, special,
-					     *(volatile unsigned int *)&replacement->tag, replacement->erase_count);
+					     tag, replacement->erase_count);
 			/* OEM ignores replay-write failures. */
 			zone->write(zone, &op2);
 			compact++;
