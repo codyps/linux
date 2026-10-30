@@ -72,12 +72,17 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 	volatile union fcm_word *reg = fcm_dev[sel][channel];
 	volatile struct fcm_hue_registers *bank;
 	int i;
+	unsigned int next_byte;
 
 	memcpy((void *)(reg + 0x20 / 4), fcm_angle_hue, sizeof(fcm_angle_hue));
 	memcpy((void *)(reg + 0xa0 / 4), fcm_angle_sat, sizeof(fcm_angle_sat));
 	memcpy((void *)(reg + 0xe0 / 4), fcm_angle_lum, sizeof(fcm_angle_lum));
 	bank = (volatile struct fcm_hue_registers *)reg;
-	for (i = 0; i < 28; i++) {
+	for (i = 0, next_byte = 4; i < 28; i++, next_byte += 4) {
+		/* OEM advances a separate byte offset for the next H/Y table
+		 * samples. Keep it materialized without changing memory order.
+		 */
+		asm volatile("" : "+r"(next_byte));
 		union fcm_word hue_word;
 		u32 hue, sat;
 
@@ -99,9 +104,11 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 			bank->sbh_hue[i].pair11.high = 200;
 			bank->vbh_hue[i].pair9.high = 50;
 		} else {
-			bank->hbh_hue[i].pair13.high = fcm_hbh[i + 1];
+			bank->hbh_hue[i].pair13.high =
+				*(const u32 *)((const char *)fcm_hbh + next_byte);
 			bank->sbh_hue[i].pair11.high = READ_ONCE(fcm_sbh[i + 1]);
-			bank->vbh_hue[i].pair9.high = fcm_ybh[i + 1];
+			bank->vbh_hue[i].pair9.high =
+				*(const u32 *)((const char *)fcm_ybh + next_byte);
 		}
 	}
 	/* Stock reloads the base after the LUT updates, then fills each plane. */
