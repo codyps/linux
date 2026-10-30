@@ -13418,9 +13418,14 @@ struct cross_rebuild_block *cross_talk_rebuild_current_block(
 	struct cross_rebuild_block *assist)
 {
 	struct cross_rebuild_block *source, *replacement;
-	struct physic_op_param op;
 	unsigned int primary_used, assist_used = 0;
 	unsigned int primary_flag = 0, assist_flag = 0;
+	/* A related Allwinner source declares a spare-data array. Keeping the
+	 * local gives the stock 0xb0-byte frame: init_nrc sees FP+0x38 and
+	 * set_physic_op_par sees op at FP+0x40. The Brick binary has no OOB
+	 * copy here, so do not infer that part of the related source. */
+	unsigned char spare_data[16];
+	struct physic_op_param op;
 	unsigned int first_erase = 0, second_erase = 0; /* OEM ignores erase failures. */
 	unsigned int page, compact, special;
 	unsigned char *data, *oob;
