@@ -74,7 +74,14 @@ obj-$(CONFIG_LEDS_PM8058)		+= leds-pm8058.o
 obj-$(CONFIG_LEDS_MLXCPLD)		+= leds-mlxcpld.o
 ifeq ($(CONFIG_LEDS_SUNXI),y)
 obj-y				+= leds-sunxi-ordered.o
-obj-y				+= leds-trimui-effect-name-text.o
+obj-y				+= leds-trimui-effect-name-text-merge.o
+# Keep the stock mergeable-string input flags/entry size after GCC emits the
+# companion C object. Kbuild must track the raw object as a prerequisite.
+targets += leds-trimui-effect-name-text.o
+quiet_cmd_trimui_led_name_merge = LD      $@
+      cmd_trimui_led_name_merge = $(OBJCOPY) --set-section-flags .rodata.str1.1=alloc,readonly,merge,strings $(obj)/leds-trimui-effect-name-text.o $@ && python3 $(srctree)/scripts/trimui_led_name_merge.py $@
+$(obj)/leds-trimui-effect-name-text-merge.o: $(obj)/leds-trimui-effect-name-text.o $(srctree)/scripts/trimui_led_name_merge.py FORCE
+	$(call if_changed,trimui_led_name_merge)
 # Each stock LED C body is contiguous, but the OEM text order differs from
 # the compiler's source order for a few functions. Preserve separate C
 # sections until the verified stock-order partial link.
