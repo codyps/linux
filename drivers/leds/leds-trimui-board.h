@@ -529,11 +529,10 @@ static ssize_t show_frame(struct class *class, struct class_attribute *attr, cha
 	 * led_count can wrap the shift into a negative, enormous copy length. */
 	u8 *source;
 	register int size asm("w19") = trimui_led_count;
-	/* Keep the observed count live until after the rooted address is formed. */
-	asm volatile("adrp %0, trimui_transfer_state\n\t"
-		     "add %0, %0, :lo12:trimui_transfer_state\n\t"
-		     "add %0, %0, #0x7cc"
-		     : "=&r"(source), "+r"(size) : : "memory");
+	/* Keep both OEM roots live before shifting the signed count. GCC emits
+	 * the same address and count order without hard-coded ADRP/ADD text. */
+	source = (u8 *)RELOC_HIDE(&trimui_transfer_state, 0) + 0x7cc;
+	asm volatile("" : : "r"(source), "r"(size));
 	size <<= 2;
 	memcpy(buffer, source, size);
 	return size;
