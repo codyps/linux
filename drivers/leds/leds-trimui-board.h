@@ -283,8 +283,8 @@ static int trimui_ledc_run_thread(void *unused)
 			int offset = trimui_frame_index * 14;
 			if (trimui_frames_len <= 0)
 				goto battery;
-			/* TODO: bound the animation length/index in a corrective patch.
-			 * Stock's 32-bit offset wraps; sysfs can read before/after anim_frames.
+			/* Stock wraps offset at 32 bits, then widens before adding channels.
+			 * TODO: bound length/index separately; these reads remain unchecked.
 			 */
 			if (++trimui_frame_index >= trimui_frames_len) {
 				trimui_frame_index = 0;
@@ -304,8 +304,8 @@ static int trimui_ledc_run_thread(void *unused)
 				memcpy(trimui_frame + 12, trimui_anim_frames + offset + 12, 2 * sizeof(u32));
 			}
 			if (trimui_mask_f) {
-				u32 f1 = READ_ONCE(trimui_anim_frames[offset + 9]);
-				u32 f2 = READ_ONCE(trimui_anim_frames[offset + 8]);
+				u32 f1 = READ_ONCE(trimui_anim_frames[(long)offset + 9]);
+				u32 f2 = READ_ONCE(trimui_anim_frames[(long)offset + 8]);
 				WRITE_ONCE(trimui_frame[8], f2);
 				WRITE_ONCE(trimui_frame[9], f1);
 			}
