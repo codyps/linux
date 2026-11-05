@@ -4649,7 +4649,7 @@ extern int hynix20nm_readretry_init(struct hynix20nm_retry_chip *chip);
 extern unsigned char hynix26nm_read_retry_cycle;
 extern unsigned char hynix26nm_read_retry_reg_num;
 extern unsigned char hynix26nm_read_retry_reg_adr[];
-extern signed short hynix26nm_read_retry_val[];
+extern signed short hynix26nm_read_retry_val[][4];
 #if !defined(TRIMUI_NFTL_HYNIX_PAGE_END_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_GCC7_PASS)
 /* This typed view keeps the stock row-stride address calculation. The OEM
@@ -12101,8 +12101,8 @@ extern int sandisk_set_readretry(struct samsung_set_chip *chip,
 #endif
 
 /* These readonly aliases identify the OEM's two 7x4 signed delta tables. */
-extern const short hynix26nm_para0_recovered[];
-extern const short hynix26nm_para1_recovered[];
+extern const short hynix26nm_para0_recovered[7][4];
+extern const short hynix26nm_para1_recovered[7][4];
 struct hynix26nm_init_chip {
 	unsigned char before_saved[56];
 	unsigned char saved[128];
@@ -12126,23 +12126,23 @@ int hynix26nm_readretry_init(struct hynix26nm_init_chip *chip)
 		hynix26nm_read_retry_reg_adr[2] = 0xae;
 		hynix26nm_read_retry_reg_adr[3] = 0xaf;
 		/* OEM keeps a distinct unchecked copy loop for each mode. */
-		for (row = 0; row < (unsigned int)hynix26nm_read_retry_cycle + 1;
+		for (row = 0; row < hynix26nm_read_retry_cycle + 1;
 		     row++)
 			for (column = 0; column < hynix26nm_read_retry_reg_num;
 			     column++)
-				hynix26nm_read_retry_val[row * 4 + column] =
-					hynix26nm_para0_recovered[row * 4 + column];
+				hynix26nm_read_retry_val[row][column] =
+					hynix26nm_para0_recovered[row][column];
 	} else if (hynix26nm_read_retry_mode == 1) {
 		hynix26nm_read_retry_reg_adr[0] = 0xa7;
 		hynix26nm_read_retry_reg_adr[1] = 0xad;
 		hynix26nm_read_retry_reg_adr[2] = 0xae;
 		hynix26nm_read_retry_reg_adr[3] = 0xaf;
-		for (row = 0; row < (unsigned int)hynix26nm_read_retry_cycle + 1;
+		for (row = 0; row < hynix26nm_read_retry_cycle + 1;
 		     row++)
 			for (column = 0; column < hynix26nm_read_retry_reg_num;
 			     column++)
-				hynix26nm_read_retry_val[row * 4 + column] =
-					hynix26nm_para1_recovered[row * 4 + column];
+				hynix26nm_read_retry_val[row][column] =
+					hynix26nm_para1_recovered[row][column];
 	} else {
 		nand_print(nftl_ro_lc_64,
 			   hynix26nm_read_retry_mode);
