@@ -1634,6 +1634,10 @@ static int trimui_board_init(void)
 		printk("ledc thread error\n");
 	result = class_register(&trimui_led_anim_class);
 	if (result < 0) {
+		/* OEM unregisters even though registration failed. The motor and
+		 * speaker failures below do the same, then continue initialization.
+		 * TODO: unwind only successfully registered classes in a separate fix.
+		 */
 		/* Stock reuses the probe diagnostic array, including pointer identity. */
 		printk(KERN_ERR "%s()%d - class_register err\n", trimui_ro_writes.sunxi_led_probe, 3329);
 		class_unregister(&trimui_led_anim_class);
@@ -1644,6 +1648,9 @@ static int trimui_board_init(void)
 		printk(KERN_ERR "%s()%d - class_register err\n", trimui_name_cluster.motor, 3158);
 		class_unregister(&trimui_motor_class);
 	}
+	/* OEM publishes ERR_PTR values without testing them. Preserve that value
+	 * and store order; TODO: handle regulator_get failure in a separate fix.
+	 */
 	trimui_motor_regulator = regulator_get(NULL, "axp2202-bldo3");
 	result = class_register(&trimui_speaker_class);
 	if (result < 0) {
