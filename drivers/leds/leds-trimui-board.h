@@ -198,16 +198,16 @@ static void commit_static_frame(void)
 
 static int trimui_ledc_run_thread(void *unused)
 {
-	/* Keep these effect roots live through their generator calls.  Stock
-	 * retains the left pointer in x22 and F2 pointer in x18.  The register
-	 * bindings recover the daemon's 824-byte body size with the OEM GCC.
-	 */
+	/* Startup roots only; recompute F2 after caller-clobbering services. */
 	register struct trimui_led_effect *left asm("x22") = &trimui_effect_l;
 	register struct trimui_led_effect *front2 asm("x18") = &trimui_effect_f2;
 	asm volatile("" : "+r"(left));
 	asm volatile("" : "+r"(front2));
 	unsigned int battery_ticks = 0;
 	u32 rgb;
+	u32 boot_white = 0xffffff;
+	register u32 boot_orange asm("w26") = 0x00ff33;
+	asm("" : : "r"(boot_orange)); /* OEM color register and worker span. */
 	trimui_scale_m = 14;
 	/* Stock publishes this control as a separate 32-bit store before the
 	 * adjacent first effect type.  A plain store lets GCC merge the two.
@@ -230,22 +230,22 @@ static int trimui_ledc_run_thread(void *unused)
 	INITIAL_SHAPE(trimui_effect_m);
 	INITIAL_SHAPE(trimui_effect_r);
 	INITIAL_SHAPE(trimui_effect_l);
-	WRITE_ONCE(trimui_effect_m.target_rgb, 0xffffff);
-	WRITE_ONCE(trimui_effect_r.target_rgb, 0xffffff);
-	WRITE_ONCE(trimui_effect_l.target_rgb, 0xffffff);
+	WRITE_ONCE(trimui_effect_m.target_rgb, boot_white);
+	WRITE_ONCE(trimui_effect_r.target_rgb, boot_white);
+	WRITE_ONCE(trimui_effect_l.target_rgb, boot_white);
 	INITIAL_SHAPE(trimui_effect_f2);
-	WRITE_ONCE(trimui_effect_f2.target_rgb, 0x00ff33);
+	WRITE_ONCE(trimui_effect_f2.target_rgb, boot_orange);
 	INITIAL_SHAPE(trimui_effect_f1);
-	WRITE_ONCE(trimui_effect_f1.target_rgb, 0x00ff33);
+	WRITE_ONCE(trimui_effect_f1.target_rgb, boot_orange);
 #undef INITIAL_SHAPE
 	/* The OEM generator receives these fixed boot colors.  It does not
 	 * reread target_rgb between initialization and each call.
 	 */
-	gen_effect(left, 2, 0xffffff, 0xffffff);
-	gen_effect(&trimui_effect_r, 2, 0xffffff, 0xffffff);
-	gen_effect(&trimui_effect_f1, 2, 0x00ff33, 0x00ff33);
-	gen_effect(front2, 2, 0x00ff33, 0x00ff33);
-	gen_effect(&trimui_effect_m, 2, 0xffffff, 0xffffff);
+	gen_effect(left, 2, boot_white, boot_white);
+	gen_effect(&trimui_effect_r, 2, boot_white, boot_white);
+	gen_effect(&trimui_effect_f1, 2, boot_orange, boot_orange);
+	gen_effect(front2, 2, boot_orange, boot_orange);
+	gen_effect(&trimui_effect_m, 2, boot_white, boot_white);
 	/* Keep the OEM's odd reset order.  A concurrent control read can see
 	 * these partially reset effects; do not collapse this into a loop.
 	 */
@@ -277,8 +277,8 @@ static int trimui_ledc_run_thread(void *unused)
 			}
 			if (is_effect_actived(&trimui_effect_f1))
 				trimui_frame[9] = step_one_frame(&trimui_effect_f1);
-			if (is_effect_actived(front2))
-				trimui_frame[8] = step_one_frame(front2);
+			if (is_effect_actived(&trimui_effect_f2))
+				trimui_frame[8] = step_one_frame(&trimui_effect_f2);
 		} else if (trimui_frames_enable) {
 			int offset = trimui_frame_index * 14;
 			if (trimui_frames_len <= 0)
