@@ -1457,6 +1457,7 @@ static int sunxi_register_led_classdev(struct sunxi_led *led)
 	size_t size;
 	struct device *dev = led->dev;
 	struct led_classdev *pcdev;
+	struct sunxi_led_classdev_group *group;
 
 	if (!led->led_count)
 		led->led_count = SUNXI_DEFAULT_LED_COUNT;
@@ -1467,8 +1468,15 @@ static int sunxi_register_led_classdev(struct sunxi_led *led)
 		return -ENOMEM;
 
 	for (i = 0; i < led->led_count; i++) {
-		led->pcdev_group[i].r.type = LED_TYPE_R;
-		pcdev = &led->pcdev_group[i].r.cdev;
+		/* Stock rereads this pointer for the type store and class-device
+		 * address, including after each registration call. Keep the separate
+		 * reads: a changed pointer could redirect the next access or fault.
+		 * TODO: synchronize the group lifetime in a separate corrective fix.
+		 */
+		group = READ_ONCE(led->pcdev_group);
+		group[i].r.type = LED_TYPE_R;
+		group = READ_ONCE(led->pcdev_group);
+		pcdev = &group[i].r.cdev;
 		pcdev->name = kzalloc(16, GFP_KERNEL);
 		sprintf((char *)pcdev->name, "sunxi_led%dr", i);
 		pcdev->brightness = LED_OFF;
@@ -1481,8 +1489,10 @@ static int sunxi_register_led_classdev(struct sunxi_led *led)
 			return err;
 		}
 
-		led->pcdev_group[i].g.type = LED_TYPE_G;
-		pcdev = &led->pcdev_group[i].g.cdev;
+		group = READ_ONCE(led->pcdev_group);
+		group[i].g.type = LED_TYPE_G;
+		group = READ_ONCE(led->pcdev_group);
+		pcdev = &group[i].g.cdev;
 		pcdev->name = kzalloc(16, GFP_KERNEL);
 		sprintf((char *)pcdev->name, "sunxi_led%dg", i);
 		pcdev->brightness = LED_OFF;
@@ -1495,8 +1505,10 @@ static int sunxi_register_led_classdev(struct sunxi_led *led)
 			return err;
 		}
 
-		led->pcdev_group[i].b.type = LED_TYPE_B;
-		pcdev = &led->pcdev_group[i].b.cdev;
+		group = READ_ONCE(led->pcdev_group);
+		group[i].b.type = LED_TYPE_B;
+		group = READ_ONCE(led->pcdev_group);
+		pcdev = &group[i].b.cdev;
 		pcdev->name = kzalloc(16, GFP_KERNEL);
 		sprintf((char *)pcdev->name, "sunxi_led%db", i);
 		pcdev->brightness = LED_OFF;
