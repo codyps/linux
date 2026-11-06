@@ -275,7 +275,7 @@ ffffff80084003ac nftl_gcc53_hynix16nm_special_init.o .text.hynix16nm_special_ini
 ffffff80084004a8 nftl_recovered.o .text.hynix16nm_special_exit 88
 ffffff8008400500 nftl_recovered.o .text.samsung_vender_set_param 152
 ffffff8008400598 nftl_recovered.o .text.samsung_set_readretry 140
-ffffff8008400624 nftl_recovered.o .text.samsung_read_page_end 340
+ffffff8008400624 nftl_gcc53_samsung_read_page_end.o .text.samsung_read_page_end 340
 ffffff8008400778 nftl_gcc53_samsung_readretry_init.o .text.samsung_readretry_init 136
 ffffff8008400800 nftl_recovered.o .text.samsung_readretry_exit 20
 ffffff8008400814 nftl_gcc53_samsung_special_init.o .text.samsung_special_init 220
@@ -316,7 +316,7 @@ ffffff8008402a4c nftl_recovered.o .text.toshiba_read_retry_clock_recover 72
 ffffff8008402a94 nftl_recovered.o .text.toshiba_vender_set_param 952
 ffffff8008402e4c nftl_recovered.o .text.toshiba_vender_pre_condition 100
 ffffff8008402eb0 nftl_gcc53_toshiba_set_readretry.o .text.toshiba_set_readretry 484
-ffffff8008403094 nftl_recovered.o .text.toshiba_read_page_end 364
+ffffff8008403094 nftl_gcc53_toshiba_read_page_end.o .text.toshiba_read_page_end 364
 ffffff8008403200 nftl_gcc53_toshiba_readretry_init.o .text.toshiba_readretry_init 152
 ffffff8008403298 nftl_recovered.o .text.toshiba_readretry_exit 20
 ffffff80084032ac nftl_recovered.o .text.toshiba_exit_readretry 364
@@ -324,7 +324,7 @@ ffffff8008403418 nftl_gcc53_toshiba_special_init.o .text.toshiba_special_init 25
 ffffff8008403514 nftl_recovered.o .text.toshiba_special_exit 88
 ffffff800840356c nftl_recovered.o .text.micron_intel_set_feature 152
 ffffff8008403604 nftl_recovered.o .text.micron_set_readretry 404
-ffffff8008403798 nftl_recovered.o .text.micron_read_page_end 340
+ffffff8008403798 nftl_gcc53_micron_read_page_end.o .text.micron_read_page_end 340
 ffffff80084038ec nftl_micron_init_gcc53.o .text.micron_readretry_init 448
 ffffff8008403aac nftl_recovered.o .text.micron_readretry_exit 44
 ffffff8008403ad8 nftl_gcc53_micron_special_init.o .text.micron_special_init 220

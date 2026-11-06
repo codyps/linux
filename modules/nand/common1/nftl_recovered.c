@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /* Verified stock-behavior NFTL helpers, compiled when selected by Kconfig.
- * Labels are inferred; asm goto pins OEM codegen, not OEM ASM provenance. */
+ * Labels are inferred. The remaining explicit NOPs retain stock instruction
+ * slots; they do not establish that the OEM wrote the functions in ASM. */
 
 /* Reuse the instruction-rooted OEM readonly pool. Separate C string literals
  * would duplicate these payloads and move later readonly and BSS addresses. */
@@ -127,7 +128,8 @@ extern int nand_get_feature(void *chip, unsigned char *address,
 			    unsigned char *values);
 /* OEM uses a 48-byte frame without a canary: readback at offset 32,
  * outgoing bytes at 40 and the original address copy at 47. */
-#ifndef TRIMUI_NFTL_MICRON_INIT_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_MICRON_INIT_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_MICRON_PAGE_END_GCC53_BUILD)
 __attribute__((optimize("-fno-stack-protector")))
 int micron_intel_set_feature(void *chip, unsigned char address,
 			     unsigned char value)
@@ -152,6 +154,7 @@ extern int micron_intel_set_feature(void *chip, unsigned char address,
                              unsigned char value);
 #endif
 
+#ifndef TRIMUI_NFTL_SAMSUNG_PAGE_END_GCC53_BUILD
 int samsung_vender_set_param(struct samsung_set_chip *chip,
 			    unsigned char *values,
 			    unsigned char *addresses, unsigned int count)
@@ -181,6 +184,9 @@ int samsung_set_readretry(struct samsung_set_chip *chip)
 	nand_disable_chip(chip);
 	return result;
 }
+#else
+extern int samsung_set_readretry(struct samsung_set_chip *chip);
+#endif
 
 extern void *nand_memcpy(void *, const void *, unsigned int);
 
@@ -8721,7 +8727,9 @@ struct samsung_read_chip_id {
 };
 /* The four vendor page-end paths keep chip/result/retry in OEM private slots
  * FP+0x20/+0x28/+0x2c. Callback failures can observe these frame bytes. */
-#ifndef TRIMUI_NFTL_SPECIAL_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_SPECIAL_GCC53_BUILD) && \
+    (!defined(TRIMUI_NFTL_SPECIAL_PAGE_END_SPLIT) || \
+     defined(TRIMUI_NFTL_SAMSUNG_PAGE_END_GCC53_BUILD))
 __attribute__((optimize("-fno-stack-protector")))
 int samsung_read_page_end(struct samsung_read_request *request)
 {
@@ -8737,8 +8745,9 @@ int samsung_read_page_end(struct samsung_read_request *request)
 	if (result == -2) {
 		nand_print_dbg(nftl_ro_lc_37);
 		retry = 1;
-		goto retry_check;
-	retry_body: {
+		/* OEM starts at retry one, and the signed byte-cycle test can
+		 * skip every retry while still performing the reset below. */
+		while ((int)samsung_read_retry_cycle > retry) {
 			chip->retry = retry;
 			result = samsung_set_readretry(chip);
 			if (result == 0) {
@@ -8760,12 +8769,6 @@ int samsung_read_page_end(struct samsung_read_request *request)
 			}
 			retry++;
 		}
-	retry_check:
-		/* OEM compares cycle to retry and branches directly to the body.
-		 * Keep this two-instruction shape and the setter-failure NOP above. */
-		asm goto("cmp %w0, %w1\n\tb.gt %l[retry_body]"
-			 : : "r"((int)samsung_read_retry_cycle), "r"(retry)
-			 : "cc" : retry_body);
 	retry_done:;
 		/* OEM resets retry mode even after errors and ignores reset failure.
 		 * It also returns ECC_LIMIT (10) after an eventual clean retry. */
@@ -8774,9 +8777,10 @@ int samsung_read_page_end(struct samsung_read_request *request)
 	}
 	return result;
 }
-#endif /* TRIMUI_NFTL_SPECIAL_GCC53_BUILD */
+#endif /* Samsung page-end selected source */
 /* C-visible name for the OEM-local eight-byte pointer at BSS offset 416. */
 extern unsigned char *micron_p1_recovered;
+#ifndef TRIMUI_NFTL_MICRON_PAGE_END_GCC53_BUILD
 int micron_set_readretry(struct samsung_set_chip *chip)
 {
 	unsigned char step;
@@ -8813,7 +8817,12 @@ done:
 	nand_disable_chip(chip);
 	return result;
 }
-#ifndef TRIMUI_NFTL_SPECIAL_GCC53_BUILD
+#else
+extern int micron_set_readretry(struct samsung_set_chip *chip);
+#endif
+#if !defined(TRIMUI_NFTL_SPECIAL_GCC53_BUILD) && \
+    (!defined(TRIMUI_NFTL_SPECIAL_PAGE_END_SPLIT) || \
+     defined(TRIMUI_NFTL_MICRON_PAGE_END_GCC53_BUILD))
 __attribute__((optimize("-fno-stack-protector")))
 int micron_read_page_end(struct samsung_read_request *request)
 {
@@ -8829,8 +8838,9 @@ int micron_read_page_end(struct samsung_read_request *request)
 	if (result == -2) {
 		nand_print_dbg(nftl_ro_lc_70);
 		retry = 0;
-		goto retry_check;
-	retry_body: {
+		/* OEM retries after a failed setter, then resets to step 255 even
+		 * if every retry fails. Preserve the signed cycle test. */
+		while ((int)micron_read_retry_cycle > retry) {
 			chip->retry = retry;
 			result = micron_set_readretry(chip);
 			if (result == 0) {
@@ -8852,10 +8862,6 @@ int micron_read_page_end(struct samsung_read_request *request)
 			}
 			retry++;
 		}
-	retry_check:
-		asm goto("cmp %w0, %w1\n\tb.gt %l[retry_body]"
-			 : : "r"((int)micron_read_retry_cycle), "r"(retry)
-			 : "cc" : retry_body);
 	retry_done:;
 		/* OEM uses 255 as the reset step, writes after a read error,
 		 * ignores the reset failure and returns 10 after a clean retry. */
@@ -8864,14 +8870,16 @@ int micron_read_page_end(struct samsung_read_request *request)
 	}
 	return result;
 }
-#endif /* TRIMUI_NFTL_SPECIAL_GCC53_BUILD */
+#endif /* Micron page-end selected source */
 /* An exported alias retains the original local BSS symbol and its assembly
  * relocations while letting this C body address the same four-byte slot. */
 extern unsigned int toshiba_retry_flag_recovered;
 extern unsigned char toshiba_read_retry_cycle;
 extern int toshiba_set_readretry(struct samsung_set_chip *);
 extern int toshiba_exit_readretry(struct samsung_set_chip *);
-#ifndef TRIMUI_NFTL_SPECIAL_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_SPECIAL_GCC53_BUILD) && \
+    (!defined(TRIMUI_NFTL_SPECIAL_PAGE_END_SPLIT) || \
+     defined(TRIMUI_NFTL_TOSHIBA_PAGE_END_GCC53_BUILD))
 __attribute__((optimize("-fno-stack-protector")))
 int toshiba_read_page_end(struct samsung_read_request *request)
 {
@@ -8888,8 +8896,9 @@ int toshiba_read_page_end(struct samsung_read_request *request)
 		nand_print_dbg(nftl_ro_lc_79);
 		toshiba_retry_flag_recovered = 1;
 		retry = 0;
-		goto retry_check;
-	retry_body: {
+		/* OEM clears the global retry flag after the loop, including
+		 * the zero-cycle and failed-setter paths. */
+		while ((int)toshiba_read_retry_cycle > retry) {
 			chip->retry = retry;
 			result = toshiba_set_readretry(chip);
 			if (result == 0) {
@@ -8911,10 +8920,6 @@ int toshiba_read_page_end(struct samsung_read_request *request)
 			}
 			retry++;
 		}
-	retry_check:
-		asm goto("cmp %w0, %w1\n\tb.gt %l[retry_body]"
-			 : : "r"((int)toshiba_read_retry_cycle), "r"(retry)
-			 : "cc" : retry_body);
 	retry_done:;
 		/* OEM clears the global flag and resets retry even after failures,
 		 * then ignores the exit callback's result. */
@@ -8924,7 +8929,7 @@ int toshiba_read_page_end(struct samsung_read_request *request)
 	}
 	return result;
 }
-#endif /* TRIMUI_NFTL_SPECIAL_GCC53_BUILD */
+#endif /* Toshiba page-end selected source */
 
 extern int sandisk_set_readretry(struct samsung_set_chip *, unsigned short);
 extern int sandisk_end_one_read_retry(struct samsung_set_chip *);
@@ -9839,7 +9844,8 @@ extern unsigned char toshiba_read_retry_exit_cmd[];
 extern unsigned char toshiba_read_retry_last_cmd[];
 extern unsigned char toshiba_read_retry_end_cmd[];
 extern unsigned int toshiba_retry_flag_recovered;
-#ifndef TRIMUI_NFTL_TOSHIBA_RETRY_GCC53_BUILD
+#if !defined(TRIMUI_NFTL_TOSHIBA_RETRY_GCC53_BUILD) && \
+    !defined(TRIMUI_NFTL_TOSHIBA_PAGE_END_GCC53_BUILD)
 int toshiba_vender_set_param(struct samsung_set_chip *chip,
 			    unsigned char *values, unsigned char *addresses,
 			    unsigned int count)
@@ -9965,6 +9971,7 @@ extern int toshiba_set_readretry(struct samsung_set_chip *chip);
 #endif
 /* OEM keeps values/addresses/count/result at FP+0x38/+0x30/+0x2c/+0x28.
  * GCC's stack-protector pass reverses these private slots without a canary. */
+#ifndef TRIMUI_NFTL_TOSHIBA_PAGE_END_GCC53_BUILD
 __attribute__((optimize("-fno-stack-protector")))
 int toshiba_exit_readretry(struct samsung_set_chip *chip)
 {
@@ -10006,6 +10013,7 @@ int toshiba_exit_readretry(struct samsung_set_chip *chip)
 	nand_disable_chip(chip);
 	return result;
 }
+#endif
 
 struct reclaim_flag_zone {
 	unsigned char before_complete[664];

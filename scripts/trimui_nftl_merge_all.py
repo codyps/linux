@@ -54,7 +54,7 @@ def main():
         unexpected = found - expected
         raise ValueError("NAND text inventory changed: missing=%r extra=%r" %
                          (missing, unexpected))
-    if len(entries) != 357 or len(objects) != 122:
+    if len(entries) != 357 or len(objects) != 125:
         raise ValueError("NAND source inventory changed")
     lines = ["/* Generated from recovered C objects and stock order manifest. */",
              "SECTIONS {", "  .text : {"]
