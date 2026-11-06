@@ -1269,22 +1269,25 @@ static __attribute__((no_reorder)) ssize_t store_anim_frames_hex(struct class *c
 	for (i = 0; (int)i < colors; ) {
 		unsigned long byte_offset = (unsigned long)i << 2;
 		const char *scan = position;
+		register const char *scan_format asm("x1") = format;
 
 		position += 7;
 		i++;
 		/* Stock encodes the clear as STR WZR, [x2, x22]. Its two address
-		 * registers add modulo 2^64; keeping the byte offset as the
-		 * pointer-typed base makes the pinned GCC emit that exact store.
-		 * This is a code-generation form, not a claim about OEM C. The
-		 * offset-as-pointer arithmetic is outside ISO C's object bounds;
-		 * TODO: validate the index and use a normal array pointer in a
-		 * separate corrective change. Keep the shipped unchecked write. */
+		 * registers add modulo 2^64. Form the address as unsigned integer
+		 * arithmetic, then convert it to a pointer; the x1 format lifetime
+		 * and x22 root constraint retain the OEM instruction schedule.
+		 * This code-generation form is not a claim about OEM C. Stock still
+		 * writes beyond the array for unchecked indices; TODO: validate the
+		 * index and use a normal array pointer in a corrective change. */
 		{
-			register char *clear_base asm("x2") =
-				(char *)(unsigned long)byte_offset;
-			*(u32 *)(clear_base + (unsigned long)pixels) = 0;
+			register unsigned long clear_base asm("x2") = byte_offset;
+			register unsigned long clear_root asm("x22") =
+				(unsigned long)pixels;
+			asm volatile("" : "+r"(clear_root) : "r"(scan_format));
+			*(u32 *)(clear_base + clear_root) = 0;
 		}
-		sscanf(scan, format, (u32 *)((char *)append + byte_offset));
+		sscanf(scan, scan_format, (u32 *)((char *)append + byte_offset));
 		asm volatile("" : "+r"(position));
 	}
 	trimui_frame_controls.len += colors / 14;
