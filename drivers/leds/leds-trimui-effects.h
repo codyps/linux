@@ -116,6 +116,10 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		u32 start_rgb;
 		/* Match OEM's red accumulator source in w5 during type-3 ramp. */
 		register int start_r asm("w5");
+		/* OEM extracts the packed green nibble into w6 before the ramp.
+		 * This is a C register role; it adds no executable assembly.
+		 */
+		register int start_g asm("w6");
 		/* OEM leaves x14/x15 intact across this generator path. Keep
 		 * the target channels in its w10/w11/w2 register schedule; the
 		 * paired-effect caller historically retains pointers in x14.
@@ -138,7 +142,7 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		for (i = 0; i < n; i++)
 			effect->frames[i] = start_rgb;
 		start_r = (start_rgb >> 16) & 255;
-		from_g = (start_rgb >> 8) & 255;
+		start_g = (start_rgb >> 8) & 15;
 		from_b = start_rgb & 255;
 		to_r = (target >> 16) & 255;
 		to_g = (target >> 8) & 255;
@@ -148,9 +152,9 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		 */
 		int delta_r, delta_g, delta_b;
 		delta_r = to_r - start_r;
-		delta_g = to_g - from_g;
+		delta_g = to_g - start_g;
 		delta_b = to_b - from_b;
-		r = ramp * start_r; g = ramp * from_g; b = ramp * from_b;
+		r = ramp * start_r; g = ramp * start_g; b = ramp * from_b;
 		for (i = 0; i < ramp; i++) {
 			u32 rgb = trimui_rgb(r / ramp, g / ramp, b / ramp);
 			effect->frames[i] = rgb;
