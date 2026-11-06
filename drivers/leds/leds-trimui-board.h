@@ -1272,7 +1272,18 @@ static __attribute__((no_reorder)) ssize_t store_anim_frames_hex(struct class *c
 
 		position += 7;
 		i++;
-		*(u32 *)((char *)pixels + byte_offset) = 0;
+		/* Stock encodes the clear as STR WZR, [x2, x22]. Its two address
+		 * registers add modulo 2^64; keeping the byte offset as the
+		 * pointer-typed base makes the pinned GCC emit that exact store.
+		 * This is a code-generation form, not a claim about OEM C. The
+		 * offset-as-pointer arithmetic is outside ISO C's object bounds;
+		 * TODO: validate the index and use a normal array pointer in a
+		 * separate corrective change. Keep the shipped unchecked write. */
+		{
+			register char *clear_base asm("x2") =
+				(char *)(unsigned long)byte_offset;
+			*(u32 *)(clear_base + (unsigned long)pixels) = 0;
+		}
 		sscanf(scan, format, (u32 *)((char *)append + byte_offset));
 		asm volatile("" : "+r"(position));
 	}
