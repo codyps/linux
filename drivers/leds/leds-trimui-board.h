@@ -215,9 +215,10 @@ static void commit_static_frame(void)
 
 static int trimui_ledc_run_thread(void *unused)
 {
+	struct trimui_stock_led_state *led_state_view = RELOC_HIDE(&trimui_led_state,0);
 	/* Startup roots only; recompute F2 after caller-clobbering services. */
-	register struct trimui_led_effect *left asm("x22") = &trimui_effect_l;
-	register struct trimui_led_effect *front2 asm("x18") = &trimui_effect_f2;
+	register struct trimui_led_effect *left asm("x22") = &(led_state_view->effects[3]);
+	register struct trimui_led_effect *front2 asm("x18") = &(led_state_view->effects[0]);
 	asm volatile("" : "+r"(left));
 	asm volatile("" : "+r"(front2));
 	int battery_ticks = 0; /* OEM signed comparison, including negative values. */
@@ -234,49 +235,49 @@ static int trimui_ledc_run_thread(void *unused)
 	 * readers can observe these intermediate values during startup.
 	 */
 #define INITIAL_CYCLES(e) WRITE_ONCE((e).cycles, 5)
-	INITIAL_CYCLES(trimui_effect_m);
+	INITIAL_CYCLES((led_state_view->effects[4]));
 	INITIAL_CYCLES(trimui_effect_r);
-	INITIAL_CYCLES(trimui_effect_l);
-	INITIAL_CYCLES(trimui_effect_f2);
-	INITIAL_CYCLES(trimui_effect_f1);
+	INITIAL_CYCLES((led_state_view->effects[3]));
+	INITIAL_CYCLES((led_state_view->effects[0]));
+	INITIAL_CYCLES((led_state_view->effects[1]));
 #undef INITIAL_CYCLES
 	/* Stock commits type/duration together as one little-endian 64-bit
 	 * store.  Keep that width and the M,R,L,F2,F1 publication sequence.
 	 */
 #define INITIAL_SHAPE(e) WRITE_ONCE(*(u64 *)&(e).type, ((u64)2000 << 32) | 2)
-	INITIAL_SHAPE(trimui_effect_m);
+	INITIAL_SHAPE((led_state_view->effects[4]));
 	INITIAL_SHAPE(trimui_effect_r);
-	INITIAL_SHAPE(trimui_effect_l);
-	WRITE_ONCE(trimui_effect_m.target_rgb, boot_white);
+	INITIAL_SHAPE((led_state_view->effects[3]));
+	WRITE_ONCE((led_state_view->effects[4]).target_rgb, boot_white);
 	WRITE_ONCE(trimui_effect_r.target_rgb, boot_white);
-	WRITE_ONCE(trimui_effect_l.target_rgb, boot_white);
-	INITIAL_SHAPE(trimui_effect_f2);
-	WRITE_ONCE(trimui_effect_f2.target_rgb, boot_orange);
-	INITIAL_SHAPE(trimui_effect_f1);
-	WRITE_ONCE(trimui_effect_f1.target_rgb, boot_orange);
+	WRITE_ONCE((led_state_view->effects[3]).target_rgb, boot_white);
+	INITIAL_SHAPE((led_state_view->effects[0]));
+	WRITE_ONCE((led_state_view->effects[0]).target_rgb, boot_orange);
+	INITIAL_SHAPE((led_state_view->effects[1]));
+	WRITE_ONCE((led_state_view->effects[1]).target_rgb, boot_orange);
 #undef INITIAL_SHAPE
 	/* The OEM generator receives these fixed boot colors.  It does not
 	 * reread target_rgb between initialization and each call.
 	 */
 	gen_effect(left, 2, boot_white, boot_white);
 	gen_effect(&trimui_effect_r, 2, boot_white, boot_white);
-	gen_effect(&trimui_effect_f1, 2, boot_orange, boot_orange);
+	gen_effect(&(led_state_view->effects[1]), 2, boot_orange, boot_orange);
 	gen_effect(front2, 2, boot_orange, boot_orange);
-	gen_effect(&trimui_effect_m, 2, boot_white, boot_white);
+	gen_effect(&(led_state_view->effects[4]), 2, boot_white, boot_white);
 	/* Keep the OEM's odd reset order.  A concurrent control read can see
 	 * these partially reset effects; do not collapse this into a loop.
 	 */
 	WRITE_ONCE(trimui_effect_r.index, 0);
-	WRITE_ONCE(trimui_effect_l.active_cycles, READ_ONCE(trimui_effect_l.cycles));
+	WRITE_ONCE((led_state_view->effects[3]).active_cycles, READ_ONCE((led_state_view->effects[3]).cycles));
 	WRITE_ONCE(trimui_effect_r.active_cycles, READ_ONCE(trimui_effect_r.cycles));
-	WRITE_ONCE(trimui_effect_f1.active_cycles, READ_ONCE(trimui_effect_f1.cycles));
-	WRITE_ONCE(trimui_effect_f2.active_cycles, READ_ONCE(trimui_effect_f2.cycles));
-	rgb = READ_ONCE(trimui_effect_m.cycles);
-	WRITE_ONCE(trimui_effect_l.index, 0);
-	WRITE_ONCE(trimui_effect_m.index, 0);
-	WRITE_ONCE(trimui_effect_f2.index, 0);
-	WRITE_ONCE(trimui_effect_f1.index, 0);
-	WRITE_ONCE(trimui_effect_m.active_cycles, rgb);
+	WRITE_ONCE((led_state_view->effects[1]).active_cycles, READ_ONCE((led_state_view->effects[1]).cycles));
+	WRITE_ONCE((led_state_view->effects[0]).active_cycles, READ_ONCE((led_state_view->effects[0]).cycles));
+	rgb = READ_ONCE((led_state_view->effects[4]).cycles);
+	WRITE_ONCE((led_state_view->effects[3]).index, 0);
+	WRITE_ONCE((led_state_view->effects[4]).index, 0);
+	WRITE_ONCE((led_state_view->effects[0]).index, 0);
+	WRITE_ONCE((led_state_view->effects[1]).index, 0);
+	WRITE_ONCE((led_state_view->effects[4]).active_cycles, rgb);
 	while (!kthread_should_stop()) {
 		if (trimui_effect_enable) {
 			if (is_effect_actived(left)) {
