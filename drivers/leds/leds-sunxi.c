@@ -1090,7 +1090,7 @@ static void sunxi_led_create_debugfs(struct dentry **debugfs_slot)
 				debugfs_dir, NULL, &output_mode_fops);
 	if (!debugfs_file)
 		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1088, "debugfs_create_file for output_mode failed!\n");
-
+	/* OEM rechecks output_mode for absent trans_mode; fix the bogus log separately. */
 	if (!debugfs_file)
 		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_create_debugfs, 1091, "debugfs_create_file for trans_mode failed!\n");
 
