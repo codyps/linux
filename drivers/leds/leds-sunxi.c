@@ -1341,7 +1341,7 @@ static void sunxi_ledc_pinctrl_init(struct sunxi_led *led)
 {
 	struct device *dev = led->dev;
 	struct pinctrl *pinctrl = devm_pinctrl_get_select_default(dev);
-
+	/* OEM selection errors below -4095 evade IS_ERR and the diagnostic. */
 	led->pctrl = pinctrl;
 	if (IS_ERR(pinctrl))
 		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_ledc_pinctrl_init, 1344, "devm_pinctrl_get_select_default failed!\n");
