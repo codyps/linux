@@ -2541,8 +2541,11 @@ int check_cross_talk(struct cross_talk_zone *zone,
 	unsigned char *oobptr;
 	int result;
 
-	goto cross_check;
-	cross_body: {
+	/* The related public Allwinner implementation uses this direct C
+	 * loop. GCC 5.3 emits the OEM pages/index comparison and branch from
+	 * it without an inline assembler annotation.
+	 */
+	for (; index < (unsigned int)zone->geometry->pages; index++) {
 		data = 0;
 		oobptr = oob;
 		/* OEM uses UXTH for index's ushort argument. This compiler uses
@@ -2557,16 +2560,9 @@ int check_cross_talk(struct cross_talk_zone *zone,
 			/* GCC 5.3 emits the OEM pointer-first load and final UXTH.
 			 * Its plain expression also retains the unchecked OOB read. */
 			zone->stats->max = oobptr[14];
-			goto cross_done;
+			break;
 		}
 	}
-	index++;
-	cross_check:
-	/* OEM uses the unsigned pages,index compare order in this tail. */
-	asm goto("cmp %w0, %w1\n\tb.hi %l[cross_body]"
-		 : : "r"((unsigned int)zone->geometry->pages), "r"(index)
-		 : "cc" : cross_body);
-	cross_done:
 	/* OEM reports success even if every physical read failed. */
 	return 0;
 }
