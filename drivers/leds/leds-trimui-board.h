@@ -1428,11 +1428,14 @@ static ssize_t store_frames_enable(struct class *class, struct class_attribute *
  int parser_base = 0;
  int left;
  /* Preserve the OEM parser and count-save order around this C BSS root.
-  * GCC otherwise moves the count save ahead of the address calculation. */
+  * GCC otherwise moves the count save ahead of the address calculation.
+  * The empty constraint retains OEM instruction order without an executable
+  * MOV. It does not imply that OEM source used inline assembly. */
  asm volatile("" : "+r"(parser_base));
  control = &trimui_frame_controls;
  asm volatile("" : "+r"(control));
- asm volatile("mov %0, %1" : "=r"(result) : "r"(count));
+ result = count;
+ asm volatile("" : "+r"(control), "+r"(result));
  /* Stock ignores parse errors and still resets/decrements state.
   * TODO: reject errors only in a separate behavior change. */
  kstrtoint(buffer,parser_base,&control->enable);
