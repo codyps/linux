@@ -1834,7 +1834,7 @@ static int sunxi_led_probe(struct platform_device *pdev)
 #ifdef CONFIG_DEBUG_FS
 		sunxi_led_create_debugfs(&led->debugfs_dir);
 #endif /* CONFIG_DEBUG_FS */
-
+	/* OEM unregisters after registration failure; early errors can fault on NULL. */
 	err = class_register(&led_class);
 	if (err < 0) {
 		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_probe, 3319, "class_register err\n");
