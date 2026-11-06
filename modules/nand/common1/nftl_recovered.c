@@ -5788,19 +5788,14 @@ int build_zone_list_first(struct first_list_zone *zone, unsigned int number)
 	}
 	if (zone->count > 1) {
 		zone->count--;
-		/* This explicit branch retains OEM's B.NE to the next scan,
-		 * followed by B to the success return. Both paths are taken;
-		 * the compiler's inverse test otherwise changes the stock body. */
-		asm goto("cmn %w0, #1\n\tb.ne %l[next_scan]\n\tb %l[first_success]"
-			 : : "r"(limit) : "cc" : next_scan, first_success);
-		__builtin_unreachable();
 	} else {
 		nand_print(nftl_ro_lc_210, zone->count);
 		return 1;
 	}
-first_success:
-	return 0;
-next_scan:
+	/* OEM treats the all-ones block limit as an immediate success, before
+	 * checking whether the scan reached the last physical block. */
+	if (limit == ~0U)
+		return 0;
 	if (is_last_phy_block((struct physical_block *)block,
 			      (struct physical_zone *)zone) == 1)
 		return 0;
