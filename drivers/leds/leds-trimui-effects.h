@@ -177,6 +177,12 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 	} else if (type >= 5 && type <= 7) {
 		if (effect->duration > 8000)
 			effect->duration = 8000;
+		/* With the pinned OEM compiler, type 7 reuses the high-clamp
+		 * duration load for this 500-ms test. A concurrent change between
+		 * the tests is invisible here, then the frame count rereads memory.
+		 * TODO: synchronize duration and use one consistent snapshot in a
+		 * future bug fix; a volatile reread here changes shipped behavior.
+		 */
 		if (type == 7 && effect->duration < 500)
 			effect->duration = 500;
 		/* Stock rereads duration for blink2 after the earlier clamp; blink3
