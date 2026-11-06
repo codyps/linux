@@ -81,16 +81,17 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		ramp = effect->duration / 48;
 		/* OEM finishes the type-2 ramp division before packing the start color. */
 		asm volatile("" : : "r"(ramp));
-		/* OEM assembles a four-bit-per-channel start color, then reads
-		 * its channels for the ramp. Preserve that intermediate shape.
+		for (i = 0; i < n; i++)
+			effect->frames[i] = target;
+		/* OEM forms the four-bit-per-channel ramp start color after
+		 * the initial fill. Keep this ordering: the unchecked fill can
+		 * overwrite following state before these channels are formed.
 		 */
 		start_rgb = trimui_rgb((target >> 20) & 15,
 				(target >> 12) & 15, (target >> 4) & 15);
 		from_r = (start_rgb >> 16) & 255;
 		from_g = (start_rgb >> 8) & 255;
 		from_b = start_rgb & 255;
-		for (i = 0; i < n; i++)
-			effect->frames[i] = target;
 		/* OEM computes the target channels after the initial fill. */
 		to_r = (target >> 16) & 255;
 		to_g = (target >> 8) & 255;
