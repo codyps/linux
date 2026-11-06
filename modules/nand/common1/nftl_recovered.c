@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /* Verified stock-behavior NFTL helpers, compiled when selected by Kconfig.
- * Structure labels are inferred from observed offsets. */
+ * Labels are inferred; asm goto pins OEM codegen, not OEM ASM provenance. */
 
 /* Reuse the instruction-rooted OEM readonly pool. Separate C string literals
  * would duplicate these payloads and move later readonly and BSS addresses. */
