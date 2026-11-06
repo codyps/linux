@@ -203,7 +203,7 @@ static int trimui_ledc_run_thread(void *unused)
 	register struct trimui_led_effect *front2 asm("x18") = &trimui_effect_f2;
 	asm volatile("" : "+r"(left));
 	asm volatile("" : "+r"(front2));
-	unsigned int battery_ticks = 0;
+	int battery_ticks = 0; /* OEM signed comparison, including negative values. */
 	u32 rgb;
 	u32 boot_white = 0xffffff;
 	register u32 boot_orange asm("w26") = 0x00ff33;
@@ -316,7 +316,7 @@ static int trimui_ledc_run_thread(void *unused)
 			battery_ticks = 0;
 			check_battery();
 		}
-		battery_ticks++;
+		battery_ticks++; /* OEM reset-before-increment: first poll at 627, then every 626 loops. */
 		msleep(16);
 	}
 	return 0;
