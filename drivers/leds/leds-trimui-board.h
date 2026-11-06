@@ -177,7 +177,7 @@ static void commit_static_frame(void)
  /* Lock/transfer/completion results remain ignored as shipped. */
  spin_lock_irqsave(&led->lock,flags);
  led->length=count;
- for(j=0;(unsigned int)j<READ_ONCE(led->length);j++) {
+ for(j=0;(unsigned int)j<READ_ONCE(led->length);j++) { /* OEM signed wrap past INT_MAX can address before wire. */
   u32 *dest=READ_ONCE(led->data);
   u32 pixel=READ_ONCE(state->wire[j]);
   WRITE_ONCE(dest[j],pixel);
