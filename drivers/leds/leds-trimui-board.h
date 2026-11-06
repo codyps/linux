@@ -877,11 +877,20 @@ static ssize_t show_effect_rgb_hex_lr(struct class *class, struct class_attribut
 	return dump_rgb_hex(buffer, trimui_effect_l.target_rgb);
 }
 
-/* Scalar views of recovered fields; these aliases allocate no storage.
- * Their original C declarations are unknown. */
-extern u32 trimui_target_l,trimui_target_r;
-__asm__(".local trimui_target_l\n.type trimui_target_l,%object\n.set trimui_target_l,trimui_led_state+0x2d9c\n.size trimui_target_l,4\n"
-        ".local trimui_target_r\n.type trimui_target_r,%object\n.set trimui_target_r,trimui_led_state+0x1e7c\n.size trimui_target_r,4\n");
+/* These are C views of the two target_rgb fields. Stock uses independent
+ * ADRP/STR roots for the two stores, whereas ordinary field expressions make
+ * GCC reuse one aggregate root. Bind the declarations to the verified field
+ * addresses without defining extra storage or handwritten instructions.
+ * TODO: recover lawful separate C objects that give GCC these roots directly.
+ */
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
+				 effects[3].target_rgb) == 0x2d9c,
+	       "left RGB target offset");
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
+				 effects[2].target_rgb) == 0x1e7c,
+	       "right RGB target offset");
+extern u32 trimui_target_l __asm__("trimui_led_state+0x2d9c");
+extern u32 trimui_target_r __asm__("trimui_led_state+0x1e7c");
 static ssize_t store_effect_rgb_hex_lr(struct class *class,struct class_attribute *attr,const char *buffer,size_t count)
 {
  u32 rgb=get_rgb_hex(class, buffer);
