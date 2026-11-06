@@ -1257,10 +1257,10 @@ static __attribute__((no_reorder)) ssize_t store_anim_frames_hex(struct class *c
 	 * int changes the destination around the sign boundary. The append
 	 * range is still unchecked; TODO: reject out-of-range frame counts. */
 	offset = (unsigned int)trimui_frame_controls.len * 14u;
-	/* Stock forms this root after the frame offset multiplication. */
-	asm("adrp %0, trimui_led_state+0x4ff0\n\t"
-	    "add %0, %0, :lo12:trimui_led_state+0x4ff0"
-	    : "=&r"(root));
+	/* Stock forms this root after the frame offset multiplication. The
+	 * tied, empty constraint keeps the C array pointer in x1 at that point
+	 * with the pinned compiler; it emits no handwritten instructions. */
+	asm("" : "=r"(root) : "0"(trimui_anim_frames));
 	pixels = root;
 	append = pixels + (int)offset;
 	/* Stock ignores append capacity and clears the start of the buffer,
