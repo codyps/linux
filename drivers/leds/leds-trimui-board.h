@@ -87,22 +87,36 @@ struct trimui_effect_pair_view {
 	u8 before_left[0xb88];
 	struct trimui_led_effect left;
 };
-extern struct trimui_effect_pair_view trimui_effect_pair;
-asm(".local trimui_effect_pair\n.type trimui_effect_pair,%object\n"
-    ".set trimui_effect_pair,trimui_led_state+0x21f8\n"
-    ".size trimui_effect_pair,0x1aa8\n");
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state, effects[3]) ==
+	       0x21f8 + __builtin_offsetof(struct trimui_effect_pair_view, left),
+	       "paired LED effect root");
+_Static_assert(sizeof(struct trimui_effect_pair_view) == 0x1aa8,
+	       "paired LED effect view size");
+extern struct trimui_effect_pair_view trimui_effect_pair
+	__asm__("trimui_led_state+0x21f8");
 /* Compatible views of rooted stock fields; no independent allocation.
- * Original C declarations are unknown. The config alias inherits the
- * four-byte ELF extent of its scalar root, not the full C view below. */
+ * Original C declarations are unknown. The config view extends beyond its
+ * four-byte scalar root; preserve this OEM access and recover a lawful C
+ * object containing the adjacent scalars in a separate change.
+ */
 struct trimui_transfer_state_view {
  u8 prefix[0x7cc]; u8 rgb[512]; int low_battery;
  u8 unobserved[0x18]; int suspended; u32 wire[128];
 };
 struct trimui_transfer_config_view { u8 prefix[16]; int enable; u32 count,debug; };
-extern struct trimui_transfer_state_view trimui_transfer_state;
-extern struct trimui_transfer_config_view trimui_transfer_config;
-asm(".local trimui_transfer_state\n.type trimui_transfer_state,%object\n.set trimui_transfer_state,trimui_led_state+0x43f8\n.size trimui_transfer_state,0xbec\n"
-    ".local trimui_transfer_config\n.type trimui_transfer_config,%object\n.set trimui_transfer_config,trimui_limit\n.size trimui_transfer_config,4\n");
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
+				 effects[4].frames[462]) == 0x43f8,
+	       "transfer LED view root");
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state, low_battery) ==
+	       0x43f8 + __builtin_offsetof(struct trimui_transfer_state_view,
+				   low_battery), "transfer low-battery field");
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state, wire_frame) ==
+	       0x43f8 + __builtin_offsetof(struct trimui_transfer_state_view, wire),
+	       "transfer wire-frame field");
+extern struct trimui_transfer_state_view trimui_transfer_state
+	__asm__("trimui_led_state+0x43f8");
+extern struct trimui_transfer_config_view trimui_transfer_config
+	__asm__("trimui_limit");
 /* Stock retains two distinct stores, including on negative capacity errors.
  * Keep its out-of-line helper and the same state view used by frame output.
  * TODO: report power-supply read failures in a separate behavior change.
@@ -912,9 +926,10 @@ static ssize_t store_effect_rgb_hex_lr(struct class *class,struct class_attribut
 /* The OEM forms the effect-M address from the page containing this byte.
  * Keep the address schedule; all parser, generator, and state effects below
  * remain in C. The alias does not allocate storage. */
-extern unsigned char trimui_m_page;
-asm(".local trimui_m_page\n.type trimui_m_page,%object\n"
-    ".set trimui_m_page,trimui_led_state+0x2830\n.size trimui_m_page,1\n");
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
+				 effects[2].frames[620]) == 0x2830,
+	       "middle LED page root");
+extern unsigned char trimui_m_page __asm__("trimui_led_state+0x2830");
 static ssize_t store_effect_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	register unsigned char *page asm("x19");
@@ -951,9 +966,10 @@ static ssize_t store_effect_m(struct class *class, struct class_attribute *attr,
 	return saved;
 }
 
-extern unsigned char trimui_l_page;
-asm(".local trimui_l_page\n.type trimui_l_page,%object\n"
-    ".set trimui_l_page,trimui_led_state+0x1830\n.size trimui_l_page,1\n");
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
+				 effects[1].frames[564]) == 0x1830,
+	       "left LED page root");
+extern unsigned char trimui_l_page __asm__("trimui_led_state+0x1830");
 static ssize_t store_effect_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	register unsigned char *page asm("x19");
@@ -988,9 +1004,10 @@ static ssize_t store_effect_l(struct class *class, struct class_attribute *attr,
 	return saved;
 }
 
-extern unsigned char trimui_r_page;
-asm(".local trimui_r_page\n.type trimui_r_page,%object\n"
-    ".set trimui_r_page,trimui_led_state+0x830\n.size trimui_r_page,1\n");
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
+				 effects[0].frames[508]) == 0x830,
+	       "right LED page root");
+extern unsigned char trimui_r_page __asm__("trimui_led_state+0x830");
 static ssize_t store_effect_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	register unsigned char *page asm("x19");
