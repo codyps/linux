@@ -28,7 +28,7 @@ static u32 trimui_rgb(int r, int g, int b)
 static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *effect, int type,
 		       u32 target, u32 previous)
 {
-	int n, ramp, i, count, r, g, b, from_r, from_g, from_b;
+	int n, ramp, i, r, g, b, from_r, from_g, from_b;
 	int to_r, to_g, to_b;
 	/* OEM clamps before validating type. An unsupported type can therefore
 	 * change duration even though no frames or metadata are published.
@@ -178,20 +178,25 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		n = effect->duration / 16;
 		for (i = 0; i < n; i++)
 			effect->frames[i] = 0;
+		/* Keep the OEM pattern count in w1 while the fixed-extent stores
+		 * execute. The fixed extent may exceed the published duration;
+		 * preserve that shipped write behavior.
+		 */
+		register int blink_count asm("w1");
 		/* Stock selects the three fixed blink-table extents through
 		 * distinct type branches, in descending type order.
 		 */
 		if (type == 7)
-			count = 30;
+			blink_count = 30;
 		else if (type == 6)
-			count = 20;
+			blink_count = 20;
 		else
-			count = 10;
+			blink_count = 10;
 		/* OEM always writes the fixed pattern extent after the zero fill.
 		 * If duration changes before the count reread, this can write
 		 * beyond the newly published length. Preserve that ordering.
 		 */
-		for (i = 0; i < count; i++)
+		for (i = 0; i < blink_count; i++)
 			if (trimui_blink_pattern[i])
 				effect->frames[i] = target;
 	} else {
