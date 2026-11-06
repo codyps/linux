@@ -8943,8 +8943,9 @@ int sandisk_read_page_end(struct samsung_read_request *request)
 	if (result == -2) {
 		nand_print_dbg(nftl_ro_lc_134);
 		retry = 0;
-		goto retry_check;
-	retry_body: {
+		/* OEM compares the byte retry limit as a signed int. Preserve
+		 * the initial zero-step test and every failed setter retry. */
+		while ((int)sandisk_read_retry_cycle > retry) {
 			chip->retry = retry;
 			result = sandisk_set_readretry(chip,
 					       (unsigned short)request->page);
@@ -8978,10 +8979,6 @@ int sandisk_read_page_end(struct samsung_read_request *request)
 			}
 			retry++;
 		}
-	retry_check:
-		asm goto("cmp %w0, %w1\n\tb.gt %l[retry_body]"
-			 : : "r"((int)sandisk_read_retry_cycle), "r"(retry)
-			 : "cc" : retry_body);
 	retry_done:;
 		/* Stock resets the retry count and ignores exit failure even when
 		 * every read or the setter failed. */
