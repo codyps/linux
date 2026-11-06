@@ -1166,7 +1166,13 @@ struct trimui_frame_control_view {
 	int mask_lr, mask_f, mask_m;
 	int enable, cycles, fps, len, effect_enable;
 };
-extern struct trimui_frame_control_view trimui_frame_controls;
+_Static_assert(sizeof(struct trimui_frame_control_view) == 40,
+	       "LED control view size");
+_Static_assert(__builtin_offsetof(struct trimui_frame_control_view,
+				 mask_lr) == 8,
+	       "LED control view root");
+extern struct trimui_frame_control_view trimui_frame_controls
+	__asm__("trimui_led_state-8");
 
 static ssize_t store_effect_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
@@ -1367,11 +1373,13 @@ struct trimui_motor_state_view {
  u8 unused[0x9d8]; int voltage;
  struct regulator *regulator;
 };
-extern struct trimui_frame_counter_view trimui_frame_counters;
-extern struct trimui_motor_state_view trimui_motor_state;
-__asm__(".local trimui_frame_controls\n.type trimui_frame_controls,%object\n.set trimui_frame_controls,trimui_led_state-8\n.size trimui_frame_controls,40\n"
-        ".local trimui_frame_counters\n.type trimui_frame_counters,%object\n.set trimui_frame_counters,trimui_led_state+0x43f8\n.size trimui_frame_counters,0x9d8\n");
-__asm__(".local trimui_motor_state\n.type trimui_motor_state,%object\n.set trimui_motor_state,trimui_led_state+0x43f8\n.size trimui_motor_state,0x9e8\n");
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
+				 effects[4].frames[462]) == 0x43f8,
+	       "LED counter and motor view root");
+extern struct trimui_frame_counter_view trimui_frame_counters
+	__asm__("trimui_led_state+0x43f8");
+extern struct trimui_motor_state_view trimui_motor_state
+	__asm__("trimui_led_state+0x43f8");
 static ssize_t store_frames_cycles(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
 	struct trimui_frame_control_view *control;
@@ -1606,22 +1614,22 @@ static struct class trimui_speaker_class = {
  * They view existing BSS: no independent storage or change to the state ABI.
  * Original declaration boundaries are unknown.
  */
-extern struct trimui_led_effect trimui_probe_effect_f2;
-extern struct trimui_led_effect trimui_probe_effect_f1;
-extern struct trimui_led_effect trimui_probe_effect_r;
-extern struct trimui_led_effect trimui_probe_effect_l;
-asm(".local trimui_probe_effect_f2\n.type trimui_probe_effect_f2,%object\n"
-    ".set trimui_probe_effect_f2,trimui_led_state+0x20\n"
-    ".size trimui_probe_effect_f2,0xf20\n"
-    ".local trimui_probe_effect_f1\n.type trimui_probe_effect_f1,%object\n"
-    ".set trimui_probe_effect_f1,trimui_led_state+0xf40\n"
-    ".size trimui_probe_effect_f1,0xf20\n"
-    ".local trimui_probe_effect_r\n.type trimui_probe_effect_r,%object\n"
-    ".set trimui_probe_effect_r,trimui_led_state+0x1e60\n"
-    ".size trimui_probe_effect_r,0xf20\n"
-    ".local trimui_probe_effect_l\n.type trimui_probe_effect_l,%object\n"
-    ".set trimui_probe_effect_l,trimui_led_state+0x2d80\n"
-    ".size trimui_probe_effect_l,0xf20\n");
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state, effects[0]) ==
+	       0x20, "LED F2 probe root");
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state, effects[1]) ==
+	       0xf40, "LED F1 probe root");
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state, effects[2]) ==
+	       0x1e60, "LED R probe root");
+_Static_assert(__builtin_offsetof(struct trimui_stock_led_state, effects[3]) ==
+	       0x2d80, "LED L probe root");
+extern struct trimui_led_effect trimui_probe_effect_f2
+	__asm__("trimui_led_state+0x20");
+extern struct trimui_led_effect trimui_probe_effect_f1
+	__asm__("trimui_led_state+0xf40");
+extern struct trimui_led_effect trimui_probe_effect_r
+	__asm__("trimui_led_state+0x1e60");
+extern struct trimui_led_effect trimui_probe_effect_l
+	__asm__("trimui_led_state+0x2d80");
 
 static int trimui_board_init(void)
 {
