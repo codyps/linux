@@ -34,7 +34,29 @@
 /* For debug */
 #define LED_ERR(fmt, arg...) pr_err("%s()%d - "fmt, __func__, __LINE__, ##arg)
 
+/* Stock places these seven initialized scalars contiguously. This one C
+ * object also gives the transfer helper a bounded view of its last fields.
+ */
+#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
+struct trimui_led_config {
+	u32 limit, scale_f, scale_lr, scale_m;
+	int enable;
+	u32 count, debug;
+};
+static struct trimui_led_config trimui_config = {
+	.limit = 128, .scale_f = 40, .scale_lr = 40, .scale_m = 40,
+	.enable = 1, .count = 23, .debug = 1,
+};
+#define debug_mask trimui_config.debug
+#define trimui_led_count trimui_config.count
+#define trimui_limit trimui_config.limit
+#define trimui_scale_f trimui_config.scale_f
+#define trimui_scale_lr trimui_config.scale_lr
+#define trimui_scale_m trimui_config.scale_m
+#define trimui_led_enable trimui_config.enable
+#else
 static u32 debug_mask = 1;
+#endif
 #define dprintk(level_mask, fmt, arg...)				\
 do {									\
 	if (unlikely(debug_mask & level_mask))				\
@@ -42,9 +64,6 @@ do {									\
 } while (0)
 
 static struct sunxi_led *sunxi_led;
-#ifdef CONFIG_TRIMUI_BOARD_ALPU_ARELINK
-static unsigned int trimui_led_count = 23;
-#endif
 
 static void sunxi_ledc_trans_data(struct sunxi_led *led);
 

@@ -42,9 +42,7 @@ static struct trimui_stock_led_state {
 	u32 anim_frames[14400];
 } trimui_led_state;
 
-static unsigned int trimui_limit = 128, trimui_scale_f = 40;
-static unsigned int trimui_scale_lr = 40, trimui_scale_m = 40;
-static int trimui_led_enable = 1;
+/* Config scalars live in the typed trimui_config object. */
 /* Stock has 32 scale pointers although the TG3040 device tree uses 23 LEDs.
  * Entries 23..31 still select the middle scale. Keep the unchecked indexing
  * beyond 32 as shipped; TODO: validate the device-tree count in a separate fix.
@@ -94,16 +92,22 @@ _Static_assert(sizeof(struct trimui_effect_pair_view) == 0x1aa8,
 	       "paired LED effect view size");
 extern struct trimui_effect_pair_view trimui_effect_pair
 	__asm__("trimui_led_state+0x21f8");
-/* Compatible views of rooted stock fields; no independent allocation.
- * Original C declarations are unknown. The config view extends beyond its
- * four-byte scalar root; preserve this OEM access and recover a lawful C
- * object containing the adjacent scalars in a separate change.
+/* The transfer view retains the OEM field addresses without allocating
+ * separate storage. Its original C declaration remains unknown. The seven
+ * adjacent configuration scalars now have one bounded C object above.
  */
 struct trimui_transfer_state_view {
  u8 prefix[0x7cc]; u8 rgb[512]; int low_battery;
  u8 unobserved[0x18]; int suspended; u32 wire[128];
 };
-struct trimui_transfer_config_view { u8 prefix[16]; int enable; u32 count,debug; };
+_Static_assert(sizeof(struct trimui_led_config) == 28,
+	       "LED configuration size");
+_Static_assert(__builtin_offsetof(struct trimui_led_config, enable) == 16,
+	       "LED configuration enable offset");
+_Static_assert(__builtin_offsetof(struct trimui_led_config, count) == 20,
+	       "LED configuration count offset");
+_Static_assert(__builtin_offsetof(struct trimui_led_config, debug) == 24,
+	       "LED configuration debug offset");
 _Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
 				 effects[4].frames[462]) == 0x43f8,
 	       "transfer LED view root");
@@ -115,8 +119,7 @@ _Static_assert(__builtin_offsetof(struct trimui_stock_led_state, wire_frame) ==
 	       "transfer wire-frame field");
 extern struct trimui_transfer_state_view trimui_transfer_state
 	__asm__("trimui_led_state+0x43f8");
-extern struct trimui_transfer_config_view trimui_transfer_config
-	__asm__("trimui_limit");
+#define trimui_transfer_config trimui_config
 /* Stock retains two distinct stores, including on negative capacity errors.
  * Keep its out-of-line helper and the same state view used by frame output.
  * TODO: report power-supply read failures in a separate behavior change.
