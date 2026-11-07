@@ -241,7 +241,7 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 	 */
 	WRITE_ONCE(effect->length, n);
 reset_effect_cursor:
-	asm volatile("" : : "r"(effect));
+	/* Stock's empty-ramp exit reaches the shared cursor reset directly. */
 	WRITE_ONCE(effect->index, 0);
 	WRITE_ONCE(effect->active_cycles, 0);
 }
