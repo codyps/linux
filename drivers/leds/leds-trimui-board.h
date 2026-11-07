@@ -219,7 +219,7 @@ static int trimui_ledc_run_thread(void *unused)
 	/* Startup roots only; recompute F2 after caller-clobbering services. */
 	register struct trimui_led_effect *left asm("x22") = &(led_state_view->effects[3]);
 	register struct trimui_led_effect *front2 asm("x18") = &(led_state_view->effects[0]);
-	asm volatile("" : "+r"(left));
+
 	asm volatile("" : "+r"(front2));
 	int battery_ticks = 0; /* OEM signed comparison, including negative values. */
 	u32 rgb;
@@ -588,7 +588,7 @@ static ssize_t store_frame_hex(struct class *class, struct class_attribute *attr
 	while ((int)((u32)(unsigned long)buffer + (u32)rounded -
 		     (u32)(unsigned long)position) > 0) {
 		int parsed; register u32 *slot asm("x2") = &pixels[i];
-		asm volatile("" : "+r"(slot));
+
 		register const char *scan asm("x0") = position;
 		asm volatile("" : "+r"(scan) : "r"(slot)); parsed = sscanf(scan, "%X", slot);
 		position += 7; asm volatile("" : : "r"(parsed)); /* Pin index after call. */
@@ -667,7 +667,7 @@ static ssize_t store_duration_f1(struct class *class, struct class_attribute *at
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
+
 	value = (int *)(anchor + sizeof(sunxi_led) +
 		__builtin_offsetof(struct trimui_stock_led_state, effects[1].duration));
 	asm volatile("" : "+r"(value));
@@ -683,7 +683,7 @@ static ssize_t store_duration_f2(struct class *class, struct class_attribute *at
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
+
 	value = (int *)(anchor + sizeof(sunxi_led) +
 		__builtin_offsetof(struct trimui_stock_led_state, effects[0].duration));
 	asm volatile("" : "+r"(value));
@@ -765,7 +765,7 @@ static ssize_t store_cycles_f1(struct class *class, struct class_attribute *attr
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
+
 	value = (int *)(anchor + sizeof(sunxi_led) +
 		__builtin_offsetof(struct trimui_stock_led_state, effects[1].cycles));
 	asm volatile("" : "+r"(value));
@@ -781,7 +781,7 @@ static ssize_t store_cycles_f2(struct class *class, struct class_attribute *attr
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
+
 	value = (int *)(anchor + sizeof(sunxi_led) +
 		__builtin_offsetof(struct trimui_stock_led_state, effects[0].cycles));
 	asm volatile("" : "+r"(value));
@@ -1181,7 +1181,7 @@ static ssize_t store_effect_enable(struct class *class, struct class_attribute *
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
+
 	value = (int *)(anchor + sizeof(sunxi_led) +
 		__builtin_offsetof(struct trimui_stock_led_state, effect_enable));
 	asm volatile("" : "+r"(value));
@@ -1229,7 +1229,7 @@ static ssize_t show_anim_frames_hex(struct class *class, struct class_attribute 
 		}
 		position += count;
 		/* Keep the cumulative count live across the next LED-count read. */
-		asm volatile("" : "+r"(count));
+
 		i++;
 	}
 	strcpy(position, "\n");
@@ -1289,7 +1289,7 @@ static __attribute__((no_reorder)) ssize_t store_anim_frames_hex(struct class *c
 			*(u32 *)(clear_base + clear_root) = 0;
 		}
 		sscanf(scan, scan_format, (u32 *)((char *)append + byte_offset));
-		asm volatile("" : "+r"(position));
+
 	}
 	trimui_frame_controls.len += colors / 14;
 	printk("\n anim frames:%d, pixels:%d\n", trimui_frame_controls.len, colors);
@@ -1354,7 +1354,7 @@ static ssize_t store_frames_len(struct class *class, struct class_attribute *att
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
+
 	value = (int *)(anchor + sizeof(sunxi_led) +
 		__builtin_offsetof(struct trimui_stock_led_state, frames_len));
 	asm volatile("" : "+r"(value));
@@ -1370,7 +1370,7 @@ static ssize_t store_frames_fps(struct class *class, struct class_attribute *att
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
+
 	value = (int *)(anchor + sizeof(sunxi_led) +
 		__builtin_offsetof(struct trimui_stock_led_state, frames_fps));
 	asm volatile("" : "+r"(value));
@@ -1453,7 +1453,7 @@ static ssize_t store_frames_override_m_enable(struct class *class, struct class_
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
+
 	value = (int *)(anchor + sizeof(sunxi_led) +
 		__builtin_offsetof(struct trimui_stock_led_state, mask_m));
 	asm volatile("" : "+r"(value));
@@ -1469,7 +1469,7 @@ static ssize_t store_frames_override_f1f2_enable(struct class *class, struct cla
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
+
 	value = (int *)(anchor + sizeof(sunxi_led) +
 		__builtin_offsetof(struct trimui_stock_led_state, mask_f));
 	asm volatile("" : "+r"(value));
@@ -1485,7 +1485,7 @@ static ssize_t store_frames_override_lr_enable(struct class *class, struct class
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
+
 	value = (int *)(anchor + sizeof(sunxi_led) +
 		__builtin_offsetof(struct trimui_stock_led_state, mask_lr));
 	asm volatile("" : "+r"(value));
