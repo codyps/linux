@@ -44,15 +44,16 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		 * target red/blue in w9/w2. The target green register binding still
 		 * preserves the OEM arithmetic schedule without executable assembly.
 		 */
-		register int from_r, from_g, from_b;
-		register int to_r, to_g asm("w8"), to_b;
+		int from_r, from_g, from_b;
+		int to_r, to_b;
+		register int to_g asm("w8");
 		/* OEM loads duration and materializes the divisor before extracting
 		 * either color, then divides after both colors are available. Keeping
-		 * the values in these register-qualified C locals preserves that
-		 * schedule without empty assembly barriers.
+		 * the duration and green target in their required registers preserves
+		 * that schedule without empty assembly barriers.
 		 */
 		register int duration asm("w1") = effect->duration;
-		register int divisor = 16;
+		int divisor = 16;
 		from_r = (previous >> 16) & 255;
 		from_g = (previous >> 8) & 255;
 		from_b = previous & 255;
