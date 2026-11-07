@@ -48,26 +48,20 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		register int from_r asm("w5"), from_g asm("w6"), from_b asm("w3");
 		register int to_r asm("w9"), to_g asm("w8"), to_b asm("w2");
 		/* OEM loads duration and materializes the divisor before extracting
-		 * either color, then divides after both colors are available. These
-		 * register constraints emit no instructions; they preserve its
-		 * arithmetic schedule without changing unchecked frame writes.
+		 * either color, then divides after both colors are available. Keeping
+		 * the values in these register-qualified C locals preserves that
+		 * schedule without empty assembly barriers.
 		 */
 		register int duration asm("w1") = effect->duration;
-		asm volatile("" : "+r"(duration));
 		register int divisor asm("w4") = 16;
-		asm volatile("" : "+r"(divisor));
 		from_r = (previous >> 16) & 255;
 		from_g = (previous >> 8) & 255;
 		from_b = previous & 255;
-		/* OEM extracts all three previous channels before touching target.
-		 * Keep that register schedule without changing memory observations.
-		 */
-		asm volatile("" : "+r"(from_r), "+r"(from_g), "+r"(from_b));
+		/* OEM extracts all three previous channels before touching target. */
 		to_r = (target >> 16) & 255;
 		to_g = (target >> 8) & 255;
 		to_b = target & 255;
 		/* OEM materializes target blue before starting the accumulators. */
-		asm volatile("" : "+r"(to_b));
 		duration /= divisor;
 		int delta_r, delta_g, delta_b;
 		delta_r = to_r - from_r;
