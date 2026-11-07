@@ -144,8 +144,15 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 			effect->duration = 500;
 		if (effect->duration > 8000)
 			effect->duration = 8000;
-		n = effect->duration / 16;
-		ramp = effect->duration / 64;
+		/* OEM uses one post-clamp duration load for both divisions. The
+		 * register roles preserve its arithmetic schedule without code ASM.
+		 */
+		register int duration3 asm("w3") = effect->duration;
+		asm volatile("" : : "r"(duration3));
+		register int divisor3 asm("w8") = 16;
+		asm volatile("" : : "r"(divisor3));
+		n = duration3 / divisor3;
+		ramp = duration3 / 64;
 		start_rgb = trimui_rgb((target >> 20) & 15,
 				(target >> 12) & 15, (target >> 4) & 15);
 		/* Keep OEM's type-3 packed start color materialized here. */
