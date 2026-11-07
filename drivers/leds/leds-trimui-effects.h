@@ -176,9 +176,20 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 			r += delta_r; g += delta_g; b += delta_b;
 		}
 	} else if (type == 4) {
-		n = effect->duration / 16;
+		/* OEM retains the frame count in w1 through this fill path. The
+		 * original declaration that produced its register allocation is
+		 * unknown; this C binding preserves the observed compiler shape.
+		 */
+		register int type4_count asm("w1") = effect->duration / 16;
+		n = type4_count;
 		for (i = 0; i < n; i++)
 			WRITE_ONCE(effect->frames[i], target);
+		/* Stock publishes the type-4 length immediately after the fill,
+		 * then joins the shared cursor reset. The frame stores remain
+		 * unchecked, including when duration is changed concurrently.
+		 */
+		WRITE_ONCE(effect->length, n);
+		goto reset_effect_cursor;
 	} else if (type >= 5 && type <= 7) {
 		/* With the pinned OEM compiler, type 7 reuses the high-clamp
 		 * duration load for this 500-ms test. A concurrent change between
