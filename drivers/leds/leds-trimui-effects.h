@@ -159,6 +159,12 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		 * stores below retain its unchecked duration/frame bound bug.
 		 */
 		int delta_r, delta_g, delta_b;
+		/* OEM forms the mirrored final index before the RGB deltas. A
+		 * signed 32-bit duration divided by 64 cannot overflow when
+		 * doubled and decremented, even if duration changed concurrently.
+		 * The later unchecked frame stores retain OEM's bounds bug.
+		 */
+		int mirror_last = 2 * ramp - 1;
 		delta_r = to_r - start_r;
 		delta_g = to_g - start_g;
 		delta_b = to_b - from_b;
@@ -166,7 +172,7 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		for (i = 0; i < ramp; i++) {
 			u32 rgb = trimui_rgb(r / ramp, g / ramp, b / ramp);
 			effect->frames[i] = rgb;
-			effect->frames[2 * ramp - 1 - i] = rgb;
+			effect->frames[mirror_last - i] = rgb;
 			r += delta_r; g += delta_g; b += delta_b;
 		}
 	} else if (type == 4) {
