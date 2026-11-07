@@ -367,5 +367,17 @@ if [ -n "${CONFIG_KALLSYMS}" ]; then
 	fi
 fi
 
+# The recovered NAND data live in separate C translation units so their
+# references can resolve during the partial and final links. In the stock
+# final ELF these fourteen names are local. Restore that binding only after
+# the kallsyms consistency check; CONFIG_KALLSYMS_ALL builds retain their
+# pre-localization table and must not use this stock-config metadata step.
+if [ "${CONFIG_ARM64}" = y ] && [ "${CONFIG_SUNXI_NAND}" = y ] &&
+   [ -z "${CONFIG_KALLSYMS_ALL}" ]; then
+	info LOCAL vmlinux
+	${OBJCOPY} --localize-symbols=${srctree}/modules/nand/common1/nftl_stock_local_data_symbols.txt vmlinux
+	mksysmap vmlinux System.map
+fi
+
 # We made a new kernel - delete old version file
 rm -f .old_version
