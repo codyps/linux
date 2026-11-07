@@ -68,16 +68,18 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		to_b = target & 255;
 		/* OEM materializes target blue before starting the accumulators. */
 		asm volatile("" : "+r"(to_b));
-		n = duration / divisor;
+		duration /= divisor;
 		int delta_r, delta_g, delta_b;
 		delta_r = to_r - from_r;
 		delta_g = to_g - from_g;
 		delta_b = to_b - from_b;
-		r = n * from_r; g = n * from_g; b = n * from_b;
-		for (i = 0; i < n; i++) {
-			effect->frames[i] = trimui_rgb(r / n, g / n, b / n);
+		r = duration * from_r; g = duration * from_g; b = duration * from_b;
+		for (i = 0; i < duration; i++) {
+			effect->frames[i] = trimui_rgb(r / duration, g / duration, b / duration);
 			r += delta_r; g += delta_g; b += delta_b;
 		}
+		WRITE_ONCE(effect->length, duration);
+		goto reset_effect_cursor;
 	} else if (type == 2) {
 		u32 start_rgb;
 		int delta_r, delta_g, delta_b;
@@ -173,18 +175,21 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 	} else if (type == 4) {
 		n = effect->duration / 16;
 		for (i = 0; i < n; i++)
-			effect->frames[i] = target;
+			WRITE_ONCE(effect->frames[i], target);
 	} else if (type >= 5 && type <= 7) {
-		if (effect->duration > 8000)
-			effect->duration = 8000;
 		/* With the pinned OEM compiler, type 7 reuses the high-clamp
 		 * duration load for this 500-ms test. A concurrent change between
 		 * the tests is invisible here, then the frame count rereads memory.
 		 * TODO: synchronize duration and use one consistent snapshot in a
 		 * future bug fix; a volatile reread here changes shipped behavior.
 		 */
-		if (type == 7 && effect->duration < 500)
-			effect->duration = 500;
+		int high_duration = effect->duration;
+		if (high_duration > 8000)
+			effect->duration = 8000;
+		if (high_duration < 500) {
+			if (type == 7)
+				effect->duration = 500;
+		}
 		/* Stock rereads duration for blink2 after the earlier clamp; blink3
 		 * uses its prior value. Keep the asymmetric observation order.
 		 */
@@ -221,6 +226,8 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 	 * Keep those distinct writes observable in that order.
 	 */
 	WRITE_ONCE(effect->length, n);
+reset_effect_cursor:
+	asm volatile("" : : "r"(effect));
 	WRITE_ONCE(effect->index, 0);
 	WRITE_ONCE(effect->active_cycles, 0);
 }
