@@ -129,7 +129,7 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		 * the target channels in w10/w11/w2 without fixed-register bindings;
 		 * the paired-effect caller historically retains pointers in x14.
 		 */
-		register int to_r, to_g, to_b;
+		int to_r, to_g, to_b;
 
 		/* OEM has an independent type-3 clamp, fill and ramp path. The
 		 * same two loops retain its initial writes and mirrored ramp order.
@@ -141,7 +141,7 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		/* OEM uses one post-clamp duration load for both divisions. The
 		 * compiler keeps its arithmetic schedule without a fixed register.
 		 */
-		register int duration3 = effect->duration;
+		int duration3 = effect->duration;
 		asm volatile("" : : "r"(duration3));
 		register int divisor3 asm("w8") = 16;
 		asm volatile("" : : "r"(divisor3));
