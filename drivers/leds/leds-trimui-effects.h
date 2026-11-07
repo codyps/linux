@@ -125,11 +125,11 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		 * This is a C register role; it adds no executable assembly.
 		 */
 		register int start_g asm("w6");
-		/* OEM leaves x14/x15 intact across this generator path. Keep
-		 * the target channels in its w10/w11/w2 register schedule; the
-		 * paired-effect caller historically retains pointers in x14.
+		/* OEM leaves x14/x15 intact across this generator path. GCC keeps
+		 * the target channels in w10/w11/w2 without fixed-register bindings;
+		 * the paired-effect caller historically retains pointers in x14.
 		 */
-		register int to_r asm("w10"), to_g asm("w11"), to_b asm("w2");
+		register int to_r, to_g, to_b;
 
 		/* OEM has an independent type-3 clamp, fill and ramp path. The
 		 * same two loops retain its initial writes and mirrored ramp order.
@@ -139,9 +139,9 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		if (effect->duration > 8000)
 			effect->duration = 8000;
 		/* OEM uses one post-clamp duration load for both divisions. The
-		 * register roles preserve its arithmetic schedule without code ASM.
+		 * compiler keeps its arithmetic schedule without a fixed register.
 		 */
-		register int duration3 asm("w3") = effect->duration;
+		register int duration3 = effect->duration;
 		asm volatile("" : : "r"(duration3));
 		register int divisor3 asm("w8") = 16;
 		asm volatile("" : : "r"(divisor3));
