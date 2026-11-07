@@ -40,20 +40,19 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 	 * a separate fix; preserve the shipped writes during reconstruction.
 	 */
 	if (type == 1) {
-		/* Stock keeps the source channels in w5/w6/w3 and the target
-		 * channels in w9/w8/w2 while forming the ramp deltas. These C
-		 * register roles reproduce its arithmetic schedule without adding
-		 * executable assembly.
+		/* GCC naturally keeps the source channels in w5/w6/w3 and the
+		 * target red/blue in w9/w2. The target green register binding still
+		 * preserves the OEM arithmetic schedule without executable assembly.
 		 */
-		register int from_r asm("w5"), from_g asm("w6"), from_b asm("w3");
-		register int to_r asm("w9"), to_g asm("w8"), to_b asm("w2");
+		register int from_r, from_g, from_b;
+		register int to_r, to_g asm("w8"), to_b;
 		/* OEM loads duration and materializes the divisor before extracting
 		 * either color, then divides after both colors are available. Keeping
 		 * the values in these register-qualified C locals preserves that
 		 * schedule without empty assembly barriers.
 		 */
 		register int duration asm("w1") = effect->duration;
-		register int divisor asm("w4") = 16;
+		register int divisor = 16;
 		from_r = (previous >> 16) & 255;
 		from_g = (previous >> 8) & 255;
 		from_b = previous & 255;
