@@ -119,12 +119,7 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		return;
 	} else if (type == 3) {
 		u32 start_rgb;
-		/* Match OEM's red accumulator source in w5 during type-3 ramp. */
-		register int start_r asm("w5");
-		/* OEM extracts the packed green nibble into w6 before the ramp.
-		 * This is a C register role; it adds no executable assembly.
-		 */
-		register int start_g asm("w6");
+		int start_r, start_g;
 		/* OEM leaves x14/x15 intact across this generator path. GCC keeps
 		 * the target channels in w10/w11/w2 without fixed-register bindings;
 		 * the paired-effect caller historically retains pointers in x14.
@@ -149,11 +144,12 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		ramp = duration3 / 64;
 		start_rgb = trimui_rgb((target >> 20) & 15,
 				(target >> 12) & 15, (target >> 4) & 15);
-		/* Keep OEM's type-3 packed start color materialized here. */
-		asm volatile("" : "+r"(start_rgb));
 		for (i = 0; i < n; i++)
 			effect->frames[i] = start_rgb;
-		start_r = (start_rgb >> 16) & 255;
+		/* This packed color has four bits per channel. Keep that range in
+		 * C so the red extraction needs no redundant byte-wide mask.
+		 */
+		start_r = (start_rgb >> 16) & 15;
 		start_g = (start_rgb >> 8) & 15;
 		from_b = start_rgb & 255;
 		to_r = (target >> 16) & 255;
