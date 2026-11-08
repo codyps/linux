@@ -9910,15 +9910,10 @@ extern int toshiba_vender_set_param(struct samsung_set_chip *chip,
 /* Stock keeps values/addresses/count/result at FP+0x38/+0x30/+0x2c/+0x28,
  * matching its exit path; the normal stack-protector layout reverses them. */
 #ifdef TRIMUI_NFTL_TOSHIBA_RETRY_GCC53_BUILD
-/* Keep the widened retry index in x0 and the table base in x1. This small
- * arithmetic step reproduces stock code generation; the index remains
- * unchecked and may read beyond the selected five-byte row. */
-#define TOSHIBA_RETRY_VALUES(TABLE) ({ \
-	register unsigned long n asm("x0") = (unsigned long)chip->retry * 5; \
-	register unsigned char *b asm("x1") = (TABLE); \
-	asm("add %0, %0, %1" : "+r"(n) : "r"(b)); \
-	(unsigned char *)n; \
-})
+/* Widen the retry index before multiplying by the five-byte row size.
+ * OEM leaves the index unchecked and can read beyond the selected row;
+ * retain that bug until a separate corrective change. */
+#define TOSHIBA_RETRY_VALUES(TABLE) ((TABLE) + (unsigned long)chip->retry * 5)
 __attribute__((optimize("-fno-stack-protector")))
 int toshiba_set_readretry(struct samsung_set_chip *chip)
 {
