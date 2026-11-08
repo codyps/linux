@@ -28,7 +28,7 @@ static const struct {
  * Stock state starts at ffffff8008bf47d0; effects are F2,F1,R,L,M in memory.
  * TODO: split and bound these buffers in a separate corrective change.
  */
-static struct trimui_stock_led_state {
+struct trimui_stock_led_state {
 	int mask_lr, mask_f, mask_m, frames_enable;
 	int frames_cycles, frames_fps, frames_len, effect_enable;
 	struct trimui_led_effect effects[5];
@@ -40,7 +40,42 @@ static struct trimui_stock_led_state {
 	u32 wire_frame[128];
 	u8 animation_alignment[12];
 	u32 anim_frames[14400];
-} trimui_led_state;
+};
+
+static int trimui_mask_lr __attribute__((used, no_reorder, aligned(4)));
+static int trimui_mask_f __attribute__((used, no_reorder, aligned(4)));
+static int trimui_mask_m __attribute__((used, no_reorder, aligned(4)));
+static int trimui_frames_enable __attribute__((used, no_reorder, aligned(4)));
+static int trimui_frames_cycles __attribute__((used, no_reorder, aligned(4)));
+static int trimui_frames_fps __attribute__((used, no_reorder, aligned(4)));
+static int trimui_frames_len __attribute__((used, no_reorder, aligned(4)));
+static int trimui_effect_enable __attribute__((used, no_reorder, aligned(4)));
+static struct trimui_led_effect trimui_effect_f2 __attribute__((used, no_reorder, aligned(4)));
+static struct trimui_led_effect trimui_effect_f1 __attribute__((used, no_reorder, aligned(4)));
+static struct trimui_led_effect trimui_effect_r __attribute__((used, no_reorder, aligned(4)));
+static struct trimui_led_effect trimui_effect_l __attribute__((used, no_reorder, aligned(4)));
+static struct trimui_led_effect trimui_effect_m __attribute__((used, no_reorder, aligned(4)));
+static int trimui_mute_requested __attribute__((used, no_reorder, aligned(4)));
+static u32 trimui_frame[128] __attribute__((used, no_reorder, aligned(4)));
+static int trimui_low_battery __attribute__((used, no_reorder, aligned(4)));
+static int trimui_frame_index __attribute__((used, no_reorder, aligned(4)));
+static int trimui_cycles_left __attribute__((used, no_reorder, aligned(4)));
+static int trimui_motor_voltage __attribute__((used, no_reorder, aligned(4)));
+static struct regulator * trimui_motor_regulator __attribute__((used, no_reorder, aligned(8)));
+static int trimui_suspended __attribute__((used, no_reorder, aligned(4)));
+/* Recovered stock lockdep-disabled layout: five empty key objects have
+ * the same address as the wire buffer. These are real GNU C objects, not
+ * aliases onto another allocation. Original declaration spelling is unknown.
+ */
+_Static_assert(sizeof(struct lock_class_key) == 0, "stock empty lock keys");
+static struct lock_class_key trimui_wait_key __attribute__((used, no_reorder));
+static struct lock_class_key trimui_main_key __attribute__((used, no_reorder));
+static struct lock_class_key trimui_anim_key __attribute__((used, no_reorder));
+static struct lock_class_key trimui_motor_key __attribute__((used, no_reorder));
+static struct lock_class_key trimui_speaker_key __attribute__((used, no_reorder));
+static u32 trimui_wire_frame[128] __attribute__((used, no_reorder, aligned(4)));
+static u8 trimui_animation_alignment[12] __attribute__((used, no_reorder, aligned(1)));
+static u32 trimui_anim_frames[14400] __attribute__((used, no_reorder, aligned(4)));
 
 /* Config scalars live in the typed trimui_config object. */
 /* Stock has 32 scale pointers although the TG3040 device tree uses 23 LEDs.
@@ -56,69 +91,6 @@ static unsigned int * const trimui_scale_by_led[32] = {
 	&trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m,
 	&trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m, &trimui_scale_m,
 };
-#define trimui_mask_lr trimui_led_state.mask_lr
-#define trimui_mask_f trimui_led_state.mask_f
-#define trimui_mask_m trimui_led_state.mask_m
-#define trimui_frames_enable trimui_led_state.frames_enable
-#define trimui_frames_cycles trimui_led_state.frames_cycles
-#define trimui_frames_fps trimui_led_state.frames_fps
-#define trimui_frames_len trimui_led_state.frames_len
-#define trimui_effect_enable trimui_led_state.effect_enable
-#define trimui_effect_f2 trimui_led_state.effects[0]
-#define trimui_effect_f1 trimui_led_state.effects[1]
-#define trimui_effect_r trimui_led_state.effects[2]
-#define trimui_effect_l trimui_led_state.effects[3]
-#define trimui_effect_m trimui_led_state.effects[4]
-#define trimui_mute_requested trimui_led_state.mute
-#define trimui_frame trimui_led_state.frame
-#define trimui_low_battery trimui_led_state.low_battery
-#define trimui_frame_index trimui_led_state.frame_index
-#define trimui_cycles_left trimui_led_state.cycles_left
-#define trimui_motor_voltage trimui_led_state.motor_voltage
-#define trimui_motor_regulator trimui_led_state.motor_regulator
-#define trimui_suspended trimui_led_state.suspended
-#define trimui_wire_frame trimui_led_state.wire_frame
-#define trimui_anim_frames trimui_led_state.anim_frames
-/* Stock forms one address below the left effect, then retains the left
- * pointer across both paired setters' parser calls. This is a view only. */
-struct trimui_effect_pair_view {
-	u8 before_left[0xb88];
-	struct trimui_led_effect left;
-};
-_Static_assert(__builtin_offsetof(struct trimui_stock_led_state, effects[3]) ==
-	       0x21f8 + __builtin_offsetof(struct trimui_effect_pair_view, left),
-	       "paired LED effect root");
-_Static_assert(sizeof(struct trimui_effect_pair_view) == 0x1aa8,
-	       "paired LED effect view size");
-extern struct trimui_effect_pair_view trimui_effect_pair
-	__asm__("trimui_led_state+0x21f8");
-/* The transfer view retains the OEM field addresses without allocating
- * separate storage. Its original C declaration remains unknown. The seven
- * adjacent configuration scalars now have one bounded C object above.
- */
-struct trimui_transfer_state_view {
- u8 prefix[0x7cc]; u8 rgb[512]; int low_battery;
- u8 unobserved[0x18]; int suspended; u32 wire[128];
-};
-_Static_assert(sizeof(struct trimui_led_config) == 28,
-	       "LED configuration size");
-_Static_assert(__builtin_offsetof(struct trimui_led_config, enable) == 16,
-	       "LED configuration enable offset");
-_Static_assert(__builtin_offsetof(struct trimui_led_config, count) == 20,
-	       "LED configuration count offset");
-_Static_assert(__builtin_offsetof(struct trimui_led_config, debug) == 24,
-	       "LED configuration debug offset");
-_Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
-				 effects[4].frames[462]) == 0x43f8,
-	       "transfer LED view root");
-_Static_assert(__builtin_offsetof(struct trimui_stock_led_state, low_battery) ==
-	       0x43f8 + __builtin_offsetof(struct trimui_transfer_state_view,
-				   low_battery), "transfer low-battery field");
-_Static_assert(__builtin_offsetof(struct trimui_stock_led_state, wire_frame) ==
-	       0x43f8 + __builtin_offsetof(struct trimui_transfer_state_view, wire),
-	       "transfer wire-frame field");
-extern struct trimui_transfer_state_view trimui_transfer_state
-	__asm__("trimui_led_state+0x43f8");
 #define trimui_transfer_config trimui_config
 /* Stock retains two distinct stores, including on negative capacity errors.
  * Keep its out-of-line helper and the same state view used by frame output.
@@ -127,9 +99,9 @@ extern struct trimui_transfer_state_view trimui_transfer_state
 static noinline void check_battery(void)
 {
 	if (trimui_axp2202_get_bat_cap() < 16)
-		trimui_transfer_state.low_battery = 1;
+		trimui_low_battery = 1;
 	else
-		trimui_transfer_state.low_battery = 0;
+		trimui_low_battery = 0;
 }
 
 static void trimui_led_power_enable(int enable)
@@ -155,7 +127,6 @@ static void commit_static_frame(void)
  unsigned int i,count,scale,red,green; int low,j; s32 blue;
  unsigned long flags,diff_time;
  struct timeval start,end;
- struct trimui_transfer_state_view *state;
  const volatile u8 *src;
  /* OEM branches on the pixel group before its single wire-frame store.
   * A volatile view keeps that branch in this compiler and preserves the
@@ -163,13 +134,12 @@ static void commit_static_frame(void)
   * TODO: bound the count in a separate behavior change. */
  volatile u32 *out;
  mutex_lock(access);
- state=RELOC_HIDE(&trimui_transfer_state,0);
  /* OEM starts one pixel ahead, then reads this pixel with negative byte
   * offsets. Preserve that address shape and the unchecked count. */
- src=state->rgb+4; out=state->wire;
+ src=((u8 *)trimui_frame)+4; out=trimui_wire_frame;
  /* Stock snapshots these values after locking, before conversion. */
  count=READ_ONCE(trimui_transfer_config.count);
- low=READ_ONCE(state->low_battery);
+ low=READ_ONCE(trimui_low_battery);
  /* Stock trusts the count beyond both arrays and its 32-entry scale table.
   * TODO: bound it in a separate behavior change. */
  for(i=0;i<count;i++) {
@@ -186,8 +156,8 @@ static void commit_static_frame(void)
   else out[i]=((green<<8)&0xff0000)|(red&0xff00)|(blue>>8);
   src+=4;
  }
- if(state->suspended || !trimui_transfer_config.enable)
-  memset(state->wire,0,sizeof(state->wire));
+ if(trimui_suspended || !trimui_transfer_config.enable)
+  memset(trimui_wire_frame,0,sizeof(trimui_wire_frame));
  /* Stock reloads the device here while retaining the initial mutex. */
  led=READ_ONCE(sunxi_led);
  do_gettimeofday(&start);
@@ -196,7 +166,7 @@ static void commit_static_frame(void)
  led->length=count;
  for(j=0;(unsigned int)j<READ_ONCE(led->length);j++) { /* OEM signed wrap past INT_MAX can address before wire. */
   u32 *dest=READ_ONCE(led->data);
-  u32 pixel=READ_ONCE(state->wire[j]);
+  u32 pixel=READ_ONCE(trimui_wire_frame[j]);
   WRITE_ONCE(dest[j],pixel);
  }
  spin_unlock_irqrestore(&led->lock,flags);
@@ -215,10 +185,9 @@ static void commit_static_frame(void)
 
 static int trimui_ledc_run_thread(void *unused)
 {
-	struct trimui_stock_led_state *led_state_view = RELOC_HIDE(&trimui_led_state,0);
 	/* Startup roots only; recompute F2 after caller-clobbering services. */
-	register struct trimui_led_effect *left asm("x22") = &(led_state_view->effects[3]);
-	register struct trimui_led_effect *front2 asm("x18") = &(led_state_view->effects[0]);
+	register struct trimui_led_effect *left asm("x22") = &(trimui_effect_l);
+	register struct trimui_led_effect *front2 asm("x18") = &(trimui_effect_f2);
 
 	asm volatile("" : "+r"(front2));
 	int battery_ticks = 0; /* OEM signed comparison, including negative values. */
@@ -235,49 +204,49 @@ static int trimui_ledc_run_thread(void *unused)
 	 * readers can observe these intermediate values during startup.
 	 */
 #define INITIAL_CYCLES(e) WRITE_ONCE((e).cycles, 5)
-	INITIAL_CYCLES((led_state_view->effects[4]));
+	INITIAL_CYCLES((trimui_effect_m));
 	INITIAL_CYCLES(trimui_effect_r);
-	INITIAL_CYCLES((led_state_view->effects[3]));
-	INITIAL_CYCLES((led_state_view->effects[0]));
-	INITIAL_CYCLES((led_state_view->effects[1]));
+	INITIAL_CYCLES((trimui_effect_l));
+	INITIAL_CYCLES((trimui_effect_f2));
+	INITIAL_CYCLES((trimui_effect_f1));
 #undef INITIAL_CYCLES
 	/* Stock commits type/duration together as one little-endian 64-bit
 	 * store.  Keep that width and the M,R,L,F2,F1 publication sequence.
 	 */
 #define INITIAL_SHAPE(e) WRITE_ONCE(*(u64 *)&(e).type, ((u64)2000 << 32) | 2)
-	INITIAL_SHAPE((led_state_view->effects[4]));
+	INITIAL_SHAPE((trimui_effect_m));
 	INITIAL_SHAPE(trimui_effect_r);
-	INITIAL_SHAPE((led_state_view->effects[3]));
-	WRITE_ONCE((led_state_view->effects[4]).target_rgb, boot_white);
+	INITIAL_SHAPE((trimui_effect_l));
+	WRITE_ONCE((trimui_effect_m).target_rgb, boot_white);
 	WRITE_ONCE(trimui_effect_r.target_rgb, boot_white);
-	WRITE_ONCE((led_state_view->effects[3]).target_rgb, boot_white);
-	INITIAL_SHAPE((led_state_view->effects[0]));
-	WRITE_ONCE((led_state_view->effects[0]).target_rgb, boot_orange);
-	INITIAL_SHAPE((led_state_view->effects[1]));
-	WRITE_ONCE((led_state_view->effects[1]).target_rgb, boot_orange);
+	WRITE_ONCE((trimui_effect_l).target_rgb, boot_white);
+	INITIAL_SHAPE((trimui_effect_f2));
+	WRITE_ONCE((trimui_effect_f2).target_rgb, boot_orange);
+	INITIAL_SHAPE((trimui_effect_f1));
+	WRITE_ONCE((trimui_effect_f1).target_rgb, boot_orange);
 #undef INITIAL_SHAPE
 	/* The OEM generator receives these fixed boot colors.  It does not
 	 * reread target_rgb between initialization and each call.
 	 */
 	gen_effect(left, 2, boot_white, boot_white);
 	gen_effect(&trimui_effect_r, 2, boot_white, boot_white);
-	gen_effect(&(led_state_view->effects[1]), 2, boot_orange, boot_orange);
+	gen_effect(&(trimui_effect_f1), 2, boot_orange, boot_orange);
 	gen_effect(front2, 2, boot_orange, boot_orange);
-	gen_effect(&(led_state_view->effects[4]), 2, boot_white, boot_white);
+	gen_effect(&(trimui_effect_m), 2, boot_white, boot_white);
 	/* Keep the OEM's odd reset order.  A concurrent control read can see
 	 * these partially reset effects; do not collapse this into a loop.
 	 */
 	WRITE_ONCE(trimui_effect_r.index, 0);
-	WRITE_ONCE((led_state_view->effects[3]).active_cycles, READ_ONCE((led_state_view->effects[3]).cycles));
+	WRITE_ONCE((trimui_effect_l).active_cycles, READ_ONCE((trimui_effect_l).cycles));
 	WRITE_ONCE(trimui_effect_r.active_cycles, READ_ONCE(trimui_effect_r.cycles));
-	WRITE_ONCE((led_state_view->effects[1]).active_cycles, READ_ONCE((led_state_view->effects[1]).cycles));
-	WRITE_ONCE((led_state_view->effects[0]).active_cycles, READ_ONCE((led_state_view->effects[0]).cycles));
-	rgb = READ_ONCE((led_state_view->effects[4]).cycles);
-	WRITE_ONCE((led_state_view->effects[3]).index, 0);
-	WRITE_ONCE((led_state_view->effects[4]).index, 0);
-	WRITE_ONCE((led_state_view->effects[0]).index, 0);
-	WRITE_ONCE((led_state_view->effects[1]).index, 0);
-	WRITE_ONCE((led_state_view->effects[4]).active_cycles, rgb);
+	WRITE_ONCE((trimui_effect_f1).active_cycles, READ_ONCE((trimui_effect_f1).cycles));
+	WRITE_ONCE((trimui_effect_f2).active_cycles, READ_ONCE((trimui_effect_f2).cycles));
+	rgb = READ_ONCE((trimui_effect_m).cycles);
+	WRITE_ONCE((trimui_effect_l).index, 0);
+	WRITE_ONCE((trimui_effect_m).index, 0);
+	WRITE_ONCE((trimui_effect_f2).index, 0);
+	WRITE_ONCE((trimui_effect_f1).index, 0);
+	WRITE_ONCE((trimui_effect_m).active_cycles, rgb);
 	while (!kthread_should_stop()) {
 		if (trimui_effect_enable) {
 			if (is_effect_actived(left)) {
@@ -549,7 +518,7 @@ static ssize_t show_frame(struct class *class, struct class_attribute *attr, cha
 	register int size asm("w19") = trimui_led_count;
 	/* Keep both OEM roots live before shifting the signed count. GCC emits
 	 * the same address and count order without hard-coded ADRP/ADD text. */
-	source = (u8 *)RELOC_HIDE(&trimui_transfer_state, 0) + 0x7cc;
+	source = (u8 *)trimui_frame;
 	asm volatile("" : : "r"(source), "r"(size));
 	size <<= 2;
 	memcpy(buffer, source, size);
@@ -561,7 +530,7 @@ static ssize_t store_frame(struct class *class, struct class_attribute *attr, co
 	/* Stock compares count with the buffer address, not its size.
 	 * TODO: use sizeof(frame) in a separate corrective patch. */
 	/* Integer address form keeps the OEM frame/count save order. */
-	u8 *frame = (u8 *)((unsigned long)&trimui_transfer_state + 0x7cc);
+	u8 *frame = (u8 *)trimui_frame;
 	if (count < (unsigned long)frame)
 		memcpy(frame, buffer, count);
 	else
@@ -577,7 +546,7 @@ static ssize_t store_frame_hex(struct class *class, struct class_attribute *attr
 	register u32 *pixels asm("x20");
 	/* Integer root preserves the OEM frame address and x20 role.
 	 * It also retains GCC's separate page and 0x7cc ADDs. */
-	pixels = (u32 *)((unsigned long)&trimui_transfer_state + 0x7cc);
+	pixels = trimui_frame;
 	/* Keep this line count for later OEM __LINE__ diagnostics. */
 	if (bytes > (int)trimui_led_count * 7)
 		bytes = trimui_led_count * 7;
@@ -615,13 +584,10 @@ _Static_assert(sizeof(sunxi_led) +
 	       "middle-effect address root");
 static ssize_t store_duration_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[3].frames[342];
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, effects[4].duration) - 0x3300);
+	value = &trimui_effect_m.duration;
 	asm volatile("" : "+r"(value));
 	saved_count = count;
 	asm volatile("" : "+r"(saved_count));
@@ -631,13 +597,10 @@ static ssize_t store_duration_m(struct class *class, struct class_attribute *att
 
 static ssize_t store_duration_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[2].frames[222];
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, effects[3].duration) - 0x2200);
+	value = &trimui_effect_l.duration;
 	asm volatile("" : "+r"(value));
 	saved_count = count;
 	asm volatile("" : "+r"(saved_count));
@@ -647,13 +610,10 @@ static ssize_t store_duration_l(struct class *class, struct class_attribute *att
 
 static ssize_t store_duration_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[1].frames[102];
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, effects[2].duration) - 0x1100);
+	value = &trimui_effect_r.duration;
 	asm volatile("" : "+r"(value));
 	saved_count = count;
 	asm volatile("" : "+r"(saved_count));
@@ -663,13 +623,11 @@ static ssize_t store_duration_r(struct class *class, struct class_attribute *att
 
 static ssize_t store_duration_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&sunxi_led;
 	int *value;
 	size_t saved_count;
 
 
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, effects[1].duration));
+	value = &trimui_effect_f1.duration;
 
 	saved_count = count;
 
@@ -679,13 +637,11 @@ static ssize_t store_duration_f1(struct class *class, struct class_attribute *at
 
 static ssize_t store_duration_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&sunxi_led;
 	int *value;
 	size_t saved_count;
 
 
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, effects[0].duration));
+	value = &trimui_effect_f2.duration;
 
 	saved_count = count;
 
@@ -695,13 +651,10 @@ static ssize_t store_duration_f2(struct class *class, struct class_attribute *at
 
 static ssize_t store_duration(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	struct trimui_effect_pair_view *pair;
 	struct trimui_led_effect *left;
 
 	/* Keep the C pair root and parser target live before saving count. */
-	pair = &trimui_effect_pair;
-	asm volatile("" : "+r"(pair));
-	left = &pair->left;
+	left = &trimui_effect_l;
 	asm volatile("" : "+r"(count) : "r"(&left->duration));
 
 	/* OEM copies the stale value to the right on parse failure too.
@@ -713,13 +666,10 @@ static ssize_t store_duration(struct class *class, struct class_attribute *attr,
 
 static ssize_t store_cycles_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[3].frames[342];
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, effects[4].cycles) - 0x3300);
+	value = &trimui_effect_m.cycles;
 	asm volatile("" : "+r"(value));
 	saved_count = count;
 	asm volatile("" : "+r"(saved_count));
@@ -729,13 +679,10 @@ static ssize_t store_cycles_m(struct class *class, struct class_attribute *attr,
 
 static ssize_t store_cycles_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[2].frames[222];
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, effects[3].cycles) - 0x2200);
+	value = &trimui_effect_l.cycles;
 	asm volatile("" : "+r"(value));
 	saved_count = count;
 	asm volatile("" : "+r"(saved_count));
@@ -745,13 +692,10 @@ static ssize_t store_cycles_l(struct class *class, struct class_attribute *attr,
 
 static ssize_t store_cycles_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&trimui_led_state.effects[1].frames[102];
 	int *value;
 	size_t saved_count;
 
-	asm volatile("" : "+r"(anchor));
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, effects[2].cycles) - 0x1100);
+	value = &trimui_effect_r.cycles;
 	asm volatile("" : "+r"(value));
 	saved_count = count;
 	asm volatile("" : "+r"(saved_count));
@@ -761,13 +705,11 @@ static ssize_t store_cycles_r(struct class *class, struct class_attribute *attr,
 
 static ssize_t store_cycles_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&sunxi_led;
 	int *value;
 	size_t saved_count;
 
 
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, effects[1].cycles));
+	value = &trimui_effect_f1.cycles;
 
 	saved_count = count;
 
@@ -777,13 +719,11 @@ static ssize_t store_cycles_f1(struct class *class, struct class_attribute *attr
 
 static ssize_t store_cycles_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&sunxi_led;
 	int *value;
 	size_t saved_count;
 
 
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, effects[0].cycles));
+	value = &trimui_effect_f2.cycles;
 
 	saved_count = count;
 
@@ -793,13 +733,10 @@ static ssize_t store_cycles_f2(struct class *class, struct class_attribute *attr
 
 static ssize_t store_cycles(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	struct trimui_effect_pair_view *pair;
 	struct trimui_led_effect *left;
 
 	/* Match the duration setter's C root and callback argument order. */
-	pair = &trimui_effect_pair;
-	asm volatile("" : "+r"(pair));
-	left = &pair->left;
+	left = &trimui_effect_l;
 	asm volatile("" : "+r"(count) : "r"(&left->cycles));
 
 	/* OEM copies the stale value to the right on parse failure too.
@@ -895,28 +832,21 @@ static ssize_t show_effect_rgb_hex_lr(struct class *class, struct class_attribut
 	return dump_rgb_hex(buffer, trimui_effect_l.target_rgb);
 }
 
-/* These are C views of the two target_rgb fields. Stock uses independent
- * ADRP/STR roots for the two stores, whereas ordinary field expressions make
- * GCC reuse one aggregate root. Bind the declarations to the verified field
- * addresses without defining extra storage or handwritten instructions.
- * TODO: recover lawful separate C objects that give GCC these roots directly.
- */
+
 _Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
 				 effects[3].target_rgb) == 0x2d9c,
 	       "left RGB target offset");
 _Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
 				 effects[2].target_rgb) == 0x1e7c,
 	       "right RGB target offset");
-extern u32 trimui_target_l __asm__("trimui_led_state+0x2d9c");
-extern u32 trimui_target_r __asm__("trimui_led_state+0x1e7c");
 static ssize_t store_effect_rgb_hex_lr(struct class *class,struct class_attribute *attr,const char *buffer,size_t count)
 {
  u32 rgb=get_rgb_hex(class, buffer);
  /* Stock publishes left before right without synchronization, even after
   * malformed input produced zero. TODO: reject invalid input and protect
   * the pair only in a separate behavior change. */
- WRITE_ONCE(trimui_target_l,rgb);
- WRITE_ONCE(trimui_target_r,rgb);
+ WRITE_ONCE(trimui_effect_l.target_rgb,rgb);
+ WRITE_ONCE(trimui_effect_r.target_rgb,rgb);
  return count;
 }
 
@@ -927,17 +857,12 @@ static ssize_t store_effect_rgb_hex_lr(struct class *class,struct class_attribut
 #define TRIMUI_EFFECT_AT(root, offset) \
 	((struct trimui_led_effect *)((root) + (offset)))
 
-/* The OEM forms the effect-M address from the page containing this byte.
- * Keep the address schedule; all parser, generator, and state effects below
- * remain in C. The alias does not allocate storage. */
+
 _Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
 				 effects[2].frames[620]) == 0x2830,
 	       "middle LED page root");
-extern unsigned char trimui_m_page __asm__("trimui_led_state+0x2830");
 static ssize_t store_effect_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	register unsigned char *page asm("x19");
-	register unsigned char *base asm("x20");
 	register size_t saved asm("x21") = count;
 	register struct trimui_led_effect *genptr asm("x14");
 	register struct trimui_led_effect *callptr asm("x0");
@@ -945,18 +870,14 @@ static ssize_t store_effect_m(struct class *class, struct class_attribute *attr,
 	int parsed_type;
 	u32 current_color, target_color;
 
-	base = (unsigned char *)&trimui_m_page + 0xac8;
-	page = (unsigned char *)&trimui_m_page;
-	effect = (struct trimui_led_effect *)(base + 0x9a8);
+	effect = &trimui_effect_m;
 	/* OEM ignores parse failure, then clamps any type above 7. */
 	kstrtoint(buffer, 0, (int *)&effect->type);
 	if ((unsigned int)effect->type > 7)
 		effect->type = 0;
-	page += 0xac8;
-	asm volatile("" : "+r"(page));
-	effect = (struct trimui_led_effect *)(page + 0x9a8);
+	effect = &trimui_effect_m;
 	/* Retain OEM's separate x14 address calculation for the generator. */
-	genptr = (struct trimui_led_effect *)(page + 0x9a8);
+	genptr = &trimui_effect_m;
 	asm volatile("" : "+r"(genptr));
 	callptr = genptr;
 	asm volatile("" : "+r"(callptr));
@@ -973,11 +894,8 @@ static ssize_t store_effect_m(struct class *class, struct class_attribute *attr,
 _Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
 				 effects[1].frames[564]) == 0x1830,
 	       "left LED page root");
-extern unsigned char trimui_l_page __asm__("trimui_led_state+0x1830");
 static ssize_t store_effect_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	register unsigned char *page asm("x19");
-	register unsigned char *base asm("x20");
 	register size_t saved asm("x21") = count;
 	register struct trimui_led_effect *genptr asm("x14");
 	register struct trimui_led_effect *callptr asm("x0");
@@ -985,17 +903,13 @@ static ssize_t store_effect_l(struct class *class, struct class_attribute *attr,
 	int parsed_type;
 	u32 current_color, target_color;
 
-	base = (unsigned char *)&trimui_l_page + 0x9c8;
-	page = (unsigned char *)&trimui_l_page;
-	effect = (struct trimui_led_effect *)(base + 0xb88);
+	effect = &trimui_effect_l;
 	/* OEM ignores parse failure, then clamps any type above 7. */
 	kstrtoint(buffer, 0, (int *)&effect->type);
 	if ((unsigned int)effect->type > 7)
 		effect->type = 0;
-	page += 0x9c8;
-	asm volatile("" : "+r"(page));
-	effect = (struct trimui_led_effect *)(page + 0xb88);
-	genptr = (struct trimui_led_effect *)(page + 0xb88);
+	effect = &trimui_effect_l;
+	genptr = &trimui_effect_l;
 	asm volatile("" : "+r"(genptr));
 	callptr = genptr;
 	asm volatile("" : "+r"(callptr));
@@ -1011,11 +925,8 @@ static ssize_t store_effect_l(struct class *class, struct class_attribute *attr,
 _Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
 				 effects[0].frames[508]) == 0x830,
 	       "right LED page root");
-extern unsigned char trimui_r_page __asm__("trimui_led_state+0x830");
 static ssize_t store_effect_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	register unsigned char *page asm("x19");
-	register unsigned char *base asm("x20");
 	register size_t saved asm("x21") = count;
 	register struct trimui_led_effect *genptr asm("x14");
 	register struct trimui_led_effect *callptr asm("x0");
@@ -1023,17 +934,13 @@ static ssize_t store_effect_r(struct class *class, struct class_attribute *attr,
 	int parsed_type;
 	u32 current_color, target_color;
 
-	base = (unsigned char *)&trimui_r_page + 0x8c8;
-	page = (unsigned char *)&trimui_r_page;
-	effect = (struct trimui_led_effect *)(base + 0xd68);
+	effect = &trimui_effect_r;
 	/* OEM ignores parse failure, then clamps any type above 7. */
 	kstrtoint(buffer, 0, (int *)&effect->type);
 	if ((unsigned int)effect->type > 7)
 		effect->type = 0;
-	page += 0x8c8;
-	asm volatile("" : "+r"(page));
-	effect = (struct trimui_led_effect *)(page + 0xd68);
-	genptr = (struct trimui_led_effect *)(page + 0xd68);
+	effect = &trimui_effect_r;
+	genptr = &trimui_effect_r;
 	asm volatile("" : "+r"(genptr));
 	callptr = genptr;
 	asm volatile("" : "+r"(callptr));
@@ -1049,14 +956,12 @@ static ssize_t store_effect_r(struct class *class, struct class_attribute *attr,
 
 static ssize_t store_effect_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	register unsigned char *root asm("x20") = (unsigned char *)&sunxi_led;
-	struct trimui_led_effect *effect = (struct trimui_led_effect *)(root + 0xf48);
+	struct trimui_led_effect *effect = &trimui_effect_f1;
 	register struct trimui_led_effect *argument asm("x14");
 	register size_t saved_count asm("x21") = count;
 	register int parser_base asm("w1") = 0;
 
-	/* The OEM uses the pointer slot eight bytes before trimui_led_state as
-	 * its address root. Keep its parser and generator pointer lifetimes. */
+
 	/* OEM ignores parse errors, then clamps any type above 7 to zero. */
 	kstrtoint(buffer, parser_base, (int *)&effect->type);
 	if ((unsigned int)effect->type > 7)
@@ -1077,14 +982,12 @@ static ssize_t store_effect_f1(struct class *class, struct class_attribute *attr
 
 static ssize_t store_effect_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	register unsigned char *root asm("x20") = (unsigned char *)&sunxi_led;
-	struct trimui_led_effect *effect = (struct trimui_led_effect *)(root + 0x28);
+	struct trimui_led_effect *effect = &trimui_effect_f2;
 	register struct trimui_led_effect *argument asm("x14");
 	register size_t saved_count asm("x21") = count;
 	register int parser_base asm("w1") = 0;
 
-	/* The OEM uses the pointer slot eight bytes before trimui_led_state as
-	 * its address root. Keep its parser and generator pointer lifetimes. */
+
 	/* OEM ignores parse errors, then clamps any type above 7 to zero. */
 	kstrtoint(buffer, parser_base, (int *)&effect->type);
 	if ((unsigned int)effect->type > 7)
@@ -1103,16 +1006,9 @@ static ssize_t store_effect_f2(struct class *class, struct class_attribute *attr
 	return saved_count;
 }
 
-#define TRIMUI_PAIR_LEFT(root) \
-	((struct trimui_led_effect *)((root) + 0xb88))
-#define TRIMUI_PAIR_RIGHT(root) \
-	((struct trimui_led_effect *)((root) + 0xd68))
 static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr,
 			       const char *buffer, size_t count)
 {
-	register unsigned char *page asm("x19");
-	register unsigned char *left_root asm("x20");
-	register unsigned char *right_root asm("x18");
 	register struct trimui_led_effect *left_argument asm("x15");
 	register struct trimui_led_effect *right_argument asm("x14");
 	register struct trimui_led_effect *left_call asm("x0");
@@ -1122,68 +1018,46 @@ static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr
 	int right_type, right_target, right_current;
 
 	/* OEM ignores parser errors and still regenerates both effects. */
-	left_root = (unsigned char *)&trimui_l_page + 0x9c8;
-	page = (unsigned char *)&trimui_l_page;
-	kstrtoint(buffer, parser_base, (int *)&TRIMUI_PAIR_LEFT(left_root)->type);
-	if ((unsigned int)TRIMUI_PAIR_LEFT(left_root)->type > 7)
-		TRIMUI_PAIR_LEFT(left_root)->type = 0;
-	page += 0x9c8;
-	asm volatile("" : "+r"(page));
-	right_root = (unsigned char *)&trimui_led_state + 0x10f8;
-	left_argument = TRIMUI_PAIR_LEFT(page);
-	right_argument = TRIMUI_PAIR_RIGHT(right_root);
+	kstrtoint(buffer, parser_base, (int *)&(&trimui_effect_l)->type);
+	if ((unsigned int)(&trimui_effect_l)->type > 7)
+		(&trimui_effect_l)->type = 0;
+	left_argument = (&trimui_effect_l);
+	right_argument = (&trimui_effect_r);
 	asm volatile("" : "+r"(left_argument), "+r"(right_argument));
 	left_call = left_argument;
 	asm volatile("" : "+r"(left_call));
-	left_type = READ_ONCE(TRIMUI_PAIR_LEFT(page)->type);
-	left_current = READ_ONCE(TRIMUI_PAIR_LEFT(page)->current_rgb);
-	left_target = READ_ONCE(TRIMUI_PAIR_LEFT(page)->target_rgb);
-	WRITE_ONCE(TRIMUI_PAIR_RIGHT(right_root)->type, left_type);
+	left_type = READ_ONCE((&trimui_effect_l)->type);
+	left_current = READ_ONCE((&trimui_effect_l)->current_rgb);
+	left_target = READ_ONCE((&trimui_effect_l)->target_rgb);
+	WRITE_ONCE((&trimui_effect_r)->type, left_type);
 	gen_effect(left_call, left_type, left_target, left_current);
 	/* OEM carries x14 across the first generator call. This relies on the
 	 * pinned gen_effect body not writing x14; a generic ABI call may clobber it. */
-	right_type = READ_ONCE(TRIMUI_PAIR_RIGHT(right_root)->type);
-	right_current = READ_ONCE(TRIMUI_PAIR_RIGHT(right_root)->current_rgb);
-	right_target = READ_ONCE(TRIMUI_PAIR_RIGHT(right_root)->target_rgb);
+	right_type = READ_ONCE((&trimui_effect_r)->type);
+	right_current = READ_ONCE((&trimui_effect_r)->current_rgb);
+	right_target = READ_ONCE((&trimui_effect_r)->target_rgb);
 	gen_effect(right_argument, right_type, right_target, right_current);
-	WRITE_ONCE(TRIMUI_PAIR_LEFT(page)->index, 0);
-	WRITE_ONCE(TRIMUI_PAIR_LEFT(page)->active_cycles,
-		READ_ONCE(TRIMUI_PAIR_LEFT(page)->cycles));
+	WRITE_ONCE((&trimui_effect_l)->index, 0);
+	WRITE_ONCE((&trimui_effect_l)->active_cycles,
+		READ_ONCE((&trimui_effect_l)->cycles));
 	/* OEM reads right cycles before resetting right index. */
-	right_cycles = READ_ONCE(TRIMUI_PAIR_RIGHT(right_root)->cycles);
-	WRITE_ONCE(TRIMUI_PAIR_RIGHT(right_root)->index, 0);
+	right_cycles = READ_ONCE((&trimui_effect_r)->cycles);
+	WRITE_ONCE((&trimui_effect_r)->index, 0);
 	/* OEM's ordinary final store is scheduled after the x19/x20 restore.
 	 * WRITE_ONCE moves it before the restore with this compiler. */
-	TRIMUI_PAIR_RIGHT(right_root)->active_cycles = right_cycles;
+	(&trimui_effect_r)->active_cycles = right_cycles;
 	return saved_count;
 }
 #undef TRIMUI_PAIR_LEFT
 #undef TRIMUI_PAIR_RIGHT
 
-/* This view begins eight bytes before the LED state. The adjacent scalar
- * fields share the address root used by the stock sysfs setters. */
-struct trimui_frame_control_view {
-	u8 unused[8];
-	int mask_lr, mask_f, mask_m;
-	int enable, cycles, fps, len, effect_enable;
-};
-_Static_assert(sizeof(struct trimui_frame_control_view) == 40,
-	       "LED control view size");
-_Static_assert(__builtin_offsetof(struct trimui_frame_control_view,
-				 mask_lr) == 8,
-	       "LED control view root");
-extern struct trimui_frame_control_view trimui_frame_controls
-	__asm__("trimui_led_state-8");
-
 static ssize_t store_effect_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&sunxi_led;
 	int *value;
 	size_t saved_count;
 
 
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, effect_enable));
+	value = &trimui_effect_enable;
 
 	saved_count = count;
 
@@ -1257,7 +1131,7 @@ static __attribute__((no_reorder)) ssize_t store_anim_frames_hex(struct class *c
 	 * before adding the 64-bit loop index. Recomputing offset + i in an
 	 * int changes the destination around the sign boundary. The append
 	 * range is still unchecked; TODO: reject out-of-range frame counts. */
-	offset = (unsigned int)trimui_frame_controls.len * 14u;
+	offset = (unsigned int)trimui_frames_len * 14u;
 	/* Stock forms this root after the frame offset multiplication. The
 	 * tied, empty constraint keeps the C array pointer in x1 at that point
 	 * with the pinned compiler; it emits no handwritten instructions. */
@@ -1291,8 +1165,8 @@ static __attribute__((no_reorder)) ssize_t store_anim_frames_hex(struct class *c
 		sscanf(scan, scan_format, (u32 *)((char *)append + byte_offset));
 
 	}
-	trimui_frame_controls.len += colors / 14;
-	printk("\n anim frames:%d, pixels:%d\n", trimui_frame_controls.len, colors);
+	trimui_frames_len += colors / 14;
+	printk("\n anim frames:%d, pixels:%d\n", trimui_frames_len, colors);
 	return count;
 }
 
@@ -1304,7 +1178,7 @@ static __attribute__((no_reorder)) ssize_t show_frame_hex(struct class *class, s
 	int count = 0;
 	register char *position asm("x21") = buffer;
 	register u32 *pixels asm("x20") =
-		/* OEM page-ADD order; 0x7cc remains a separate ADD. */ (u32 *)((unsigned long)&trimui_transfer_state + 0x7cc);
+		/* OEM page-ADD order; 0x7cc remains a separate ADD. */ trimui_frame;
 	register const char *format_page asm("x24");
 	/* Keep the OEM frame root and late format-page offset while retaining
 	 * the compiler's pooled format literal. */
@@ -1350,13 +1224,11 @@ static __attribute__((no_reorder)) ssize_t help_show_effect(struct class *class,
 
 static ssize_t store_frames_len(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&sunxi_led;
 	int *value;
 	size_t saved_count;
 
 
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, frames_len));
+	value = &trimui_frames_len;
 
 	saved_count = count;
 
@@ -1366,13 +1238,11 @@ static ssize_t store_frames_len(struct class *class, struct class_attribute *att
 
 static ssize_t store_frames_fps(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&sunxi_led;
 	int *value;
 	size_t saved_count;
 
 
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, frames_fps));
+	value = &trimui_frames_fps;
 
 	saved_count = count;
 
@@ -1380,82 +1250,60 @@ static ssize_t store_frames_fps(struct class *class, struct class_attribute *att
 	return saved_count;
 }
 
-/* Compatible address views, not independent allocations or recovered types.
- * Only the explicitly rooted control/counter fields are accessed. */
-struct trimui_frame_counter_view { u8 unused[0x9d0]; int index,left; };
-/* Voltage and regulator share the same stock BSS root as the frame counters. */
-struct trimui_motor_state_view {
- u8 unused[0x9d8]; int voltage;
- struct regulator *regulator;
-};
-_Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
-				 effects[4].frames[462]) == 0x43f8,
-	       "LED counter and motor view root");
-extern struct trimui_frame_counter_view trimui_frame_counters
-	__asm__("trimui_led_state+0x43f8");
-extern struct trimui_motor_state_view trimui_motor_state
-	__asm__("trimui_led_state+0x43f8");
 static ssize_t store_frames_cycles(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	struct trimui_frame_control_view *control;
-	struct trimui_frame_counter_view *counter;
+
+
 	size_t result;
 	int parser_base = 0;
 
 	/* Keep OEM's parser zero, BSS root, and saved-count schedule. */
 	asm volatile("" : "+r"(parser_base));
-	control = &trimui_frame_controls;
-	asm volatile("" : "+r"(control));
+
 	result = count;
 	asm volatile("" : "+r"(result));
 	/* OEM ignores parse errors and clears enable regardless.  TODO: reject
 	 * invalid input only in a separate behavior-changing fix. */
-	kstrtoint(buffer, parser_base, &control->cycles);
+	kstrtoint(buffer, parser_base, &trimui_frames_cycles);
 	/* OEM materializes the counter root before clearing enable.  This C
 	 * reference retains the same instruction order with the pinned compiler. */
-	counter = &trimui_frame_counters;
-	control->enable = 0;
+
+	trimui_frames_enable = 0;
 	/* Stock issues two separate 32-bit resets.  A frame worker can observe
 	 * the intermediate state; TODO: synchronize only in a separate fix. */
-	WRITE_ONCE(counter->index, 0);
-	WRITE_ONCE(counter->left, 0);
+	WRITE_ONCE(trimui_frame_index, 0);
+	WRITE_ONCE(trimui_cycles_left, 0);
 	return result;
 }
 
 static ssize_t store_frames_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
- struct trimui_frame_control_view *control;
+
  size_t result;
  int parser_base = 0;
  int left;
- /* Preserve the OEM parser and count-save order around this C BSS root.
-  * GCC otherwise moves the count save ahead of the address calculation.
-  * The empty constraint retains OEM instruction order without an executable
-  * MOV. It does not imply that OEM source used inline assembly. */
+
  asm volatile("" : "+r"(parser_base));
- control = &trimui_frame_controls;
- asm volatile("" : "+r"(control));
+
  result = count;
- asm volatile("" : "+r"(control), "+r"(result));
+ asm volatile("" : "+r"(result));
  /* Stock ignores parse errors and still resets/decrements state.
   * TODO: reject errors only in a separate behavior change. */
- kstrtoint(buffer,parser_base,&control->enable);
- left=control->cycles-1;
- trimui_frame_counters.index=0;
- trimui_frame_counters.left=left;
- if(!control->enable)control->len=0;
+ kstrtoint(buffer,parser_base,&trimui_frames_enable);
+ left=trimui_frames_cycles-1;
+ trimui_frame_index=0;
+ trimui_cycles_left=left;
+ if(!trimui_frames_enable)trimui_frames_len=0;
  return result;
 }
 
 static ssize_t store_frames_override_m_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&sunxi_led;
 	int *value;
 	size_t saved_count;
 
 
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, mask_m));
+	value = &trimui_mask_m;
 
 	saved_count = count;
 
@@ -1465,13 +1313,11 @@ static ssize_t store_frames_override_m_enable(struct class *class, struct class_
 
 static ssize_t store_frames_override_f1f2_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&sunxi_led;
 	int *value;
 	size_t saved_count;
 
 
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, mask_f));
+	value = &trimui_mask_f;
 
 	saved_count = count;
 
@@ -1481,13 +1327,11 @@ static ssize_t store_frames_override_f1f2_enable(struct class *class, struct cla
 
 static ssize_t store_frames_override_lr_enable(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *anchor = (unsigned char *)&sunxi_led;
 	int *value;
 	size_t saved_count;
 
 
-	value = (int *)(anchor + sizeof(sunxi_led) +
-		__builtin_offsetof(struct trimui_stock_led_state, mask_lr));
+	value = &trimui_mask_lr;
 
 	saved_count = count;
 
@@ -1502,7 +1346,7 @@ static ssize_t show_motor_voltage(struct class *class, struct class_attribute *a
 
 static ssize_t store_motor_voltage(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	struct trimui_motor_state_view *state;
+
 	register size_t saved_count asm("x20");
 
 	/* OEM keeps this state pointer live across kstrtoint and then re-reads
@@ -1510,29 +1354,25 @@ static ssize_t store_motor_voltage(struct class *class, struct class_attribute *
 	 * memory access or changing the stock NULL/error-pointer handling.
 	 * Saving count after forming the state root preserves OEM ADRP/ADD/MOV
 	 * order without changing the stale-value behavior on parse failure. */
-	state = &trimui_motor_state;
-	asm("" : "+r"(state));
-	asm("mov %0, %1" : "=r"(saved_count) : "r"(count), "r"(state));
-	kstrtoint(buffer, 0, &state->voltage);
+
+	asm("mov %0, %1" : "=r"(saved_count) : "r"(count), "r"(&trimui_motor_voltage));
+	kstrtoint(buffer, 0, &trimui_motor_voltage);
 	/* Stock passes NULL/error pointers through. TODO: check regulator_get in a separate fix. */
-	regulator_set_voltage(state->regulator, state->voltage,
-		state->voltage + 100000);
+	regulator_set_voltage(trimui_motor_regulator, trimui_motor_voltage,
+		trimui_motor_voltage + 100000);
 	return saved_count;
 }
 
 static ssize_t store_speaker_mute(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	unsigned char *root = (unsigned char *)&trimui_transfer_state;
+	int *root = &trimui_mute_requested;
 	int *requested;
 	register size_t saved_count asm("x20");
 
-	/* Stock addresses mute through the transfer-state root, then offsets
-	 * 0x7c8 into the shared LED state. Keep that root across the parser.
-	 * Save count after forming the root: OEM emits ADRP/ADD before MOV x20.
-	 * The explicit register move only constrains this setup order. */
+
 	asm("" : "+r"(root));
 	asm("mov %0, %1" : "=r"(saved_count) : "r"(count), "r"(root));
-	requested = (int *)(root + 0x7c8);
+	requested = root;
 	/* OEM ignores parse failure and may use the prior mute request. */
 	kstrtoint(buffer, 0, requested);
 	if (*requested) {
@@ -1640,14 +1480,35 @@ _Static_assert(__builtin_offsetof(struct trimui_stock_led_state, effects[2]) ==
 	       0x1e60, "LED R probe root");
 _Static_assert(__builtin_offsetof(struct trimui_stock_led_state, effects[3]) ==
 	       0x2d80, "LED L probe root");
-extern struct trimui_led_effect trimui_probe_effect_f2
-	__asm__("trimui_led_state+0x20");
-extern struct trimui_led_effect trimui_probe_effect_f1
-	__asm__("trimui_led_state+0xf40");
-extern struct trimui_led_effect trimui_probe_effect_r
-	__asm__("trimui_led_state+0x1e60");
-extern struct trimui_led_effect trimui_probe_effect_l
-	__asm__("trimui_led_state+0x2d80");
+
+/* The shipped diagnostic names identify these initialization helpers.
+ * Preserve their ignored failures and continued initialization as OEM does.
+ */
+static inline void init_motor_voltage(void)
+{
+	int result;
+
+	result = __class_register(&trimui_motor_class, &trimui_motor_key);
+	if (result < 0) {
+		printk(KERN_ERR "%s()%d - class_register err\n", trimui_name_cluster.motor, 3158);
+		class_unregister(&trimui_motor_class);
+	}
+	/* OEM publishes ERR_PTR values without testing them. Preserve that value
+	 * and store order; TODO: handle regulator_get failure in a separate fix.
+	 */
+	trimui_motor_regulator = regulator_get(NULL, "axp2202-bldo3");
+}
+
+static inline void init_speaker_mute(void)
+{
+	int result;
+
+	result = __class_register(&trimui_speaker_class, &trimui_speaker_key);
+	if (result < 0) {
+		printk(KERN_ERR "%s()%d - class_register err\n", trimui_name_cluster.speaker, 3218);
+		class_unregister(&trimui_speaker_class);
+	}
+}
 
 static int trimui_board_init(void)
 {
@@ -1662,32 +1523,34 @@ static int trimui_board_init(void)
 	BUILD_BUG_ON(sizeof(struct trimui_led_effect) != 0xf20);
 	memset(trimui_frame, 0, sizeof(trimui_frame));
 	memset(&trimui_effect_m, 0, sizeof(trimui_effect_m));
-	memset(&trimui_probe_effect_l, 0, sizeof(trimui_probe_effect_l));
-	memset(&trimui_probe_effect_r, 0, sizeof(trimui_probe_effect_r));
-	memset(&trimui_probe_effect_f1, 0, sizeof(trimui_probe_effect_f1));
-	memset(&trimui_probe_effect_f2, 0, sizeof(trimui_probe_effect_f2));
+	memset(&trimui_effect_l, 0, sizeof(trimui_effect_l));
+	memset(&trimui_effect_r, 0, sizeof(trimui_effect_r));
+	memset(&trimui_effect_f1, 0, sizeof(trimui_effect_f1));
+	memset(&trimui_effect_f2, 0, sizeof(trimui_effect_f2));
 	/* Preserve the OEM store order. The LED class is already visible while
 	 * probe initializes these globals, so a reader can observe partial state. */
-	WRITE_ONCE(trimui_probe_effect_f2.duration, 2000);
+	WRITE_ONCE(trimui_effect_f2.duration, 2000);
 	WRITE_ONCE(trimui_effect_m.duration, 2000);
-	WRITE_ONCE(trimui_probe_effect_f1.duration, 2000);
-	WRITE_ONCE(trimui_probe_effect_r.duration, 2000);
-	WRITE_ONCE(trimui_probe_effect_l.duration, 2000);
-	WRITE_ONCE(trimui_probe_effect_f1.cycles, 1);
-	WRITE_ONCE(trimui_probe_effect_f2.cycles, 1);
+	WRITE_ONCE(trimui_effect_f1.duration, 2000);
+	WRITE_ONCE(trimui_effect_r.duration, 2000);
+	WRITE_ONCE(trimui_effect_l.duration, 2000);
+	WRITE_ONCE(trimui_effect_f1.cycles, 1);
+	WRITE_ONCE(trimui_effect_f2.cycles, 1);
 	WRITE_ONCE(trimui_effect_m.cycles, 1);
-	WRITE_ONCE(trimui_probe_effect_r.cycles, 1);
-	WRITE_ONCE(trimui_probe_effect_l.cycles, 1);
+	WRITE_ONCE(trimui_effect_r.cycles, 1);
+	WRITE_ONCE(trimui_effect_l.cycles, 1);
 	result = gpio_request(107, "led_5v");
 	/* Stock continues after GPIO and thread errors. TODO: unwind and return
 	 * those errors in a separate fix, and stop the thread on remove. */
 	if (result < 0)
 		printk("trimui_ledc_init error! led_5v: %d\n", 107);
 	gpio_direction_output(107, 1);
-	task = kthread_run(trimui_ledc_run_thread, NULL, "ledc daemon");
+	task = kthread_create(trimui_ledc_run_thread, NULL, "ledc daemon");
 	if (IS_ERR(task))
 		printk("ledc thread error\n");
-	result = class_register(&trimui_led_anim_class);
+	else
+		wake_up_process(task);
+	result = __class_register(&trimui_led_anim_class, &trimui_anim_key);
 	if (result < 0) {
 		/* OEM unregisters even though registration failed. The motor and
 		 * speaker failures below do the same, then continue initialization.
@@ -1698,19 +1561,7 @@ static int trimui_board_init(void)
 		class_unregister(&trimui_led_anim_class);
 		return -EFAULT;
 	}
-	result = class_register(&trimui_motor_class);
-	if (result < 0) {
-		printk(KERN_ERR "%s()%d - class_register err\n", trimui_name_cluster.motor, 3158);
-		class_unregister(&trimui_motor_class);
-	}
-	/* OEM publishes ERR_PTR values without testing them. Preserve that value
-	 * and store order; TODO: handle regulator_get failure in a separate fix.
-	 */
-	trimui_motor_regulator = regulator_get(NULL, "axp2202-bldo3");
-	result = class_register(&trimui_speaker_class);
-	if (result < 0) {
-		printk(KERN_ERR "%s()%d - class_register err\n", trimui_name_cluster.speaker, 3218);
-		class_unregister(&trimui_speaker_class);
-	}
+	init_motor_voltage();
+	init_speaker_mute();
 	return 0;
 }

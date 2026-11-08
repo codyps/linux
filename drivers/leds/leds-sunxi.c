@@ -63,7 +63,7 @@ do {									\
 		pr_warn("%s()%d - "fmt, __func__, __LINE__, ##arg);	\
 } while (0)
 
-static struct sunxi_led *sunxi_led;
+static struct sunxi_led *sunxi_led __attribute__((used, no_reorder));
 
 static void sunxi_ledc_trans_data(struct sunxi_led *led);
 
@@ -1842,7 +1842,7 @@ static int sunxi_led_probe(struct platform_device *pdev)
 	sunxi_ledc_set_time(led);
 
 	sunxi_clk_init(led);
-	init_waitqueue_head(&led->wait);
+	__init_waitqueue_head(&led->wait, "&led->wait", &trimui_wait_key);
 
 	err = sunxi_ledc_irq_init(led);
 	if (err) {
@@ -1866,7 +1866,7 @@ static int sunxi_led_probe(struct platform_device *pdev)
 		sunxi_led_create_debugfs(&led->debugfs_dir);
 #endif /* CONFIG_DEBUG_FS */
 	/* OEM unregisters on error: NULL cp faults; freed cp is read after kset failure. */
-	err = class_register(&led_class);
+	err = __class_register(&led_class, &trimui_main_key);
 	if (err < 0) {
 		SUNXI_LED_NAMED_STOCK_ERR(trimui_ro_writes.sunxi_led_probe, 3319, "class_register err\n");
 		class_unregister(&led_class);
