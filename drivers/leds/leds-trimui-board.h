@@ -1016,28 +1016,28 @@ static ssize_t store_effect_f1(struct class *class, struct class_attribute *attr
 
 static ssize_t store_effect_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	struct trimui_led_effect *effect = &trimui_effect_f2;
+	register unsigned long page asm("x19");
+	register unsigned long base asm("x20");
 	register struct trimui_led_effect *argument asm("x14");
 	register size_t saved_count asm("x21") = count;
 	register int parser_base asm("w1") = 0;
-
-
-	/* OEM ignores parse errors, then clamps any type above 7 to zero. */
-	kstrtoint(buffer, parser_base, (int *)&effect->type);
-	if ((unsigned int)effect->type > 7)
-		effect->type = 0;
-	argument = effect;
+	base = (unsigned long)&trimui_front_member_root; asm volatile("" : "+r"(base));
+	kstrtoint(buffer, parser_base, (int *)&FRONT_FIELD(base, type));
+	if ((unsigned int)FRONT_FIELD(base, type) > 7)
+		FRONT_FIELD(base, type) = 0;
+	page = (unsigned long)&trimui_front_member_root; asm volatile("" : "+r"(page));
+	argument = (struct trimui_led_effect *)(page + 40);
 	asm volatile("" : "+r"(argument));
-	/* Keep the OEM x0 setup before its reread of type. */
 	{
 		register struct trimui_led_effect *call asm("x0") = argument;
-
 		asm volatile("" : "+r"(call));
-		gen_effect(call, effect->type, effect->target_rgb, effect->current_rgb);
+		gen_effect(call, FRONT_FIELD(page, type), FRONT_FIELD(page, target_rgb),
+			   FRONT_FIELD(page, current_rgb));
 	}
-	WRITE_ONCE(effect->index, 0);
-	WRITE_ONCE(effect->active_cycles, READ_ONCE(effect->cycles));
+	WRITE_ONCE(FRONT_FIELD(page, index), 0);
+	WRITE_ONCE(FRONT_FIELD(page, active_cycles), READ_ONCE(FRONT_FIELD(page, cycles)));
 	return saved_count;
+
 }
 
 static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr,

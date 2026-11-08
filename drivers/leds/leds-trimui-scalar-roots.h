@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* Address-only GNU C bindings to real four-byte frame members. No storage
+/* Address-only GNU C bindings to real frame members and the device slot. No storage
  * is allocated. Numeric bases reach neighboring effect fields only under
  * the verified stock BSS layout; no before-object C pointer is formed.
  * Original OEM declaration spelling is unknown.
@@ -16,3 +16,8 @@ _Static_assert(920 + 2952 == sizeof(struct trimui_led_effect), "left numeric fie
 _Static_assert(440 + 3432 == sizeof(struct trimui_led_effect), "right numeric field delta");
 #define TRIMUI_EFFECT_MEMBER(root, delta, member) \
  (*(__typeof__(trimui_effect_m.member) *)((root) + (delta) + __builtin_offsetof(struct trimui_led_effect, member)))
+
+/* The root is the existing pointer slot itself, never its pointed-to device. */
+extern __typeof__(sunxi_led) trimui_front_member_root __asm__("sunxi_led");
+_Static_assert(sizeof(trimui_front_member_root) == 8, "front root pointer slot");
+#define FRONT_FIELD(root, member) TRIMUI_EFFECT_MEMBER(root, 40, member)
