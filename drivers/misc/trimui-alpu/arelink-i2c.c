@@ -148,59 +148,40 @@ u8 I2CMasterReceiver(u8 address)
 	return I2CMasterWrite(address | 1);
 }
 
-/* Stock uses pointer-end loops and two STOP call sites. The instruction
- * transcription is synthetic; its original C spelling is unknown. Disable
- * GCC's pure/const IPA only here: otherwise __builtin_unreachable() after
- * the returning assembly makes GCC wrongly drop caller continuations.
- * Stock ignores GPIO direction failures in the bus primitives. TODO:
- * propagate them in a separate behavior-changing fix.
+/* Stock truncates ACK/status results to a byte and stops on the first
+ * rejected byte. GPIO direction failures remain ignored in the primitives.
+ * TODO: propagate them only in a separate behavior-changing fix.
+ * Integer cursors preserve the stock modulo-64-bit end calculation, including
+ * null/zero-length transfers; no pointer arithmetic on NULL is required.
  */
-__attribute__((optimize("no-ipa-pure-const")))
 u8 I2CWrite(u8 address, const u8 *reg, u8 reg_len, const u8 *data, u8 count)
 {
-    asm volatile(
-    "stp x29, x30, [sp, #-0x40]!\n"
-    "mov x29, sp\n"
-    "stp x19, x20, [sp, #0x10]\n"
-    "mov x20, x1\n"
-    "stp x21, x22, [sp, #0x20]\n"
-    "mov x19, x3\n"
-    "str x23, [sp, #0x30]\n"
-    "and w22, w2, #0xff\n"
-    "and w21, w4, #0xff\n"
-    "bl I2CSendDeviceAddress\n"
-    "ands w23, w0, #0xff\n"
-    "b.ne 1f\n"
-    "add x22, x20, w22, uxtb\n"
-    "2: cmp x20, x22\n"
-    "b.ne 3f\n"
-    "add x21, x19, w21, uxtb\n"
-    "4: cmp x19, x21\n"
-    "b.ne 5f\n"
-    "1: bl I2CMasterStop\n"
-    "b 6f\n"
-    "3: ldrb w0, [x20]\n"
-    "bl I2CMasterWrite\n"
-    "tst w0, #0xff\n"
-    "b.eq 7f\n"
-    "8: mov w23, #8\n"
-    "bl I2CMasterStop\n"
-    "6: mov w0, w23\n"
-    "ldr x23, [sp, #0x30]\n"
-    "ldp x19, x20, [sp, #0x10]\n"
-    "ldp x21, x22, [sp, #0x20]\n"
-    "ldp x29, x30, [sp], #0x40\n"
-    "ret\n"
-    "7: add x20, x20, #1\n"
-    "b 2b\n"
-    "5: ldrb w0, [x19]\n"
-    "bl I2CMasterWrite\n"
-    "tst w0, #0xff\n"
-    "b.ne 8b\n"
-    "add x19, x19, #1\n"
-    "b 4b\n"
-    );
-    __builtin_unreachable();
+    unsigned long reg_cursor = (unsigned long)reg;
+    unsigned long data_cursor = (unsigned long)data;
+    unsigned long reg_end, data_end;
+    u8 result = I2CSendDeviceAddress(address);
+
+    if (result)
+        goto stop;
+    reg_end = reg_cursor + reg_len;
+    while (reg_cursor != reg_end) {
+        if (I2CMasterWrite(*(const u8 *)reg_cursor))
+            goto nack;
+        reg_cursor++;
+    }
+    data_end = data_cursor + count;
+    while (data_cursor != data_end) {
+        if (I2CMasterWrite(*(const u8 *)data_cursor))
+            goto nack;
+        data_cursor++;
+    }
+stop:
+    I2CMasterStop();
+    return result;
+nack:
+    result = 8;
+    I2CMasterStop();
+    return result;
 }
 
 /* Stock's successful zero-length read returns without STOP, leaving the bus
