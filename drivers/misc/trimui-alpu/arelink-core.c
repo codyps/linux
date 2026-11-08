@@ -616,11 +616,11 @@ u8 arelink_init(u8 *serial)
  ___memcpy(alpu_key,decoded,5);
  alpu_initialized_flag=1;
  /* Stock materializes zero, masks it to four bits, then truncates to a byte.
-  * Retain that actual AND instruction rather than folding it away. This is
-  * a compatible native reconstruction, not a claim about the original C.
+  * The unoptimized C mask preserves the native operation and byte store.
+  * The original C spelling remains unknown.
   */
  { register int zero __asm__("w0")=0;
-   __asm__("and %w0,%w0,#15" : "+r"(zero));
+   zero &= 15;
    alpu_protected=zero;
  }
  alpu_status=0xffff;
