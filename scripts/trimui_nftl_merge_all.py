@@ -54,7 +54,9 @@ def main():
         unexpected = found - expected
         raise ValueError("NAND text inventory changed: missing=%r extra=%r" %
                          (missing, unexpected))
-    if len(entries) != 357 or len(objects) != 125:
+    # The OEM-exact reclaim-completion leaf now has its own C producer.
+    # Function inventory, sizes and stock order remain unchanged.
+    if len(entries) != 357 or len(objects) != 126:
         raise ValueError("NAND source inventory changed")
     lines = ["/* Generated from recovered C objects and stock order manifest. */",
              "SECTIONS {", "  .text : {"]
