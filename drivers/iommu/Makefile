@@ -29,3 +29,10 @@ obj-$(CONFIG_FSL_PAMU) += fsl_pamu.o fsl_pamu_domain.o
 obj-$(CONFIG_S390_IOMMU) += s390-iommu.o
 obj-$(CONFIG_SUNXI_IOMMU) += sunxi-iommu.o
 obj-$(CONFIG_IOMMU_DEBUG) += iommu-debug.o
+
+# OEM clone numbering is unknown. Name only the fingerprint-verified native
+# implementation; do not make kallsyms depend on its final link address.
+ifeq ($(CONFIG_TRIMUI_BOARD_ALPU_ARELINK)$(CONFIG_IOMMU_TESTS),yy)
+$(obj)/iommu-debug.o: $(src)/iommu-debug.c $(srctree)/scripts/trimui_iommu_clone_name.py
+$(obj)/iommu-debug.o: private cmd_cc_o_c = $(CC) $(c_flags) -c -o $(if $(CONFIG_MODVERSIONS),$(@D)/.tmp_$(@F),$@) $< && python3 $(srctree)/scripts/trimui_iommu_clone_name.py --objcopy "$(OBJCOPY)" --object $(if $(CONFIG_MODVERSIONS),$(@D)/.tmp_$(@F),$@)
+endif
