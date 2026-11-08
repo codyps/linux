@@ -247,17 +247,17 @@ static int trimui_ledc_run_thread(void *unused)
 	WRITE_ONCE((trimui_effect_l).active_cycles, READ_ONCE((trimui_effect_l).cycles));
 	WRITE_ONCE(trimui_effect_r.active_cycles, READ_ONCE(trimui_effect_r.cycles));
 	WRITE_ONCE((trimui_effect_f1).active_cycles, READ_ONCE((trimui_effect_f1).cycles));
-	WRITE_ONCE((trimui_effect_f2).active_cycles, READ_ONCE((trimui_effect_f2).cycles));
+	WRITE_ONCE(front2->active_cycles, READ_ONCE(front2->cycles));
 	rgb = READ_ONCE((trimui_effect_m).cycles);
 	WRITE_ONCE((trimui_effect_l).index, 0);
 	WRITE_ONCE((trimui_effect_m).index, 0);
-	WRITE_ONCE((trimui_effect_f2).index, 0);
+	WRITE_ONCE(front2->index, 0);
 	WRITE_ONCE((trimui_effect_f1).index, 0);
 	WRITE_ONCE((trimui_effect_m).active_cycles, rgb);
 	while (!kthread_should_stop()) {
 		if (trimui_effect_enable) {
-			if (is_effect_actived(left)) {
-				rgb = step_one_frame(left);
+			if (is_effect_actived(&trimui_effect_l)) {
+				rgb = step_one_frame(&trimui_effect_l);
 				trimui_frame[10] = trimui_frame[11] = rgb;
 			}
 			if (is_effect_actived(&trimui_effect_r)) {
