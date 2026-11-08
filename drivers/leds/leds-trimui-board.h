@@ -839,14 +839,30 @@ _Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
 _Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
 				 effects[2].target_rgb) == 0x1e7c,
 	       "right RGB target offset");
+/* GNU C symbol names bind these declarations to existing u32 members.
+ * Each four-byte interval is fully inside one real effect object; there is
+ * no additional allocation or oversized view. The bindings retain the OEM
+ * direct store relocations, not a claim about original C spelling. */
+extern u32 trimui_rgb_target_l __asm__("trimui_effect_l+28");
+extern u32 trimui_rgb_target_r __asm__("trimui_effect_r+28");
+_Static_assert(__builtin_offsetof(struct trimui_led_effect, target_rgb) == 28,
+	       "RGB target binding offset");
+_Static_assert(sizeof(trimui_rgb_target_l) == sizeof(trimui_effect_l.target_rgb),
+	       "left target binding width");
+_Static_assert(sizeof(trimui_rgb_target_r) == sizeof(trimui_effect_r.target_rgb),
+	       "right target binding width");
+_Static_assert(28 + sizeof(trimui_rgb_target_l) <= sizeof(trimui_effect_l),
+	       "left target binding extent");
+_Static_assert(28 + sizeof(trimui_rgb_target_r) <= sizeof(trimui_effect_r),
+	       "right target binding extent");
 static ssize_t store_effect_rgb_hex_lr(struct class *class,struct class_attribute *attr,const char *buffer,size_t count)
 {
  u32 rgb=get_rgb_hex(class, buffer);
  /* Stock publishes left before right without synchronization, even after
   * malformed input produced zero. TODO: reject invalid input and protect
   * the pair only in a separate behavior change. */
- WRITE_ONCE(trimui_effect_l.target_rgb,rgb);
- WRITE_ONCE(trimui_effect_r.target_rgb,rgb);
+ WRITE_ONCE(trimui_rgb_target_l,rgb);
+ WRITE_ONCE(trimui_rgb_target_r,rgb);
  return count;
 }
 
