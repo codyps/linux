@@ -888,7 +888,7 @@ static ssize_t store_effect_rgb_hex_lr(struct class *class,struct class_attribut
  * input keeps the previous type, but still regenerates the effect and resets
  * its playback state; preserve that observable bug.
  */
-extern u32 trimui_middle_member_root __asm__("trimui_effect_l+1400"); /* Real L.frames[342], four bytes; no allocation. */
+#include "leds-trimui-scalar-roots.h"
 #define MIDDLE_FIELD(root, member) \
  (*(__typeof__(trimui_effect_m.member) *)((root) + 2472 + __builtin_offsetof(struct trimui_led_effect, member)))
 _Static_assert(__builtin_offsetof(struct trimui_led_effect, frames[342]) == 1400, "middle member root");
@@ -930,29 +930,29 @@ _Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
 	       "left LED page root");
 static ssize_t store_effect_l(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
+	register unsigned long page asm("x19");
+	register unsigned long base asm("x20");
 	register size_t saved asm("x21") = count;
 	register struct trimui_led_effect *genptr asm("x14");
 	register struct trimui_led_effect *callptr asm("x0");
-	struct trimui_led_effect *effect;
 	int parsed_type;
 	u32 current_color, target_color;
-
-	effect = &trimui_effect_l;
-	/* OEM ignores parse failure, then clamps any type above 7. */
-	kstrtoint(buffer, 0, (int *)&effect->type);
-	if ((unsigned int)effect->type > 7)
-		effect->type = 0;
-	effect = &trimui_effect_l;
-	genptr = &trimui_effect_l;
+	base = (unsigned long)&trimui_left_member_root;
+	asm volatile("" : "+r"(base));
+	kstrtoint(buffer, 0, (int *)&TRIMUI_EFFECT_MEMBER(base, 2952, type));
+	if ((unsigned int)TRIMUI_EFFECT_MEMBER(base, 2952, type) > 7)
+		TRIMUI_EFFECT_MEMBER(base, 2952, type) = 0;
+	page = (unsigned long)&trimui_left_member_root;
+	asm volatile("" : "+r"(page));
+	genptr = (struct trimui_led_effect *)(page + 2952);
 	asm volatile("" : "+r"(genptr));
-	callptr = genptr;
-	asm volatile("" : "+r"(callptr));
-	parsed_type = READ_ONCE(effect->type);
-	current_color = READ_ONCE(effect->current_rgb);
-	target_color = READ_ONCE(effect->target_rgb);
+	callptr = genptr; asm volatile("" : "+r"(callptr));
+	parsed_type = READ_ONCE(TRIMUI_EFFECT_MEMBER(page, 2952, type));
+	current_color = READ_ONCE(TRIMUI_EFFECT_MEMBER(page, 2952, current_rgb));
+	target_color = READ_ONCE(TRIMUI_EFFECT_MEMBER(page, 2952, target_rgb));
 	gen_effect(callptr, parsed_type, target_color, current_color);
-	WRITE_ONCE(effect->index, 0);
-	WRITE_ONCE(effect->active_cycles, READ_ONCE(effect->cycles));
+	WRITE_ONCE(TRIMUI_EFFECT_MEMBER(page, 2952, index), 0);
+	WRITE_ONCE(TRIMUI_EFFECT_MEMBER(page, 2952, active_cycles), READ_ONCE(TRIMUI_EFFECT_MEMBER(page, 2952, cycles)));
 	return saved;
 }
 
@@ -961,29 +961,29 @@ _Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
 	       "right LED page root");
 static ssize_t store_effect_r(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
+	register unsigned long page asm("x19");
+	register unsigned long base asm("x20");
 	register size_t saved asm("x21") = count;
 	register struct trimui_led_effect *genptr asm("x14");
 	register struct trimui_led_effect *callptr asm("x0");
-	struct trimui_led_effect *effect;
 	int parsed_type;
 	u32 current_color, target_color;
-
-	effect = &trimui_effect_r;
-	/* OEM ignores parse failure, then clamps any type above 7. */
-	kstrtoint(buffer, 0, (int *)&effect->type);
-	if ((unsigned int)effect->type > 7)
-		effect->type = 0;
-	effect = &trimui_effect_r;
-	genptr = &trimui_effect_r;
+	base = (unsigned long)&trimui_right_member_root;
+	asm volatile("" : "+r"(base));
+	kstrtoint(buffer, 0, (int *)&TRIMUI_EFFECT_MEMBER(base, 3432, type));
+	if ((unsigned int)TRIMUI_EFFECT_MEMBER(base, 3432, type) > 7)
+		TRIMUI_EFFECT_MEMBER(base, 3432, type) = 0;
+	page = (unsigned long)&trimui_right_member_root;
+	asm volatile("" : "+r"(page));
+	genptr = (struct trimui_led_effect *)(page + 3432);
 	asm volatile("" : "+r"(genptr));
-	callptr = genptr;
-	asm volatile("" : "+r"(callptr));
-	parsed_type = READ_ONCE(effect->type);
-	current_color = READ_ONCE(effect->current_rgb);
-	target_color = READ_ONCE(effect->target_rgb);
+	callptr = genptr; asm volatile("" : "+r"(callptr));
+	parsed_type = READ_ONCE(TRIMUI_EFFECT_MEMBER(page, 3432, type));
+	current_color = READ_ONCE(TRIMUI_EFFECT_MEMBER(page, 3432, current_rgb));
+	target_color = READ_ONCE(TRIMUI_EFFECT_MEMBER(page, 3432, target_rgb));
 	gen_effect(callptr, parsed_type, target_color, current_color);
-	WRITE_ONCE(effect->index, 0);
-	WRITE_ONCE(effect->active_cycles, READ_ONCE(effect->cycles));
+	WRITE_ONCE(TRIMUI_EFFECT_MEMBER(page, 3432, index), 0);
+	WRITE_ONCE(TRIMUI_EFFECT_MEMBER(page, 3432, active_cycles), READ_ONCE(TRIMUI_EFFECT_MEMBER(page, 3432, cycles)));
 	return saved;
 }
 #undef MIDDLE_FIELD
