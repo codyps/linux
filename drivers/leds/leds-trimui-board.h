@@ -274,12 +274,18 @@ static int trimui_ledc_run_thread(void *unused)
 			if (is_effect_actived(&trimui_effect_f2))
 				trimui_frame[8] = step_one_frame(&trimui_effect_f2);
 		} else if (trimui_frames_enable) {
-			int offset = trimui_frame_index * 14;
+			s32 offset;
+			const u32 *source;
 			if (trimui_frames_len <= 0)
 				goto battery;
 			/* Stock wraps offset at 32 bits, then widens before adding channels.
 			 * TODO: bound length/index separately; these reads remain unchecked.
 			 */
+			/* Retain the OEM shared source address, including signed
+			 * backward addresses after 32-bit index multiplication wraps. */
+			offset = (s32)((u32)trimui_frame_index * 14U);
+			source = (const u32 *)((unsigned long)trimui_anim_frames +
+				((unsigned long)(long)offset << 2));
 			if (++trimui_frame_index >= trimui_frames_len) {
 				trimui_frame_index = 0;
 				if (trimui_cycles_left > 0) trimui_cycles_left--;
@@ -288,18 +294,18 @@ static int trimui_ledc_run_thread(void *unused)
 					trimui_frames_len = 0;
 				}
 			}
-			if (trimui_mask_m) memcpy(trimui_frame, trimui_anim_frames + offset, 8 * sizeof(u32));
+			if (trimui_mask_m) memcpy(trimui_frame, source, 8 * sizeof(u32));
 			if (trimui_mask_lr) {
 				/* Stock transfers each LED pair before reading the next.
 				 * The two-copy sequence can observe an intervening frame edit.
 				 */
-				memcpy(trimui_frame + 10, trimui_anim_frames + offset + 10, 2 * sizeof(u32));
+				memcpy(trimui_frame + 10, source + 10, 2 * sizeof(u32));
 				barrier();
-				memcpy(trimui_frame + 12, trimui_anim_frames + offset + 12, 2 * sizeof(u32));
+				memcpy(trimui_frame + 12, source + 12, 2 * sizeof(u32));
 			}
 			if (trimui_mask_f) {
-				u32 f1 = READ_ONCE(trimui_anim_frames[(long)offset + 9]);
-				u32 f2 = READ_ONCE(trimui_anim_frames[(long)offset + 8]);
+				u32 f1 = READ_ONCE(source[9]);
+				u32 f2 = READ_ONCE(source[8]);
 				/* OEM publishes these with one paired 32-bit STP after
 				 * both reads. Separate WRITE_ONCE stores emitted two STRs.
 				 * Keep the adjacent ordinary stores and verify the pair;
