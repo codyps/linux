@@ -12037,23 +12037,15 @@ int sandisk_set_readretry(struct samsung_set_chip *chip, unsigned short page)
 			register unsigned int odd asm("w0") = page & 1;
 			(unsigned short)odd;
 		}))) {
-			/* OEM uses a 32-bit offset in x0 and table base in x1,
-			 * then adds in that register order. Retain unchecked retry
+			/* OEM widens the retry index before multiplication.
+			 * Retain unchecked retry
 			 * indexes; a corrected implementation would validate them. */
-			register unsigned long off asm("x0") =
-				(unsigned long)chip->retry * 3;
-			register unsigned char *base asm("x1") = sandisk_19_low_recovered;
-			asm volatile("add %0, %0, %1" : "+r"(off) : "r"(base));
-			values = (unsigned char *)off;
+			values = sandisk_19_low_recovered + (unsigned long)chip->retry * 3;
 			addresses = sandisk_read_retry_reg_adr_19;
 			count = 3;
 			sandisk_read_retry_cycle = 16;
 		} else {
-			register unsigned long off asm("x0") =
-				(unsigned long)chip->retry * 3;
-			register unsigned char *base asm("x1") = sandisk_19_high_recovered;
-			asm volatile("add %0, %0, %1" : "+r"(off) : "r"(base));
-			values = (unsigned char *)off;
+			values = sandisk_19_high_recovered + (unsigned long)chip->retry * 3;
 			addresses = sandisk_read_retry_reg_adr_19;
 			count = 3;
 			sandisk_read_retry_cycle = 20;
@@ -12063,11 +12055,7 @@ int sandisk_set_readretry(struct samsung_set_chip *chip, unsigned short page)
 		/* OEM ignores the final command result. */
 		set_one_cmd((struct command_chip *)chip, -74, 0);
 	} else if (sandisk_read_retry_mode == 49) {
-		register unsigned long off asm("x0") =
-			(unsigned long)chip->retry * 3;
-		register unsigned char *base asm("x1") = sandisk_24_recovered;
-		asm volatile("add %0, %0, %1" : "+r"(off) : "r"(base));
-		values = (unsigned char *)off;
+		values = sandisk_24_recovered + (unsigned long)chip->retry * 3;
 		addresses = sandisk_read_retry_reg_adr_24;
 		count = 3;
 		result = sandisk_vender_set_param(chip, values,
