@@ -1365,14 +1365,22 @@ static ssize_t store_motor_voltage(struct class *class, struct class_attribute *
 
 static ssize_t store_speaker_mute(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	int *root = &trimui_mute_requested;
+	enum { requested_offset =
+		__builtin_offsetof(struct trimui_stock_led_state, mute) -
+		__builtin_offsetof(struct trimui_stock_led_state,
+				   effects[4].frames[462]) };
+	/* Preserve the OEM two-stage address calculation as unsigned integer
+	 * arithmetic. Form a C pointer only after returning to the real mute
+	 * scalar; no pointer is based before that separately declared object.
+	 * This is reconstruction scaffolding, not recovered original spelling. */
+	unsigned long root = (unsigned long)&trimui_mute_requested - requested_offset;
 	int *requested;
 	register size_t saved_count asm("x20");
 
 
 	asm("" : "+r"(root));
 	asm("mov %0, %1" : "=r"(saved_count) : "r"(count), "r"(root));
-	requested = root;
+	requested = (int *)(root + requested_offset);
 	/* OEM ignores parse failure and may use the prior mute request. */
 	kstrtoint(buffer, 0, requested);
 	if (*requested) {
