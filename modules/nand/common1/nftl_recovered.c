@@ -10014,6 +10014,7 @@ struct reclaim_flag_zone {
 	unsigned char before_complete[664];
 	unsigned int complete;
 };
+#ifndef TRIMUI_NFTL_GCC7_PASS
 void clean_read_reclaim_complete_flag(struct read_claim_node *head)
 {
 	struct read_claim_node *node = head;
@@ -10030,14 +10031,16 @@ void clean_read_reclaim_complete_flag(struct read_claim_node *head)
 		destination = (struct reclaim_flag_zone *)node->zone;
 		asm("" : "+r"(destination));
 		value = ((struct reclaim_flag_zone *)node->zone)->complete;
-		/* GCC 7 emits AND for the implicit boolean conversion; stock
-		 * uses CMP, CSET and UXTB in this order. */
-		asm("cmp %w0, #0\n\tcset %w0, eq\n\tuxtb %w0, %w0"
-		    : "+r"(value) : : "cc");
+		/* OEM toggles the complete word: zero becomes one, every nonzero
+		 * value becomes zero. Keep the two unchecked zone observations. */
+		value = (unsigned char)(value == 0);
 		destination->complete = value;
 		node = node->next;
 	}
 }
+#else
+extern void clean_read_reclaim_complete_flag(struct read_claim_node *head);
+#endif
 #ifndef TRIMUI_NFTL_READ_RECLAIM_GCC53_BUILD
 int set_nftl_read_claim_complete(struct read_claim_node *head,
 				 struct read_claim_node *selected)

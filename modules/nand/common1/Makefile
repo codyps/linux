@@ -69,6 +69,7 @@ $(obj)/nftl_gcc53_hynix16nm_read_page_end.o: override CC := python3 $(srctree)/s
 $(obj)/nftl_gcc53_hynix20nm_read_page_end.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix20nm_read_page_end --
 $(obj)/nftl_gcc53_hynix26nm_read_page_end.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix26nm_read_page_end --
 $(obj)/nftl_gcc53_read_reclaim.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) read_reclaim --
+$(obj)/nftl_gcc53_reclaim_complete.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) clean_read_reclaim_complete_flag --
 $(obj)/nftl_gcc53_first_scan.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) init_zone_after_first_scan --
 $(obj)/nftl_gcc53_hynix16nm_major_check_byte.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix16nm_major_check_byte --
 $(obj)/nftl_gcc53_hynix16nm_get_special_info.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix16nm_get_special_info --
@@ -156,6 +157,7 @@ nftl_gcc53_objects += $(addprefix $(obj)/,$(nftl_hynix_special_objects))
 nftl_gcc53_objects += $(addprefix $(obj)/,$(nftl_small_objects))
 nftl_gcc53_objects += $(addprefix $(obj)/,$(nftl_hynix_end_objects))
 nftl_gcc53_objects += $(obj)/nftl_gcc53_read_reclaim.o
+nftl_gcc53_objects += $(obj)/nftl_gcc53_reclaim_complete.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_first_scan.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_second_scan.o
 nftl_gcc53_objects += $(obj)/nftl_gcc53_no_cross_rebuild.o
@@ -243,7 +245,7 @@ nftl_all_text_objects := $(addprefix $(obj)/, \
 	nftl_gcc53_out_phy_block_from_free_list.o nftl_gcc53_out_phy_block_from_free_list_by_block.o nftl_gcc53_get_cold_logic_page.o nftl_gcc53_fill_no_use_data_to_current_block.o nftl_gcc53_set_oob_logic_page.o nftl_gcc53_hynix26nm_getdefaultparam.o nftl_gcc53_hynix16nm_set_readretry.o nftl_gcc53_sandisk_readretry_init.o \
 	nftl_gcc53_samsung_special_init.o nftl_gcc53_micron_special_init.o nftl_gcc53_toshiba_special_init.o nftl_gcc53_sandisk_special_init.o nftl_gcc53_sandisk_A19_special_init.o nftl_gcc53_nand_dbg_phy_read.o nftl_gcc53_nand_dbg_zone_phy_read.o nftl_gcc53_hynix16nm_special_init.o \
 	nftl_gcc53_hynix20nm_special_init.o nftl_gcc53_hynix26nm_special_init.o nftl_gcc53_hynix16nm_readretry_init.o nftl_gcc53_malloc_logic_page_map.o nftl_gcc53_prio_gc_one.o nftl_gcc53_put_phy_block_to_free_list.o nftl_gcc53_hynix16nm_read_page_end.o nftl_gcc53_hynix20nm_read_page_end.o \
-	nftl_gcc53_hynix26nm_read_page_end.o nftl_gcc53_read_reclaim.o nftl_gcc53_first_scan.o nftl_gcc53_hynix16nm_major_check_byte.o nftl_gcc53_hynix16nm_get_special_info.o nftl_gcc53_hynix20nm_init_readretry_param.o nftl_gcc53_hynix20nm_default_param.o nftl_gcc53_get_used_page_num.o \
+	nftl_gcc53_hynix26nm_read_page_end.o nftl_gcc53_read_reclaim.o nftl_gcc53_reclaim_complete.o nftl_gcc53_first_scan.o nftl_gcc53_hynix16nm_major_check_byte.o nftl_gcc53_hynix16nm_get_special_info.o nftl_gcc53_hynix20nm_init_readretry_param.o nftl_gcc53_hynix20nm_default_param.o nftl_gcc53_get_used_page_num.o \
 	nftl_gcc53_get_used_page_num_no_crosstalk.o nftl_gcc53_gc_info.o nftl_gcc53_clean_zone.o nftl_gcc53_zone_param.o nftl_gcc53_static_wear_check.o nftl_gcc53_write_error.o nftl_gcc53_hynix16nm_init_readretry_param.o nftl_gcc53_hynix26nm_set_readretry.o \
 	nftl_gcc53_torture_block_and_mark.o nftl_gcc53_build_zone_list_first.o nftl_gcc53_toshiba_set_readretry.o nftl_gcc53__nftl_nand_read_logic_page.o nftl_gcc53_recover_logic_page_mapping.o nftl_gcc53_power_on_gc.o nftl_gcc53_check_cross_talk.o nftl_gcc53_init_nrc.o \
 	nftl_gcc53_gc_all_base_on_free_blks.o nftl_gcc53_done_static_wear_leveling.o nftl_gcc53_is_no_use_device.o nftl_gcc53_garbage_collect.o nftl_gcc53_garbage_collect_first.o nftl_gcc53_print_logic_page_map.o nftl_gcc53_panic_backup_block.o nftl_gcc53_sandisk_first_burn.o \
@@ -304,6 +306,7 @@ CFLAGS_nftl_gcc53_hynix16nm_read_page_end.o += -O0 -fno-builtin -fno-pic -mcmode
 CFLAGS_nftl_gcc53_hynix20nm_read_page_end.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_hynix26nm_read_page_end.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_read_reclaim.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS_nftl_gcc53_reclaim_complete.o += -O0 -fno-builtin -fno-pic -mcmodel=small -momit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_first_scan.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_hynix16nm_major_check_byte.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
 CFLAGS_nftl_gcc53_hynix16nm_get_special_info.o += -O0 -fno-builtin -fno-pic -mcmodel=small -mno-omit-leaf-frame-pointer -ffunction-sections -fdata-sections
