@@ -300,8 +300,13 @@ static int trimui_ledc_run_thread(void *unused)
 			if (trimui_mask_f) {
 				u32 f1 = READ_ONCE(trimui_anim_frames[(long)offset + 9]);
 				u32 f2 = READ_ONCE(trimui_anim_frames[(long)offset + 8]);
-				WRITE_ONCE(trimui_frame[8], f2);
-				WRITE_ONCE(trimui_frame[9], f1);
+				/* OEM publishes these with one paired 32-bit STP after
+				 * both reads. Separate WRITE_ONCE stores emitted two STRs.
+				 * Keep the adjacent ordinary stores and verify the pair;
+				 * this does not promise atomic publication of both pixels.
+				 * TODO: synchronize animation/frame edits separately. */
+				trimui_frame[8] = f2;
+				trimui_frame[9] = f1;
 			}
 		}
 		commit_static_frame();
