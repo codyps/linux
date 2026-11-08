@@ -210,7 +210,7 @@ ffffff80083fb07c nftl_gcc53_print_logic_page_map.o .text.print_logic_page_map 23
 ffffff80083fb168 nftl_recovered.o .text.get_last_nftl 72
 ffffff80083fb1b0 nftl_recovered.o .text.get_nftl_need_read_claim 140
 ffffff80083fb23c nftl_recovered.o .text.get_nftl_read_claim_page_no 48
-ffffff80083fb26c nftl_recovered.o .text.clean_read_reclaim_complete_flag 92
+ffffff80083fb26c nftl_gcc53_reclaim_complete.o .text.clean_read_reclaim_complete_flag 92
 ffffff80083fb2c8 nftl_recovered.o .text.set_nftl_read_claim_complete 148
 ffffff80083fb35c nftl_recovered.o .text.set_nftl_read_claim_flag 104
 ffffff80083fb3c4 nftl_gcc53_get_cold_logic_page.o .text.get_cold_logic_page 216
