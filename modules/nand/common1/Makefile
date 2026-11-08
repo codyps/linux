@@ -70,7 +70,7 @@ $(obj)/nftl_gcc53_hynix20nm_read_page_end.o: override CC := python3 $(srctree)/s
 $(obj)/nftl_gcc53_hynix26nm_read_page_end.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix26nm_read_page_end --
 $(obj)/nftl_gcc53_read_reclaim.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) read_reclaim --
 # GGCPASS in this wrapper selects helper declarations; CC remains pinned GCC5.
-$(obj)/nftl_gcc53_poweroff_ecc.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) nand_power_off_ecc_error --
+$(obj)/nftl_gcc53_poweroff_ecc.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) nand_power_off_ecc_error:_DumpHexData --
 $(obj)/nftl_gcc53_reclaim_complete.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) clean_read_reclaim_complete_flag --
 $(obj)/nftl_gcc53_first_scan.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) init_zone_after_first_scan --
 $(obj)/nftl_gcc53_hynix16nm_major_check_byte.o: override CC := python3 $(srctree)/scripts/trimui_nftl_select_cc.py $(TRIMUI_NFTL_GCC53) $(CROSS_COMPILE)ld $(OBJCOPY) hynix16nm_major_check_byte --
