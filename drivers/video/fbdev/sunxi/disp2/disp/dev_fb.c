@@ -2130,19 +2130,12 @@ static int Fb_map_kernel_logo(u32 sel, struct fb_info *info)
 						+ abs(fb_width - x) / 2;
 					u32 byte_width = info->var.bits_per_pixel >> 3;
 					u64 product;
-#ifdef __aarch64__
-					/* Preserve stock operand and scheduling order. A W
-					 * destination also preserves its 32-bit wrap before
-					 * the 64-bit pointer addition. Compatible source,
-					 * not evidence of the original C spelling.
-					 */
-					__asm__("" : "+r" (pixel_index));
-					__asm__("mul %w0, %w1, %w2"
-						: "=r" (product)
-						: "r" (pixel_index), "r" (byte_width));
-#else
-					product = (u32)(pixel_index * byte_width);
-#endif
+/* Stock wraps the byte offset at32 bits before pointer
+                     * addition. Keep that truncation even on ARM64.
+                     * TODO: overflow checking would change OEM behavior.
+                     */
+                    __asm__("" : "+r" (pixel_index));
+                    product = (u32)(pixel_index * byte_width);
 					product;
 				}));
 #line 2132
