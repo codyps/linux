@@ -1413,7 +1413,7 @@ static ssize_t store_speaker_mute(struct class *class, struct class_attribute *a
 
 
 	asm("" : "+r"(root));
-	asm("mov %0, %1" : "=r"(saved_count) : "r"(count), "r"(root));
+	saved_count = count; asm("" : "+r"(saved_count) : "r"(root));
 	requested = (int *)(root + requested_offset);
 	/* OEM ignores parse failure and may use the prior mute request. */
 	kstrtoint(buffer, 0, requested);
