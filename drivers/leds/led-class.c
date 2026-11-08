@@ -198,7 +198,7 @@ int led_classdev_register(struct device *parent, struct led_classdev *led_cdev)
 				led_cdev, led_cdev->groups, "%s", name);
 	if (IS_ERR(led_cdev->dev))
 		return PTR_ERR(led_cdev->dev);
-
+	/* OEM publishes before led_access init; fix this order separately. */
 	if (ret)
 		dev_warn(parent, "Led %s renamed to %s due to name collision",
 				led_cdev->name, dev_name(led_cdev->dev));
