@@ -1289,7 +1289,7 @@ static ssize_t store_frames_cycles(struct class *class, struct class_attribute *
 {
 
 
-	size_t result;
+	register size_t result asm("x20");
 	int parser_base = 0;
 
 	/* Keep OEM's parser zero, BSS root, and saved-count schedule. */
