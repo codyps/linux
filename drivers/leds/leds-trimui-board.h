@@ -888,40 +888,40 @@ static ssize_t store_effect_rgb_hex_lr(struct class *class,struct class_attribut
  * input keeps the previous type, but still regenerates the effect and resets
  * its playback state; preserve that observable bug.
  */
-#define TRIMUI_EFFECT_AT(root, offset) \
-	((struct trimui_led_effect *)((root) + (offset)))
-
-
-_Static_assert(__builtin_offsetof(struct trimui_stock_led_state,
-				 effects[2].frames[620]) == 0x2830,
-	       "middle LED page root");
+extern u32 trimui_middle_member_root __asm__("trimui_effect_l+1400"); /* Real L.frames[342], four bytes; no allocation. */
+#define MIDDLE_FIELD(root, member) \
+ (*(__typeof__(trimui_effect_m.member) *)((root) + 2472 + __builtin_offsetof(struct trimui_led_effect, member)))
+_Static_assert(__builtin_offsetof(struct trimui_led_effect, frames[342]) == 1400, "middle member root");
+_Static_assert(1400 + sizeof(trimui_middle_member_root) <= sizeof(trimui_effect_l) &&
+	       sizeof(struct trimui_led_effect) - 1400 == 2472,
+	       "middle member extent and numeric field delta");
 static ssize_t store_effect_m(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
+	register unsigned long page asm("x19");
+	register unsigned long base asm("x20");
 	register size_t saved asm("x21") = count;
 	register struct trimui_led_effect *genptr asm("x14");
 	register struct trimui_led_effect *callptr asm("x0");
-	struct trimui_led_effect *effect;
 	int parsed_type;
 	u32 current_color, target_color;
-
-	effect = &trimui_effect_m;
-	/* OEM ignores parse failure, then clamps any type above 7. */
-	kstrtoint(buffer, 0, (int *)&effect->type);
-	if ((unsigned int)effect->type > 7)
-		effect->type = 0;
-	effect = &trimui_effect_m;
-	/* Retain OEM's separate x14 address calculation for the generator. */
-	genptr = &trimui_effect_m;
+	base = (unsigned long)&trimui_middle_member_root;
+	asm volatile("" : "+r"(base));
+	kstrtoint(buffer, 0, (int *)&MIDDLE_FIELD(base, type));
+	if ((unsigned int)MIDDLE_FIELD(base, type) > 7)
+		MIDDLE_FIELD(base, type) = 0;
+	page = (unsigned long)&trimui_middle_member_root;
+	asm volatile("" : "+r"(page));
+	genptr = (struct trimui_led_effect *)(page + 2472);
 	asm volatile("" : "+r"(genptr));
 	callptr = genptr;
 	asm volatile("" : "+r"(callptr));
-	parsed_type = READ_ONCE(effect->type);
-	current_color = READ_ONCE(effect->current_rgb);
-	target_color = READ_ONCE(effect->target_rgb);
+	parsed_type = READ_ONCE(MIDDLE_FIELD(page, type));
+	current_color = READ_ONCE(MIDDLE_FIELD(page, current_rgb));
+	target_color = READ_ONCE(MIDDLE_FIELD(page, target_rgb));
 	gen_effect(callptr, parsed_type, target_color, current_color);
-	/* OEM resets the index before reading cycles, even if state changes. */
-	WRITE_ONCE(effect->index, 0);
-	WRITE_ONCE(effect->active_cycles, READ_ONCE(effect->cycles));
+	/* OEM resets index before reading cycles, including after parse failure. */
+	WRITE_ONCE(MIDDLE_FIELD(page, index), 0);
+	WRITE_ONCE(MIDDLE_FIELD(page, active_cycles), READ_ONCE(MIDDLE_FIELD(page, cycles)));
 	return saved;
 }
 
@@ -986,7 +986,7 @@ static ssize_t store_effect_r(struct class *class, struct class_attribute *attr,
 	WRITE_ONCE(effect->active_cycles, READ_ONCE(effect->cycles));
 	return saved;
 }
-#undef TRIMUI_EFFECT_AT
+#undef MIDDLE_FIELD
 
 static ssize_t store_effect_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
