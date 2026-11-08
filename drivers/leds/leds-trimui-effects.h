@@ -198,34 +198,38 @@ static __attribute__((no_reorder)) void gen_effect(struct trimui_led_effect *eff
 		 * future bug fix; a volatile reread here changes shipped behavior.
 		 */
 		int high_duration = effect->duration;
-		if (high_duration > 8000)
+		register int blink_count asm("w1");
+		if (high_duration > 8000) {
 			effect->duration = 8000;
-		if (high_duration < 500) {
-			if (type == 7)
-				effect->duration = 500;
+			if (type == 7) {
+				blink_count = 30;
+				goto count_ready;
+			}
+			goto after_type7;
 		}
-		/* Stock rereads duration for blink2 after the earlier clamp; blink3
-		 * uses its prior value. Keep the asymmetric observation order.
+		if (type == 7) {
+			if (high_duration < 500)
+				effect->duration = 500;
+			blink_count = 30;
+			goto count_ready;
+		}
+		/* Stock skips the type-7 low clamp after a high clamp, but type 6
+		 * still rereads duration. A concurrent writer can change that read.
+		 * TODO: use one synchronized duration in a corrective change.
 		 */
-		if (type == 6 && READ_ONCE(effect->duration) < 350)
-			effect->duration = 350;
+	after_type7:
+		if (type == 6) {
+			if (READ_ONCE(effect->duration) < 350)
+				effect->duration = 350;
+			blink_count = 20;
+		} else {
+			blink_count = 10;
+		}
+		/* Keep the stock type decision ahead of the final duration read. */
+	count_ready:
 		n = effect->duration / 16;
 		for (i = 0; i < n; i++)
 			effect->frames[i] = 0;
-		/* Keep the OEM pattern count in w1 while the fixed-extent stores
-		 * execute. The fixed extent may exceed the published duration;
-		 * preserve that shipped write behavior.
-		 */
-		register int blink_count asm("w1");
-		/* Stock selects the three fixed blink-table extents through
-		 * distinct type branches, in descending type order.
-		 */
-		if (type == 7)
-			blink_count = 30;
-		else if (type == 6)
-			blink_count = 20;
-		else
-			blink_count = 10;
 		/* OEM always writes the fixed pattern extent after the zero fill.
 		 * If duration changes before the count reread, this can write
 		 * beyond the newly published length. Preserve that ordering.
