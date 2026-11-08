@@ -1204,23 +1204,25 @@ static __attribute__((no_reorder)) ssize_t store_anim_frames_hex(struct class *c
 	return count;
 }
 
-static __attribute__((no_reorder)) ssize_t show_frame_hex(struct class *class, struct class_attribute *attr, char *buffer)
+static __attribute__((no_reorder, optimize("no-move-loop-invariants"))) ssize_t show_frame_hex(struct class *class, struct class_attribute *attr, char *buffer)
 {
 	/* Stock advances the index in x22 but compares its low signed word.
 	 * A mutable LED count can change between loop iterations. */
 	register long i asm("x22") = 0;
 	int count = 0;
+	register struct trimui_led_config *config_root asm("x23") = &trimui_config;
+	/* Hold a bounded configuration-object root across formatting calls. */
+	asm("" : "+r" (config_root));
 	register char *position asm("x21") = buffer;
 	register u32 *pixels asm("x20") =
 		/* OEM page-ADD order; 0x7cc remains a separate ADD. */ trimui_frame;
-	register const char *format_page asm("x24");
 	/* Keep the OEM frame root and late format-page offset while retaining
 	 * the compiler's pooled format literal. */
-	asm("adrp %0, %1" : "=r"(format_page) : "S"("%06X "));
+	/* The C literal supplies the complete pooled address. */
 	/* Stock advances by the cumulative length, producing sparse output.
 	 * At 34 LEDs the newline lands beyond a 4 KiB sysfs page.
 	 * TODO: advance by the last write and bound output in a separate fix. */
-	while ((int)i < (int)trimui_led_count) {
+	while ((int)i < (int)config_root->count) {
 		count += 7;
 		{
 			const char *format;
@@ -1230,8 +1232,7 @@ static __attribute__((no_reorder)) ssize_t show_frame_hex(struct class *class, s
 			 */
 			register char *destination asm("x0") = position;
 			asm("" : "+r"(destination));
-			asm("add %0, %1, :lo12:%2"
-			    : "=r"(format) : "r"(format_page), "S"("%06X "));
+			format = "%06X ";
 			sprintf(destination, format, pixels[i] & 0xffffff);
 		}
 		position += count;
