@@ -116,7 +116,7 @@ static void trimui_led_power_enable(int enable)
 	if (!enable)
 		gpio_direction_output(107, 0);
 }
-static void commit_static_frame(void) __asm__("commit_static_frame.constprop.16"); /* OEM clone name, not original C. */
+#include "leds-trimui-frame-byte.h"
 static void commit_static_frame(void)
 {
  /* Stock keeps this initial mutex even if the global device changes.
@@ -127,7 +127,7 @@ static void commit_static_frame(void)
  unsigned int i,count,scale,red,green; int low,j; s32 blue;
  unsigned long flags,diff_time;
  struct timeval start,end;
- const volatile u8 *src;
+ const u8 *src;
  /* OEM branches on the pixel group before its single wire-frame store.
   * A volatile view keeps that branch in this compiler and preserves the
   * same one-store-per-pixel observation, including unchecked overflow.
@@ -151,9 +151,9 @@ static void commit_static_frame(void)
   }
   /* Preserve byte observation order, wrap, and arithmetic blue shift.
    * TODO: normalize channel widths only as a separate fix. */
-  blue=(u32)src[-4]*scale; red=(u32)src[-2]*scale; green=(u32)src[-3]*scale;
-  if(i<10)out[i]=((red<<8)&0xff0000)|(green&0xff00)|(blue>>8);
-  else out[i]=((green<<8)&0xff0000)|(red&0xff00)|(blue>>8);
+  blue=TRIMUI_FRAME_BYTE(src-4)*scale; red=TRIMUI_FRAME_BYTE(src-2)*scale; green=TRIMUI_FRAME_BYTE(src-3)*scale;
+  u32 high,partial; if(i<10){ high=(red<<8)&0xff0000; partial=TRIMUI_PACK_CAPTURE((green&0xff00)|(blue>>8)); }
+  else { high=(green<<8)&0xff0000; partial=TRIMUI_PACK_CAPTURE((red&0xff00)|(blue>>8)); } out[i]=high|partial;
   src+=4;
  }
  if(trimui_suspended || !trimui_transfer_config.enable)
