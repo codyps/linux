@@ -1043,6 +1043,9 @@ static ssize_t store_effect_f2(struct class *class, struct class_attribute *attr
 static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr,
 			       const char *buffer, size_t count)
 {
+	register unsigned long parse_base asm("x20");
+	register unsigned long left_page asm("x19");
+	register unsigned long right_page asm("x18");
 	register struct trimui_led_effect *left_argument asm("x15");
 	register struct trimui_led_effect *right_argument asm("x14");
 	register struct trimui_led_effect *left_call asm("x0");
@@ -1050,36 +1053,33 @@ static ssize_t store_effect_lr(struct class *class, struct class_attribute *attr
 	register int parser_base asm("w1") = 0;
 	int right_cycles, left_type, left_target, left_current;
 	int right_type, right_target, right_current;
-
 	/* OEM ignores parser errors and still regenerates both effects. */
-	kstrtoint(buffer, parser_base, (int *)&(&trimui_effect_l)->type);
-	if ((unsigned int)(&trimui_effect_l)->type > 7)
-		(&trimui_effect_l)->type = 0;
-	left_argument = (&trimui_effect_l);
-	right_argument = (&trimui_effect_r);
+	parse_base = (unsigned long)&trimui_left_member_root; asm volatile("" : "+r"(parse_base));
+	kstrtoint(buffer, parser_base, (int *)&TRIMUI_EFFECT_MEMBER(parse_base, 2952, type));
+	if ((unsigned int)TRIMUI_EFFECT_MEMBER(parse_base, 2952, type) > 7)
+		TRIMUI_EFFECT_MEMBER(parse_base, 2952, type) = 0;
+	left_page = (unsigned long)&trimui_left_member_root; asm volatile("" : "+r"(left_page));
+	right_page = (unsigned long)&trimui_right_member_root; asm volatile("" : "+r"(right_page));
+	left_argument = (struct trimui_led_effect *)(left_page + 2952);
+	right_argument = (struct trimui_led_effect *)(right_page + 3432);
 	asm volatile("" : "+r"(left_argument), "+r"(right_argument));
-	left_call = left_argument;
-	asm volatile("" : "+r"(left_call));
-	left_type = READ_ONCE((&trimui_effect_l)->type);
-	left_current = READ_ONCE((&trimui_effect_l)->current_rgb);
-	left_target = READ_ONCE((&trimui_effect_l)->target_rgb);
-	WRITE_ONCE((&trimui_effect_r)->type, left_type);
+	left_call = left_argument; asm volatile("" : "+r"(left_call));
+	left_type = READ_ONCE(TRIMUI_EFFECT_MEMBER(left_page, 2952, type));
+	left_current = READ_ONCE(TRIMUI_EFFECT_MEMBER(left_page, 2952, current_rgb));
+	left_target = READ_ONCE(TRIMUI_EFFECT_MEMBER(left_page, 2952, target_rgb));
+	WRITE_ONCE(TRIMUI_EFFECT_MEMBER(right_page, 3432, type), left_type);
 	gen_effect(left_call, left_type, left_target, left_current);
-	/* OEM carries x14 across the first generator call. This relies on the
-	 * pinned gen_effect body not writing x14; a generic ABI call may clobber it. */
-	right_type = READ_ONCE((&trimui_effect_r)->type);
-	right_current = READ_ONCE((&trimui_effect_r)->current_rgb);
-	right_target = READ_ONCE((&trimui_effect_r)->target_rgb);
+	/* OEM retains x14/x18 across calls; the pinned generator preserves them. */
+	right_type = READ_ONCE(TRIMUI_EFFECT_MEMBER(right_page, 3432, type));
+	right_current = READ_ONCE(TRIMUI_EFFECT_MEMBER(right_page, 3432, current_rgb));
+	right_target = READ_ONCE(TRIMUI_EFFECT_MEMBER(right_page, 3432, target_rgb));
 	gen_effect(right_argument, right_type, right_target, right_current);
-	WRITE_ONCE((&trimui_effect_l)->index, 0);
-	WRITE_ONCE((&trimui_effect_l)->active_cycles,
-		READ_ONCE((&trimui_effect_l)->cycles));
-	/* OEM reads right cycles before resetting right index. */
-	right_cycles = READ_ONCE((&trimui_effect_r)->cycles);
-	WRITE_ONCE((&trimui_effect_r)->index, 0);
-	/* OEM's ordinary final store is scheduled after the x19/x20 restore.
-	 * WRITE_ONCE moves it before the restore with this compiler. */
-	(&trimui_effect_r)->active_cycles = right_cycles;
+	WRITE_ONCE(TRIMUI_EFFECT_MEMBER(left_page, 2952, index), 0);
+	WRITE_ONCE(TRIMUI_EFFECT_MEMBER(left_page, 2952, active_cycles),
+		READ_ONCE(TRIMUI_EFFECT_MEMBER(left_page, 2952, cycles)));
+	right_cycles = READ_ONCE(TRIMUI_EFFECT_MEMBER(right_page, 3432, cycles));
+	WRITE_ONCE(TRIMUI_EFFECT_MEMBER(right_page, 3432, index), 0);
+	TRIMUI_EFFECT_MEMBER(right_page, 3432, active_cycles) = right_cycles;
 	return saved_count;
 }
 #undef TRIMUI_PAIR_LEFT
