@@ -22,6 +22,13 @@ xradio_core-$(CONFIG_XRADIO_ETF)    += etf.o
 
 ldflags-y += --strip-debug
 
+# With the pinned Linaro 7.4.1 compiler, late forward propagation reverses
+# the cleanup comparison in xradio_init_common. B.NE still sees the same Z,
+# but N/C/V then differ from OEM at an interrupt or exception boundary.
+# Retain the OEM CMP and all other function bytes without changing the C
+# cleanup behavior. The original source/compiler cause remains unknown.
+CFLAGS_main.o += -fdisable-tree-forwprop4=xradio_init_common
+
 xradio_wlan-y := wlan_init.o
 
 obj-$(CONFIG_XRADIO) += xradio_core.o
