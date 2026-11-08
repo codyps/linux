@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Reorder four OEM LED literals in an ELF relocatable C object.
+"""Reorder three OEM LED literals in an ELF relocatable C object.
 
-The driver remains C. GCC 7 emits these four literals in a different order
+The driver remains C. GCC 7 emits these three literals in a different order
 from the shipped Image even when their source functions are moved; moving the
 functions also changes verified executable bodies. This link-layout step
 changes only the mergeable string section and its section-relative RELA
@@ -15,7 +15,7 @@ import struct
 import sys
 
 
-EXPECTED_POOL_SHA256 = "ed4b704d7731e5d4cd6ddb8a32b0dc013be8729bd7c4259b43a6a22a992c56ad"
+EXPECTED_POOL_SHA256 = "b258e72e4e80be304c9a0aae1a9891c4d69ccca1623aceb483a477ab4fee8df8"
 TIMEOUT = b"\x013%s()%d - led xfer timeout\n"
 COMPLETE = b"\x014%s()%d - xfer complete\n"
 PINCTRL = b"\x013%s()%d - pinctrl_lookup_state(%s) failed! return %p\n"
@@ -53,14 +53,17 @@ def reorder(pool):
     assert len(items) == len(set(items)) == 157
     assert [items.index(value) for value in
             (PINCTRL, TIMEOUT, COMPLETE, ENABLE, AXP, THREAD)] == \
-           [17, 26, 27, 37, 93, 94]
+           [17, 26, 27, 37, 94, 93]
     moved = items.copy()
-    for value in (TIMEOUT, COMPLETE, AXP, ENABLE):
+    for value in (TIMEOUT, COMPLETE, ENABLE):
         moved.remove(value)
     before_pinctrl = moved.index(PINCTRL)
     moved[before_pinctrl:before_pinctrl] = [TIMEOUT, COMPLETE]
-    after_thread = moved.index(THREAD) + 1
-    moved[after_thread:after_thread] = [AXP, ENABLE]
+    # Explicit create/error/wake C now emits THREAD immediately before AXP.
+    # Preserve that native order; only ENABLE still needs moving here.
+    assert moved.index(AXP) == moved.index(THREAD) + 1
+    after_axp = moved.index(AXP) + 1
+    moved[after_axp:after_axp] = [ENABLE]
     old_starts, new_starts = {}, {}
     for values, starts in ((items, old_starts), (moved, new_starts)):
         cursor = 0

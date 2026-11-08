@@ -85,7 +85,7 @@ $(obj)/leds-trimui-effect-name-text-merge.o: $(obj)/leds-trimui-effect-name-text
 # Each stock LED C body is contiguous, but the OEM text order differs from
 # the compiler's source order for a few functions. Preserve separate C
 # sections until the verified stock-order partial link. The GCC string pool
-# likewise needs four records reordered; the script remaps all in-object
+# likewise needs three records reordered; the script remaps all in-object
 # RELA addends, leaving the C bodies and their literal values intact.
 CFLAGS_leds-sunxi.o += -ffunction-sections
 # This prerequisite is not in obj-y; register it so Kbuild reloads its .cmd.
