@@ -1389,7 +1389,7 @@ static ssize_t store_motor_voltage(struct class *class, struct class_attribute *
 	 * Saving count after forming the state root preserves OEM ADRP/ADD/MOV
 	 * order without changing the stale-value behavior on parse failure. */
 
-	asm("mov %0, %1" : "=r"(saved_count) : "r"(count), "r"(&trimui_motor_voltage));
+	saved_count = count; asm("" : : "r"(saved_count), "r"(&trimui_motor_voltage));
 	kstrtoint(buffer, 0, &trimui_motor_voltage);
 	/* Stock passes NULL/error pointers through. TODO: check regulator_get in a separate fix. */
 	regulator_set_voltage(trimui_motor_regulator, trimui_motor_voltage,
