@@ -1921,9 +1921,9 @@ static int sunxi_led_remove(struct platform_device *pdev)
 {
 	struct sunxi_led *led = platform_get_drvdata(pdev);
 
-	/* Stock leaves the board thread, classes, GPIO and motor regulator alive.
-	 * TODO: stop/release them in a separate fix; retain the shipped teardown.
-	 */
+	/* OEM leaves the board thread/classes/GPIO/motor regulator alive.
+	 * sunxi_led stays dangling after kfree; led=NULL clears only a local.
+	 * TODO: stop/release/clear separately; preserve shipped teardown here. */
 	class_unregister(&led_class);
 
 	sunxi_led_remove_debugfs(led);
