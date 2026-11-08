@@ -118,8 +118,8 @@ ffffff80083f5ff4 nftl_recovered.o .text.nand_clean_zone_table 68
 ffffff80083f6038 nftl_recovered.o .text.nand_find_zone_table 140
 ffffff80083f60c4 nftl_recovered.o .text.write_data_to_nand 152
 ffffff80083f615c nftl_recovered.o .text.nand_check_table 124
-ffffff80083f61d8 nftl_recovered.o .text._DumpHexData 156
-ffffff80083f6274 nftl_recovered.o .text.nand_power_off_ecc_error 272
+ffffff80083f61d8 nftl_gcc53_poweroff_ecc.o .text._DumpHexData 156
+ffffff80083f6274 nftl_gcc53_poweroff_ecc.o .text.nand_power_off_ecc_error 272
 ffffff80083f6384 nftl_sector_cache_init_gcc53.o .text.nftl_sector_cache_init 372
 ffffff80083f64f8 nftl_recovered.o .text.nftl_sector_cache_exit 48
 ffffff80083f6528 nftl_recovered.o .text.search_from_sector_cache_write_list 104

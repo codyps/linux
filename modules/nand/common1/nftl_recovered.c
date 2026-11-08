@@ -4141,6 +4141,7 @@ int write_data_to_nand(void *zone)
 	/* OEM ignores every write result, even after a failed allocation. */
 	return 0;
 }
+#if !defined(TRIMUI_NFTL_GCC7_PASS) || defined(TRIMUI_NFTL_ECC_GCC53_BUILD)
 static void _DumpHexData(const unsigned char *data, int length)
 {
 	const unsigned char *current = data;
@@ -4156,6 +4157,7 @@ static void _DumpHexData(const unsigned char *data, int length)
 	}
 	nand_print(nftl_ro_lc_45);
 }
+#endif
 #ifdef TRIMUI_NFTL_GCC7_PASS
 extern void dump_buf(const unsigned char *data, unsigned int length);
 #else
@@ -4387,7 +4389,7 @@ int hynix20nm_init_readretry_param(struct hynix20nm_readretry_zone *zone)
 			goto done;
 		} else {
 			/* Preserve the OEM failure-path NOP and branch layout. */
-			asm volatile("nop");
+			goto done;
 		}
 	}
 	/* OEM frees only the page buffer here. The 32 KiB copy buffer leaks
@@ -8766,8 +8768,9 @@ int samsung_read_page_end(struct samsung_read_request *request)
 				}
 			} else {
 				/* OEM executes one NOP only when retry setup fails. */
-				asm volatile("nop");
+				goto retry_step;
 			}
+		retry_step:
 			retry++;
 		}
 	retry_done:;
@@ -8859,8 +8862,9 @@ int micron_read_page_end(struct samsung_read_request *request)
 				}
 			} else {
 				/* Keep the OEM retry-setup failure instruction slot. */
-				asm volatile("nop");
+				goto retry_step;
 			}
+		retry_step:
 			retry++;
 		}
 	retry_done:;
@@ -8917,8 +8921,9 @@ int toshiba_read_page_end(struct samsung_read_request *request)
 				}
 			} else {
 				/* Keep the OEM retry-setup failure instruction slot. */
-				asm volatile("nop");
+				goto retry_step;
 			}
+		retry_step:
 			retry++;
 		}
 	retry_done:;
@@ -8981,8 +8986,9 @@ int sandisk_read_page_end(struct samsung_read_request *request)
 				}
 			} else {
 				/* Stock executes the NOP only after retry setup fails. */
-				asm volatile("nop");
+				goto retry_step;
 			}
+		retry_step:
 			retry++;
 		}
 	retry_done:;
@@ -9232,8 +9238,9 @@ int sandisk_A19_read_page_end(struct samsung_read_request *request)
 		} else {
 			/* OEM executes this NOP only when mode 51 skips both
 			 * middle phases. Keep the shipped timing and branch join. */
-			asm volatile("nop");
+			goto phase_three;
 		}
+	phase_three:
 		A19_PHASE(3);
 	#undef A19_PHASE
 	done:
@@ -10204,7 +10211,8 @@ struct poweroff_ecc_zone {
 #if !defined(TRIMUI_NFTL_PHY_RECOVERY_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_PAGE_MAP_GCC53_BUILD) && \
     !defined(TRIMUI_NFTL_USED_PAGE_GCC53_BUILD) && \
-    !defined(TRIMUI_NFTL_NO_CROSSTALK_GCC53_BUILD)
+    !defined(TRIMUI_NFTL_NO_CROSSTALK_GCC53_BUILD) && \
+    (!defined(TRIMUI_NFTL_GCC7_PASS) || defined(TRIMUI_NFTL_ECC_GCC53_BUILD))
 int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 			     const unsigned char *data, unsigned char *oob)
 {
@@ -10225,8 +10233,9 @@ int nand_power_off_ecc_error(struct poweroff_ecc_zone *zone,
 		error = 1;
 		/* The stock body executes one NOP at this join point, only after
 		 * the bad-marker diagnostic. Keep its instruction timing. */
-		asm volatile("nop");
+		goto check_error;
 	}
+check_error:
 	if (error == 1) {
 		/* OEM prints its original source line and dumps 16 bytes of OOB;
 		 * preserve that diagnostic even if the source line moves. */
