@@ -166,8 +166,15 @@ static void commit_static_frame(void)
  led->length=count;
  for(j=0;(unsigned int)j<READ_ONCE(led->length);j++) { /* OEM signed wrap past INT_MAX can address before wire. */
   u32 *dest=READ_ONCE(led->data);
-  u32 pixel=READ_ONCE(trimui_wire_frame[j]);
-  WRITE_ONCE(dest[j],pixel);
+  /* OEM sign-extends the wrapped 32-bit index before both addresses.
+   * Ordinary array indexing let this compiler widen only the destination
+   * induction variable and lose that behavior after INT_MAX. Keep the
+   * byte offset numeric so it also preserves the OEM backward/fault
+   * address rather than forming an out-of-array intermediate C pointer.
+   * TODO: bound the transfer only in a separate behavior change. */
+  unsigned long offset=(unsigned long)(long)(s32)(u32)j << 2;
+  u32 pixel=READ_ONCE(*(u32 *)((unsigned long)trimui_wire_frame+offset));
+  WRITE_ONCE(*(u32 *)((unsigned long)dest+offset),pixel);
  }
  spin_unlock_irqrestore(&led->lock,flags);
  sunxi_ledc_trans_data(led);
