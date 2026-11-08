@@ -4308,9 +4308,10 @@ int hynix16nm_init_readretry_param(struct hynix16nm_readretry_zone *zone)
 		hynix16nm_set_default_param(zone);
 		nand_print_dbg(nftl_ro_lc_129,
 			       zone->controller->channel, status_first[0]);
-		/* Preserve the OEM fallback-path NOP before buffer cleanup. */
-		asm volatile("nop");
+		/* OEM fallback exits through the common buffer cleanup. */
+		goto out_free_buffers;
 	}
+out_free_buffers:
 	nand_free_temp_buf(copy_buffer);
 	nand_free_temp_buf(page_buffer);
 	return 0;
