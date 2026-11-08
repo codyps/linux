@@ -1487,10 +1487,10 @@ static int sunxi_register_led_classdev(struct sunxi_led *led)
 		return -ENOMEM;
 
 	for (i = 0; i < led->led_count; i++) {
-		/* Stock rereads this pointer for the type store and class-device
-		 * address, including after each registration call. Keep the separate
-		 * reads: a changed pointer could redirect the next access or fault.
-		 * TODO: synchronize the group lifetime in a separate corrective fix.
+		/* OEM reloads the group for type/cdev stores, including after calls.
+		 * Keep each read: pointer changes can redirect accesses or fault.
+		 * All three name allocations below are unchecked before sprintf.
+		 * TODO: validate names and synchronize group lifetime separately.
 		 */
 		group = READ_ONCE(led->pcdev_group);
 		group[i].r.type = LED_TYPE_R;
