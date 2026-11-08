@@ -990,29 +990,29 @@ static ssize_t store_effect_r(struct class *class, struct class_attribute *attr,
 
 static ssize_t store_effect_f1(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
-	struct trimui_led_effect *effect = &trimui_effect_f1;
-	register struct trimui_led_effect *argument asm("x14");
-	register size_t saved_count asm("x21") = count;
-	register int parser_base asm("w1") = 0;
-
-
-	/* OEM ignores parse errors, then clamps any type above 7 to zero. */
-	kstrtoint(buffer, parser_base, (int *)&effect->type);
-	if ((unsigned int)effect->type > 7)
-		effect->type = 0;
-	argument = effect;
-	asm volatile("" : "+r"(argument));
-	/* Keep the OEM x0 setup before its reread of type. */
-	{
-		register struct trimui_led_effect *call asm("x0") = argument;
-
-		asm volatile("" : "+r"(call));
-		gen_effect(call, effect->type, effect->target_rgb, effect->current_rgb);
-	}
-	WRITE_ONCE(effect->index, 0);
-	WRITE_ONCE(effect->active_cycles, READ_ONCE(effect->cycles));
-	return saved_count;
+ register unsigned long page asm("x19"), base asm("x20");
+ register struct trimui_led_effect *argument asm("x14");
+ register size_t saved_count asm("x21") = count;
+ register int parser_base asm("w1") = 0;
+ u32 type, current_color, target;
+ /* OEM ignores parse errors; type above7 becomes0. Preserve separate reads. */
+ base=(unsigned long)&trimui_front_member_root; asm volatile("" : "+r"(base));
+ kstrtoint(buffer,parser_base,(int *)&TRIMUI_EFFECT_MEMBER(base,3912,type));
+ if ((unsigned int)TRIMUI_EFFECT_MEMBER(base,3912,type)>7) TRIMUI_EFFECT_MEMBER(base,3912,type)=0;
+ page=(unsigned long)&trimui_front_member_root; asm volatile("" : "+r"(page));
+ argument=(struct trimui_led_effect *)(page+3912); asm volatile("" : "+r"(argument));
+ {
+  register struct trimui_led_effect *call asm("x0")=argument;
+  asm volatile("" : "+r"(call));
+  /* No paired load: OEM observes type/current_color/target in this order. */
+  type=READ_ONCE(TRIMUI_EFFECT_MEMBER(page,3912,type)); current_color=READ_ONCE(TRIMUI_EFFECT_MEMBER(page,3912,current_rgb)); target=READ_ONCE(TRIMUI_EFFECT_MEMBER(page,3912,target_rgb));
+  gen_effect(call,type,target,current_color);
+ }
+ WRITE_ONCE(TRIMUI_EFFECT_MEMBER(page,3912,index),0);
+ WRITE_ONCE(TRIMUI_EFFECT_MEMBER(page,3912,active_cycles),READ_ONCE(TRIMUI_EFFECT_MEMBER(page,3912,cycles)));
+ return saved_count;
 }
+
 
 static ssize_t store_effect_f2(struct class *class, struct class_attribute *attr, const char *buffer, size_t count)
 {
