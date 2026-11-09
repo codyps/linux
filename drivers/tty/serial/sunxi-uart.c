@@ -2521,3 +2521,27 @@ module_exit(sunxi_uart_exit);
 MODULE_AUTHOR("Aaron<leafy.myeh@allwinnertech.com>");
 MODULE_DESCRIPTION("Driver for Allwinner UART controller");
 MODULE_LICENSE("GPL");
+
+/*
+ * OEM reconstruction note: sw_console_get_port() returns UART slot 7 when
+ * no enabled slot has the requested line number. Each iteration assigns
+ * port before checking for a match, so the callers' NULL checks do not detect
+ * a failed search. Preserve this fallback for OEM equivalence. A separately
+ * corrected build should return NULL when the search has no match.
+ *
+ * This note is at EOF to preserve existing BUG/diagnostic source line numbers
+ * embedded in the qualified OEM-equivalent image.
+ */
+
+/*
+ * OEM reconstruction note: wait_for_xmitr() uses 1000000 CTS iterations,
+ * overwriting the preceding 500000 assignment despite the "500ms" comment.
+ * Keep the one-million budget for OEM equivalence; a corrected version should
+ * update the stale comment and state the intended timeout contract explicitly.
+ * Each unsuccessful CTS poll invokes udelay(1), including the final poll.
+ * Expiry still falls through to transmitting the character, without an error.
+ *
+ * The LSR loop makes two distinct register reads: the first decides readiness,
+ * the second records break status. Preserve both reads and their order even
+ * when the observed bytes differ. Its final timeout iteration skips udelay(1).
+ */

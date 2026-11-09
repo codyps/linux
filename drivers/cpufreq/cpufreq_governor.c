@@ -556,3 +556,13 @@ void cpufreq_dbs_governor_limits(struct cpufreq_policy *policy)
 	mutex_unlock(&policy_dbs->timer_mutex);
 }
 EXPORT_SYMBOL_GPL(cpufreq_dbs_governor_limits);
+
+/*
+ * OEM failure-path bug: when gov->init(dbs_data) fails, the branch above
+ * goes directly to free_policy_dbs_info(). That frees policy_dbs, while the
+ * separately allocated dbs_data misses the kfree used by kobject rollback.
+ * Preserve this leak for stock equivalence. A corrected mode should also
+ * unwind dbs_data, after checking the callback's failure ownership contract.
+ * Native evidence: cpufreq_dbs_governor_init +0x174 -> +0xe4; the explicit
+ * dbs_data kfree at +0x240 is bypassed. Ondemand's tuners allocation can fail.
+ */
