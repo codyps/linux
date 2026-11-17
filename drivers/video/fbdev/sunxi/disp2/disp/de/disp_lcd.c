@@ -396,6 +396,9 @@ static void lcd_get_sys_config(u32 disp, struct disp_lcd_cfg *lcd_cfg)
 			sprintf(sub_name, "lcd_fix_power");
 		else
 			sprintf(sub_name, "lcd_fix_power%d", i);
+		/* Stock clears the ordinary power flag here, not the fixed-power
+		 * flag. TODO: reset lcd_fix_power_used[i] if changing OEM behavior.
+		 */
 		lcd_cfg->lcd_power_used[i] = 0;
 		ret =
 		    disp_sys_script_get_item(primary_key, sub_name,
