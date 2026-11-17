@@ -1481,6 +1481,10 @@ static s32 disp_lcd_get_panel_info(struct disp_device *lcd,
 		return DIS_FAIL;
 	}
 
+	/* Stock does not check info. A successful lookup copies 0x150 bytes to
+	 * it even when the caller's allocation returned NULL. Preserve this
+	 * fault path; add an allocation check in a separate corrective change.
+	 */
 	memcpy(info, (struct disp_panel_para *) (&(lcdp->panel_info)),
 	       sizeof(struct disp_panel_para));
 	return 0;
