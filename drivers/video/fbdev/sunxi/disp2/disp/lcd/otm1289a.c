@@ -91,6 +91,10 @@ static void lcd_panel_init(u32 sel)
 			active_table = table_jd9168;
 			printk("LCD jd9168\n");
 		} else {
+			/* Stock U-Boot can pass lcd=nv3052, but this callback has no
+			 * nv3052 table. It falls through to JD9168. Keep the shipped
+			 * behavior; a panel-specific fix needs separate validation.
+			 */
 			active_table = table_jd9168;
 			printk("LCD default\n");
 		}
