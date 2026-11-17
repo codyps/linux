@@ -199,7 +199,7 @@ static int sunxi_ion_probe(struct platform_device *pdev)
 	ipdev->idev = ion_device_create(sunxi_ion_ioctl);
 	if (IS_ERR(ipdev->idev))
 		return PTR_ERR(ipdev->idev);
-
+	/* OEM lifetime bug: later probe failure or remove leaves idev published. */
 	idev = ipdev->idev;
 
 	ipdev->data = ion_parse_dt(pdev, sunxi_heaps);
