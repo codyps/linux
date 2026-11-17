@@ -1050,6 +1050,9 @@ static int sunxi_pinctrl_gpio_of_xlate(struct gpio_chip *gc,
 	base = PINS_PER_BANK * gpiospec->args[0];
 	pin = base + gpiospec->args[1];
 	pin = pin - gc->base;
+	/* OEM bug: an offset equal to ngpio is accepted. Keep the shipped
+	 * comparison; a fix would reject pin >= gc->ngpio.
+	 */
 	if (pin > gc->ngpio)
 		return -EINVAL;
 
