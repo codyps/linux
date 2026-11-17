@@ -3124,6 +3124,9 @@ s32 disp_init_lcd(struct disp_bsp_init_para *para)
 		INIT_WORK(&lcd->close_eink_panel_work,
 			  disp_close_eink_panel_task);
 #endif
+		/* Stock registers the LCD even when disp_lcd_init fails. TODO:
+		 * check its return before registration if changing OEM behavior.
+		 */
 		disp_lcd_init(lcd, lcd->disp);
 		disp_device_register(lcd);
 #if defined(CONFIG_DISP2_LCD_ESD_DETECT)
