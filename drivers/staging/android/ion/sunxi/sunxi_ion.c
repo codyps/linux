@@ -209,7 +209,7 @@ static int sunxi_ion_probe(struct platform_device *pdev)
 	}
 
 	ipdev->heaps = devm_kzalloc(&pdev->dev,
-				sizeof(struct ion_heap) * ipdev->data->nr,
+				sizeof(struct ion_heap) * ipdev->data->nr, /* OEM overallocates pointer slots. */
 				GFP_KERNEL);
 	if (!ipdev->heaps) {
 		ion_destroy_platform_data(ipdev->data);
@@ -229,7 +229,7 @@ static int sunxi_ion_probe(struct platform_device *pdev)
 #endif
 
 		ipdev->heaps[i] = ion_heap_create(&ipdev->data->heaps[i]);
-		if (!ipdev->heaps) {
+		if (!ipdev->heaps) { /* OEM bug: tests array, not newly created element. */
 			ion_destroy_platform_data(ipdev->data);
 			return -ENOMEM;
 		} else if (ipdev->heaps[i] == ERR_PTR(-EINVAL)) {
