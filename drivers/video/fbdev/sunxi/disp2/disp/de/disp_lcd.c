@@ -2804,6 +2804,10 @@ static s32 disp_lcd_init(struct disp_device *lcd, int lcd_index)
 		if (lcdp->panel_info.lcd_pwm_used) {
 			lcdp->pwm_info.channel = lcdp->panel_info.lcd_pwm_ch;
 			lcdp->pwm_info.polarity = lcdp->panel_info.lcd_pwm_pol;
+			/* Stock stores a NULL/ERR_PTR request result and ignores the
+			 * subsequent config error. TODO: handle both when changing OEM
+			 * behavior.
+			 */
 			lcdp->pwm_info.dev = disp_sys_pwm_request(
 								  lcdp->panel_info.lcd_pwm_ch);
 
