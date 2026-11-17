@@ -1261,7 +1261,7 @@ static irqreturn_t sunxi_ledc_irq_handler(int irq, void *dev_id)
 	irq_status = sunxi_get_reg(LEDC_INT_STS_REG_OFFSET);
 
 	sunxi_ledc_clear_all_irq();
-
+	/* OEM bug: CPU FIFO can unmap unmapped/stale src_dma; fix separately. */
 	if (irq_status & LEDC_TRANS_FINISH_INT) {
 		if (led->dma_chan)
 			dma_unmap_single(dev,
