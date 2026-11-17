@@ -1521,7 +1521,7 @@ static int axp2202_battery_probe(struct platform_device *pdev)
 	/* for device tree parse */
 	axp2202_bat_parse_device_tree(bat_power);
 	trimui_bat_power = bat_power;
-
+	/* OEM bug: init failure or remove leaves this published pointer stale. */
 	ret = axp2202_init_chip(bat_power);
 	if (ret < 0) {
 		dev_err(bat_power->dev, "axp2202 init chip fail!\n");
