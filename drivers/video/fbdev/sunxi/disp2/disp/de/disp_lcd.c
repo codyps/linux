@@ -411,6 +411,10 @@ static void lcd_get_sys_config(u32 disp, struct disp_lcd_cfg *lcd_cfg)
 
 	/* lcd_power */
 	for (i = 0; i < LCD_POWER_NUM; i++) {
+		/* Stock asks for lcd_power at index zero. The Brick DTB has
+		 * lcd_power0 = "cldo1", which this loop therefore ignores.
+		 * TODO: accept lcd_power0 if changing OEM behavior.
+		 */
 		if (i == 0)
 			sprintf(sub_name, "lcd_power");
 		else
