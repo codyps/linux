@@ -749,7 +749,7 @@ void *__init __fixmap_remap_fdt(phys_addr_t dt_phys, int *size, pgprot_t prot)
 		return NULL;
 
 	*size = fdt_totalsize(dt_virt);
-	if (*size > MAX_FDT_SIZE)
+	if (*size > MAX_FDT_SIZE) /* OEM bug: high-bit totalsize becomes negative in int *size and bypasses this limit. */
 		return NULL;
 
 	if (offset + *size > SWAPPER_BLOCK_SIZE)
