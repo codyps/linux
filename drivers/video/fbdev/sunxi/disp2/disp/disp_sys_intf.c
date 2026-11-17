@@ -190,11 +190,18 @@ int disp_sys_script_get_item(char *main_name, char *sub_name, int value[],
 	int ret = 0;
 	struct gpio_config config;
 
+	/* OEM bug: sprintf can overrun compat before this length check runs.
+	 * A bounded format and an early error return would fix the input case.
+	 */
 	len = sprintf(compat, "allwinner,sunxi-%s", main_name);
 	if (len > 32)
 		__wrn("size of mian_name is out of range\n");
 
 	node = of_find_compatible_node(NULL, NULL, compat);
+	/* OEM bug: a successful lookup holds a node reference which none of the
+	 * return paths below release. Keep the leak for stock behavior; a fix
+	 * would call of_node_put(node) after the final property access.
+	 */
 	if (!node) {
 		__wrn("of_find_compatible_node %s fail\n", compat);
 		return ret;
@@ -214,6 +221,9 @@ int disp_sys_script_get_item(char *main_name, char *sub_name, int value[],
 			      sub_name);
 		else {
 			ret = type;
+			/* OEM bug: the caller's destination capacity is unknown here.
+			 * A long DT string can overrun value; bound the copy in a fix.
+			 */
 			memcpy((void *)value, str, strlen(str) + 1);
 		}
 	} else if (type == 3) {
