@@ -1929,6 +1929,10 @@ OUT:
 s32 bsp_disp_lcd_dsi_clk_enable(u32 disp, u32 en)
 {
 	s32 ret = -1;
+	/* Stock passes an unchecked allocation result to the panel-info
+	 * lookup. Preserve that failure path; handle allocation failure in a
+	 * separate corrective change after validating the caller contract.
+	 */
 	struct disp_panel_para *panel_info =
 	    kmalloc(sizeof(struct disp_panel_para), GFP_KERNEL | __GFP_ZERO);
 
