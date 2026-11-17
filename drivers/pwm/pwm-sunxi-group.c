@@ -1317,6 +1317,11 @@ static int sunxi_pwm_probe(struct platform_device *pdev)
 	}
 	clk_prepare_enable(pwm->pwm_clk);
 
+	/* Stock stores a negative platform_get_irq() error in this unsigned
+	 * field, then treats it as a present IRQ and ignores request_irq()'s
+	 * failure. Keep the shipped behavior; TODO: use a signed local result
+	 * and skip IRQ setup on error in a separate corrective change.
+	 */
 	pwm->irq = platform_get_irq(pdev, 0);
 	if (pwm->irq > 0) {
 		init_waitqueue_head(&pwm->wait);
