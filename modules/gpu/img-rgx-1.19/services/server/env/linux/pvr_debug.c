@@ -44,13 +44,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */ /**************************************************************************/
 
 #include <linux/sched.h>
-/*
- * task_tgid_nr() moved out of <linux/sched.h> into <linux/pid.h> in Linux 6.16;
- * include it explicitly. <linux/pid.h> is long-standing, so this is safe on
- * older kernels too (where task_tgid_nr still comes from <linux/sched.h>).
- * (tsp-mc9m.1, mainline 6.x port.)
- */
-#include <linux/pid.h>
 #include <linux/moduleparam.h>
 
 #include "img_types.h"
@@ -239,9 +232,7 @@ static IMG_BOOL VBAppend(IMG_CHAR *pszBuf, IMG_UINT32 ui32BufSiz, const IMG_CHAR
 	IMG_INT32 i32Len;
 
 	ui32Used = OSStringLength(pszBuf);
-#line 233
 	BUG_ON(ui32Used >= ui32BufSiz);
-#line 241
 	ui32Space = ui32BufSiz - ui32Used;
 
 	i32Len = vsnprintf(&pszBuf[ui32Used], ui32Space, pszFormat, VArgs);
@@ -285,41 +276,6 @@ void PVRSRVReleasePrintf(const IMG_CHAR *pszFormat, ...)
 	spin_unlock_irqrestore(&gsDebugLock, ulLockFlags);
 	va_end(vaArgs);
 }
-
-#if defined(PF_ODYSSEY_CAPTURE)
-/*
- * A capture drain must keep every line under one lock.  Keeping IRQs disabled
- * for the same interval also prevents a local interrupt-side PVR_LOG from
- * entering the release-print path between capture lines.
- */
-void PVRSRVReleasePrintfLock(unsigned long *pulLockFlags)
-{
-	spin_lock_irqsave(&gsDebugLock, *pulLockFlags);
-}
-
-void PVRSRVReleasePrintfLocked(const IMG_CHAR *pszFormat, ...)
-{
-	va_list vaArgs;
-	IMG_CHAR *pszBuf = gszBuffer;
-	IMG_UINT32 ui32BufSiz = sizeof(gszBuffer);
-	IMG_INT32 result;
-
-	va_start(vaArgs, pszFormat);
-	result = snprintf(pszBuf, (ui32BufSiz - 2), "PVR_K:  %u: ", current->pid);
-	PVR_ASSERT(result > 0);
-	ui32BufSiz -= result;
-	if (VBAppend(pszBuf, ui32BufSiz, pszFormat, vaArgs))
-		printk(KERN_INFO "%s (truncated)\n", pszBuf);
-	else
-		printk(KERN_INFO "%s\n", pszBuf);
-	va_end(vaArgs);
-}
-
-void PVRSRVReleasePrintfUnlock(unsigned long ulLockFlags)
-{
-	spin_unlock_irqrestore(&gsDebugLock, ulLockFlags);
-}
-#endif
 
 #if defined(PVRSRV_NEED_PVR_TRACE)
 
@@ -525,3 +481,38 @@ void PVRSRVDebugPrintf(IMG_UINT32 ui32DebugLevel,
 }
 
 #endif /* PVRSRV_NEED_PVR_DPF */
+
+#if defined(PF_ODYSSEY_CAPTURE)
+/*
+ * A capture drain must keep every line under one lock.  Keeping IRQs disabled
+ * for the same interval also prevents a local interrupt-side PVR_LOG from
+ * entering the release-print path between capture lines.
+ */
+void PVRSRVReleasePrintfLock(unsigned long *pulLockFlags)
+{
+	spin_lock_irqsave(&gsDebugLock, *pulLockFlags);
+}
+
+void PVRSRVReleasePrintfLocked(const IMG_CHAR *pszFormat, ...)
+{
+	va_list vaArgs;
+	IMG_CHAR *pszBuf = gszBuffer;
+	IMG_UINT32 ui32BufSiz = sizeof(gszBuffer);
+	IMG_INT32 result;
+
+	va_start(vaArgs, pszFormat);
+	result = snprintf(pszBuf, (ui32BufSiz - 2), "PVR_K:  %u: ", current->pid);
+	PVR_ASSERT(result > 0);
+	ui32BufSiz -= result;
+	if (VBAppend(pszBuf, ui32BufSiz, pszFormat, vaArgs))
+		printk(KERN_INFO "%s (truncated)\n", pszBuf);
+	else
+		printk(KERN_INFO "%s\n", pszBuf);
+	va_end(vaArgs);
+}
+
+void PVRSRVReleasePrintfUnlock(unsigned long ulLockFlags)
+{
+	spin_unlock_irqrestore(&gsDebugLock, ulLockFlags);
+}
+#endif
