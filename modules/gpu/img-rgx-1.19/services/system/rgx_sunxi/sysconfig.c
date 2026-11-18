@@ -170,6 +170,28 @@ static PVRSRV_ERROR PhysHeapsCreate(PHYS_HEAP_CONFIG **ppasPhysHeapsOut,
 	return PVRSRV_OK;
 }
 
+/* Unobserved stock source lines before the heap teardown helper. */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static void PhysHeapsDestroy(PHYS_HEAP_CONFIG *pasPhysHeaps)
 {
 	OSFreeMem(pasPhysHeaps);
@@ -181,8 +203,7 @@ static void SysDevFeatureDepInit(PVRSRV_DEVICE_CONFIG *psDevConfig, IMG_UINT64 u
 	if (ui64Features & RGX_FEATURE_AXI_ACELITE_BIT_MASK)
 	{
 		psDevConfig->eCacheSnoopingMode = PVRSRV_DEVICE_SNOOP_CPU_ONLY;
-	}
-	else
+	} else
 #endif
 	{
 		psDevConfig->eCacheSnoopingMode = PVRSRV_DEVICE_SNOOP_NONE;
@@ -191,54 +212,107 @@ static void SysDevFeatureDepInit(PVRSRV_DEVICE_CONFIG *psDevConfig, IMG_UINT64 u
 
 PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 {
-	struct device *dev = pvOSDevice;
-	struct sunxi_platform *sunxi_data;
 	PVRSRV_DEVICE_CONFIG *psDevConfig;
 	RGX_DATA *psRGXData;
 	RGX_TIMING_INFORMATION *psRGXTimingInfo;
 	PHYS_HEAP_CONFIG *pasPhysHeaps;
 	IMG_UINT32 uiPhysHeapCount;
 	PVRSRV_ERROR eError;
+	struct device *dev = pvOSDevice;
+	struct sunxi_platform *sunxi_data;
 
 	if (sunxi_platform_init(dev))
 		return PVRSRV_ERROR_INIT_FAILURE;
+
 	sunxi_data = dev->platform_data;
+
+	/* Preserve the stock 48-bit DMA mask and ignored return value. */
 	dma_set_mask(pvOSDevice, DMA_BIT_MASK(48));
 
-	psDevConfig = OSAllocZMem(sizeof(*psDevConfig) + sizeof(*psRGXData) +
+
+	/* The RGX data and timing state share this allocation. */
+
+	psDevConfig = OSAllocZMem(sizeof(*psDevConfig) +
+				 sizeof(*psRGXData) +
 				 sizeof(*psRGXTimingInfo));
 	if (!psDevConfig)
+	{
 		return PVRSRV_ERROR_OUT_OF_MEMORY;
+	}
+
 	psRGXData = (RGX_DATA *)((IMG_CHAR *)psDevConfig + sizeof(*psDevConfig));
 	psRGXTimingInfo = (RGX_TIMING_INFORMATION *)((IMG_CHAR *)psRGXData + sizeof(*psRGXData));
 
 	eError = PhysHeapsCreate(&pasPhysHeaps, &uiPhysHeapCount);
 	if (eError)
+	{
 		goto ErrorFreeDevConfig;
+	}
+
 
 	psRGXTimingInfo->ui32CoreClockSpeed = clk_get_rate(sunxi_data->clks.core);
 	psRGXTimingInfo->bEnableActivePM = IMG_TRUE;
 	psRGXTimingInfo->bEnableRDPowIsland = IMG_TRUE;
 	psRGXTimingInfo->ui32ActivePMLatencyms = SYS_RGX_ACTIVE_POWER_LATENCY_MS;
+
+
 	psRGXData->psRGXTimingInfo = psRGXTimingInfo;
+
+	/* Unobserved stock source lines before the device configuration. */
+
+
+
+
+
+
+
+
+
+
+
 
 	psDevConfig->pvOSDevice = pvOSDevice;
 	psDevConfig->pszName = "sunxi";
 	psDevConfig->pszVersion = NULL;
 	psDevConfig->pfnSysDevFeatureDepInit = SysDevFeatureDepInit;
+
+
 	psDevConfig->sRegsCpuPBase.uiAddr = sunxi_data->reg_base;
 	psDevConfig->ui32RegsSize = sunxi_data->reg_size;
 	psDevConfig->ui32IRQ = sunxi_data->irq_num;
-	psDevConfig->pfnPrePowerState = sunxiPrePowerState;
-	psDevConfig->pfnPostPowerState = sunxiPostPowerState;
-	psDevConfig->hDevData = psRGXData;
-	psDevConfig->hSysData = sunxi_data;
-	psDevConfig->eDefaultHeap = PVRSRV_PHYS_HEAP_GPU_LOCAL;
+
 	psDevConfig->pasPhysHeaps = pasPhysHeaps;
 	psDevConfig->ui32PhysHeapCount = uiPhysHeapCount;
+	psDevConfig->eDefaultHeap = PVRSRV_PHYS_HEAP_GPU_LOCAL;
+
+
+
+	psDevConfig->pfnPrePowerState = sunxiPrePowerState;
+	psDevConfig->pfnPostPowerState = sunxiPostPowerState;
+
+
 	psDevConfig->pfnClockFreqGet = NULL;
+
+	psDevConfig->hDevData = psRGXData;
+	psDevConfig->hSysData = sunxi_data;
+
+	/* Unobserved stock source lines before publishing the device configuration. */
+
+
+
+
+
+
+
+
+
+
+
+
+
 	*ppsDevConfig = psDevConfig;
 	sunxi_data->config = &gsDevices[0];
+
 	return PVRSRV_OK;
 
 ErrorFreeDevConfig:
@@ -248,11 +322,12 @@ ErrorFreeDevConfig:
 
 void SysDevDeInit(PVRSRV_DEVICE_CONFIG *psDevConfig)
 {
-	PHYS_HEAP_CONFIG *pasPhysHeaps;
+	/* Unobserved stock source lines before platform teardown. */
+
+
 
 	sunxi_platform_term();
-	pasPhysHeaps = psDevConfig->pasPhysHeaps;
-	PhysHeapsDestroy(pasPhysHeaps);
+	PhysHeapsDestroy(psDevConfig->pasPhysHeaps);
 	OSFreeMem(psDevConfig);
 }
 
