@@ -201,8 +201,8 @@ static int trimui_ledc_run_thread(void *unused)
 	int battery_ticks = 0; /* OEM signed comparison, including negative values. */
 	u32 rgb;
 	u32 boot_white = 0xffffff;
-	register u32 boot_orange asm("w26") = 0x00ff33;
-	asm("" : : "r"(boot_orange)); /* OEM color register and worker span. */
+	u32 boot_orange = 0x00ff33;
+	asm("" : : "r"(boot_orange)); /* Keep the stock worker instruction span. */
 	trimui_scale_m = 14;
 	/* Stock publishes this control as a separate 32-bit store before the
 	 * adjacent first effect type.  A plain store lets GCC merge the two.
