@@ -125,13 +125,13 @@ static inline void switch_interl_dfs(int val)
 }
 
 PVRSRV_ERROR sunxiPrePowerState(IMG_HANDLE hSysData,
-					 PVRSRV_SYS_POWER_STATE eNewPowerState,
-					 PVRSRV_SYS_POWER_STATE eCurrentPowerState,
+					 PVRSRV_DEV_POWER_STATE eNewPowerState,
+					 PVRSRV_DEV_POWER_STATE eCurrentPowerState,
 					 PVRSRV_POWER_FLAGS bForced)
 {
 	struct sunxi_platform *platform = (struct sunxi_platform *)hSysData;
 
-	if (eNewPowerState == PVRSRV_SYS_POWER_STATE_ON && !platform->power_on) {
+	if (eNewPowerState == PVRSRV_DEV_POWER_STATE_ON && !platform->power_on) {
 		pm_runtime_get_sync(platform->dev);
 		if (!sunxi_data->soft_mode) {
 			ppu_mode_switch(POWER_CTRL_MODE_HW, false);
@@ -149,13 +149,13 @@ PVRSRV_ERROR sunxiPrePowerState(IMG_HANDLE hSysData,
 }
 
 PVRSRV_ERROR sunxiPostPowerState(IMG_HANDLE hSysData,
-					  PVRSRV_SYS_POWER_STATE eNewPowerState,
-					  PVRSRV_SYS_POWER_STATE eCurrentPowerState,
+					  PVRSRV_DEV_POWER_STATE eNewPowerState,
+					  PVRSRV_DEV_POWER_STATE eCurrentPowerState,
 					  PVRSRV_POWER_FLAGS bForced)
 {
 	struct sunxi_platform *platform = (struct sunxi_platform *)hSysData;
 
-	if (eNewPowerState == PVRSRV_SYS_POWER_STATE_OFF
+	if (eNewPowerState == PVRSRV_DEV_POWER_STATE_OFF
 		&& platform->power_on && platform->power_idle) {
 		spin_lock(&sunxi_data->lock);
 		platform->power_on = 0;
