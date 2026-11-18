@@ -58,7 +58,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 static IMG_BOOL gbEnableDmaIoRemapping = IMG_FALSE;
 static DMA_ALLOC gsDmaIoRemapArray[DMA_MAX_IOREMAP_ENTRIES] = {{0}};
 
-
 static void*
 SysDmaAcquireKernelAddress(struct page *psPage, IMG_UINT64 ui64Size, DMA_ALLOC *psDmaAlloc)
 {
@@ -139,7 +138,6 @@ SysDmaAcquireKernelAddress(struct page *psPage, IMG_UINT64 ui64Size, DMA_ALLOC *
 		}
 	}
 
-
 	/* Remap pages into VMALLOC space */
 	pvVirtAddr = pvr_vmap(pagearray, ui32PgCount, VM_MAP, prot);
 	psDmaAlloc->PageProps = prot;
@@ -181,7 +179,7 @@ PVRSRV_ERROR SysDmaAllocMem(DMA_ALLOC *psDmaAlloc)
 		psDmaAlloc->sBusAddr.uiAddr ||
 		psDmaAlloc->pvOSDevice == NULL)
 	{
-		PVR_LOG_IF_FALSE_STOCK(182, (IMG_FALSE), "Invalid parameter");
+		PVR_LOG_IF_FALSE((IMG_FALSE), "Invalid parameter");
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
@@ -234,12 +232,12 @@ PVRSRV_ERROR SysDmaAllocMem(DMA_ALLOC *psDmaAlloc)
 	}
 	else
 	{
-		PVR_DPF_STOCK(235, (PVR_DBG_ERROR,	"Unable to allocate contiguous buffer, size: 0x"IMG_SIZE_FMTSPECX, uiSize));
+		PVR_DPF((PVR_DBG_ERROR,	"Unable to allocate contiguous buffer, size: 0x"IMG_SIZE_FMTSPECX, uiSize));
 		eError = PVRSRV_ERROR_FAILED_TO_ALLOC_PAGES;
 	}
 
 e0:
-	PVR_LOG_RETURN_IF_FALSE_STOCK(240, (psDmaAlloc->pvVirtAddr), "DMA/CMA allocation failed", PVRSRV_ERROR_FAILED_TO_ALLOC_PAGES);
+	PVR_LOG_RETURN_IF_FALSE((psDmaAlloc->pvVirtAddr), "DMA/CMA allocation failed", PVRSRV_ERROR_FAILED_TO_ALLOC_PAGES);
 	return eError;
 }
 
@@ -262,7 +260,7 @@ void SysDmaFreeMem(DMA_ALLOC *psDmaAlloc)
 		psDmaAlloc->pvVirtAddr == NULL ||
 		psDmaAlloc->sBusAddr.uiAddr == 0)
 	{
-		PVR_LOG_IF_FALSE_STOCK(263, (IMG_FALSE), "Invalid parameter");
+		PVR_LOG_IF_FALSE((IMG_FALSE), "Invalid parameter");
 		return;
 	}
 
@@ -308,7 +306,7 @@ PVRSRV_ERROR SysDmaRegisterForIoRemapping(DMA_ALLOC *psDmaAlloc)
 		psDmaAlloc->pvVirtAddr == NULL ||
 		psDmaAlloc->sBusAddr.uiAddr == 0)
 	{
-		PVR_LOG_IF_FALSE_STOCK(309, (IMG_FALSE), "Invalid parameter");
+		PVR_LOG_IF_FALSE((IMG_FALSE), "Invalid parameter");
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
@@ -391,7 +389,7 @@ void SysDmaDeregisterForIoRemapping(DMA_ALLOC *psDmaAlloc)
 		psDmaAlloc->pvVirtAddr == NULL ||
 		psDmaAlloc->sBusAddr.uiAddr == 0)
 	{
-		PVR_LOG_IF_FALSE_STOCK(392, (IMG_FALSE), "Invalid parameter");
+		PVR_LOG_IF_FALSE((IMG_FALSE), "Invalid parameter");
 		return;
 	}
 
