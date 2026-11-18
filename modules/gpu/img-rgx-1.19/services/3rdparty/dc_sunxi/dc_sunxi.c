@@ -41,6 +41,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */ /**************************************************************************/
 
+#line 41
 #include <linux/console.h>
 #include <linux/module.h>
 #include <linux/fb.h>
@@ -334,7 +335,7 @@ void DC_SUNXI_ContextConfigure(IMG_HANDLE hDisplayContext,
 	{
 #line 332
 		BUG_ON(ahBuffers == NULL);
-#line 334
+#line 333
 
 		if (psDeviceData->bCanFlip)
 		{
@@ -410,11 +411,11 @@ void DC_SUNXI_ContextDestroy(IMG_HANDLE hDisplayContext)
 
 #line 406
 	BUG_ON(psDeviceContext->hLastConfigData != NULL);
-#line 408
+#line 407
 	kfree(psDeviceContext);
 }
 
-#line 410
+#line 424
 static
 IMG_BOOL DC_SUNXI_GetBufferID(DC_SUNXI_CONTEXT *psDeviceContext, IMG_UINT32 *pui32BufferID)
 {
@@ -425,6 +426,7 @@ IMG_BOOL DC_SUNXI_GetBufferID(DC_SUNXI_CONTEXT *psDeviceContext, IMG_UINT32 *pui
 		if ((psDeviceContext->ui32AllocUseMask & (1UL << ui32BufferID)) == 0)
 		{
 			psDeviceContext->ui32AllocUseMask |= (1UL << ui32BufferID);
+
 			*pui32BufferID = ui32BufferID;
 
 			return IMG_TRUE;
@@ -433,6 +435,7 @@ IMG_BOOL DC_SUNXI_GetBufferID(DC_SUNXI_CONTEXT *psDeviceContext, IMG_UINT32 *pui
 	return IMG_FALSE;
 }
 
+#line 442
 static
 void DC_SUNXI_PutBufferID(DC_SUNXI_CONTEXT *psDeviceContext, IMG_UINT32 ui32BufferID)
 {
@@ -523,7 +526,7 @@ PVRSRV_ERROR DC_SUNXI_BufferAcquire(IMG_HANDLE hBuffer,
 	{
 #line 531
 		BUG_ON(i * PAGE_SIZE >= ui32MaxLen);
-#line 518
+#line 532
 		pasDevPAddr[i].uiAddr = uiStartAddr + (i * PAGE_SIZE);
 #if defined(DC_SUNXI_USE_SCREEN_BASE)
 		pasDevPAddr[i].uiAddr =
@@ -703,8 +706,10 @@ static int __init DC_SUNXI_init(void)
 			goto err_unlock;
 		}
 #if defined(DC_SUNXI_FORCE_XRGB8888)
+#line 713
 		ePixFormat = (IMG_PIXFMT)90; /* Stock fbdev XRGB8888 value. */
 #else
+#line 713
 		ePixFormat = IMG_PIXFMT_B8G8R8A8_UNORM;
 #endif
 	}
