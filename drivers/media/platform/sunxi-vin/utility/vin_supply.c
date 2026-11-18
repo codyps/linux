@@ -96,6 +96,7 @@ int vin_set_pmu_channel(struct v4l2_subdev *sd, enum pmic_channel pmic_ch,
 #ifndef CONFIG_SUNXI_REGULATOR_DT
 		regulator_put(power[pmic_ch].pmic);
 #endif
+
 		power[pmic_ch].pmic = NULL;
 		vin_log(VIN_LOG_POWER, "regulator_is already disabled\n");
 	} else {
