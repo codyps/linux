@@ -43,6 +43,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */ /**************************************************************************/
 
 #include "pvr_notifier.h"
+#include "rgxhwperf.h"
 #include "scp.h"
 #include "allocmem.h"
 
@@ -52,7 +53,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "lock.h"
 #include "sync_server.h"
 #include "sync_internal.h"
-#include "rgxhwperf.h"
 
 #include "pvrsrv_sync_server.h"
 
