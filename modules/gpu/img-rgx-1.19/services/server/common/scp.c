@@ -41,7 +41,9 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */ /**************************************************************************/
-
+#include "img_types.h"
+#include "pvrsrv_error.h"
+#include <powervr/pvrsrv_sync_ext.h>
 #include "pvr_notifier.h"
 #include "device.h"
 #include "rgxhwperf.h"
@@ -53,9 +55,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "lock.h"
 #include "sync_server.h"
 #include "sync_internal.h"
-
 #include "pvrsrv_sync_server.h"
-
 struct _SCP_CONTEXT_
 {
 	PVRSRV_DEVICE_NODE  *psDevNode;         /*<! Device node reference for SCP layer */
