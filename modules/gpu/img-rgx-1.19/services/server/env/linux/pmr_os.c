@@ -218,7 +218,9 @@ static INLINE int _OSMMapPMR(PVRSRV_DEVICE_NODE *psDevNode,
 {
 	IMG_INT32 iStatus;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0))
+#line 213
 	pfn_t sPFN;
+#line 215
 #else
 	unsigned long uiPFN;
 #endif
