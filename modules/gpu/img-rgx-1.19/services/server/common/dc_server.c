@@ -201,7 +201,6 @@ static DLLIST_NODE g_sDisplayContextsListHead;
 /*****************************************************************************
  *                             Private functions                             *
  *****************************************************************************/
-
 static void _DCDeviceAcquireRef(DC_DEVICE *psDevice)
 {
 	IMG_INT iRefCount = OSAtomicIncrement(&psDevice->sRefCount);
@@ -740,8 +739,6 @@ static void _DCPMRFinalize(PMR_IMPL_PRIVDATA pvPriv)
 
 	_DCBufferReleaseRef(psPMRPriv->psBuffer);
 	OSFreeMem(psPMRPriv);
-
-	return;
 }
 
 static PVRSRV_ERROR _DCPMRReadBytes(PMR_IMPL_PRIVDATA pvPriv,
@@ -837,7 +834,7 @@ static PVRSRV_ERROR _DCCreatePMR(IMG_DEVMEM_LOG2ALIGN_T uiLog2PageSize,
 	PVRSRV_ERROR eError;
 	IMG_UINT32 uiMappingTable = 0;
 
-	PVR_LOG_RETURN_IF_INVALID_PARAM_STOCK(837, psPhysHeap, "psPhysHeap");
+	PVR_LOG_RETURN_IF_INVALID_PARAM(psPhysHeap, "psPhysHeap");
 
 	/*
 		Create the PMR for this buffer.
@@ -931,9 +928,9 @@ PVRSRV_ERROR DCDevicesEnumerate(CONNECTION_DATA *psConnection,
 	PVR_UNREFERENCED_PARAMETER(psConnection);
 
 	/* Check that we don't have any NULL pointers / zero-sized arrays passed */
-	PVR_LOG_RETURN_IF_FALSE_STOCK(931, (0U != ui32DeviceArraySize), "ui32DeviceArraySize invalid", PVRSRV_ERROR_INVALID_PARAMS);
-	PVR_LOG_RETURN_IF_FALSE_STOCK(932, (NULL != pui32DeviceCount), "pui32DeviceCount invalid", PVRSRV_ERROR_INVALID_PARAMS);
-	PVR_LOG_RETURN_IF_FALSE_STOCK(933, (NULL != paui32DeviceIndex), "paui32DeviceIndex invalid", PVRSRV_ERROR_INVALID_PARAMS);
+	PVR_LOG_RETURN_IF_FALSE((0U != ui32DeviceArraySize), "ui32DeviceArraySize invalid", PVRSRV_ERROR_INVALID_PARAMS);
+	PVR_LOG_RETURN_IF_FALSE((NULL != pui32DeviceCount), "pui32DeviceCount invalid", PVRSRV_ERROR_INVALID_PARAMS);
+	PVR_LOG_RETURN_IF_FALSE((NULL != paui32DeviceIndex), "paui32DeviceIndex invalid", PVRSRV_ERROR_INVALID_PARAMS);
 
 	/* Iterate over whole list using dllist_foreach() */
 
@@ -1435,7 +1432,7 @@ static void _DCDisplayContextFlush(PDLLIST_NODE psNode)
 
 		if ( 0 == ui32LoopCount && PVRSRV_ERROR_FAILED_DEPENDENCIES != eError && 1 != psDisplayContext->ui32ConfigsInFlight )
 		{
-			PVR_DPF_STOCK(1435, (PVR_DBG_ERROR, "DCDisplayContextFlush: called when not required"));
+			PVR_DPF((PVR_DBG_ERROR, "DCDisplayContextFlush: called when not required"));
 			break;
 		}
 
@@ -1460,7 +1457,7 @@ static void _DCDisplayContextFlush(PDLLIST_NODE psNode)
 
 	if ( ui32LoopCount >= 500 )
 	{
-		PVR_DPF_STOCK(1460, (PVR_DBG_ERROR, "DCDisplayContextFlush: Failed to flush after > 500 milliseconds"));
+		PVR_DPF((PVR_DBG_ERROR, "DCDisplayContextFlush: Failed to flush after > 500 milliseconds"));
 	}
 
 	PVR_DPF((PVR_DBG_WARNING, "DCDisplayContextFlush: inserting final NULL flip"));
@@ -1491,7 +1488,7 @@ PVRSRV_ERROR DCDisplayContextFlush(void)
 	}
 	else
 	{
-		PVR_DPF_STOCK(1491, (PVR_DBG_ERROR, "DCDisplayContextFlush: No display contexts found"));
+		PVR_DPF((PVR_DBG_ERROR, "DCDisplayContextFlush: No display contexts found"));
 		eError = PVRSRV_ERROR_INVALID_CONTEXT;
 	}
 
@@ -1567,7 +1564,7 @@ PVRSRV_ERROR DCDisplayContextConfigure(DC_DISPLAY_CONTEXT *psDisplayContext,
 		for (i=0;i<ui32PipeCount;i++)
 		{
 			eError = _DCBufferMap(papsBuffers[i]);
-			PVR_LOG_GOTO_IF_ERROR_STOCK(1567, eError, "_DCBufferMap", FailMapBuffer);
+			PVR_LOG_GOTO_IF_ERROR(eError, "_DCBufferMap", FailMapBuffer);
 			ui32BuffersMapped++;
 		}
 	}
@@ -1899,7 +1896,7 @@ PVRSRV_ERROR DCBufferAcquire(DC_BUFFER *psBuffer, PMR **ppsPMR)
 	PMR *psPMR = psBuffer->uBufferData.sAllocData.psPMR;
 	PVRSRV_ERROR eError;
 
-	PVR_LOG_GOTO_IF_INVALID_PARAM_STOCK(1899, psBuffer->eType != DC_BUFFER_TYPE_IMPORT, eError, fail_typecheck);
+	PVR_LOG_GOTO_IF_INVALID_PARAM(psBuffer->eType != DC_BUFFER_TYPE_IMPORT, eError, fail_typecheck);
 	PMRRefPMR(psPMR);
 
 	*ppsPMR = psPMR;
@@ -1972,6 +1969,8 @@ PVRSRV_ERROR DCRegisterDevice(DC_DEVICE_FUNCTIONS *psFuncTable,
 	PVR_GOTO_IF_ERROR(eError, FailEventObject);
 
 	eError = PhysHeapAcquireByID(PVRSRV_PHYS_HEAP_DISPLAY, psNew->psDevNode, &psNew->psPhysHeap);
+
+	/* Only a missing display heap selects the GPU-local fallback. */
 	if (eError == PVRSRV_ERROR_PHYSHEAP_ID_INVALID)
 	{
 		/* DC based system layers must provide a DISPLAY Phys Heap or a
@@ -1980,7 +1979,9 @@ PVRSRV_ERROR DCRegisterDevice(DC_DEVICE_FUNCTIONS *psFuncTable,
 		 * value might not be accessible by the display controller HW. */
 		eError = PhysHeapAcquireByID(PVRSRV_PHYS_HEAP_GPU_LOCAL, psNew->psDevNode, &psNew->psPhysHeap);
 	}
-	PVR_LOG_GOTO_IF_ERROR_STOCK(1984, eError, "DCRegisterDevice: DISPLAY heap not found", FailPhysHeap);
+
+	/* Propagate any remaining heap error to the stock cleanup path. */
+	PVR_LOG_GOTO_IF_ERROR(eError, "DCRegisterDevice: DISPLAY heap not found", FailPhysHeap);
 
 	/* Init state required for system surface */
 	psNew->hSystemBuffer = NULL;
@@ -2078,7 +2079,7 @@ void DCUnregisterDevice(IMG_HANDLE hSrvHandle)
 	else
 	{
 		/* there are stuck references so it is not safe to free the memory */
-		PVR_DPF_STOCK(2082, (PVR_DBG_ERROR, "%s: DC device has stuck references. Not freeing memory.", __func__));
+		PVR_DPF((PVR_DBG_ERROR, "%s: DC device has stuck references. Not freeing memory.", __func__));
 	}
 }
 
@@ -2296,13 +2297,13 @@ PVRSRV_ERROR DCInit(void)
 	dllist_init(&g_sDCDeviceListHead);
 
 	eError = OSLockCreate(&g_hDCListLock);
-	PVR_LOG_GOTO_IF_ERROR_STOCK(2300, eError, "OSLockCreate:1", err_out);
+	PVR_LOG_GOTO_IF_ERROR(eError, "OSLockCreate:1", err_out);
 
 	eError = OSLockCreate(&g_hDCDisplayContextsListLock);
-	PVR_LOG_GOTO_IF_ERROR_STOCK(2303, eError, "OSLockCreate:2", err_hDCDisplayContextsListLock);
+	PVR_LOG_GOTO_IF_ERROR(eError, "OSLockCreate:2", err_hDCDisplayContextsListLock);
 
 	eError = OSLockCreate(&g_hDCDevListLock);
-	PVR_LOG_GOTO_IF_ERROR_STOCK(2306, eError, "OSLockCreate:3", err_hDCDevListLock);
+	PVR_LOG_GOTO_IF_ERROR(eError, "OSLockCreate:3", err_hDCDevListLock);
 
 	return PVRSRV_OK;
 
