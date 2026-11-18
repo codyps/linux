@@ -58,7 +58,6 @@ PVRSRV_ERROR InfoPageCreate(PVRSRV_DATA *psData)
     PVRSRV_ERROR eError;
 
     PVR_ASSERT(psData != NULL);
-
     /* Allocate single page of memory for driver information page */
     eError = DevmemAllocateExportable(psData->psHostMemDeviceNode,
                                       OSGetPageSize(),
@@ -67,19 +66,19 @@ PVRSRV_ERROR InfoPageCreate(PVRSRV_DATA *psData)
                                       uiMemFlags,
                                       "PVRSRVInfoPage",
                                       &psData->psInfoPageMemDesc);
-    PVR_LOG_GOTO_IF_ERROR_STOCK(69, eError, "DevmemAllocateExportable", e0);
+    PVR_LOG_GOTO_IF_ERROR(eError, "DevmemAllocateExportable", e0);
 
     eError =  DevmemAcquireCpuVirtAddr(psData->psInfoPageMemDesc,
                                        (void **) &psData->pui32InfoPage);
-    PVR_LOG_GOTO_IF_ERROR_STOCK(73, eError, "DevmemAllocateExportable", e0);
+    PVR_LOG_GOTO_IF_ERROR(eError, "DevmemAllocateExportable", e0);
 
     /* Look-up the memory descriptor PMR handle */
     eError = DevmemLocalGetImportHandle(psData->psInfoPageMemDesc,
                                         (void **) &psData->psInfoPagePMR);
-    PVR_LOG_GOTO_IF_ERROR_STOCK(78, eError, "DevmemLocalGetImportHandle", e0);
+    PVR_LOG_GOTO_IF_ERROR(eError, "DevmemLocalGetImportHandle", e0);
 
     eError = OSLockCreate(&psData->hInfoPageLock);
-    PVR_LOG_GOTO_IF_ERROR_STOCK(81, eError, "OSLockCreate", e0);
+    PVR_LOG_GOTO_IF_ERROR(eError, "OSLockCreate", e0);
 
     /* Because the memory is allocated read only we need to explicitly set it to
      * 0. The reason for this is that if the memory is allocated with
