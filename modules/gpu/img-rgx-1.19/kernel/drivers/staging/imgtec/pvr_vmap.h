@@ -64,7 +64,7 @@ static inline void *pvr_vmap(struct page **pages,
 #endif /* !defined(CONFIG_64BIT) || defined(PVRSRV_FORCE_SLOWER_VMAP_ON_64BIT_BUILDS) */
 }
 
-static inline void pvr_vunmap(void *vaddr,
+static inline void pvr_vunmap(const void *vaddr,
 			      __maybe_unused unsigned int count,
 			      __maybe_unused pgprot_t prot)
 {
