@@ -129,6 +129,7 @@ else
   ccflags-y += -D__linux__ -include $(DDK_SRC)/config_kernel.h
 endif
 ccflags-y += \
+ -I$(DDK_SRC)/kernel/drivers/staging/imgtec \
  -I$(OUT)/include \
  -I$(DDK_SRC)/hwdefs/rogue \
  -I$(DDK_SRC)/hwdefs/rogue/km
