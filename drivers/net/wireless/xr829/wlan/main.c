@@ -484,6 +484,7 @@ static void xradio_get_mac_addrs(u8 *macaddr)
 {
 	int ret = 0;
 	u32 serial;
+	u8 high, middle, low;
 	/* Shipped BUG record: main.c:509. */
 #line 509
 	SYS_BUG(!macaddr);
@@ -500,9 +501,12 @@ static void xradio_get_mac_addrs(u8 *macaddr)
 	macaddr[0] = 0xdc;
 	macaddr[1] = 0x44;
 	serial = get_unaligned_le32(gTrimuiSerialNumber) << 4;
-	macaddr[2] = 0x60 | (serial >> 24);
-	macaddr[3] = serial >> 16;
-	macaddr[4] = serial >> 8;
+	high = serial >> 24;
+	middle = serial >> 16;
+	low = serial >> 8;
+	macaddr[2] = 0x60 | high;
+	macaddr[3] = middle;
+	macaddr[4] = low;
 	macaddr[5] = serial + 1;
 	printk("XRADIO MACADDR=%02x:%02x:%02x:%02x:%02x:%02x\n",
 	       macaddr[0], macaddr[1], macaddr[2],
