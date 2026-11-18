@@ -1,9 +1,6 @@
 /*************************************************************************/ /*!
-@File           scp.c
-@Title          Software Command Processor
 @Copyright      Copyright (c) Imagination Technologies Ltd. All Rights Reserved
-@Description    The software command processor allows commands queued and
-                deferred until their synchronisation requirements have been meet.
+@Description    Queue commands until their synchronization requirements are met.
 @License        Dual MIT/GPLv2
 
 The contents of this file are subject to the MIT license as set out below.
@@ -60,6 +57,9 @@ struct _SCP_CONTEXT_
 	IMG_UINT32			psSyncRequesterID;  /*!< Sync requester ID, used when taking sync operations */
 	POS_LOCK			hLock;              /*!< Lock for this structure */
 };
+
+/* Command submission uses the full GPU and synchronization interfaces. */
+
 #include "rgxhwperf.h"
 #include "allocmem.h"
 #include "pvr_debug.h"
