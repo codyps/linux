@@ -80,13 +80,11 @@ ifeq ($(PVR_SYSTEM),sunxi_a133)
 
   ifeq ($(VERSION).$(PATCHLEVEL),4.9)
     # The stock DDK generated these two units in its SDK kbuild directory.
-    # Restrict the mapping to debug metadata for the generated module units.
+    # Staged sources and include paths used different roots in the stock DDK.
     stock_gpu_source := /home2/trimuidev/tg3040/tina_1.1.1/lichee/linux-4.9/modules/gpu/img-rgx/linux/rogue_km/
     stock_gpu_kbuild := $(stock_gpu_source)binary_sunxi_linux_nullws_release/target_aarch64/kbuild/
-    CFLAGS_dc_sunxi.o += $(call cc-option,-fdebug-prefix-map=./modules/gpu/img-rgx-1.19/=$(stock_gpu_source))
-    stock_gpu_mod_debug := $(call cc-option,-fdebug-prefix-map=modules/gpu/img-rgx-1.19/=$(stock_gpu_kbuild))
-    CFLAGS_dc_sunxi.mod.o += $(stock_gpu_mod_debug)
-    CFLAGS_pvrsrvkm.mod.o += $(stock_gpu_mod_debug)
+    ccflags-y += $(call cc-option,-fdebug-prefix-map=./modules/gpu/img-rgx-1.19/=$(stock_gpu_source))
+    ccflags-y += $(call cc-option,-fdebug-prefix-map=modules/gpu/img-rgx-1.19/=$(stock_gpu_kbuild))
   endif
 
   # Include vendor build-options CFLAGS from pvr-buildopts.mk.
