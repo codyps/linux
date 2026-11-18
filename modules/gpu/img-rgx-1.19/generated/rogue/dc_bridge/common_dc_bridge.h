@@ -51,7 +51,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "img_types.h"
 #include "pvrsrv_error.h"
 
-#include "pvrsrv_surface.h"
+#include "rogue/pvrsrv_surface.h"
 #include "dc_external.h"
 #include "pvrsrv_sync_km.h"
 
