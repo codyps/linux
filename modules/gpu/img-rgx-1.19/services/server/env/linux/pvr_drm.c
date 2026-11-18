@@ -62,7 +62,6 @@
 #include <linux/pm.h>
 #include <linux/mutex.h>
 
-
 #include "module_common.h"
 #include "pvr_drm.h"
 #include "pvr_drv.h"
@@ -96,7 +95,6 @@ static int pvr_pm_suspend(struct device *dev)
 
 	return PVRSRVDeviceSuspend(ddev);
 }
-
 /* Executed after the system is woken up from sleep/suspend-to-RAM/S3. This
  * phase restores the content of the video memory from the system RAM.
  */
@@ -177,7 +175,6 @@ const struct dev_pm_ops pvr_pm_ops = {
 	 */
 	.suspend = pvr_pm_suspend,
 	.resume = pvr_pm_resume,
-
 
 	/* Hibernation (suspend-to-disk/S4) callbacks.
 	 * This mode saves the content of the video RAM to the system RAM and then
