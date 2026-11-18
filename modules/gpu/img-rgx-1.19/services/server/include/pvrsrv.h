@@ -52,16 +52,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "physheap.h"
 #include "cache_ops.h"
 #include "pvr_notifier.h"
+#if !defined(PVRSRV_NO_BRIDGE_QUERIES)
 #include "pvr_bridge.h"
 #if defined(SUPPORT_RGX)
 #include "rgx_bridge.h"
+#endif
 #endif
 #if defined(__KERNEL__) && defined(__linux__) && !defined(__GENKSYMS__)
 #define __pvrsrv_defined_struct_enum__
 #include <services_kernel_client.h>
 #endif
-
-
 #if defined(SUPPORT_GPUVIRT_VALIDATION)
 #include "virt_validation_defs.h"
 #endif
@@ -418,7 +418,7 @@ PVRSRV_ERROR PVRSRVSystemInstallDeviceLISR(void *pvOSDevice,
 PVRSRV_ERROR PVRSRVSystemUninstallDeviceLISR(IMG_HANDLE hLISRData);
 
 int PVRSRVGetDriverStatus(void);
-
+#if !defined(PVRSRV_NO_BRIDGE_QUERIES)
 /*!
 ******************************************************************************
  @Function	: PVRSRVIsBridgeEnabled
@@ -449,7 +449,7 @@ static inline IMG_BOOL PVRSRVIsBridgeEnabled(IMG_HANDLE hServices, IMG_UINT32 ui
 
 	return (IMG_BOOL)(((1U << (ui32BridgeGroup - ui32Offset)) & ui32Bridges) != 0);
 }
-
+#endif
 
 #if defined(SUPPORT_GPUVIRT_VALIDATION)
 #if defined(EMULATOR)
