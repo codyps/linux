@@ -129,23 +129,39 @@ static PHYS_HEAP_FUNCTIONS gsPhysHeapFuncs = {
 	.pfnDevPAddrToCpuPAddr = UMAPhysHeapDevPAddrToCpuPAddr,
 };
 
-
+/*
+ * Allocate the GPU and firmware physical heap descriptors together.
+ */
 static PVRSRV_ERROR PhysHeapsCreate(PHYS_HEAP_CONFIG **ppasPhysHeapsOut,
                                    IMG_UINT32 *puiPhysHeapCountOut)
 {
+	/*
+	 * Both heaps use the same physical address translation.
+	 * Their usage flags distinguish them for the device configuration.
+	 */
+
 	PHYS_HEAP_CONFIG *pasPhysHeaps;
 	IMG_UINT32 uiHeapCount = 2;
 
+	/*
+	 * Both descriptors belong to this allocation and are destroyed together.
+	 * Return the count alongside the allocation for the device config.
+	 * Release them together in PhysHeapsDestroy.
+	 */
+
 	pasPhysHeaps = OSAllocZMem(sizeof(*pasPhysHeaps) * uiHeapCount);
 	if (!pasPhysHeaps)
-	        return PVRSRV_ERROR_OUT_OF_MEMORY;
+	{
+		return PVRSRV_ERROR_OUT_OF_MEMORY;
+	}
 
-	pasPhysHeaps[0].eType = PHYS_HEAP_TYPE_UMA;
 	pasPhysHeaps[0].pszPDumpMemspaceName = "SYSMEM";
+	pasPhysHeaps[0].eType = PHYS_HEAP_TYPE_UMA;
 	pasPhysHeaps[0].psMemFuncs = &gsPhysHeapFuncs;
 	pasPhysHeaps[0].ui32UsageFlags = PHYS_HEAP_USAGE_GPU_LOCAL;
-	pasPhysHeaps[1].eType = PHYS_HEAP_TYPE_UMA;
+
 	pasPhysHeaps[1].pszPDumpMemspaceName = "SYSMEM_FW";
+	pasPhysHeaps[1].eType = PHYS_HEAP_TYPE_UMA;
 	pasPhysHeaps[1].psMemFuncs = &gsPhysHeapFuncs;
 	pasPhysHeaps[1].ui32UsageFlags = PHYS_HEAP_USAGE_FW_SHARED;
 
