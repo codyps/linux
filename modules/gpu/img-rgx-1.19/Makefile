@@ -86,6 +86,13 @@ ifeq ($(PVR_SYSTEM),sunxi_a133)
     ccflags-y += $(call cc-option,-fdebug-prefix-map=./modules/gpu/img-rgx-1.19/=$(stock_gpu_source))
     ccflags-y += $(call cc-option,-fdebug-prefix-map=modules/gpu/img-rgx-1.19/=$(stock_gpu_kbuild))
 
+    # Record the OEM build options and compilation directory in GCC DWARF.
+    stock_gpu_kernel := /home2/trimuidev/tg3040/tina_1.1.1/lichee/linux-4.9
+    ccflags-y += $(call cc-option,-fdebug-prefix-map=$(realpath $(srctree))=$(stock_gpu_kernel))
+    ccflags-y += $(call cc-option,-grecord-gcc-switches)
+    ccflags-y += $(call cc-option,-march=armv8-a+crc+simd)
+    ccflags-y += $(call cc-option,-fno-pie)
+
     # GCC's system headers used the OpenWrt staging directory in the SDK.
     gpu_compiler_include := $(abspath $(shell $(CC) -print-file-name=include))
     stock_gpu_compiler_include := /home2/trimuidev/tg3040/tina_1.1.1/out/a133-aw3/staging_dir/toolchain/lib/gcc/aarch64-openwrt-linux-gnu/7.4.1/include
