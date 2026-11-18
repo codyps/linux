@@ -191,6 +191,7 @@ static void commit_static_frame(void)
 }
 
 __attribute__((target("tune=cortex-a53")))
+__attribute__((optimize("reorder-blocks-algorithm=stc")))
 static int trimui_ledc_run_thread(void *unused)
 {
 	/* Startup roots only; recompute F2 after caller-clobbering services. */
