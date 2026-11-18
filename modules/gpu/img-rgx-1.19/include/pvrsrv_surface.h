@@ -70,17 +70,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 typedef enum _PVRSRV_SURFACE_MEMLAYOUT_  {
 	PVRSRV_SURFACE_MEMLAYOUT_STRIDED = 0,		/*!< Strided memory buffer */
 	PVRSRV_SURFACE_MEMLAYOUT_FBC,				/*!< Compressed frame buffer */
-	PVRSRV_SURFACE_MEMLAYOUT_BIF_PAGE_TILED,	/*!< Buffer Interface page tiled buffer */
+
 } PVRSRV_SURFACE_MEMLAYOUT;
 
 /*!
  * Frame Buffer Compression layout.
  * Defines the FBC mode to use.
  *
- *   Structure: #_PVRSRV_SURFACE_FBC_LAYOUT_
+ *   Structure: #PVRSRV_SURFACE_FBC_LAYOUT_TAG
  *   Typedef: ::PVRSRV_SURFACE_FBC_LAYOUT
  */
-typedef struct _PVRSRV_SURFACE_FBC_LAYOUT_ {
+typedef struct PVRSRV_SURFACE_FBC_LAYOUT_TAG {
 	/*! The compression mode for this surface*/
 	IMG_FB_COMPRESSION	eFBCompressionMode;
 } PVRSRV_SURFACE_FBC_LAYOUT;
@@ -88,10 +88,10 @@ typedef struct _PVRSRV_SURFACE_FBC_LAYOUT_ {
 /*!
  * Pixel and memory format of a surface
  *
- *   Structure: #_PVRSRV_SURFACE_FORMAT_
+ *   Structure: #PVRSRV_SURFACE_FORMAT_TAG
  *   Typedef: ::PVRSRV_SURFACE_FORMAT
  */
-typedef struct _PVRSRV_SURFACE_FORMAT_
+typedef struct PVRSRV_SURFACE_FORMAT_TAG
 {
 	/*! Enum value of type IMG_PIXFMT for the pixel format */
 	IMG_UINT32					ePixFormat;
@@ -110,10 +110,10 @@ typedef struct _PVRSRV_SURFACE_FORMAT_
 /*!
  * Width and height of a surface
  *
- *   Structure: #_PVRSRV_SURFACE_DIMS_
+ *   Structure: #PVRSRV_SURFACE_DIMS_TAG
  *   Typedef: ::PVRSRV_SURFACE_DIMS
  */
-typedef struct _PVRSRV_SURFACE_DIMS_
+typedef struct PVRSRV_SURFACE_DIMS_TAG
 {
 	IMG_UINT32		ui32Width;		/*!< Width in pixels*/
 	IMG_UINT32		ui32Height;		/*!< Height in pixels*/
@@ -122,10 +122,10 @@ typedef struct _PVRSRV_SURFACE_DIMS_
 /*!
  * Dimension and format details of a surface
  *
- *   Structure: #_PVRSRV_SURFACE_INFO_
+ *   Structure: #PVRSRV_SURFACE_INFO_TAG
  *   Typedef: ::PVRSRV_SURFACE_INFO
  */
-typedef struct _PVRSRV_SURFACE_INFO_
+typedef struct PVRSRV_SURFACE_INFO_TAG
 {
 	PVRSRV_SURFACE_DIMS		sDims;		/*!< Width and height */
 	PVRSRV_SURFACE_FORMAT	sFormat;	/*!< Memory format */
@@ -140,10 +140,10 @@ typedef struct _PVRSRV_SURFACE_INFO_
 /*!
  * Defines a rectangle on a surface
  *
- *   Structure: #_PVRSRV_SURFACE_RECT_
+ *   Structure: #PVRSRV_SURFACE_RECT_TAG
  *   Typedef: ::PVRSRV_SURFACE_RECT
  */
-typedef struct _PVRSRV_SURFACE_RECT_
+typedef struct PVRSRV_SURFACE_RECT_TAG
 {
 	IMG_INT32				i32XOffset;	/*!< X offset from origin in pixels */
 	IMG_INT32				i32YOffset;	/*!< Y offset from origin in pixels */
@@ -153,10 +153,10 @@ typedef struct _PVRSRV_SURFACE_RECT_
 /*!
  * Surface configuration details
  *
- *   Structure: #_PVRSRV_SURFACE_CONFIG_INFO_
+ *   Structure: #PVRSRV_SURFACE_CONFIG_INFO_TAG
  *   Typedef: ::PVRSRV_SURFACE_CONFIG_INFO
  */
-typedef struct _PVRSRV_SURFACE_CONFIG_INFO_
+typedef struct PVRSRV_SURFACE_CONFIG_INFO_TAG
 {
 	/*! Crop applied to surface (BEFORE transformation) */
 	PVRSRV_SURFACE_RECT		sCrop;
@@ -187,7 +187,7 @@ typedef struct _PVRSRV_SURFACE_CONFIG_INFO_
 /*!
  * Contains information about a panel
  */
-typedef struct _PVRSRV_PANEL_INFO_
+typedef struct PVRSRV_PANEL_INFO_TAG
 {
 	PVRSRV_SURFACE_INFO sSurfaceInfo;		/*!< Panel surface details */
 	IMG_UINT32			ui32RefreshRate;	/*!< Panel refresh rate in Hz */
