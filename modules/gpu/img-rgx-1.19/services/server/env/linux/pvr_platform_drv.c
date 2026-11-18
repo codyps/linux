@@ -156,6 +156,13 @@ static int pvr_devices_register(void)
 }
 #endif
 
+/*
+ * The Brick firmware supplies the GPU platform device through its FDT.
+ * Probe attaches DRM to that device without registering a second one.
+ * Load the driver before exposing the DRM device. On failure, release
+ * the allocated device, unloading first if registration failed.
+ */
+
 static int pvr_probe(struct platform_device *pdev)
 {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
@@ -183,9 +190,7 @@ static int pvr_probe(struct platform_device *pdev)
 	 * because of potential race conditions. Calling the function here,
 	 * before calling drm_dev_register, avoids those potential races.
 	 */
-#line 191
 	BUG_ON(pvr_drm_platform_driver.load != NULL);
-#line 185
 	ret = pvr_drm_load(ddev, 0);
 	if (ret)
 		goto err_drm_dev_put;
@@ -217,15 +222,7 @@ err_drm_dev_put:
 #endif
 }
 
-/*
- * struct platform_driver::remove() returns void from Linux 6.11 (previously
- * int). (tsp-mc9m.1, mainline 6.x port.)
- */
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0))
-static void pvr_remove(struct platform_device *pdev)
-#else
 static int pvr_remove(struct platform_device *pdev)
-#endif
 {
 	struct drm_device *ddev = platform_get_drvdata(pdev);
 
@@ -237,18 +234,14 @@ static int pvr_remove(struct platform_device *pdev)
 	/* The unload callback, called from drm_dev_unregister, is
 	 * deprecated. Call the unload function directly.
 	 */
-#line 235
 	BUG_ON(pvr_drm_platform_driver.unload != NULL);
-#line 237
 	pvr_drm_unload(ddev);
 
 	drm_dev_put(ddev);
 #else
 	drm_put_dev(ddev);
 #endif
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0))
 	return 0;
-#endif
 }
 
 static void pvr_shutdown(struct platform_device *pdev)
@@ -325,6 +318,7 @@ static void __exit pvr_exit(void)
 {
 	DRM_DEBUG_DRIVER("\n");
 
+	/* The GPU platform device is owned by the device tree. */
 	platform_driver_unregister(&pvr_platform_driver);
 	PVRSRVDriverDeinit();
 
