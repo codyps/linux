@@ -42,9 +42,10 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */ /**************************************************************************/
 
+#include "pvr_notifier.h"
 #include "scp.h"
 #include "allocmem.h"
-#include "pvr_notifier.h"
+
 #include "pvrsrv.h"
 #include "pvr_debug.h"
 #include "osfunc.h"
