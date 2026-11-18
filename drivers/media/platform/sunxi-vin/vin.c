@@ -130,19 +130,6 @@ static void vin_md_prepare_pipeline(struct vin_pipeline *p,
 	}
 }
 
-static int vin_mclk_pin_release(struct vin_md *vind)
-{
-#ifndef FPGA_VER
-	int i;
-
-	for (i = 0; i < VIN_MAX_CCI; i++) {
-		if (!IS_ERR_OR_NULL(vind->mclk[i].pin))
-			devm_pinctrl_put(vind->mclk[i].pin);
-	}
-#endif
-	return 0;
-}
-
 #line 133
 static int vin_md_get_clocks(struct vin_md *vind)
 #line 147
