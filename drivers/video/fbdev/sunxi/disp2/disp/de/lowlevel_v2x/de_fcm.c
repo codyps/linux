@@ -124,8 +124,8 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 	/* Stock reloads the base after the LUT updates, then fills each plane. */
 	reg = fcm_dev[sel][channel];
 	for (offset = 0; offset < 0x5b0; offset += 4) {
-		*(volatile u32 *)((volatile u8 *)reg + 0x300 + offset) = 0x64646464;
 		asm volatile("" : "+r"(offset));
+		*(volatile u32 *)((volatile u8 *)reg + 0x300 + offset) = 0x64646464;
 	}
 	for (i = 0; i < 364; i++)
 		reg[0x900 / 4 + i].value = 0x64646464;
