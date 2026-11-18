@@ -109,4 +109,11 @@ int PVRSRV_BridgeDispatchKM(struct drm_device *dev, void *arg,
 			    struct drm_file *file);
 int PVRSRV_MMap(struct file *file, struct vm_area_struct *ps_vma);
 
+/* Since 6.12 drm_open_helper() requires FOP_UNSIGNED_OFFSET for DRM nodes. */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0))
+#define PVR_DRM_FOP_FLAGS .fop_flags = FOP_UNSIGNED_OFFSET,
+#else
+#define PVR_DRM_FOP_FLAGS
+#endif
+
 #endif /* !defined(__PVR_DRV_H__) */
