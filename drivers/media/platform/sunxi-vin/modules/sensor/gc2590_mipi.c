@@ -18,13 +18,12 @@
 #include <linux/delay.h>
 #include <linux/videodev2.h>
 #include <linux/clk.h>
-#include <linux/gpio.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-mediabus.h>
 #include <linux/io.h>
 #include "camera.h"
 #include "sensor_helper.h"
-
+#include <linux/gpio.h>
 MODULE_AUTHOR("lwj");
 MODULE_DESCRIPTION("A low-level driver for C2590 Raw sensors");
 MODULE_LICENSE("GPL");
@@ -155,7 +154,7 @@ static struct regval_list sensor_1600_1200_regs[] = {
 /* Stock retains this initialized global even though the shipped sensor code
  * does not read it. Keep the module's data layout and observable symbol.
  */
-unsigned int BASEGAIN = 128;
+
 
 /*
  * Here we'll try to encapsulate the changes for just the output
@@ -163,6 +162,7 @@ unsigned int BASEGAIN = 128;
  *
  */
 
+#line 168
 static struct regval_list sensor_fmt_raw[] = {
 };
 
@@ -183,10 +183,15 @@ static int sensor_s_exp(struct v4l2_subdev *sd, unsigned int exp_val)
 static int sensor_g_gain(struct v4l2_subdev *sd, __s32 *value)
 {
 struct sensor_info *info = to_state(sd);
+#line 189
 *value = info->gain;
+#line 189
 sensor_dbg("sensor_get_gain = %d\n", info->gain);
 return 0;
 }
+
+#line 194
+unsigned int BASEGAIN = 128;
 
 static int sensor_s_gain(struct v4l2_subdev *sd, int gain_val)
 {
@@ -197,8 +202,9 @@ static int c2590_sensor_vts;
 static int sensor_s_exp_gain(struct v4l2_subdev *sd,
 			struct sensor_exp_gain *exp_gain)
 {
-	int exp_val, gain_val, shutter, frame_length;
-	unsigned char explow, exphigh, gainlow;
+	int exp_val, gain_val, frame_length, shutter;
+	unsigned char explow, expmid, exphigh;
+	unsigned char gainlow, gainhigh;
 	struct sensor_info *info = to_state(sd);
 
 	exp_val = exp_gain->exp_val;
@@ -209,27 +215,47 @@ static int sensor_s_exp_gain(struct v4l2_subdev *sd,
 		gain_val = 255;
 	if (exp_val > 0x89b4)
 		exp_val = 0x89b4;
+#line 221
 	gainlow = (unsigned char)(gain_val - 16);
-	explow = (unsigned char)(exp_val >> 4);
-	exphigh = (unsigned char)(exp_val >> 12);
+#line 223
 	shutter = exp_val >> 4;
+#line 225
+	expmid = (unsigned char)(exp_val >> 12);
+	explow = (unsigned char)shutter;
+#line 228
 	frame_length = c2590_sensor_vts;
+#line 228
 	if (shutter > c2590_sensor_vts - 4)
 		frame_length = shutter + 4;
+#line 234
 	sensor_write(sd, 0x0341, frame_length & 0xff);
 	sensor_write(sd, 0x0340, frame_length >> 8);
+#line 237
 	sensor_write(sd, 0x0205, gainlow);
+#line 240
 	sensor_write(sd, 0x0203, explow);
-	sensor_write(sd, 0x0202, exphigh);
+	sensor_write(sd, 0x0202, expmid);
+#line 243
 	info->exp = exp_val;
 	info->gain = gain_val;
+#line 232
 	return 0;
+}
+
+/* The stock standby helper has no sensor-side register effects. */
+#line 249
+static int sensor_s_sw_stby(struct v4l2_subdev *sd, int on_off)
+{
+	int ret = 0;
+
+	return ret;
 }
 
 /*
  * Stuff that knows about the sensor.
  */
 
+#line 259
 static int sensor_power(struct v4l2_subdev *sd, int on)
 {
 	int ret;
@@ -238,22 +264,31 @@ static int sensor_power(struct v4l2_subdev *sd, int on)
 	switch (on) {
 	case STBY_ON:
 		sensor_dbg("STBY_ON!\n");
+#line 270
 		usleep_range(10000, 12000);
 		cci_lock(sd);
 		vin_gpio_write(sd, PWDN, CSI_GPIO_HIGH);
+#line 270
+		sensor_s_sw_stby(sd, CSI_GPIO_HIGH);
+#line 273
 		cci_unlock(sd);
 		vin_set_mclk(sd, OFF);
+#line 273
 		break;
 	case STBY_OFF:
 		sensor_dbg("STBY_OFF!\n");
+#line 278
 		cci_lock(sd);
 		vin_set_mclk_freq(sd, MCLK);
 		vin_set_mclk(sd, ON);
 		usleep_range(10000, 12000);
 		vin_gpio_write(sd, PWDN, CSI_GPIO_LOW);
+#line 281
+		sensor_s_sw_stby(sd, CSI_GPIO_LOW);
 		usleep_range(10000, 12000);
 		cci_unlock(sd);
 		break;
+#line 289
 	case PWR_ON:
 		sensor_print("PWR_ON!\n");
 		gpio_direction_output(136, 0);
@@ -315,34 +350,43 @@ static int sensor_reset(struct v4l2_subdev *sd, u32 val)
 
 static int sensor_detect(struct v4l2_subdev *sd)
 {
-	unsigned int SENSOR_ID = 0;
+	unsigned int SENSOR_ID = 0, value;
 	data_type val;
 	int cnt = 0;
 
+#line 353
 	printk("hhz sensor_detect 0202 \n");
 	sensor_read(sd, 0x0000, &val);
 	SENSOR_ID |= (val << 8);
 	sensor_read(sd, 0x0001, &val);
 	SENSOR_ID |= (val);
 	sensor_print("V4L2_IDENT_SENSOR = 0x%x\n", SENSOR_ID);
+#line 362
 	sensor_write(sd, 0x328d, 0x50);
 
+#line 367
 	while ((SENSOR_ID != V4L2_IDENT_SENSOR) && (cnt < 3)) {
 		sensor_read(sd, 0x0000, &val);
 		SENSOR_ID |= (val << 8);
 		sensor_read(sd, 0x0001, &val);
 		SENSOR_ID |= (val);
 		sensor_print("retry = %d, V4L2_IDENT_SENSOR = %x\n",
+#line 368
 			cnt, SENSOR_ID);
+#line 373
 		cnt++;
+#line 370
 	}
 
+#line 376
 	if (SENSOR_ID != V4L2_IDENT_SENSOR)
 		return -ENODEV;
 
+#line 375
 	return 0;
 }
 
+#line 382
 static int sensor_init(struct v4l2_subdev *sd, u32 val)
 {
 	int ret;
@@ -447,6 +491,7 @@ static struct sensor_win_size sensor_win_sizes[] = {
 
 #define N_WIN_SIZES (ARRAY_SIZE(sensor_win_sizes))
 
+#line 508
 static int sensor_reg_init(struct sensor_info *info)
 {
 
@@ -504,8 +549,8 @@ static int sensor_g_mbus_config(struct v4l2_subdev *sd,
 
 static int sensor_g_ctrl(struct v4l2_ctrl *ctrl)
 {
-	struct sensor_info *info = container_of(ctrl->handler,
-			struct sensor_info, handler);
+	struct sensor_info *info =
+		container_of(ctrl->handler, struct sensor_info, handler);
 	struct v4l2_subdev *sd = &info->sd;
 
 	switch (ctrl->id) {
@@ -519,8 +564,8 @@ static int sensor_g_ctrl(struct v4l2_ctrl *ctrl)
 
 static int sensor_s_ctrl(struct v4l2_ctrl *ctrl)
 {
-	struct sensor_info *info = container_of(ctrl->handler,
-			struct sensor_info, handler);
+	struct sensor_info *info =
+		container_of(ctrl->handler, struct sensor_info, handler);
 	struct v4l2_subdev *sd = &info->sd;
 
 	switch (ctrl->id) {
@@ -549,7 +594,6 @@ static const struct v4l2_subdev_core_ops sensor_core_ops = {
 	.compat_ioctl32 = sensor_compat_ioctl32,
 #endif
 };
-
 static const struct v4l2_subdev_video_ops sensor_video_ops = {
 	.s_parm = sensor_s_parm,
 	.g_parm = sensor_g_parm,
@@ -591,8 +635,7 @@ static const struct v4l2_ctrl_config sensor_custom_ctrls[] = {
 	},
 };
 
-static int sensor_init_controls(struct v4l2_subdev *sd,
-			const struct v4l2_ctrl_ops *ops)
+static int sensor_init_controls(struct v4l2_subdev *sd, const struct v4l2_ctrl_ops *ops)
 {
 	struct sensor_info *info = to_state(sd);
 	struct v4l2_ctrl_handler *handler = &info->handler;
@@ -626,7 +669,6 @@ static int sensor_probe(struct i2c_client *client,
 {
 	struct v4l2_subdev *sd;
 	struct sensor_info *info;
-
 	info = kzalloc(sizeof(struct sensor_info), GFP_KERNEL);
 	if (info == NULL)
 		return -ENOMEM;
@@ -634,12 +676,17 @@ static int sensor_probe(struct i2c_client *client,
 	cci_dev_probe_helper(sd, client, &sensor_ops, &cci_drv);
 	sensor_init_controls(sd, &sensor_ctrl_ops);
 	mutex_init(&info->lock);
+#line 695
 	info->fmt = &sensor_formats[0];
+#line 693
 	info->fmt_pt = &sensor_formats[0];
+#line 697
 	info->win_pt = &sensor_win_sizes[0];
 	info->fmt_num = N_FMTS;
 	info->win_size_num = N_WIN_SIZES;
+#line 697
 	info->sensor_field = V4L2_FIELD_NONE;
+#line 701
 	info->af_first_flag = 1;
 
 	return 0;
@@ -648,11 +695,14 @@ static int sensor_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd;
 
+#line 708
 	sd = cci_dev_remove_helper(client, &cci_drv);
 	kfree(to_state(sd));
+#line 711
 	return 0;
+#line 711
 }
-
+#line 713
 static const struct i2c_device_id sensor_id[] = {
 	{SENSOR_NAME, 0},
 	{}
