@@ -78,6 +78,15 @@ ifeq ($(PVR_SYSTEM),sunxi_a133)
   WINDOW_SYSTEM=nullws
   include $(DDK_SRC)/config_kernel_sunxi_a133.mk
 
+  ifeq ($(VERSION).$(PATCHLEVEL),4.9)
+    # The stock DDK generated these two units in its SDK kbuild directory.
+    # Restrict the mapping to debug metadata for the generated module units.
+    stock_gpu_kbuild := /home2/trimuidev/tg3040/tina_1.1.1/lichee/linux-4.9/modules/gpu/img-rgx/linux/rogue_km/binary_sunxi_linux_nullws_release/target_aarch64/kbuild/
+    stock_gpu_mod_debug := $(call cc-option,-fdebug-prefix-map=modules/gpu/img-rgx-1.19/=$(stock_gpu_kbuild))
+    CFLAGS_dc_sunxi.mod.o += $(stock_gpu_mod_debug)
+    CFLAGS_pvrsrvkm.mod.o += $(stock_gpu_mod_debug)
+  endif
+
   # Include vendor build-options CFLAGS from pvr-buildopts.mk.
   # PVR_BUILDOPTS_MK can be overridden; default search order:
   #   1. build/pvr-buildopts.mk (in-repo copy, CI-friendly)
