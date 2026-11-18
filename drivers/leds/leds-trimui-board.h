@@ -198,13 +198,13 @@ static int trimui_ledc_run_thread(void *unused)
 	struct trimui_led_effect *left = &(trimui_effect_l);
 	struct trimui_led_effect *front2 = &(trimui_effect_f2);
 
-	asm volatile("" : "+r"(front2));
 	int battery_ticks = 0; /* OEM signed comparison, including negative values. */
 	u32 rgb;
 	u32 boot_white = 0xffffff;
 	u32 boot_orange = 0x00ff33;
-	asm("" : : "r"(boot_orange)); /* Keep the stock worker instruction span. */
 	trimui_scale_m = 14;
+	asm("" : : "r"(boot_orange)); /* Keep the stock worker instruction span. */
+	asm volatile("" : "+r"(front2));
 	/* Stock publishes this control as a separate 32-bit store before the
 	 * adjacent first effect type.  A plain store lets GCC merge the two.
 	 */
