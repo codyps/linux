@@ -845,7 +845,7 @@ static INLINE PVRSRV_ERROR CacheOpValidateUMVA(PMR *psPMR,
 	}
 	else if (mm)
 	{
-		mmap_read_lock(mm);
+		down_read(&mm->mmap_sem);
 		vma = find_vma(mm, (unsigned long)(uintptr_t)pvAddr);
 
 		if (!vma ||
@@ -859,7 +859,7 @@ static INLINE PVRSRV_ERROR CacheOpValidateUMVA(PMR *psPMR,
 			 */
 			pvAddr = NULL;
 		}
-		mmap_read_unlock(mm);
+		up_read(&mm->mmap_sem);
 	}
 #endif
 
