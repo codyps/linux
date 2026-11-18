@@ -419,9 +419,7 @@ static void sensor_s_sw_stby(struct v4l2_subdev *sd, int on_off)
 static int sensor_power(struct v4l2_subdev *sd, int on)
 {
 	int ret = 0;
-
 	printk("zzz5648 sensor_power\n");
-
 	switch (on) {
 	case STBY_ON:
 		sensor_print("STBY_ON!\n");
@@ -438,7 +436,6 @@ static int sensor_power(struct v4l2_subdev *sd, int on)
 		cci_unlock(sd);
 		break;
 	case PWR_ON:
-
 		gpio_direction_output(GPIOE(6), 0);
 		gpio_direction_output(GPIOE(7), 0);
 		sensor_print("PWR_ON!100\n");
@@ -718,8 +715,8 @@ static int sensor_g_mbus_config(struct v4l2_subdev *sd,
 
 static int sensor_g_ctrl(struct v4l2_ctrl *ctrl)
 {
-	struct sensor_info *info = container_of(ctrl->handler,
-			struct sensor_info, handler);
+	struct sensor_info *info =
+		container_of(ctrl->handler, struct sensor_info, handler);
 	struct v4l2_subdev *sd = &info->sd;
 
 	switch (ctrl->id) {
@@ -733,8 +730,8 @@ static int sensor_g_ctrl(struct v4l2_ctrl *ctrl)
 
 static int sensor_s_ctrl(struct v4l2_ctrl *ctrl)
 {
-	struct sensor_info *info = container_of(ctrl->handler,
-			struct sensor_info, handler);
+	struct sensor_info *info =
+		container_of(ctrl->handler, struct sensor_info, handler);
 	struct v4l2_subdev *sd = &info->sd;
 
 	switch (ctrl->id) {
@@ -804,9 +801,8 @@ static const struct v4l2_ctrl_config sensor_custom_ctrls[] = {
 		.def = 120,
 	},
 };
-
-static int sensor_init_controls(struct v4l2_subdev *sd,
-			const struct v4l2_ctrl_ops *ops)
+static int
+sensor_init_controls(struct v4l2_subdev *sd, const struct v4l2_ctrl_ops *ops)
 {
 	struct sensor_info *info = to_state(sd);
 	struct v4l2_ctrl_handler *handler = &info->handler;

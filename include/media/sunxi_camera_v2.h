@@ -174,6 +174,8 @@ enum v4l2_sensor_type {
 #define  V4L2_CID_AF_WIN_X2		(V4L2_CID_USER_SUNXI_CAMERA_BASE + 21)
 #define  V4L2_CID_AF_WIN_Y2		(V4L2_CID_USER_SUNXI_CAMERA_BASE + 22)
 
+/* Stock camera declaration metadata starts here. */
+#line 232
 static const char *const flash_led_mode_v1[] = {
 	"Off",
 	"Auto",
