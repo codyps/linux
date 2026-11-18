@@ -702,7 +702,7 @@ static int __init DC_SUNXI_init(void)
 			goto err_unlock;
 		}
 #if defined(DC_SUNXI_FORCE_XRGB8888)
-		ePixFormat = IMG_PIXFMT_B8G8R8X8_UNORM;
+		ePixFormat = (IMG_PIXFMT)90; /* Stock fbdev XRGB8888 value. */
 #else
 		ePixFormat = IMG_PIXFMT_B8G8R8A8_UNORM;
 #endif
@@ -726,7 +726,7 @@ static int __init DC_SUNXI_init(void)
 				   psLINFBInfo->var.blue.offset);
 			goto err_unlock;
 		}
-		ePixFormat = IMG_PIXFMT_R5G6B5_UNORM;
+		ePixFormat = (IMG_PIXFMT)86; /* Stock fbdev RGB565 value. */
 	}
 	else
 	{
