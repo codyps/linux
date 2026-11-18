@@ -53,8 +53,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "interrupt_support.h"
 
 #if defined(__linux__)
-#include <linux/clk.h>
 #include <linux/dma-mapping.h>
+#include <linux/clk.h>
 #include <linux/platform_device.h>
 #endif
 
