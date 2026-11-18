@@ -106,20 +106,10 @@ typedef struct _SCP_COMMAND_
  *                             Internal functions                            *
  *****************************************************************************/
 
-/*************************************************************************/ /*!
-@Function       __SCPAlloc
-
-@Description    Allocate space in the software command processor.
-
-@Input          psContext            Context to allocate from
-
-@Input          ui32Size                Size to allocate
-
-@Output         ppvBufferSpace          Pointer to space allocated
-
-@Return         PVRSRV_OK if the allocation was successful
-*/
-/*****************************************************************************/
+/* Allocate ui32Size bytes in the software command processor.
+ * Return PVRSRV_OK and the allocation through ppvBufferSpace on success.
+ * psContext identifies the command buffer that owns the allocation.
+ */
 static
 PVRSRV_ERROR __SCPAlloc(SCP_CONTEXT *psContext,
 						IMG_UINT32 ui32Size,
@@ -259,7 +249,7 @@ PVRSRV_ERROR _SCPCommandReady(PVRSRV_DEVICE_NODE *psDevNode, SCP_COMMAND *psComm
 		}
 		else
 		{
-			PVR_LOG_IF_ERROR_STOCK(252, eErr, "SyncFenceWaitKM");
+			PVR_LOG_IF_ERROR(eErr, "SyncFenceWaitKM");
 			/* Release the fence. */
 			SyncFenceReleaseKM(&psCommand->sAcquireFenceObj);
 			SyncClearFenceObj(&psCommand->sAcquireFenceObj);
@@ -344,13 +334,13 @@ PVRSRV_ERROR SCPCreate(PVRSRV_DEVICE_NODE *psDevNode,
 
 	/* allocate an internal queue info structure */
 	psContext = OSAllocZMem(sizeof(SCP_CONTEXT));
-	PVR_LOG_RETURN_IF_NOMEM_STOCK(337, psContext, "OSAllocZMem");
+	PVR_LOG_RETURN_IF_NOMEM(psContext, "OSAllocZMem");
 
 	psContext->psDevNode = psDevNode;
 
 	/* allocate the command queue buffer - allow for overrun */
 	psContext->pvCCB = OSAllocMem(ui32Power2QueueSize);
-	PVR_LOG_GOTO_IF_NOMEM_STOCK(343, psContext->pvCCB, eError, ErrorExitNoCCB);
+	PVR_LOG_GOTO_IF_NOMEM(psContext->pvCCB, eError, ErrorExitNoCCB);
 
 	psContext->ui32CCBSize = ui32Power2QueueSize;
 
@@ -457,9 +447,9 @@ PVRSRV_ERROR SCPAllocCommand(SCP_CONTEXT *psContext,
 		iReleaseFenceTimeline != PVRSRV_NO_TIMELINE)
 	{
 		eError = SyncSWGetTimelineObj(iReleaseFenceTimeline, &psCommand->sSWTimelineObj);
-		PVR_LOG_RETURN_IF_ERROR_STOCK(450, eError, "SyncSWGetTimelineObj");
+		PVR_LOG_RETURN_IF_ERROR(eError, "SyncSWGetTimelineObj");
 		eError = SyncGetFenceObj(*piReleaseFence, &psCommand->sReleaseFenceObj);
-		PVR_LOG_RETURN_IF_ERROR_STOCK(452, eError, "SyncGetFenceObj");
+		PVR_LOG_RETURN_IF_ERROR(eError, "SyncGetFenceObj");
 	}
 	else
 	{
@@ -560,7 +550,7 @@ void SCPCommandComplete(SCP_CONTEXT *psContext,
 
 	if (psContext->ui32ReadOffset == psContext->ui32DepOffset)
 	{
-		PVR_DPF_STOCK(553, (PVR_DBG_ERROR, "SCPCommandComplete: Called with nothing to do!"));
+		PVR_DPF((PVR_DBG_ERROR, "SCPCommandComplete: Called with nothing to do!"));
 		return;
 	}
 
