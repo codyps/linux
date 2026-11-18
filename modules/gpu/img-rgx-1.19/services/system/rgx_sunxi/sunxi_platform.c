@@ -598,6 +598,7 @@ int sunxi_platform_init(struct device *dev)
 	struct platform_device *pdev = to_platform_device(dev);
 #endif /* defined(CONFIG_OF) */
 	unsigned int val, volt_val = 0;
+
 	sunxi_data = (struct sunxi_platform *)kzalloc(sizeof(struct sunxi_platform), GFP_KERNEL);
 	if (!sunxi_data) {
 		dev_err(dev, "failed to get kzalloc sunxi_platform");
@@ -651,19 +652,13 @@ int sunxi_platform_init(struct device *dev)
 	sunxi_data->power_on = 0;
 
 	val = readl(sunxi_data->ppu_reg + GPU_PD_STAT_REG);
-#line 653
 	WARN_ON((val & GPU_PD_STAT_MASK) != GPU_PD_STAT_3D_MODE);
-#line 653
 	if (!sunxi_data->soft_mode) {
 		val = ppu_mode_switch(POWER_CTRL_MODE_HW, false);
-#line 656
 		WARN_ON((val & POWER_CTRL_MODE_MASK) != POWER_CTRL_MODE_HW);
-#line 656
 	} else {
 		val = ppu_mode_switch(POWER_CTRL_MODE_SW, true);
-#line 659
 		WARN_ON((val & POWER_CTRL_MODE_MASK) != POWER_CTRL_MODE_SW);
-#line 659
 	}
 	sunxi_create_debugfs();
 	if (sysfs_create_group(&dev->kobj, &scene_ctrl_attribute_group)) {
@@ -673,7 +668,6 @@ int sunxi_platform_init(struct device *dev)
 	sunxi_data->power_idle = 0;
 	regulator_set_voltage(sunxi_data->regula, 900000, 900000);
 #endif
-
 	init_waitqueue_head(&dvfs_wq);
 
 	dev_info(dev, "idle:%d dvfs:%d power:%d %s mode:%d volt:%u core:%lu\n",
@@ -689,6 +683,7 @@ void sunxi_platform_term(void)
 	pm_runtime_disable(sunxi_data->dev);
 	debugfs_remove_recursive(sunxi_debugfs);
 	sysfs_remove_group(&sunxi_data->dev->kobj, &scene_ctrl_attribute_group);
+
 	kfree(sunxi_data);
 
 	sunxi_data = NULL;
