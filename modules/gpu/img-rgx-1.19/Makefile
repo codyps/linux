@@ -85,6 +85,11 @@ ifeq ($(PVR_SYSTEM),sunxi_a133)
     stock_gpu_kbuild := $(stock_gpu_source)binary_sunxi_linux_nullws_release/target_aarch64/kbuild/
     ccflags-y += $(call cc-option,-fdebug-prefix-map=./modules/gpu/img-rgx-1.19/=$(stock_gpu_source))
     ccflags-y += $(call cc-option,-fdebug-prefix-map=modules/gpu/img-rgx-1.19/=$(stock_gpu_kbuild))
+
+    # GCC's system headers used the OpenWrt staging directory in the SDK.
+    gpu_compiler_include := $(abspath $(shell $(CC) -print-file-name=include))
+    stock_gpu_compiler_include := /home2/trimuidev/tg3040/tina_1.1.1/out/a133-aw3/staging_dir/toolchain/lib/gcc/aarch64-openwrt-linux-gnu/7.4.1/include
+    ccflags-y += $(call cc-option,-fdebug-prefix-map=$(gpu_compiler_include)=$(stock_gpu_compiler_include))
   endif
 
   # Include vendor build-options CFLAGS from pvr-buildopts.mk.
