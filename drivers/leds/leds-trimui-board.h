@@ -1205,6 +1205,7 @@ static __attribute__((no_reorder)) ssize_t store_anim_frames_hex(struct class *c
 	return count;
 }
 
+__attribute__((target("tune=cortex-a53")))
 static __attribute__((no_reorder, optimize("no-move-loop-invariants"))) ssize_t show_frame_hex(struct class *class, struct class_attribute *attr, char *buffer)
 {
 	/* Stock advances the index in x22 but compares its low signed word.
