@@ -2347,7 +2347,7 @@ static s32 disp_mgr_apply(struct disp_manager *mgr)
 		memcpy(&data, mgrp->cfg, sizeof(struct disp_manager_data));
 		mgrp->cfg->flag &= ~MANAGER_ALL_DIRTY;
 	}
-
+	/* OEM treats is_dirty() errors as dirty. TODO: handle errors. */
 	list_for_each_entry(lyr, &mgr->lyr_list, list) {
 		if (lyr->is_dirty && lyr->is_dirty(lyr)) {
 			lyr_drity = true;
