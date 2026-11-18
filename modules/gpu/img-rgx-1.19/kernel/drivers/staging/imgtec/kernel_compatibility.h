@@ -426,6 +426,11 @@ __pvr_copy_to_user(void __user *to, const void *from, unsigned long n)
  *
  * This is unused in at least Linux 3.4 and above for all architectures other
  * than 'um' (User Mode Linux), which stopped using it in 4.2.
+ *
+ * DDK callers always use the two-argument form. On older kernels the
+ * compatibility wrapper supplies the access type expected by the native
+ * interface. Capture the original macro in an inline function before
+ * redefining access_ok to avoid expanding the compatibility macro recursively.
  */
 #if defined(access_ok)
  /*
@@ -458,12 +463,7 @@ __pvr_access_ok_compat(int type, const void __user * addr, unsigned long size)
 #define page_to_phys(x) l4x_virt_to_phys((void *)((phys_addr_t)page_to_pfn(x) << PAGE_SHIFT))
 
 #endif /* defined(CONFIG_L4) */
-
-/*
- * Compat shims for DDK 1.19 code running on older kernels (4.9.x).
- */
-
-/* mmap_write_lock/unlock introduced in 5.8, replacing down/up_write(&mm->mmap_sem) */
+/* Linux 5.8 renamed the mmap_sem locking helpers. */
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0))
 #include <linux/rwsem.h>
 static inline void mmap_write_lock(struct mm_struct *mm)
