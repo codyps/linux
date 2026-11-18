@@ -143,9 +143,12 @@ static int vin_mclk_pin_release(struct vin_md *vind)
 	return 0;
 }
 
+#line 133
 static int vin_md_get_clocks(struct vin_md *vind)
+#line 147
 {
 #ifndef FPGA_VER
+#line 136
 	struct device_node *np = vind->pdev->dev.of_node;
 	unsigned int core_clk;
 	int i;
@@ -154,61 +157,80 @@ static int vin_md_get_clocks(struct vin_md *vind)
 	if (IS_ERR_OR_NULL(vind->clk[VIN_TOP_CLK].clock)) {
 		vin_err("Get top clk failed!\n");
 		vind->clk[VIN_TOP_CLK].clock = NULL;
+#line 157
 		return 0;
 	}
 
+#line 147
 	vind->clk[VIN_TOP_CLK_SRC].clock = of_clk_get(np, 1);
 	if (IS_ERR_OR_NULL(vind->clk[VIN_TOP_CLK_SRC].clock)) {
 		vin_err("Get top clk source failed!\n");
 		vind->clk[VIN_TOP_CLK_SRC].clock = NULL;
+#line 164
 		return 0;
 	}
 
+#line 154
 	for (i = 0; i < VIN_MAX_CCI; i++) {
 		vind->mclk[i].mclk = of_clk_get(np, 3 * i + 2);
 		if (IS_ERR_OR_NULL(vind->mclk[i].mclk)) {
 			vin_err("Get mclk%d failed!\n", i);
 			vind->mclk[i].mclk = NULL;
+#line 172
 			break;
 		}
+#line 161
 		vind->mclk[i].clk_24m = of_clk_get(np, 3 * i + 3);
 		if (IS_ERR_OR_NULL(vind->mclk[i].clk_24m)) {
 			vin_err("Get mclk%d_24m failed!\n", i);
 			vind->mclk[i].clk_24m = NULL;
+#line 178
 			break;
 		}
+#line 167
 		vind->mclk[i].clk_pll = of_clk_get(np, 3 * i + 4);
 		if (IS_ERR_OR_NULL(vind->mclk[i].clk_pll)) {
 			vin_err("Get mclk%d_pll failed!\n", i);
 			vind->mclk[i].clk_pll = NULL;
+#line 184
 			break;
 		}
 	}
 
+#line 175
 	vind->isp_clk[VIN_ISP_CLK].clock = of_clk_get(np, 3 * i + 2);
 	if (IS_ERR_OR_NULL(vind->isp_clk[VIN_ISP_CLK].clock)) {
 		vin_warn("Get isp clk failed!\n");
 		vind->isp_clk[VIN_ISP_CLK].clock = NULL;
+#line 192
 	}
 
 #if defined CONFIG_ARCH_SUN8IW16P1 || defined CONFIG_ARCH_SUN8IW19P1 || defined CONFIG_ARCH_SUN50IW10P1
+#line 182
 	vind->isp_clk[VIN_ISP_CLK_SRC].clock = of_clk_get(np, 3 * i + 3);
 	if (IS_ERR_OR_NULL(vind->isp_clk[VIN_ISP_CLK_SRC].clock)) {
 		vin_warn("Get isp clk failed!\n");
 		vind->isp_clk[VIN_ISP_CLK_SRC].clock = NULL;
+#line 199
 	}
 
+#line 188
 	if (clk_set_parent(vind->isp_clk[VIN_ISP_CLK].clock, vind->isp_clk[VIN_ISP_CLK_SRC].clock)) {
 		vin_err("isp clock set parent failed\n");
+#line 203
 		return -1;
 	}
 
+#line 193
 	if (of_property_read_u32(np, "vind0_isp", &core_clk)) {
 		vin_err("vin failed to get isp clk\n");
 		vind->isp_clk[VIN_ISP_CLK].frequency = ISP_CLK_RATE;
+#line 209
 	} else {
+#line 197
 		vin_log(VIN_LOG_MD, "vin get isp clk = %d\n", core_clk);
 		vind->isp_clk[VIN_ISP_CLK].frequency = core_clk;
+#line 212
 	}
 #else
 	vind->mipi_clk[VIN_MIPI_CLK].clock = of_clk_get(np, 3 * i + 3);
@@ -239,33 +261,46 @@ static int vin_md_get_clocks(struct vin_md *vind)
 	}
 #endif
 
+#line 229
 	if (clk_set_parent(vind->clk[VIN_TOP_CLK].clock, vind->clk[VIN_TOP_CLK_SRC].clock)) {
 		vin_err("vin top clock set parent failed\n");
 		return -1;
+#line 245
 	}
 
+#line 234
 	if (of_property_read_u32(np, "vind0_clk", &core_clk)) {
 		vin_err("vin failed to get core clk\n");
 		vind->clk[VIN_TOP_CLK].frequency = VIN_CLK_RATE;
+#line 250
 	} else {
+#line 238
 		vin_log(VIN_LOG_MD, "vin get core clk = %d\n", core_clk);
 		vind->clk[VIN_TOP_CLK].frequency = core_clk;
+#line 253
 	}
 
 #endif
 	return 0;
 }
 
+#line 246
 static void vin_md_put_clocks(struct vin_md *vind)
 {
+#line 261
 #ifndef FPGA_VER
+#line 249
 	int i;
 
+#line 264
 	for (i = 0; i < VIN_MAX_CLK; i++) {
+#line 252
 		if (vind->clk[i].clock)
 			clk_put(vind->clk[i].clock);
+#line 267
 	}
 
+#line 256
 	for (i = 0; i < VIN_MAX_CCI; i++) {
 		if (vind->mclk[i].mclk)
 			clk_put(vind->mclk[i].mclk);
@@ -273,18 +308,24 @@ static void vin_md_put_clocks(struct vin_md *vind)
 			clk_put(vind->mclk[i].clk_24m);
 		if (vind->mclk[i].clk_pll)
 			clk_put(vind->mclk[i].clk_pll);
+#line 276
 	}
 
+#line 265
 	if (vind->isp_clk[VIN_ISP_CLK].clock)
 		clk_put(vind->isp_clk[VIN_ISP_CLK].clock);
 	if (vind->isp_clk[VIN_ISP_CLK_SRC].clock)
 		clk_put(vind->isp_clk[VIN_ISP_CLK_SRC].clock);
 
+#line 283
 	for (i = 0; i < VIN_MIPI_MAX_CLK; i++) {
+#line 271
 		if (vind->mipi_clk[i].clock)
 			clk_put(vind->mipi_clk[i].clock);
+#line 286
 	}
 #endif
+#line 275
 }
 
 static int __vin_set_top_clk_rate(struct vin_md *vind, unsigned int rate)
@@ -293,37 +334,54 @@ static int __vin_set_top_clk_rate(struct vin_md *vind, unsigned int rate)
 		vind->clk[VIN_TOP_CLK_SRC].frequency = rate;
 	else if (rate >= 150000000)
 		vind->clk[VIN_TOP_CLK_SRC].frequency = rate * 2;
+#line 296
 	else if (rate >= 75000000)
+#line 284
 		vind->clk[VIN_TOP_CLK_SRC].frequency = rate * 4;
+#line 298
 	else
 		vind->clk[VIN_TOP_CLK_SRC].frequency = VIN_CLK_RATE;
 
 #ifndef CONFIG_ARCH_SUN50IW3P1
+#line 289
 	if (clk_set_rate(vind->clk[VIN_TOP_CLK_SRC].clock,
+#line 303
 	    vind->clk[VIN_TOP_CLK_SRC].frequency)) {
+#line 291
 		vin_err("set vin top clock source rate error\n");
+#line 305
 		return -1;
 	}
 #endif
 
+#line 296
 	if (clk_set_rate(vind->clk[VIN_TOP_CLK].clock, rate)) {
 		vin_err("set vin top clock rate error\n");
 		return -1;
+#line 312
 	}
+#line 300
 	vin_log(VIN_LOG_POWER, "vin top clk get rate = %ld\n",
+#line 314
 		clk_get_rate(vind->clk[VIN_TOP_CLK].clock));
 
 	return 0;
+#line 304
 }
 
 static int __vin_set_isp_clk_rate(struct vin_md *vind, unsigned int rate)
+#line 320
 {
+#line 308
 	if (rate >= 300000000)
 		vind->isp_clk[VIN_ISP_CLK_SRC].frequency = rate;
 	else if (rate >= 150000000)
 		vind->isp_clk[VIN_ISP_CLK_SRC].frequency = rate * 2;
+#line 325
 	else if (rate >= 75000000)
+#line 313
 		vind->isp_clk[VIN_ISP_CLK_SRC].frequency = rate * 4;
+#line 327
 	else
 		vind->isp_clk[VIN_ISP_CLK_SRC].frequency = ISP_CLK_RATE;
 
@@ -334,36 +392,48 @@ static int __vin_set_isp_clk_rate(struct vin_md *vind, unsigned int rate)
 		return -1;
 	}
 #endif
+#line 324
 	if (clk_set_rate(vind->isp_clk[VIN_ISP_CLK].clock, rate)) {
 		vin_err("set vin isp clock rate error\n");
+#line 339
 		return -1;
 	}
+#line 328
 	vin_log(VIN_LOG_POWER, "vin isp clk get rate = %ld\n",
+#line 342
 		clk_get_rate(vind->isp_clk[VIN_ISP_CLK].clock));
 
 	return 0;
 }
 
+#line 334
 static int vin_md_clk_enable(struct vin_md *vind)
 {
+#line 349
 #ifndef FPGA_VER
+#line 337
 	if (vind->clk[VIN_TOP_CLK].clock) {
 		__vin_set_top_clk_rate(vind, vind->clk[VIN_TOP_CLK].frequency);
 		clk_prepare_enable(vind->clk[VIN_TOP_CLK].clock);
 		sunxi_periph_reset_assert(vind->clk[VIN_TOP_CLK].clock);
 		sunxi_periph_reset_deassert(vind->clk[VIN_TOP_CLK].clock);
+#line 355
 	}
 
+#line 344
 	if (vind->isp_clk[VIN_ISP_CLK].clock) {
 		if (vind->isp_clk[VIN_ISP_CLK_SRC].clock)
 			__vin_set_isp_clk_rate(vind, vind->isp_clk[VIN_ISP_CLK].frequency);
 		clk_prepare_enable(vind->isp_clk[VIN_ISP_CLK].clock);
 		sunxi_periph_reset_assert(vind->isp_clk[VIN_ISP_CLK].clock);
 		sunxi_periph_reset_deassert(vind->isp_clk[VIN_ISP_CLK].clock);
+#line 363
 	}
 
+#line 352
 	if (vind->mipi_clk[VIN_MIPI_CLK].clock)
 		clk_prepare_enable(vind->mipi_clk[VIN_MIPI_CLK].clock);
+#line 367
 #else
 	void __iomem *clk_base;
 	void __iomem *gpio_base;
@@ -398,44 +468,61 @@ static int vin_md_clk_enable(struct vin_md *vind)
 	writel(0x22222222, (gpio_base + 0x98));
 #endif
 	return 0;
+#line 388
 }
 
 static void vin_md_clk_disable(struct vin_md *vind)
 {
+#line 405
 #ifndef FPGA_VER
+#line 393
 	if (vind->clk[VIN_TOP_CLK].clock) {
 		clk_disable_unprepare(vind->clk[VIN_TOP_CLK].clock);
 		sunxi_periph_reset_assert(vind->clk[VIN_TOP_CLK].clock);
 		sunxi_periph_reset_deassert(vind->clk[VIN_TOP_CLK].clock);
+#line 410
 	}
 
+#line 399
 	if (vind->isp_clk[VIN_ISP_CLK].clock) {
 		clk_disable_unprepare(vind->isp_clk[VIN_ISP_CLK].clock);
 		sunxi_periph_reset_assert(vind->isp_clk[VIN_ISP_CLK].clock);
 		sunxi_periph_reset_deassert(vind->isp_clk[VIN_ISP_CLK].clock);
+#line 416
 	}
 
+#line 405
 	if (vind->mipi_clk[VIN_MIPI_CLK].clock)
 		clk_disable_unprepare(vind->mipi_clk[VIN_MIPI_CLK].clock);
+#line 420
 #endif
+#line 408
 }
 
+#line 423
 #if !defined NO_SUPPROT_CCU_PLATDORM
+#line 411
 static void vin_ccu_clk_gating_en(unsigned int en)
+#line 425
 {
 	if (en) {
+#line 414
 		csic_ccu_clk_gating_enable();
 		csic_ccu_mcsi_clk_mode(1);
 		csic_ccu_mcsi_post_clk_enable(0);
 		csic_ccu_mcsi_post_clk_enable(1);
+#line 431
 	} else {
+#line 419
 		csic_ccu_mcsi_post_clk_disable(1);
 		csic_ccu_mcsi_post_clk_disable(0);
 		csic_ccu_mcsi_clk_mode(0);
 		csic_ccu_clk_gating_disable();
+#line 436
 	}
 }
 
+#line 426
 static void vin_subdev_ccu_en(struct v4l2_subdev *sd, unsigned int en)
 {
 	__maybe_unused struct mipi_dev *mipi = NULL;
@@ -447,10 +534,13 @@ static void vin_subdev_ccu_en(struct v4l2_subdev *sd, unsigned int en)
 
 	if (dev == NULL) {
 		vin_err("%s subdev is NULL, cannot set ccu\n", sd->name);
+#line 450
 		return;
 	}
 
+#line 440
 	switch (sd->grp_id) {
+#line 454
 #if !defined (CONFIG_ARCH_SUN50IW10P1)
 	case VIN_GRP_ID_MIPI:
 		mipi = (struct mipi_dev *)dev;
@@ -473,49 +563,73 @@ static void vin_subdev_ccu_en(struct v4l2_subdev *sd, unsigned int en)
 #endif
 	case VIN_GRP_ID_SCALER:
 		scaler = (struct scaler_dev *)dev;
+#line 463
 		csic_ccu_vipp_clk_en(scaler->id, en);
 		break;
+#line 478
 	case VIN_GRP_ID_CAPTURE:
 		vinc = (struct vin_core *)dev;
+#line 467
 		csic_ccu_bk_clk_en(vinc->vipp_sel, en);
 		break;
+#line 482
 	default:
 		break;
 	}
+#line 472
 }
+#line 486
 #endif
 
+#line 475
 static void vin_md_set_power(struct vin_md *vind, int on)
+#line 489
 {
+#line 477
 	__maybe_unused int i;
 
 	if (on && (vind->use_count)++ > 0)
+#line 493
 		return;
+#line 481
 	else if (!on && (vind->use_count == 0 || --(vind->use_count) > 0))
+#line 495
 		return;
 
 	if (on) {
+#line 485
 		vin_md_clk_enable(vind);
 		usleep_range(100, 120);
+#line 500
 #if !defined NO_SUPPROT_CCU_PLATDORM
+#line 488
 		vin_ccu_clk_gating_en(1);
 		csic_isp_bridge_enable(vind->id);
+#line 503
 #endif
 #if defined (CONFIG_ARCH_SUN50IW10P1)
+#line 492
 		csic_ccu_mcsi_combo_clk_en(0, 1);
+#line 506
 #endif
 #ifdef SUPPORT_ISP_TDM
 		for (i = 0; i < VIN_MAX_CSI; i++)
+#line 496
 			csic_ccu_mcsi_parser_clk_en(i, 1);
+#line 510
 		for (i = 0; i < VIN_MAX_ISP; i++)
+#line 498
 			csic_ccu_misp_isp_clk_en(i, 1);
+#line 512
 #endif
+#line 500
 		csic_top_enable(vind->id);
 		csic_top_version_read_en(vind->id, 1);
 		csic_feature_list_get(vind->id, &vind->csic_fl);
 		csic_version_get(vind->id, &vind->csic_ver);
 		csic_top_version_read_en(vind->id, 0);
 		csic_mbus_req_mex_set(vind->id, 0xf);
+#line 519
 #ifdef CONFIG_MULTI_FRAME
 		csic_mulp_mode_en(vind->id, 1);
 		csic_mulp_dma_cs(vind->id, CSIC_MULF_DMA0_CS);
@@ -523,27 +637,39 @@ static void vin_md_set_power(struct vin_md *vind, int on)
 #endif
 
 #if defined (CONFIG_ARCH_SUN50IW10P1)
+#line 513
 		cmb_phy_top_enable();
+#line 527
 #endif
 	} else {
 #if defined (CONFIG_ARCH_SUN50IW10P1)
+#line 517
 		cmb_phy_top_disable();
+#line 531
 #endif
 
 #ifdef CONFIG_MULTI_FRAME
 		csic_mulp_int_disable(vind->id, MULF_ALL);
 		csic_mulp_mode_en(vind->id, 0);
 #endif
+#line 524
 		csic_top_disable(vind->id);
+#line 538
 #if !defined NO_SUPPROT_CCU_PLATDORM
+#line 526
 		csic_isp_bridge_disable(vind->id);
 		vin_ccu_clk_gating_en(0);
+#line 541
 #endif
+#line 529
 		vin_md_clk_disable(vind);
+#line 543
 	}
 }
 
+#line 533
 static void vin_set_cci_power(struct vin_md *vind, int on)
+#line 547
 {
 #if defined (CONFIG_ARCH_SUN50IW9P1)
 	int i;
@@ -560,52 +686,74 @@ static void vin_set_cci_power(struct vin_md *vind, int on)
 #endif
 }
 
+#line 550
 static int vin_gpio_request(struct vin_md *vind)
+#line 564
 {
 #ifndef FPGA_VER
+#line 553
 	unsigned int i, num;
 	struct gpio_config *gc = NULL;
 	struct sensor_list *sl = NULL;
 
 	for (num = 0; num < VIN_MAX_DEV; num++) {
+#line 571
 		sl = &vind->modules[num].sensors;
 
+#line 560
 		for (i = 0; i < MAX_GPIO_NUM; i++) {
+#line 574
 			gc = &sl->gpio[i];
+#line 562
 			if (gc == NULL || gc->gpio == GPIO_INDEX_INVALID)
+#line 576
 				continue;
 
+#line 565
 			if (gpio_request(gc->gpio, NULL) < 0) {
 				vin_log(VIN_LOG_MD, "gpio%d request failed!\n", gc->gpio);
+#line 580
 				continue;
 			}
+#line 569
 			vin_log(VIN_LOG_MD, "gpio%d request success!\n", gc->gpio);
+#line 583
 		}
 	}
 #endif
 	return 0;
 }
 
+#line 576
 static void vin_gpio_release(struct vin_md *vind)
+#line 590
 {
 #ifndef FPGA_VER
+#line 579
 	unsigned int i, num;
 	struct gpio_config *gc = NULL;
 	struct sensor_list *sl = NULL;
 
 	for (num = 0; num < VIN_MAX_DEV; num++) {
+#line 597
 		sl = &vind->modules[num].sensors;
 
+#line 586
 		for (i = 0; i < MAX_GPIO_NUM; i++) {
+#line 600
 			gc = &sl->gpio[i];
+#line 588
 			if (gc->gpio != GPIO_INDEX_INVALID)
 				gpio_free(gc->gpio);
+#line 603
 		}
 	}
 #endif
 }
 
+#line 595
 static void __vin_pattern_config(struct vin_md *vind, struct vin_core *vinc, int on)
+#line 609
 {
 #ifdef SUPPORT_PTN
 	int port_sel = 2;
@@ -625,7 +773,9 @@ static void __vin_pattern_config(struct vin_md *vind, struct vin_core *vinc, int
 #endif
 }
 
+#line 615
 static void __vin_pattern_onoff(struct vin_md *vind, struct vin_core *vinc, int on)
+#line 629
 {
 #ifdef SUPPORT_PTN
 	if (vinc->ptn_cfg.ptn_en) {
@@ -643,18 +793,24 @@ static void __vin_pattern_onoff(struct vin_md *vind, struct vin_core *vinc, int 
 #endif
 }
 
+#line 633
 static int __vin_subdev_set_power(struct v4l2_subdev *sd, unsigned int idx, int on)
+#line 647
 {
+#line 635
 	int *use_count;
 	int ret;
 
 	if (sd == NULL)
 		return -ENXIO;
 
+#line 654
 	use_count = &sd->entity.use_count;
+#line 642
 	if (on && (*use_count)++ > 0)
 		return 0;
 	else if (!on && (*use_count == 0 || --(*use_count) > 0))
+#line 658
 		return 0;
 
 #if defined SENSOR_POER_BEFORE_VIN
@@ -664,14 +820,20 @@ static int __vin_subdev_set_power(struct v4l2_subdev *sd, unsigned int idx, int 
 
 #if !defined NO_SUPPROT_CCU_PLATDORM
 	if (on)
+#line 654
 		vin_subdev_ccu_en(sd, on);
+#line 668
 #endif
 
+#line 657
 	ret = v4l2_subdev_call(sd, core, s_power, on);
 
+#line 672
 #if !defined NO_SUPPROT_CCU_PLATDORM
+#line 660
 	if (!on)
 		vin_subdev_ccu_en(sd, on);
+#line 675
 #endif
 
 #if 0
@@ -680,36 +842,47 @@ static int __vin_subdev_set_power(struct v4l2_subdev *sd, unsigned int idx, int 
 			ret = v4l2_subdev_call(sd, core, init, on);
 	}
 #endif
+#line 670
 	return ret != -ENOIOCTLCMD ? ret : 0;
 }
 
 static int vin_pipeline_s_power(struct vin_pipeline *p, bool on)
 {
 	static const u8 seq[2][VIN_IND_MAX] = {
+#line 689
 		{ VIN_IND_ISP, VIN_IND_SENSOR, VIN_IND_CSI, VIN_IND_MIPI,
 			VIN_IND_SCALER, VIN_IND_CAPTURE  },
 		{ VIN_IND_CAPTURE, VIN_IND_MIPI, VIN_IND_CSI, VIN_IND_SENSOR,
 			VIN_IND_ISP, VIN_IND_SCALER},
 	};
+#line 681
 	int i, ret = 0;
 
 	for (i = 0; i < VIN_IND_TDM_RX; i++) {
 		unsigned int idx = seq[on][i];
 		if (!p->sd[idx] || !p->sd[idx]->entity.graph_obj.mdev)
+#line 699
 			continue;
+#line 687
 		ret = __vin_subdev_set_power(p->sd[idx], idx, on);
 		if (ret < 0 && ret != -ENXIO)
+#line 702
 			goto error;
 	}
+#line 691
 	return 0;
 error:
 	for (; i >= 0; i--) {
 		unsigned int idx = seq[on][i];
 		if (!p->sd[idx] || !p->sd[idx]->entity.graph_obj.mdev)
+#line 709
 			continue;
+#line 697
 		__vin_subdev_set_power(p->sd[idx], idx, !on);
+#line 711
 	}
 	return ret;
+#line 700
 }
 
 static int __vin_pipeline_open(struct vin_pipeline *p,
@@ -718,21 +891,25 @@ static int __vin_pipeline_open(struct vin_pipeline *p,
 	struct vin_md *vind;
 	int ret;
 
+#line 721
 	/* The shipped WARN record names line 708. Retain the BSP license
 	 * header above while reproducing its observable diagnostic metadata. */
 #line 708
 	if (WARN_ON(p == NULL || me == NULL))
+#line 709
 		return -EINVAL;
 
 	if (prepare)
 		vin_md_prepare_pipeline(p, me);
 
 	vind = entity_to_vin_mdev(me);
+#line 715
 	if (vind)
 		vin_md_set_power(vind, 1);
 
 	ret = vin_pipeline_s_power(p, 1);
 	if (!ret)
+#line 720
 		return 0;
 	return ret;
 }
@@ -804,6 +981,7 @@ static int __vin_pipeline_s_stream(struct vin_pipeline *p, int on_idx)
 		{ VIN_IND_TDM_RX, VIN_IND_MIPI, VIN_IND_ISP,
 			VIN_IND_SCALER, VIN_IND_CAPTURE, VIN_IND_CSI},
 	};
+#line 787
 	struct v4l2_mbus_config mcfg;
 	struct vin_core *vinc = NULL;
 	struct vin_md *vind = NULL;
@@ -811,6 +989,7 @@ static int __vin_pipeline_s_stream(struct vin_pipeline *p, int on_idx)
 
 	if (p == NULL) {
 		vin_err("pipeline is NULL, cannot s_stream\n");
+#line 798
 		return -ENODEV;
 	}
 
@@ -819,6 +998,7 @@ static int __vin_pipeline_s_stream(struct vin_pipeline *p, int on_idx)
 	 * the explanation of the recovered table above. */
 #line 797
 	if (WARN_ON(p->sd[VIN_IND_SENSOR] == NULL))
+#line 798
 		return -ENODEV;
 
 	vind = entity_to_vin_mdev(&p->sd[VIN_IND_SENSOR]->entity);

@@ -153,7 +153,10 @@ typedef struct isp_image_params {
 #define  V4L2_CID_B_GAIN		(V4L2_CID_USER_SUNXI_CAMERA_BASE + 13)
 
 /* Vendor colorspace value retained in the TG3040 ISP callbacks. */
-enum sunxi_v4l2_colorspace {
+/* Retain the stock colorspace tag and declaration origin. */
+#line 147
+enum user_v4l2_colorspace {
+#line 157
 	V4L2_COLORSPACE_REC709_PART_RANGE = 31,
 };
 
