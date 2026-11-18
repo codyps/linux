@@ -73,13 +73,14 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 	volatile struct fcm_hue_registers *bank;
 	long i;
 	unsigned int offset;
-	unsigned int next_byte;
+	unsigned long next_byte;
 
 	memcpy((void *)(reg + 0x20 / 4), fcm_angle_hue, sizeof(fcm_angle_hue));
 	memcpy((void *)(reg + 0xa0 / 4), fcm_angle_sat, sizeof(fcm_angle_sat));
 	memcpy((void *)(reg + 0xe0 / 4), fcm_angle_lum, sizeof(fcm_angle_lum));
 	bank = (volatile struct fcm_hue_registers *)reg;
 	for (i = 0, next_byte = 4; i < 28; i++, next_byte += 4) {
+		int row = i;
 		union fcm_word hue_word;
 		u32 hue, sat;
 
@@ -89,30 +90,30 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 		 * in a separate behavior change.
 		 */
 		hue = READ_ONCE(fcm_hbh[i]);
-		hue_word.value = bank->hbh_hue[i].value;
+		hue_word.value = bank->hbh_hue[row].value;
 		sat = READ_ONCE(fcm_sbh[i]);
 		hue_word.pair13.low = hue;
-		bank->hbh_hue[i].value = hue_word.value;
-		bank->sbh_hue[i].pair11.low = sat;
+		bank->hbh_hue[row].value = hue_word.value;
+		bank->sbh_hue[row].pair11.low = sat;
 		/* Preserve the OEM read/write schedule for shadow/table aliases. */
-		bank->vbh_hue[i].pair9.low = READ_ONCE(fcm_ybh[i]);
+		bank->vbh_hue[row].pair9.low = READ_ONCE(fcm_ybh[i]);
 		if (i == 27) {
-			bank->hbh_hue[i].pair13.high = 0;
-			bank->sbh_hue[i].pair11.high = 200;
-			bank->vbh_hue[i].pair9.high = 50;
+			bank->hbh_hue[row].pair13.high = 0;
+			bank->sbh_hue[row].pair11.high = 200;
+			bank->vbh_hue[row].pair9.high = 50;
 		} else {
 			/* OEM reads the H shadow before its next-row table value.
 			 * Preserve that order when the unchecked shadow aliases a table.
 			 */
-			volatile union fcm_word *dst_h = bank->hbh_hue + i;
+			volatile union fcm_word *dst_h = bank->hbh_hue + row;
 			union fcm_word current_h;
 			current_h.value = dst_h->value;
 			u32 next_h = READ_ONCE(
 				*(const u32 *)((const char *)fcm_hbh + next_byte));
 			current_h.pair13.high = next_h;
 			dst_h->value = current_h.value;
-			bank->sbh_hue[i].pair11.high = READ_ONCE(fcm_sbh[i + 1]);
-			bank->vbh_hue[i].pair9.high =
+			bank->sbh_hue[row].pair11.high = READ_ONCE(fcm_sbh[i + 1]);
+			bank->vbh_hue[row].pair9.high =
 				*(const u32 *)((const char *)fcm_ybh + next_byte);
 		}
 		/* OEM carries the separate next-row byte offset through the LUT
