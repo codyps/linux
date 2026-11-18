@@ -213,8 +213,12 @@ static INLINE int _OSMMapPMR(PVRSRV_DEVICE_NODE *psDevNode,
 							IMG_CPU_PHYADDR *psCpuPAddr,
 							IMG_UINT32 uiLog2PageSize,
 							IMG_BOOL bUseVMInsertPage,
-							IMG_BOOL bUseMixedMap,
-							int riscv_cached)
+							IMG_BOOL bUseMixedMap
+#if SYSPORT_MEM_OFFSET
+							, int riscv_cached
+#endif
+#line 210
+)
 {
 	IMG_INT32 iStatus;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0))
@@ -226,8 +230,14 @@ static INLINE int _OSMMapPMR(PVRSRV_DEVICE_NODE *psDevNode,
 #endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0))
+#if SYSPORT_MEM_OFFSET
 	sPFN = riscv_cached ? phys_to_pfn_t(psCpuPAddr->uiAddr, 0) :
 		phys_to_pfn_t(psCpuPAddr->uiAddr + SYSPORT_MEM_OFFSET, 0);
+#else
+#line 219
+	sPFN = phys_to_pfn_t(psCpuPAddr->uiAddr, 0);
+#endif
+#line 222
 #else
 	uiPFN = psCpuPAddr->uiAddr >> PAGE_SHIFT;
 	PVR_ASSERT(((IMG_UINT64)uiPFN << PAGE_SHIFT) == psCpuPAddr->uiAddr);
@@ -356,7 +366,9 @@ OSMMapPMRGeneric(PMR *psPMR, PMR_MMAP_DATA pOSMMapData)
 	IMG_BOOL *pbValid;
 	IMG_BOOL bUseMixedMap = IMG_FALSE;
 	IMG_BOOL bUseVMInsertPage = IMG_FALSE;
+#if SYSPORT_MEM_OFFSET
 	int riscv_cached = 0;
+#endif
 
 	/* if writeable but not shared mapping is requested then fail */
 #line 349
@@ -398,7 +410,9 @@ OSMMapPMRGeneric(PMR *psPMR, PMR_MMAP_DATA pOSMMapData)
 				if (PhysHeapGetType(psPhysHeap) == PHYS_HEAP_TYPE_LMA)
 					sPageProt = pgprot_writecombine(sPageProt);
 #endif
+#if SYSPORT_MEM_OFFSET
 				riscv_cached = 1;
+#endif
 				break;
 		}
 
@@ -490,8 +504,10 @@ OSMMapPMRGeneric(PMR *psPMR, PMR_MMAP_DATA pOSMMapData)
 			if (pbValid[uiOffsetIdx])
 			{
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0))
+#if SYSPORT_MEM_OFFSET
 	sPFN = riscv_cached ? phys_to_pfn_t(psCpuPAddr->uiAddr, 0) :
 		phys_to_pfn_t(psCpuPAddr->uiAddr + SYSPORT_MEM_OFFSET, 0);
+#endif
 				sPFN = phys_to_pfn_t(psCpuPAddr[uiOffsetIdx].uiAddr, 0);
 
 				if (!pfn_t_valid(sPFN) || page_count(pfn_t_to_page(sPFN)) == 0)
@@ -536,7 +552,12 @@ OSMMapPMRGeneric(PMR *psPMR, PMR_MMAP_DATA pOSMMapData)
 								 &psCpuPAddr[uiOffsetIdx],
 								 uiLog2PageSize,
 								 bUseVMInsertPage,
-								 bUseMixedMap, riscv_cached);
+								 bUseMixedMap
+#if SYSPORT_MEM_OFFSET
+								 , riscv_cached
+#endif
+#line 514
+								 );
 			if (iStatus)
 			{
 				/* Failure error code doesn't get propagated */
