@@ -317,6 +317,7 @@ static INLINE int _OSMMapPMR(PVRSRV_DEVICE_NODE *psDevNode,
 		   using remap_pfn_range() directly. Furthermore, accounting is
 		   always compromised for DMA/CMA allocations.
 		*/
+#line 311
 		size_t uiNumContiguousBytes = 1ULL << uiLog2PageSize;
 
 		iStatus = remap_pfn_range(ps_vma,
@@ -356,6 +357,7 @@ OSMMapPMRGeneric(PMR *psPMR, PMR_MMAP_DATA pOSMMapData)
 	int riscv_cached = 0;
 
 	/* if writeable but not shared mapping is requested then fail */
+#line 349
 	PVR_RETURN_IF_INVALID_PARAM(((ps_vma->vm_flags & VM_WRITE) == 0) ||
 	                            ((ps_vma->vm_flags & VM_SHARED) != 0));
 
@@ -416,6 +418,7 @@ OSMMapPMRGeneric(PMR *psPMR, PMR_MMAP_DATA pOSMMapData)
 	pmr_set_vm_flags(ps_vma, VM_DONTEXPAND);
 
 	/* Don't allow mapping to be inherited across a process fork */
+#line 408
 	pmr_set_vm_flags(ps_vma, VM_DONTCOPY);
 
 	uiLength = ps_vma->vm_end - ps_vma->vm_start;
@@ -510,6 +513,7 @@ OSMMapPMRGeneric(PMR *psPMR, PMR_MMAP_DATA pOSMMapData)
 	}
 	else
 	{
+#line 500
 		pmr_set_vm_flags(ps_vma, VM_PFNMAP);
 	}
 
