@@ -64,6 +64,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 static PVRSRV_DEVICE_CONFIG gsDevices[1];
 
 /*
+ * The A133 exposes CPU and device physical addresses in the same space.
+ * Both the GPU-local heap and the firmware-shared heap therefore use
+ * the same identity translation operations. The heaps are distinguished
+ * by usage flags and PDump names, not by address translation.
+ *
+ * As in the vendor path, process the first address separately so that
+ * a one-element translation avoids entering the loop. Callers must
+ * provide at least one address in each array.
+ *
+ * Keep gsDevices separate from the dynamically allocated config: the
+ * platform back-pointer references the static object, while the DRM
+ * device configuration returned by SysDevInit belongs to its caller.
+ */
+
+/*
 	CPU to Device physical address translation
 */
 static
@@ -109,6 +124,41 @@ void UMAPhysHeapDevPAddrToCpuPAddr(IMG_HANDLE hPrivData,
 	}
 }
 
+static PHYS_HEAP_FUNCTIONS gsPhysHeapFuncs = {
+	.pfnCpuPAddrToDevPAddr = UMAPhysHeapCpuPAddrToDevPAddr,
+	.pfnDevPAddrToCpuPAddr = UMAPhysHeapDevPAddrToCpuPAddr,
+};
+
+
+static PVRSRV_ERROR PhysHeapsCreate(PHYS_HEAP_CONFIG **ppasPhysHeapsOut,
+                                   IMG_UINT32 *puiPhysHeapCountOut)
+{
+	PHYS_HEAP_CONFIG *pasPhysHeaps;
+	IMG_UINT32 uiHeapCount = 2;
+
+	pasPhysHeaps = OSAllocZMem(sizeof(*pasPhysHeaps) * uiHeapCount);
+	if (!pasPhysHeaps)
+	        return PVRSRV_ERROR_OUT_OF_MEMORY;
+
+	pasPhysHeaps[0].eType = PHYS_HEAP_TYPE_UMA;
+	pasPhysHeaps[0].pszPDumpMemspaceName = "SYSMEM";
+	pasPhysHeaps[0].psMemFuncs = &gsPhysHeapFuncs;
+	pasPhysHeaps[0].ui32UsageFlags = PHYS_HEAP_USAGE_GPU_LOCAL;
+	pasPhysHeaps[1].eType = PHYS_HEAP_TYPE_UMA;
+	pasPhysHeaps[1].pszPDumpMemspaceName = "SYSMEM_FW";
+	pasPhysHeaps[1].psMemFuncs = &gsPhysHeapFuncs;
+	pasPhysHeaps[1].ui32UsageFlags = PHYS_HEAP_USAGE_FW_SHARED;
+
+	*ppasPhysHeapsOut = pasPhysHeaps;
+	*puiPhysHeapCountOut = uiHeapCount;
+	return PVRSRV_OK;
+}
+
+static void PhysHeapsDestroy(PHYS_HEAP_CONFIG *pasPhysHeaps)
+{
+	OSFreeMem(pasPhysHeaps);
+}
+
 static void SysDevFeatureDepInit(PVRSRV_DEVICE_CONFIG *psDevConfig, IMG_UINT64 ui64Features)
 {
 #if defined(SUPPORT_AXI_ACE_TEST)
@@ -123,11 +173,6 @@ static void SysDevFeatureDepInit(PVRSRV_DEVICE_CONFIG *psDevConfig, IMG_UINT64 u
 	}
 }
 
-static PHYS_HEAP_FUNCTIONS gsPhysHeapFuncs = {
-	.pfnCpuPAddrToDevPAddr = UMAPhysHeapCpuPAddrToDevPAddr,
-	.pfnDevPAddrToCpuPAddr = UMAPhysHeapDevPAddrToCpuPAddr,
-};
-
 PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 {
 	struct device *dev = pvOSDevice;
@@ -136,6 +181,8 @@ PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 	RGX_DATA *psRGXData;
 	RGX_TIMING_INFORMATION *psRGXTimingInfo;
 	PHYS_HEAP_CONFIG *pasPhysHeaps;
+	IMG_UINT32 uiPhysHeapCount;
+	PVRSRV_ERROR eError;
 
 	if (sunxi_platform_init(dev))
 		return PVRSRV_ERROR_INIT_FAILURE;
@@ -149,19 +196,9 @@ PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 	psRGXData = (RGX_DATA *)((IMG_CHAR *)psDevConfig + sizeof(*psDevConfig));
 	psRGXTimingInfo = (RGX_TIMING_INFORMATION *)((IMG_CHAR *)psRGXData + sizeof(*psRGXData));
 
-	pasPhysHeaps = OSAllocZMem(2 * sizeof(*pasPhysHeaps));
-	if (!pasPhysHeaps) {
-		OSFreeMem(psDevConfig);
-		return PVRSRV_ERROR_OUT_OF_MEMORY;
-	}
-	pasPhysHeaps[0].eType = PHYS_HEAP_TYPE_UMA;
-	pasPhysHeaps[0].pszPDumpMemspaceName = "SYSMEM";
-	pasPhysHeaps[0].psMemFuncs = &gsPhysHeapFuncs;
-	pasPhysHeaps[0].ui32UsageFlags = PHYS_HEAP_USAGE_GPU_LOCAL;
-	pasPhysHeaps[1].eType = PHYS_HEAP_TYPE_UMA;
-	pasPhysHeaps[1].pszPDumpMemspaceName = "SYSMEM_FW";
-	pasPhysHeaps[1].psMemFuncs = &gsPhysHeapFuncs;
-	pasPhysHeaps[1].ui32UsageFlags = PHYS_HEAP_USAGE_FW_SHARED;
+	eError = PhysHeapsCreate(&pasPhysHeaps, &uiPhysHeapCount);
+	if (eError)
+		goto ErrorFreeDevConfig;
 
 	psRGXTimingInfo->ui32CoreClockSpeed = clk_get_rate(sunxi_data->clks.core);
 	psRGXTimingInfo->bEnableActivePM = IMG_TRUE;
@@ -182,11 +219,15 @@ PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 	psDevConfig->hSysData = sunxi_data;
 	psDevConfig->eDefaultHeap = PVRSRV_PHYS_HEAP_GPU_LOCAL;
 	psDevConfig->pasPhysHeaps = pasPhysHeaps;
-	psDevConfig->ui32PhysHeapCount = 2;
+	psDevConfig->ui32PhysHeapCount = uiPhysHeapCount;
 	psDevConfig->pfnClockFreqGet = NULL;
 	*ppsDevConfig = psDevConfig;
 	sunxi_data->config = &gsDevices[0];
 	return PVRSRV_OK;
+
+ErrorFreeDevConfig:
+	OSFreeMem(psDevConfig);
+	return eError;
 }
 
 void SysDevDeInit(PVRSRV_DEVICE_CONFIG *psDevConfig)
@@ -195,7 +236,7 @@ void SysDevDeInit(PVRSRV_DEVICE_CONFIG *psDevConfig)
 
 	sunxi_platform_term();
 	pasPhysHeaps = psDevConfig->pasPhysHeaps;
-	OSFreeMem(pasPhysHeaps);
+	PhysHeapsDestroy(pasPhysHeaps);
 	OSFreeMem(psDevConfig);
 }
 
