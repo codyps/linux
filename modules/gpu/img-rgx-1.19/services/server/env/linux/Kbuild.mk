@@ -629,9 +629,6 @@ $(foreach _o,$(addprefix CFLAGS_,$(filter generated/%.o,$($(PVRSRV_MODNAME)-y)))
 # failure in the ftrace Linux kernel header.  So disable the relevant check.
 CFLAGS_services/server/env/linux/trace_events.o := -Wno-missing-prototypes
 
-# The stock software command queue does not expose bridge query declarations.
-CFLAGS_scp.o += -DPVRSRV_NO_BRIDGE_QUERIES
-
 # Make sure the mem_utils are built in 'free standing' mode, so the compiler
 # is not encouraged to call out to C library functions
 ifeq ($(CC),clang)

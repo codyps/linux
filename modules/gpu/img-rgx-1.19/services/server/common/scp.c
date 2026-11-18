@@ -41,6 +41,7 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */ /**************************************************************************/
+#define PVRSRV_NO_BRIDGE_QUERIES
 #include "img_types.h"
 #include "pvrsrv_error.h"
 #include <powervr/pvrsrv_sync_ext.h>
@@ -49,7 +50,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "rgxhwperf.h"
 #include "scp.h"
 #include "allocmem.h"
-#include "pvrsrv.h"
 #include "pvr_debug.h"
 #include "osfunc.h"
 #include "lock.h"
