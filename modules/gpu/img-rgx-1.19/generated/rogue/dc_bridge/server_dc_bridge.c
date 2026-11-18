@@ -106,9 +106,7 @@ PVRSRVBridgeDCDevicesEnumerate(IMG_UINT32 ui32DispatchTableEntry,
 
 	IMG_UINT32 ui32NextOffset = 0;
 	IMG_BYTE *pArrayArgsBuffer = NULL;
-#if !defined(INTEGRITY_OS)
 	IMG_BOOL bHaveEnoughSpace = IMG_FALSE;
-#endif
 
 	IMG_UINT32 ui32BufferSize = 0;
 	IMG_UINT64 ui64BufferSize =
@@ -132,7 +130,6 @@ PVRSRVBridgeDCDevicesEnumerate(IMG_UINT32 ui32DispatchTableEntry,
 
 	if (ui32BufferSize != 0)
 	{
-#if !defined(INTEGRITY_OS)
 		/* Try to use remainder of input buffer for copies if possible, word-aligned for safety. */
 		IMG_UINT32 ui32InBufferOffset =
 		    PVR_ALIGN(sizeof(*psDCDevicesEnumerateIN), sizeof(unsigned long));
@@ -148,7 +145,6 @@ PVRSRVBridgeDCDevicesEnumerate(IMG_UINT32 ui32DispatchTableEntry,
 			pArrayArgsBuffer = &pInputBuffer[ui32InBufferOffset];
 		}
 		else
-#endif
 		{
 			pArrayArgsBuffer = OSAllocMemNoStats(ui32BufferSize);
 
@@ -202,11 +198,7 @@ DCDevicesEnumerate_exit:
 		PVR_ASSERT(ui32BufferSize == ui32NextOffset);
 #endif /* PVRSRV_NEED_PVR_ASSERT */
 
-#if defined(INTEGRITY_OS)
-	if (pArrayArgsBuffer)
-#else
 	if (!bHaveEnoughSpace && pArrayArgsBuffer)
-#endif
 		OSFreeMemNoStats(pArrayArgsBuffer);
 
 	return 0;
@@ -293,7 +285,7 @@ PVRSRVBridgeDCDeviceRelease(IMG_UINT32 ui32DispatchTableEntry,
 		     (psDCDeviceReleaseOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psDCDeviceReleaseOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF_STOCK(289, (PVR_DBG_ERROR,
+		PVR_DPF((PVR_DBG_ERROR,
 			 "%s: %s", __func__, PVRSRVGetErrorString(psDCDeviceReleaseOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
 		goto DCDeviceRelease_exit;
@@ -424,9 +416,7 @@ PVRSRVBridgeDCPanelQuery(IMG_UINT32 ui32DispatchTableEntry,
 
 	IMG_UINT32 ui32NextOffset = 0;
 	IMG_BYTE *pArrayArgsBuffer = NULL;
-#if !defined(INTEGRITY_OS)
 	IMG_BOOL bHaveEnoughSpace = IMG_FALSE;
-#endif
 
 	IMG_UINT32 ui32BufferSize = 0;
 	IMG_UINT64 ui64BufferSize =
@@ -450,7 +440,6 @@ PVRSRVBridgeDCPanelQuery(IMG_UINT32 ui32DispatchTableEntry,
 
 	if (ui32BufferSize != 0)
 	{
-#if !defined(INTEGRITY_OS)
 		/* Try to use remainder of input buffer for copies if possible, word-aligned for safety. */
 		IMG_UINT32 ui32InBufferOffset =
 		    PVR_ALIGN(sizeof(*psDCPanelQueryIN), sizeof(unsigned long));
@@ -466,7 +455,6 @@ PVRSRVBridgeDCPanelQuery(IMG_UINT32 ui32DispatchTableEntry,
 			pArrayArgsBuffer = &pInputBuffer[ui32InBufferOffset];
 		}
 		else
-#endif
 		{
 			pArrayArgsBuffer = OSAllocMemNoStats(ui32BufferSize);
 
@@ -546,11 +534,7 @@ DCPanelQuery_exit:
 		PVR_ASSERT(ui32BufferSize == ui32NextOffset);
 #endif /* PVRSRV_NEED_PVR_ASSERT */
 
-#if defined(INTEGRITY_OS)
-	if (pArrayArgsBuffer)
-#else
 	if (!bHaveEnoughSpace && pArrayArgsBuffer)
-#endif
 		OSFreeMemNoStats(pArrayArgsBuffer);
 
 	return 0;
@@ -576,9 +560,7 @@ PVRSRVBridgeDCFormatQuery(IMG_UINT32 ui32DispatchTableEntry,
 
 	IMG_UINT32 ui32NextOffset = 0;
 	IMG_BYTE *pArrayArgsBuffer = NULL;
-#if !defined(INTEGRITY_OS)
 	IMG_BOOL bHaveEnoughSpace = IMG_FALSE;
-#endif
 
 	IMG_UINT32 ui32BufferSize = 0;
 	IMG_UINT64 ui64BufferSize =
@@ -603,7 +585,6 @@ PVRSRVBridgeDCFormatQuery(IMG_UINT32 ui32DispatchTableEntry,
 
 	if (ui32BufferSize != 0)
 	{
-#if !defined(INTEGRITY_OS)
 		/* Try to use remainder of input buffer for copies if possible, word-aligned for safety. */
 		IMG_UINT32 ui32InBufferOffset =
 		    PVR_ALIGN(sizeof(*psDCFormatQueryIN), sizeof(unsigned long));
@@ -619,7 +600,6 @@ PVRSRVBridgeDCFormatQuery(IMG_UINT32 ui32DispatchTableEntry,
 			pArrayArgsBuffer = &pInputBuffer[ui32InBufferOffset];
 		}
 		else
-#endif
 		{
 			pArrayArgsBuffer = OSAllocMemNoStats(ui32BufferSize);
 
@@ -717,11 +697,7 @@ DCFormatQuery_exit:
 		PVR_ASSERT(ui32BufferSize == ui32NextOffset);
 #endif /* PVRSRV_NEED_PVR_ASSERT */
 
-#if defined(INTEGRITY_OS)
-	if (pArrayArgsBuffer)
-#else
 	if (!bHaveEnoughSpace && pArrayArgsBuffer)
-#endif
 		OSFreeMemNoStats(pArrayArgsBuffer);
 
 	return 0;
@@ -747,9 +723,7 @@ PVRSRVBridgeDCDimQuery(IMG_UINT32 ui32DispatchTableEntry,
 
 	IMG_UINT32 ui32NextOffset = 0;
 	IMG_BYTE *pArrayArgsBuffer = NULL;
-#if !defined(INTEGRITY_OS)
 	IMG_BOOL bHaveEnoughSpace = IMG_FALSE;
-#endif
 
 	IMG_UINT32 ui32BufferSize = 0;
 	IMG_UINT64 ui64BufferSize =
@@ -774,7 +748,6 @@ PVRSRVBridgeDCDimQuery(IMG_UINT32 ui32DispatchTableEntry,
 
 	if (ui32BufferSize != 0)
 	{
-#if !defined(INTEGRITY_OS)
 		/* Try to use remainder of input buffer for copies if possible, word-aligned for safety. */
 		IMG_UINT32 ui32InBufferOffset =
 		    PVR_ALIGN(sizeof(*psDCDimQueryIN), sizeof(unsigned long));
@@ -790,7 +763,6 @@ PVRSRVBridgeDCDimQuery(IMG_UINT32 ui32DispatchTableEntry,
 			pArrayArgsBuffer = &pInputBuffer[ui32InBufferOffset];
 		}
 		else
-#endif
 		{
 			pArrayArgsBuffer = OSAllocMemNoStats(ui32BufferSize);
 
@@ -886,11 +858,7 @@ DCDimQuery_exit:
 		PVR_ASSERT(ui32BufferSize == ui32NextOffset);
 #endif /* PVRSRV_NEED_PVR_ASSERT */
 
-#if defined(INTEGRITY_OS)
-	if (pArrayArgsBuffer)
-#else
 	if (!bHaveEnoughSpace && pArrayArgsBuffer)
-#endif
 		OSFreeMemNoStats(pArrayArgsBuffer);
 
 	return 0;
@@ -1164,7 +1132,7 @@ PVRSRVBridgeDCSystemBufferRelease(IMG_UINT32 ui32DispatchTableEntry,
 		     (psDCSystemBufferReleaseOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psDCSystemBufferReleaseOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF_STOCK(1137, (PVR_DBG_ERROR,
+		PVR_DPF((PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psDCSystemBufferReleaseOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
@@ -1296,9 +1264,7 @@ PVRSRVBridgeDCDisplayContextConfigureCheck(IMG_UINT32 ui32DispatchTableEntry,
 
 	IMG_UINT32 ui32NextOffset = 0;
 	IMG_BYTE *pArrayArgsBuffer = NULL;
-#if !defined(INTEGRITY_OS)
 	IMG_BOOL bHaveEnoughSpace = IMG_FALSE;
-#endif
 
 	IMG_UINT32 ui32BufferSize = 0;
 	IMG_UINT64 ui64BufferSize =
@@ -1325,7 +1291,6 @@ PVRSRVBridgeDCDisplayContextConfigureCheck(IMG_UINT32 ui32DispatchTableEntry,
 
 	if (ui32BufferSize != 0)
 	{
-#if !defined(INTEGRITY_OS)
 		/* Try to use remainder of input buffer for copies if possible, word-aligned for safety. */
 		IMG_UINT32 ui32InBufferOffset =
 		    PVR_ALIGN(sizeof(*psDCDisplayContextConfigureCheckIN), sizeof(unsigned long));
@@ -1342,7 +1307,6 @@ PVRSRVBridgeDCDisplayContextConfigureCheck(IMG_UINT32 ui32DispatchTableEntry,
 			pArrayArgsBuffer = &pInputBuffer[ui32InBufferOffset];
 		}
 		else
-#endif
 		{
 			pArrayArgsBuffer = OSAllocMemNoStats(ui32BufferSize);
 
@@ -1486,11 +1450,7 @@ DCDisplayContextConfigureCheck_exit:
 		PVR_ASSERT(ui32BufferSize == ui32NextOffset);
 #endif /* PVRSRV_NEED_PVR_ASSERT */
 
-#if defined(INTEGRITY_OS)
-	if (pArrayArgsBuffer)
-#else
 	if (!bHaveEnoughSpace && pArrayArgsBuffer)
-#endif
 		OSFreeMemNoStats(pArrayArgsBuffer);
 
 	return 0;
@@ -1522,7 +1482,7 @@ PVRSRVBridgeDCDisplayContextDestroy(IMG_UINT32 ui32DispatchTableEntry,
 	     && (psDCDisplayContextDestroyOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL)
 	     && (psDCDisplayContextDestroyOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF_STOCK(1487, (PVR_DBG_ERROR,
+		PVR_DPF((PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psDCDisplayContextDestroyOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
@@ -1659,9 +1619,7 @@ PVRSRVBridgeDCBufferImport(IMG_UINT32 ui32DispatchTableEntry,
 
 	IMG_UINT32 ui32NextOffset = 0;
 	IMG_BYTE *pArrayArgsBuffer = NULL;
-#if !defined(INTEGRITY_OS)
 	IMG_BOOL bHaveEnoughSpace = IMG_FALSE;
-#endif
 
 	IMG_UINT32 ui32BufferSize = 0;
 	IMG_UINT64 ui64BufferSize =
@@ -1684,7 +1642,6 @@ PVRSRVBridgeDCBufferImport(IMG_UINT32 ui32DispatchTableEntry,
 
 	if (ui32BufferSize != 0)
 	{
-#if !defined(INTEGRITY_OS)
 		/* Try to use remainder of input buffer for copies if possible, word-aligned for safety. */
 		IMG_UINT32 ui32InBufferOffset =
 		    PVR_ALIGN(sizeof(*psDCBufferImportIN), sizeof(unsigned long));
@@ -1700,7 +1657,6 @@ PVRSRVBridgeDCBufferImport(IMG_UINT32 ui32DispatchTableEntry,
 			pArrayArgsBuffer = &pInputBuffer[ui32InBufferOffset];
 		}
 		else
-#endif
 		{
 			pArrayArgsBuffer = OSAllocMemNoStats(ui32BufferSize);
 
@@ -1846,11 +1802,7 @@ DCBufferImport_exit:
 		PVR_ASSERT(ui32BufferSize == ui32NextOffset);
 #endif /* PVRSRV_NEED_PVR_ASSERT */
 
-#if defined(INTEGRITY_OS)
-	if (pArrayArgsBuffer)
-#else
 	if (!bHaveEnoughSpace && pArrayArgsBuffer)
-#endif
 		OSFreeMemNoStats(pArrayArgsBuffer);
 
 	return 0;
@@ -1877,7 +1829,7 @@ PVRSRVBridgeDCBufferFree(IMG_UINT32 ui32DispatchTableEntry,
 		     (psDCBufferFreeOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psDCBufferFreeOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF_STOCK(1833, (PVR_DBG_ERROR,
+		PVR_DPF((PVR_DBG_ERROR,
 			 "%s: %s", __func__, PVRSRVGetErrorString(psDCBufferFreeOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
 		goto DCBufferFree_exit;
@@ -1912,7 +1864,7 @@ PVRSRVBridgeDCBufferUnimport(IMG_UINT32 ui32DispatchTableEntry,
 		     (psDCBufferUnimportOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psDCBufferUnimportOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF_STOCK(1868, (PVR_DBG_ERROR,
+		PVR_DPF((PVR_DBG_ERROR,
 			 "%s: %s", __func__, PVRSRVGetErrorString(psDCBufferUnimportOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
 		goto DCBufferUnimport_exit;
@@ -2035,7 +1987,7 @@ PVRSRVBridgeDCBufferUnpin(IMG_UINT32 ui32DispatchTableEntry,
 		     (psDCBufferUnpinOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psDCBufferUnpinOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF_STOCK(1991, (PVR_DBG_ERROR,
+		PVR_DPF((PVR_DBG_ERROR,
 			 "%s: %s", __func__, PVRSRVGetErrorString(psDCBufferUnpinOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
 		goto DCBufferUnpin_exit;
@@ -2159,7 +2111,7 @@ PVRSRVBridgeDCBufferRelease(IMG_UINT32 ui32DispatchTableEntry,
 		     (psDCBufferReleaseOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psDCBufferReleaseOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF_STOCK(2115, (PVR_DBG_ERROR,
+		PVR_DPF((PVR_DBG_ERROR,
 			 "%s: %s", __func__, PVRSRVGetErrorString(psDCBufferReleaseOUT->eError)));
 		UnlockHandle(psConnection->psProcessHandleBase->psHandleBase);
 		goto DCBufferRelease_exit;
@@ -2197,9 +2149,7 @@ PVRSRVBridgeDCDisplayContextConfigure2(IMG_UINT32 ui32DispatchTableEntry,
 
 	IMG_UINT32 ui32NextOffset = 0;
 	IMG_BYTE *pArrayArgsBuffer = NULL;
-#if !defined(INTEGRITY_OS)
 	IMG_BOOL bHaveEnoughSpace = IMG_FALSE;
-#endif
 
 	IMG_UINT32 ui32BufferSize = 0;
 	IMG_UINT64 ui64BufferSize =
@@ -2224,7 +2174,6 @@ PVRSRVBridgeDCDisplayContextConfigure2(IMG_UINT32 ui32DispatchTableEntry,
 
 	if (ui32BufferSize != 0)
 	{
-#if !defined(INTEGRITY_OS)
 		/* Try to use remainder of input buffer for copies if possible, word-aligned for safety. */
 		IMG_UINT32 ui32InBufferOffset =
 		    PVR_ALIGN(sizeof(*psDCDisplayContextConfigure2IN), sizeof(unsigned long));
@@ -2241,7 +2190,6 @@ PVRSRVBridgeDCDisplayContextConfigure2(IMG_UINT32 ui32DispatchTableEntry,
 			pArrayArgsBuffer = &pInputBuffer[ui32InBufferOffset];
 		}
 		else
-#endif
 		{
 			pArrayArgsBuffer = OSAllocMemNoStats(ui32BufferSize);
 
@@ -2389,11 +2337,7 @@ DCDisplayContextConfigure2_exit:
 		PVR_ASSERT(ui32BufferSize == ui32NextOffset);
 #endif /* PVRSRV_NEED_PVR_ASSERT */
 
-#if defined(INTEGRITY_OS)
-	if (pArrayArgsBuffer)
-#else
 	if (!bHaveEnoughSpace && pArrayArgsBuffer)
-#endif
 		OSFreeMemNoStats(pArrayArgsBuffer);
 
 	return 0;
