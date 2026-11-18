@@ -61,7 +61,7 @@
 #include <linux/platform_device.h>
 #include <linux/pm.h>
 #include <linux/mutex.h>
-#include <linux/pm_runtime.h>
+
 
 #include "module_common.h"
 #include "pvr_drm.h"
