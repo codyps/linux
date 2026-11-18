@@ -927,7 +927,6 @@ _MemsetPageArray(IMG_UINT32 uiNumToClean,
 			OSCachedMemSet(pvAddr, ui8Pattern, PAGE_SIZE * uiToClean);
 		}
 		pvr_vunmap(pvAddr, uiToClean, pgprot);
-
 		ppsCleanArray = &(ppsCleanArray[uiToClean]);
 		uiNumToClean -= uiToClean;
 	}
@@ -1182,8 +1181,7 @@ _GetGFPFlags(IMG_BOOL bZero,
 
 	PVR_UNREFERENCED_PARAMETER(psDev);
 #else
-	/* Stock device setup supplies the DMA-mask pointer. */
-	if (psDev)
+	if (psDev) /* Stock setup supplies the DMA-mask pointer. */
 	{
 #if defined(CONFIG_64BIT) || defined(CONFIG_ARM_LPAE) || defined(CONFIG_X86_PAE)
 		if (*psDev->dma_mask > DMA_BIT_MASK(32))
@@ -1940,7 +1938,7 @@ _AllocOSPages_Fast(PMR_OSPAGEARRAY_DATA *psPageArrayData)
 		IMG_UINT32 uiIdx, uiIdy, uiIdz;
 
 		ppsPageAttributeArray = OSAllocMem(sizeof(struct page *) * uiOSPagesToAlloc);
-		PVR_LOG_GOTO_IF_NOMEM_STOCK(1939, ppsPageAttributeArray, eError, e_free_pages);
+		PVR_LOG_GOTO_IF_NOMEM(ppsPageAttributeArray, eError, e_free_pages);
 
 		for (uiIdx = 0; uiIdx < uiOSPagesToAlloc; uiIdx += ui32NumPageReq)
 		{
@@ -1960,7 +1958,7 @@ _AllocOSPages_Fast(PMR_OSPAGEARRAY_DATA *psPageArrayData)
 					PVRSRV_ZERO_VALUE);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF_STOCK(1959, (PVR_DBG_ERROR, "Failed to zero pages (fast)"));
+			PVR_DPF((PVR_DBG_ERROR, "Failed to zero pages (fast)"));
 			goto e_free_pages;
 		}
 	}
@@ -1973,14 +1971,14 @@ _AllocOSPages_Fast(PMR_OSPAGEARRAY_DATA *psPageArrayData)
 			PVRSRV_POISON_ON_ALLOC_VALUE);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF_STOCK(1972, (PVR_DBG_ERROR, "Failed to poison pages (fast)"));
+			PVR_DPF((PVR_DBG_ERROR, "Failed to poison pages (fast)"));
 		}
 		eError = _MemsetPageArray(uiOSPagesToAlloc - uiDevPagesFromPool,
 		                          ppsPageAttributeArray, PAGE_KERNEL,
 						PVRSRV_POISON_ON_ALLOC_VALUE);
 		if (eError != PVRSRV_OK)
 		{
-			PVR_DPF_STOCK(1979, (PVR_DBG_ERROR, "Failed to poison pages (fast)"));
+			PVR_DPF((PVR_DBG_ERROR, "Failed to poison pages (fast)"));
 		}
 
 		/* for poisoning need to also flush the pool pages as the 0s have
@@ -2146,7 +2144,7 @@ _AllocOSPages_Sparse(PMR_OSPAGEARRAY_DATA *psPageArrayData,
 	 * from the pool and to store pages that need their caching attributes changed.
 	 * Allocate number of OS pages to be able to use the attribute function later. */
 	ppsTempPageArray = OSAllocMem(sizeof(struct page*) * uiOSPagesToAlloc);
-	PVR_LOG_GOTO_IF_NOMEM_STOCK(2145, ppsTempPageArray, eError, e_exit);
+	PVR_LOG_GOTO_IF_NOMEM(ppsTempPageArray, eError, e_exit);
 
 	/* Check the requested number of pages if they fit in the page array */
 	if (uiDevPagesAllocated <
@@ -2217,7 +2215,7 @@ _AllocOSPages_Sparse(PMR_OSPAGEARRAY_DATA *psPageArrayData,
 									  puiAllocIndices[i]);
 			if (eError != PVRSRV_OK)
 			{
-				PVR_DPF_STOCK(2216, (PVR_DBG_ERROR, "Failed to alloc CMA pages"));
+				PVR_DPF((PVR_DBG_ERROR, "Failed to alloc CMA pages"));
 				goto e_free_pages;
 			}
 		}
@@ -2281,7 +2279,7 @@ _AllocOSPages_Sparse(PMR_OSPAGEARRAY_DATA *psPageArrayData,
 		eError = _MemsetPageArray(uiTempPageArrayIndex - uiDevPagesFromPool,
 		                          &ppsTempPageArray[uiDevPagesFromPool],
 					PAGE_KERNEL, PVRSRV_ZERO_VALUE);
-		PVR_LOG_GOTO_IF_FALSE_STOCK(2280, eError == PVRSRV_OK, "failed to zero pages (sparse)", e_free_pages);
+		PVR_LOG_GOTO_IF_FALSE(eError == PVRSRV_OK, "failed to zero pages (sparse)", e_free_pages);
 	}
 	else if (BIT_ISSET(ui32AllocFlags, FLAG_POISON_ON_ALLOC))
 	{
@@ -2289,7 +2287,7 @@ _AllocOSPages_Sparse(PMR_OSPAGEARRAY_DATA *psPageArrayData,
 		 * allocated from the pool or from the system. */
 		eError = _MemsetPageArray(uiTempPageArrayIndex, ppsTempPageArray,
 					PAGE_KERNEL, PVRSRV_POISON_ON_ALLOC_VALUE);
-		PVR_LOG_IF_FALSE_STOCK(2288, eError == PVRSRV_OK, "failed to poison pages (sparse)");
+		PVR_LOG_IF_FALSE(eError == PVRSRV_OK, "failed to poison pages (sparse)");
 
 		/* We need to flush the cache for the poisoned pool pages here. The flush for the pages
 		 * allocated from the system is done below because we also need to add appropriate cache
@@ -2642,7 +2640,7 @@ _FreeOSPages_Sparse(PMR_OSPAGEARRAY_DATA *psPageArrayData,
 		ppsTempPageArray = OSAllocMemNoStats(sizeof(struct page*) * uiTempArraySize);
 		if (ppsTempPageArray == NULL)
 		{
-			PVR_DPF_STOCK(2641, (PVR_DBG_ERROR, "%s: Failed free_pages metadata allocation", __func__));
+			PVR_DPF((PVR_DBG_ERROR, "%s: Failed free_pages metadata allocation", __func__));
 			return PVRSRV_ERROR_OUT_OF_MEMORY;
 		}
 
@@ -2861,7 +2859,7 @@ _FreeOSPages(PMR_OSPAGEARRAY_DATA *psPageArrayData,
 
 	if (eError != PVRSRV_OK)
 	{
-		PVR_DPF_STOCK(2860, (PVR_DBG_ERROR, "_FreeOSPages_FreePages failed"));
+		PVR_DPF((PVR_DBG_ERROR, "_FreeOSPages_FreePages failed"));
 	}
 
 	_DumpPageArray(psPageArrayData->pagearray,
@@ -2909,7 +2907,7 @@ PMRFinalizeOSMem(PMR_IMPL_PRIVDATA pvPriv)
 #endif
 
 		eError = _FreeOSPages(psOSPageArrayData, NULL, 0);
-		PVR_LOG_IF_ERROR_STOCK(2908, eError, "_FreeOSPages");
+		PVR_LOG_IF_ERROR(eError, "_FreeOSPages");
 		PVR_ASSERT(eError == PVRSRV_OK); /* can we do better? */
 	}
 
@@ -3028,9 +3026,7 @@ PMRSysPhysAddrOSMem(PMR_IMPL_PRIVDATA pvPriv,
 							" [0; %" IMG_UINT64_FMTSPECX "]", __func__,
 							psDevPAddr[uiIdx].uiAddr,
 							psOSPageArrayData->ui64DmaMask));
-#line 3027
 					BUG();
-#line 3030
 				}
 			}
 #endif
@@ -3069,7 +3065,6 @@ PMRAcquireKernelMappingDataOSMem(PMR_IMPL_PRIVDATA pvPriv,
 	IMG_UINT32 uiPageSizeDiff = 0;
 	struct page **pagearray;
 	PMR_OSPAGEARRAY_KERNMAP_DATA *psData;
-
 
 	/* For cases device page size greater than the OS page size,
 	 * multiple physically contiguous OS pages constitute one device page.
