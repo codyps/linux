@@ -59,9 +59,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 #include "platform.h"
+static PVRSRV_DEVICE_CONFIG gsDevices[1];
 
 /* Stock also retains this static config object for the platform back-pointer. */
-static PVRSRV_DEVICE_CONFIG gsDevices[1];
 
 /*
  * The A133 exposes CPU and device physical addresses in the same space.
