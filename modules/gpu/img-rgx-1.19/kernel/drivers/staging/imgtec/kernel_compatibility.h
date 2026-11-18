@@ -484,6 +484,31 @@ static inline void mmap_read_unlock(struct mm_struct *mm)
 }
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)) */
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0))
+struct dma_buf_map {
+	void *vaddr;
+};
+
+#define dma_buf_vmap(dmabuf, map) \
+	({ \
+		(map)->vaddr = dma_buf_vmap(dmabuf); \
+		(map)->vaddr ? 0 : ((dmabuf) && (dmabuf)->ops->vmap) ? -ENOMEM : -EINVAL; \
+	})
+
+#define dma_buf_vunmap(dmabuf, map) \
+	({ \
+		dma_buf_vunmap(dmabuf, (map)->vaddr); \
+		(map)->vaddr = NULL; \
+	})
+
+/*
+ * dma_buf_vmap/vunmap compat (from upstream DDK kernel_config_compatibility.h).
+ * Kernel 5.11 changed dma_buf_vmap to take an output struct dma_buf_map.
+ * We define the struct and wrap the old single-arg API.
+ * Order matters: the iosys_map block below depends on dma_buf_map existing.
+ */
+#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)) */
+
 /* vm_flags_set/clear introduced in 6.3 */
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0))
 static inline void vm_flags_set(struct vm_area_struct *vma, vm_flags_t flags)
@@ -501,31 +526,6 @@ static inline void vm_flags_clear(struct vm_area_struct *vma, vm_flags_t flags)
 #define register_shrinker(s, ...) register_shrinker(s)
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0)) */
 
-/*
- * dma_buf_vmap/vunmap compat (from upstream DDK kernel_config_compatibility.h).
- * Kernel 5.11 changed dma_buf_vmap to take an output struct dma_buf_map.
- * We define the struct and wrap the old single-arg API.
- * Order matters: the iosys_map block below depends on dma_buf_map existing.
- */
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0))
-
-struct dma_buf_map {
-	void *vaddr;
-};
-
-#define dma_buf_vmap(dmabuf, map) \
-	({ \
-		(map)->vaddr = dma_buf_vmap(dmabuf); \
-		(map)->vaddr ? 0 : ((dmabuf) && (dmabuf)->ops->vmap) ? -ENOMEM : -EINVAL; \
-	})
-
-#define dma_buf_vunmap(dmabuf, map) \
-	({ \
-		dma_buf_vunmap(dmabuf, (map)->vaddr); \
-		(map)->vaddr = NULL; \
-	})
-
-#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)) */
 
 /*
  * iosys_map rename compat (from upstream DDK kernel_config_compatibility.h).
