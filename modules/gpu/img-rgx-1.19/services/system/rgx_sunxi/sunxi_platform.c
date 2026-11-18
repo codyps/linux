@@ -127,7 +127,7 @@ static inline void switch_interl_dfs(int val)
 PVRSRV_ERROR sunxiPrePowerState(IMG_HANDLE hSysData,
 					 PVRSRV_SYS_POWER_STATE eNewPowerState,
 					 PVRSRV_SYS_POWER_STATE eCurrentPowerState,
-					 PVRSRV_POWER_FLAGS ePwrFlags)
+					 PVRSRV_POWER_FLAGS bForced)
 {
 	struct sunxi_platform *platform = (struct sunxi_platform *)hSysData;
 
@@ -151,7 +151,7 @@ PVRSRV_ERROR sunxiPrePowerState(IMG_HANDLE hSysData,
 PVRSRV_ERROR sunxiPostPowerState(IMG_HANDLE hSysData,
 					  PVRSRV_SYS_POWER_STATE eNewPowerState,
 					  PVRSRV_SYS_POWER_STATE eCurrentPowerState,
-					  PVRSRV_POWER_FLAGS ePwrFlags)
+					  PVRSRV_POWER_FLAGS bForced)
 {
 	struct sunxi_platform *platform = (struct sunxi_platform *)hSysData;
 
