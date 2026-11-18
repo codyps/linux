@@ -128,8 +128,10 @@ int de_fcm_set_init_para(unsigned int sel, unsigned int channel)
 	}
 	for (i = 0; i < 364; i++)
 		reg[0x900 / 4 + i].value = 0x64646464;
-	for (i = 0; i < 364; i++)
-		reg[0xf00 / 4 + i].value = 0x64646464;
+	for (offset = 0; offset < 0x5b0; offset += 4) {
+		asm volatile("" : : "r"(offset));
+		*(volatile u32 *)((volatile u8 *)reg + 0xf00 + offset) = 0x64646464;
+	}
 	for (i = 0; i < 364; i++)
 		reg[0x1500 / 4 + i].value = 0x64646464;
 	for (i = 0; i < 364; i++)
