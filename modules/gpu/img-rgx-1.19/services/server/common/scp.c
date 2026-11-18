@@ -43,10 +43,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */ /**************************************************************************/
 
 #include "pvr_notifier.h"
+#include "device.h"
 #include "rgxhwperf.h"
 #include "scp.h"
 #include "allocmem.h"
-
 #include "pvrsrv.h"
 #include "pvr_debug.h"
 #include "osfunc.h"
