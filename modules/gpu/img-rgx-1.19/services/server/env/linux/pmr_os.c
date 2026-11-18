@@ -65,7 +65,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "mmap_stats.h"
 #endif
 
-#include "kernel_compatibility.h"
+/* The stock kernel exposes vm_flags directly. Keep the newer setter
+ * for kernels that require it. */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)
+#define pmr_set_vm_flags(vma, flags) ((vma)->vm_flags |= (flags))
+#else
+#define pmr_set_vm_flags(vma, flags) vm_flags_set(vma, flags)
+#endif
+#line 69
 
 /*
  * x86_32:
@@ -397,19 +404,19 @@ OSMMapPMRGeneric(PMR *psPMR, PMR_MMAP_DATA pOSMMapData)
 	}
 	ps_vma->vm_page_prot = sPageProt;
 
-	vm_flags_set(ps_vma, VM_IO);
+	pmr_set_vm_flags(ps_vma, VM_IO);
 
 	/* Don't include the mapping in core dumps */
-	vm_flags_set(ps_vma, VM_DONTDUMP);
+	pmr_set_vm_flags(ps_vma, VM_DONTDUMP);
 
 	/*
 	 * Disable mremap because our nopage handler assumes all
 	 * page requests have already been validated.
 	 */
-	vm_flags_set(ps_vma, VM_DONTEXPAND);
+	pmr_set_vm_flags(ps_vma, VM_DONTEXPAND);
 
 	/* Don't allow mapping to be inherited across a process fork */
-	vm_flags_set(ps_vma, VM_DONTCOPY);
+	pmr_set_vm_flags(ps_vma, VM_DONTCOPY);
 
 	uiLength = ps_vma->vm_end - ps_vma->vm_start;
 
@@ -498,12 +505,12 @@ OSMMapPMRGeneric(PMR *psPMR, PMR_MMAP_DATA pOSMMapData)
 
 		if (bUseMixedMap)
 		{
-			vm_flags_set(ps_vma, VM_MIXEDMAP);
+			pmr_set_vm_flags(ps_vma, VM_MIXEDMAP);
 		}
 	}
 	else
 	{
-		vm_flags_set(ps_vma, VM_PFNMAP);
+		pmr_set_vm_flags(ps_vma, VM_PFNMAP);
 	}
 
 	/* For each PMR page-size contiguous bytes, map page(s) into user VMA */
