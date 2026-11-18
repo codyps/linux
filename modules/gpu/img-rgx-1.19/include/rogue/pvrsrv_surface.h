@@ -80,7 +80,8 @@ typedef enum _PVRSRV_SURFACE_MEMLAYOUT_  {
  *   Structure: #PVRSRV_SURFACE_FBC_LAYOUT_TAG
  *   Typedef: ::PVRSRV_SURFACE_FBC_LAYOUT
  */
-typedef struct PVRSRV_SURFACE_FBC_LAYOUT_TAG {
+typedef struct PVRSRV_SURFACE_FBC_LAYOUT_TAG
+{
 	/*! The compression mode for this surface*/
 	IMG_FB_COMPRESSION	eFBCompressionMode;
 } PVRSRV_SURFACE_FBC_LAYOUT;
