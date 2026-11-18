@@ -42,20 +42,10 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */ /**************************************************************************/
 #define PVRSRV_NO_BRIDGE_QUERIES
-#include "img_types.h"
-#include "pvrsrv_error.h"
-#include <powervr/pvrsrv_sync_ext.h>
 #include "pvr_notifier.h"
 #include "device.h"
-#include "rgxhwperf.h"
 #include "scp.h"
-#include "allocmem.h"
-#include "pvr_debug.h"
-#include "osfunc.h"
 #include "lock.h"
-#include "sync_server.h"
-#include "sync_internal.h"
-#include "pvrsrv_sync_server.h"
 struct _SCP_CONTEXT_
 {
 	PVRSRV_DEVICE_NODE  *psDevNode;         /*<! Device node reference for SCP layer */
@@ -67,6 +57,16 @@ struct _SCP_CONTEXT_
 	IMG_UINT32			psSyncRequesterID;  /*!< Sync requester ID, used when taking sync operations */
 	POS_LOCK			hLock;              /*!< Lock for this structure */
 };
+#include "pvrsrv_error.h"
+#include <powervr/pvrsrv_sync_ext.h>
+#include "img_types.h"
+#include "rgxhwperf.h"
+#include "allocmem.h"
+#include "pvr_debug.h"
+#include "osfunc.h"
+#include "sync_server.h"
+#include "sync_internal.h"
+#include "pvrsrv_sync_server.h"
 
 #define SCP_COMMAND_INVALID     0   /*!< Invalid command */
 #define SCP_COMMAND_CALLBACK    1   /*!< Command with callbacks */

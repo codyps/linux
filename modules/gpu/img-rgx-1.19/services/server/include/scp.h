@@ -47,7 +47,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "img_types.h"
 #include "img_defs.h"
 #include "pvrsrv_error.h"
-#include "sync_server.h"
+#include <powervr/pvrsrv_sync_ext.h>
+struct _PVRSRV_DEVICE_NODE_;
 
 
 typedef struct _SCP_CONTEXT_ SCP_CONTEXT;	/*!< Opaque handle to a software command processor context */
@@ -69,7 +70,7 @@ typedef void (*SCPDo)(void *pvReadyData, void *pvCompleteData);
 @Return         PVRSRV_OK if the software command processor was created
 */
 /*****************************************************************************/
-PVRSRV_ERROR IMG_CALLCONV SCPCreate(PVRSRV_DEVICE_NODE *psDevNode,
+PVRSRV_ERROR IMG_CALLCONV SCPCreate(struct _PVRSRV_DEVICE_NODE_ *psDevNode,
 									IMG_UINT32 ui32CCBSizeLog2,
 									SCP_CONTEXT **ppsContext);
 
