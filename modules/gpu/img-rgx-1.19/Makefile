@@ -90,6 +90,11 @@ ifeq ($(PVR_SYSTEM),sunxi_a133)
     gpu_compiler_include := $(abspath $(shell $(CC) -print-file-name=include))
     stock_gpu_compiler_include := /home2/trimuidev/tg3040/tina_1.1.1/out/a133-aw3/staging_dir/toolchain/lib/gcc/aarch64-openwrt-linux-gnu/7.4.1/include
     ccflags-y += $(call cc-option,-fdebug-prefix-map=$(gpu_compiler_include)=$(stock_gpu_compiler_include))
+
+    # The SDK stages DDK C files apart from their headers. Search the explicit
+    # DDK include list for quoted headers, while keeping DRM UAPI siblings visible.
+    stock_gpu_nostdinc := $(NOSTDINC_FLAGS)
+    NOSTDINC_FLAGS = $(if $(filter %.mod.o dc_sunxi.o,$(notdir $@)),,-I- -I$(srctree)/include/uapi/drm) $(stock_gpu_nostdinc)
   endif
 
   # Include vendor build-options CFLAGS from pvr-buildopts.mk.
