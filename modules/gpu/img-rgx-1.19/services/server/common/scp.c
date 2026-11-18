@@ -58,19 +58,9 @@ struct _SCP_CONTEXT_
 	POS_LOCK			hLock;              /*!< Lock for this structure */
 };
 
-/* Command submission uses the full GPU and synchronization interfaces. */
-
 #include "rgxhwperf.h"
-#include "allocmem.h"
-#include "pvr_debug.h"
-#include "osfunc.h"
-#include "sync_server.h"
-#include "sync_internal.h"
 #include "pvrsrv_sync_server.h"
 
-#define SCP_COMMAND_INVALID     0   /*!< Invalid command */
-#define SCP_COMMAND_CALLBACK    1   /*!< Command with callbacks */
-#define SCP_COMMAND_PADDING     2   /*!< Padding */
 typedef struct _SCP_COMMAND_
 {
 	IMG_UINT32				ui32CmdType;        /*!< Command type */
@@ -83,6 +73,16 @@ typedef struct _SCP_COMMAND_
 	void					*pvReadyData;       /*!< Data to pass into pfnReady */
 	void					*pvCompleteData;    /*!< Data to pass into pfnComplete */
 } SCP_COMMAND;
+/* Command submission uses the full GPU and synchronization interfaces. */
+
+#include "allocmem.h"
+#include "pvr_debug.h"
+#include "osfunc.h"
+#include "sync_server.h"
+#include "sync_internal.h"
+#define SCP_COMMAND_INVALID     0   /*!< Invalid command */
+#define SCP_COMMAND_CALLBACK    1   /*!< Command with callbacks */
+#define SCP_COMMAND_PADDING     2   /*!< Padding */
 
 #define GET_CCB_SPACE(WOff, ROff, CCBSize) \
 	((((ROff) - (WOff)) + ((CCBSize) - 1)) & ((CCBSize) - 1))
