@@ -1127,7 +1127,7 @@ int rawnand_special_init(void)
 	type = nci->npi->selected_readretry_no;
 
 	rawnand_chip_special_init(type);
-
+	/* OEM discards vendor init errors. A fix would propagate the status. */
 	return 0;
 }
 
