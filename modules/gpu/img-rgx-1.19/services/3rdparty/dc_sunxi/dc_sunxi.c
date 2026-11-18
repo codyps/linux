@@ -435,7 +435,7 @@ IMG_BOOL DC_SUNXI_GetBufferID(DC_SUNXI_CONTEXT *psDeviceContext, IMG_UINT32 *pui
 	return IMG_FALSE;
 }
 
-#line 442
+#line 443
 static
 void DC_SUNXI_PutBufferID(DC_SUNXI_CONTEXT *psDeviceContext, IMG_UINT32 ui32BufferID)
 {
@@ -712,6 +712,7 @@ static int __init DC_SUNXI_init(void)
 #line 713
 		ePixFormat = IMG_PIXFMT_B8G8R8A8_UNORM;
 #endif
+#line 715
 	}
 	else if(psLINFBInfo->var.bits_per_pixel == 16)
 	{
