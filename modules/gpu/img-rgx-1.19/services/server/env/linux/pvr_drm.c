@@ -95,6 +95,7 @@ static int pvr_pm_suspend(struct device *dev)
 
 	return PVRSRVDeviceSuspend(ddev);
 }
+
 /* Executed after the system is woken up from sleep/suspend-to-RAM/S3. This
  * phase restores the content of the video memory from the system RAM.
  */
@@ -106,7 +107,6 @@ static int pvr_pm_resume(struct device *dev)
 
 	return PVRSRVDeviceResume(ddev);
 }
-
 
 /* Executed before the hibernation image is created. This callback allows to
  * preserve the content of the video RAM into the system RAM which in turn
