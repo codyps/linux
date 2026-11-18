@@ -190,6 +190,7 @@ static void commit_static_frame(void)
  mutex_unlock(access);
 }
 
+__attribute__((target("tune=cortex-a53")))
 static int trimui_ledc_run_thread(void *unused)
 {
 	/* Startup roots only; recompute F2 after caller-clobbering services. */
