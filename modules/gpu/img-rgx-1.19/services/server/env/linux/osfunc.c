@@ -107,7 +107,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endif
 #include "physmem_osmem_linux.h"
 #include "dma_support.h"
-#include "kernel_compatibility.h"
+
 
 #include "pvrsrv_sync_server.h"
 
@@ -1773,7 +1773,13 @@ PVRSRV_ERROR OSChangeSparseMemCPUAddrMap(void **psPageArray,
 	}
 
 	/* Acquire the memory sem */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
+#line 1776
+	down_write(&psMM->mmap_sem);
+#else
 	mmap_write_lock(psMM);
+#endif
+#line 1777
 
 	psMapping = psVMA->vm_file->f_mapping;
 
@@ -1801,7 +1807,13 @@ PVRSRV_ERROR OSChangeSparseMemCPUAddrMap(void **psPageArray,
 
 	if ((psVMA->vm_flags & VM_MIXEDMAP) || bIsLMA)
 	{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)
+#line 1804
+		psVMA->vm_flags |= VM_MIXEDMAP;
+#else
 		vm_flags_set(psVMA, VM_MIXEDMAP);
+#endif
+#line 1805
 		bMixedMap = IMG_TRUE;
 	}
 	else
@@ -1823,7 +1835,13 @@ PVRSRV_ERROR OSChangeSparseMemCPUAddrMap(void **psPageArray,
 #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)) */
 				{
 					bMixedMap = IMG_TRUE;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)
+#line 1826
+					psVMA->vm_flags |= VM_MIXEDMAP;
+#else
 					vm_flags_set(psVMA, VM_MIXEDMAP);
+#endif
+#line 1827
 					break;
 				}
 			}
@@ -1898,7 +1916,13 @@ PVRSRV_ERROR OSChangeSparseMemCPUAddrMap(void **psPageArray,
 
 	eError = PVRSRV_OK;
 eFailed:
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
+#line 1901
+	up_write(&psMM->mmap_sem);
+#else
 	mmap_write_unlock(psMM);
+#endif
+#line 1902
 
 	return eError;
 }
