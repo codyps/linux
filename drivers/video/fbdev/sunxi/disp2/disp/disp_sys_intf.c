@@ -190,18 +190,11 @@ int disp_sys_script_get_item(char *main_name, char *sub_name, int value[],
 	int ret = 0;
 	struct gpio_config config;
 
-	/* OEM bug: sprintf can overrun compat before this length check runs.
-	 * A bounded format and an early error return would fix the input case.
-	 */
 	len = sprintf(compat, "allwinner,sunxi-%s", main_name);
 	if (len > 32)
 		__wrn("size of mian_name is out of range\n");
 
 	node = of_find_compatible_node(NULL, NULL, compat);
-	/* OEM bug: a successful lookup holds a node reference which none of the
-	 * return paths below release. Keep the leak for stock behavior; a fix
-	 * would call of_node_put(node) after the final property access.
-	 */
 	if (!node) {
 		__wrn("of_find_compatible_node %s fail\n", compat);
 		return ret;
@@ -221,9 +214,6 @@ int disp_sys_script_get_item(char *main_name, char *sub_name, int value[],
 			      sub_name);
 		else {
 			ret = type;
-			/* OEM bug: the caller's destination capacity is unknown here.
-			 * A long DT string can overrun value; bound the copy in a fix.
-			 */
 			memcpy((void *)value, str, strlen(str) + 1);
 		}
 	} else if (type == 3) {
@@ -697,3 +687,17 @@ int disp_sys_pwm_set_polarity(uintptr_t p_handler, int polarity)
 }
 
 #endif
+
+/*
+ * OEM bugs in disp_sys_script_get_item(). Keep these notes here so stock
+ * warning line numbers emitted by __wrn() above stay reproducible.
+ *
+ * The compatibility string can overrun compat before the length check.
+ * Use bounded formatting and reject truncation before the lookup in a fix.
+ *
+ * A successful node lookup leaves a reference held on every return path.
+ * Release it with of_node_put() after the last property access in a fix.
+ *
+ * The string copy assumes an unknown destination capacity. Pass a capacity
+ * from the caller and bound the copy in a fix.
+ */
