@@ -508,7 +508,6 @@ static inline void vm_flags_clear(struct vm_area_struct *vma, vm_flags_t flags)
  * Order matters: the iosys_map block below depends on dma_buf_map existing.
  */
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0))
-#include <linux/dma-buf.h>
 
 struct dma_buf_map {
 	void *vaddr;
