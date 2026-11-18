@@ -42,8 +42,8 @@ PVRSRVKM_NAME = $(PVRSRV_MODNAME)
 
 # Stock places the Sunxi state and its empty lock-class key before gsDevices.
 # Preserve the translation-unit order, including its section-relative aliases.
-$(PVRSRVKM_NAME)-y += services/system/rogue/$(PVR_SYSTEM)/sunxi_platform.o \
- services/system/rogue/$(PVR_SYSTEM)/sysconfig.o \
+$(PVRSRVKM_NAME)-y += services/system/rgx_sunxi/sunxi_platform.o \
+ services/system/rgx_sunxi/sysconfig.o \
  services/system/rogue/common/env/linux/dma_support.o \
  services/server/common/vmm_pvz_client.o \
  services/server/common/vmm_pvz_server.o \

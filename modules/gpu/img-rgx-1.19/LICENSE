@@ -13,7 +13,7 @@ This repository contains source code under dual licensing:
   (Imagination Technologies Ltd.)
 - **MediaTek platform files** (`services/system/rogue/mt8173/`):
   GPL-2.0 (MediaTek Inc.) -- not used by PocketForge.
-- **PocketForge-authored files** (e.g. `services/system/rogue/sunxi_a133/`):
+- **PocketForge-authored files** (e.g. `services/system/rgx_sunxi/`):
   Dual MIT/GPLv2, matching upstream convention.
 - **Auto-generated config files** (`config_kernel.h`, `config_kernel.mk`):
   No separate license header; covered by the repository's dual MIT/GPLv2.

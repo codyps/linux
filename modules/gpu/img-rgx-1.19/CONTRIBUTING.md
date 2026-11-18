@@ -58,7 +58,7 @@ Expected fields:
 
 ## sunxi_a133 system layer port
 
-The `services/system/rogue/sunxi_a133/` directory is the Allwinner A133
+The `services/system/rgx_sunxi/` directory is the Allwinner A133
 (TrimUI Smart Pro) system layer, ported from the vendor DDK 1.11
 (`sonic_pad_os`) to the DDK 1.19 API surface.
 

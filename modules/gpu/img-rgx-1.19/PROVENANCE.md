@@ -71,7 +71,7 @@ See `LICENSE`, `MIT-COPYING`, and `GPL-COPYING` in this repository.
 
 PocketForge's fork adds:
 
-1. **`services/system/rogue/sunxi_a133/`** -- A133/sun50iw10 system layer,
+1. **`services/system/rgx_sunxi/`** -- A133/sun50iw10 system layer,
    ported from the DDK 1.11 sunxi system layer in
    `CrealityTech/sonic_pad_os` (GPL-2.0).
 2. **Build configuration** -- replacement `config_kernel.h` and

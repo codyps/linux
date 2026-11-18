@@ -137,7 +137,7 @@ ifeq ($(PVR_SYSTEM),sunxi_a133)
   # sunxi_a133 includes: use DDK's own headers, no drm/img compatibility header
   ccflags-y += \
    -I$(DDK_SRC) \
-   -I$(DDK_SRC)/services/system/rogue/sunxi_a133 \
+   -I$(DDK_SRC)/services/system/rgx_sunxi \
    -I$(DDK_SRC)/services/system/include \
    -I$(DDK_SRC)/services/server/include \
    -I$(DDK_SRC)/services/include \
