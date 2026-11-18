@@ -194,7 +194,7 @@ __attribute__((target("tune=cortex-a53")))
 static int trimui_ledc_run_thread(void *unused)
 {
 	/* Startup roots only; recompute F2 after caller-clobbering services. */
-	register struct trimui_led_effect *left asm("x22") = &(trimui_effect_l);
+	struct trimui_led_effect *left = &(trimui_effect_l);
 	struct trimui_led_effect *front2 = &(trimui_effect_f2);
 
 	asm volatile("" : "+r"(front2));
