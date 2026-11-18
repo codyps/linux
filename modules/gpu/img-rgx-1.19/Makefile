@@ -90,7 +90,8 @@ ifeq ($(PVR_SYSTEM),sunxi_a133)
     stock_gpu_kernel := /home2/trimuidev/tg3040/tina_1.1.1/lichee/linux-4.9
     ccflags-y += $(call cc-option,-fdebug-prefix-map=$(realpath $(srctree))=$(stock_gpu_kernel))
     ccflags-y += $(call cc-option,-grecord-gcc-switches)
-    ccflags-y += $(call cc-option,-march=armv8-a+crc+simd)
+    # Append after the arm64 module code model to preserve GCC option order.
+    KBUILD_CFLAGS_MODULE += $(call cc-option,-march=armv8-a+crc+simd)
     ccflags-y += $(call cc-option,-fno-pie)
 
     # GCC's system headers used the OpenWrt staging directory in the SDK.
