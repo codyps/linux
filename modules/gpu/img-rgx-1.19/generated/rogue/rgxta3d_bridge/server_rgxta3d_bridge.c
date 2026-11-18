@@ -60,7 +60,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "handle.h"
 
 #include <linux/slab.h>
-
+#include "server_rgxta3d_capture.h"
 /* ***************************************************************************
  * Server-side bridge entry points
  */
@@ -116,10 +116,7 @@ PVRSRVBridgeRGXCreateHWRTDataSet(IMG_UINT32 ui32DispatchTableEntry,
 	IMG_UINT32 ui32NextOffset = 0;
 	IMG_BYTE *pArrayArgsBuffer = NULL;
 	IMG_BOOL bHaveEnoughSpace = IMG_FALSE;
-#if defined(PF_ODYSSEY_CAPTURE)
-	IMG_UINT64 ui64OdysseyCaptureId = 0;
-#endif
-
+	RGX_BRIDGE_CAPTURE_ID
 	IMG_UINT32 ui32BufferSize = 0;
 	IMG_UINT64 ui64BufferSize =
 	    ((IMG_UINT64) RGXMKIF_NUM_GEOMDATAS * sizeof(IMG_DEV_VIRTADDR)) +
@@ -350,18 +347,7 @@ PVRSRVBridgeRGXCreateHWRTDataSet(IMG_UINT32 ui32DispatchTableEntry,
 	}
 	/* Release now we have looked up handles. */
 	UnlockHandle(psConnection->psHandleBase);
-
-#if defined(PF_ODYSSEY_CAPTURE)
-	/* PF generator pin: keep this call immediately before RGXCreateHWRTDataSet.
-	 * The bridge generator has no custom-call schema in this DDK release. */
-	RGXOdysseyCaptureCreate(psConnection, sRgnHeaderDevVAddrInt,
-		psRGXCreateHWRTDataSetIN->ui32RgnHeaderSize,
-		psRGXCreateHWRTDataSetIN->ui32TEMTILE1,
-		psRGXCreateHWRTDataSetIN->ui32TEMTILE2,
-		psRGXCreateHWRTDataSetIN->ui32TEScreen,
-		psRGXCreateHWRTDataSetIN->ui32ISPMtileSize, &ui64OdysseyCaptureId);
-#endif
-
+	RGX_BRIDGE_CAPTURE_CREATE
 	psRGXCreateHWRTDataSetOUT->eError =
 	    RGXCreateHWRTDataSet(psConnection, OSGetDevNode(psConnection),
 				 sVHeapTableDevVAddrInt,
@@ -395,15 +381,7 @@ PVRSRVBridgeRGXCreateHWRTDataSet(IMG_UINT32 ui32DispatchTableEntry,
 	{
 		goto RGXCreateHWRTDataSet_exit;
 	}
-#if defined(PF_ODYSSEY_CAPTURE)
-	RGXOdysseyCaptureRetain(psKmHwRTDataSetInt, sRgnHeaderDevVAddrInt,
-		psRGXCreateHWRTDataSetIN->ui32RgnHeaderSize,
-		psRGXCreateHWRTDataSetIN->ui32TEMTILE1,
-		psRGXCreateHWRTDataSetIN->ui32TEMTILE2,
-		psRGXCreateHWRTDataSetIN->ui32TEScreen,
-		psRGXCreateHWRTDataSetIN->ui32ISPMtileSize, ui64OdysseyCaptureId);
-#endif
-
+	RGX_BRIDGE_CAPTURE_RETAIN
 	/* Lock over handle creation. */
 	LockHandle(psConnection->psHandleBase);
 	if (hKmHwRTDataSetInt2)
@@ -527,7 +505,7 @@ PVRSRVBridgeRGXDestroyHWRTDataSet(IMG_UINT32 ui32DispatchTableEntry,
 	     && (psRGXDestroyHWRTDataSetOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL)
 	     && (psRGXDestroyHWRTDataSetOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF_STOCK(510, (PVR_DBG_ERROR,
+		PVR_DPF((PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psRGXDestroyHWRTDataSetOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
@@ -681,7 +659,7 @@ PVRSRVBridgeRGXDestroyZSBuffer(IMG_UINT32 ui32DispatchTableEntry,
 	     && (psRGXDestroyZSBufferOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL)
 	     && (psRGXDestroyZSBufferOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF_STOCK(664, (PVR_DBG_ERROR,
+		PVR_DPF((PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psRGXDestroyZSBufferOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
@@ -814,7 +792,7 @@ PVRSRVBridgeRGXUnpopulateZSBuffer(IMG_UINT32 ui32DispatchTableEntry,
 		     (psRGXUnpopulateZSBufferOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psRGXUnpopulateZSBufferOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF_STOCK(797, (PVR_DBG_ERROR,
+		PVR_DPF((PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psRGXUnpopulateZSBufferOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
@@ -1002,7 +980,7 @@ PVRSRVBridgeRGXDestroyFreeList(IMG_UINT32 ui32DispatchTableEntry,
 		     (psRGXDestroyFreeListOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL) &&
 		     (psRGXDestroyFreeListOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF_STOCK(985, (PVR_DBG_ERROR,
+		PVR_DPF((PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psRGXDestroyFreeListOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
@@ -1271,7 +1249,7 @@ PVRSRVBridgeRGXDestroyRenderContext(IMG_UINT32 ui32DispatchTableEntry,
 	     && (psRGXDestroyRenderContextOUT->eError != PVRSRV_ERROR_KERNEL_CCB_FULL)
 	     && (psRGXDestroyRenderContextOUT->eError != PVRSRV_ERROR_RETRY)))
 	{
-		PVR_DPF_STOCK(1254, (PVR_DBG_ERROR,
+		PVR_DPF((PVR_DBG_ERROR,
 			 "%s: %s",
 			 __func__, PVRSRVGetErrorString(psRGXDestroyRenderContextOUT->eError)));
 		UnlockHandle(psConnection->psHandleBase);
