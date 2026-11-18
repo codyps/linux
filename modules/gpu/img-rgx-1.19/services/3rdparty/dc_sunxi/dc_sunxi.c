@@ -419,8 +419,14 @@ void DC_SUNXI_ContextDestroy(IMG_HANDLE hDisplayContext)
 static
 IMG_BOOL DC_SUNXI_GetBufferID(DC_SUNXI_CONTEXT *psDeviceContext, IMG_UINT32 *pui32BufferID)
 {
-	IMG_UINT32 ui32IDLimit = !!psDeviceContext->psDeviceData->bCanFlip + 1;
+	IMG_UINT32 ui32IDLimit;
 	IMG_UINT32 ui32BufferID;
+#line 420
+	if (psDeviceContext->psDeviceData->bCanFlip)
+#line 424
+		ui32IDLimit = 2;
+	else
+		ui32IDLimit = 1;
 #line 429
 	for (ui32BufferID = 0; ui32BufferID < ui32IDLimit; ++ui32BufferID)
 	{
