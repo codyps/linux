@@ -80,6 +80,40 @@ MODULE_IMPORT_NS(DMA_BUF);
 
 static struct drm_driver pvr_drm_platform_driver;
 
+/* The original platform registration layout in this range is only partly known. */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static int pvr_devices_register(void)
+{
+	/* The GPU platform device is supplied by the device tree. */
+	return 0;
+}
 #if defined(MODULE) && !defined(PVR_LDM_PLATFORM_PRE_REGISTERED)
 /*
  * This is an arbitrary value. If it's changed then the 'num_devices' module
@@ -114,47 +148,13 @@ MODULE_PARM_DESC(num_devices,
 		 "Number of platform devices to register (default: 1 - max: 16)");
 #endif /* defined(NO_HARDWARE) */
 #endif /* defined(MODULE) && !defined(PVR_LDM_PLATFORM_PRE_REGISTERED) */
-
-#if 0
-static int pvr_devices_register(void)
+static void pvr_devices_unregister(void)
 {
-#if defined(MODULE) && !defined(PVR_LDM_PLATFORM_PRE_REGISTERED)
-	struct platform_device_info pvr_dev_info = {
-		.name = SYS_RGX_DEV_NAME,
-		.id = -2,
-#if defined(NO_HARDWARE)
-		/* Not all cores have 40 bit physical support, but this
-		 * will work unless > 32 bit address is returned on those cores.
-		 * In the future this will be fixed more correctly.
-		 */
-		.dma_mask = DMA_BIT_MASK(40),
-#else
-		.dma_mask = DMA_BIT_MASK(32),
-#endif
-	};
-	unsigned int i;
-
-	BUG_ON(pvr_num_devices == 0 || pvr_num_devices > MAX_DEVICES);
-
-	pvr_devices = kmalloc_array(pvr_num_devices, sizeof(*pvr_devices),
-				    GFP_KERNEL);
-	if (!pvr_devices)
-		return -ENOMEM;
-
-	for (i = 0; i < pvr_num_devices; i++) {
-		pvr_devices[i] = platform_device_register_full(&pvr_dev_info);
-		if (IS_ERR(pvr_devices[i])) {
-			DRM_ERROR("unable to register device %u (err=%ld)\n",
-				  i, PTR_ERR(pvr_devices[i]));
-			pvr_devices[i] = NULL;
-			return -ENODEV;
-		}
-	}
-#endif /* defined(MODULE) && !defined(PVR_LDM_PLATFORM_PRE_REGISTERED) */
-
-	return 0;
+	/* The platform bus owns the device lifetime. */
 }
-#endif
+
+
+
 
 /*
  * The Brick firmware supplies the GPU platform device through its FDT.
@@ -311,14 +311,14 @@ static int __init pvr_init(void)
 	if (err)
 		return err;
 
-	return 0; // pvr_devices_register();
+	return pvr_devices_register();
 }
 
 static void __exit pvr_exit(void)
 {
 	DRM_DEBUG_DRIVER("\n");
 
-	/* The GPU platform device is owned by the device tree. */
+	pvr_devices_unregister();
 	platform_driver_unregister(&pvr_platform_driver);
 	PVRSRVDriverDeinit();
 
