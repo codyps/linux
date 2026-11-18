@@ -51,6 +51,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 struct _PVRSRV_DEVICE_NODE_;
 
 
+/* Context storage is private to the SCP implementation. */
 typedef struct _SCP_CONTEXT_ SCP_CONTEXT;	/*!< Opaque handle to a software command processor context */
 
 typedef IMG_BOOL (*SCPReady)(void *pvReadyData);
@@ -62,7 +63,6 @@ typedef void (*SCPDo)(void *pvReadyData, void *pvCompleteData);
 @Description    Create a software command processor
 
 @Input          psDevNode            Device node pointer
-
 @Input          ui32CCBSizeLog2      Log2 of the CCB size
 
 @Output         ppsContext           Pointer to SCP context created
