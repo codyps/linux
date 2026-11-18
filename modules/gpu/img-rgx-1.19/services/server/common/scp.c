@@ -544,10 +544,6 @@ PVRSRV_ERROR SCPFlush(SCP_CONTEXT *psContext)
 	return PVRSRV_OK;
 }
 
-/* This looks like a reasonable value. Number of traced syncs should
- * not exceed 20. */
-#define MAX_TRACED_UFOS 20
-
 /*
 	SCPCommandComplete
 */
