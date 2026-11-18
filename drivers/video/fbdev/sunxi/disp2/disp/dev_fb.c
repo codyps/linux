@@ -2134,7 +2134,7 @@ static int Fb_map_kernel_logo(u32 sel, struct fb_info *info)
                      * addition. Keep that truncation even on ARM64.
                      * TODO: overflow checking would change OEM behavior.
                      */
-                    __asm__("" : "+r" (pixel_index));
+
                     product = (u32)(pixel_index * byte_width);
 					product;
 				}));
