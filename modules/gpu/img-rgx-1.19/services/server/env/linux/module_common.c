@@ -65,7 +65,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "pvr_bridge_k.h"
 
 #include "pvr_fence.h"
-
 #if defined(SUPPORT_NATIVE_FENCE_SYNC)
 #include "pvr_sync.h"
 #if !defined(USE_PVRSYNC_DEVNODE)
@@ -154,10 +153,10 @@ CONNECTION_DATA *LinuxServicesConnectionFromFile(struct file *pFile)
 		PVRSRV_CONNECTION_PRIV *psConnectionPriv;
 
 		psDRMFile = pFile->private_data;
-		PVR_LOG_RETURN_IF_FALSE_STOCK(156, psDRMFile != NULL, "psDRMFile is NULL", NULL);
+		PVR_LOG_RETURN_IF_FALSE(psDRMFile != NULL, "psDRMFile is NULL", NULL);
 
 		psConnectionPriv = (PVRSRV_CONNECTION_PRIV*)psDRMFile->driver_priv;
-		PVR_LOG_RETURN_IF_FALSE_STOCK(159, psConnectionPriv != NULL, "psConnectionPriv is NULL", NULL);
+		PVR_LOG_RETURN_IF_FALSE(psConnectionPriv != NULL, "psConnectionPriv is NULL", NULL);
 
 		return (CONNECTION_DATA*)psConnectionPriv->pvConnectionData;
 	}
@@ -482,7 +481,7 @@ int PVRSRVDeviceServicesOpen(PVRSRV_DEVICE_NODE *psDeviceNode,
 
 	if (!psPVRSRVData)
 	{
-		PVR_DPF_STOCK(484, (PVR_DBG_ERROR, "%s: No device data", __func__));
+		PVR_DPF((PVR_DBG_ERROR, "%s: No device data", __func__));
 		iErr = -ENODEV;
 		goto out;
 	}
@@ -507,7 +506,7 @@ int PVRSRVDeviceServicesOpen(PVRSRV_DEVICE_NODE *psDeviceNode,
 		psConnectionPriv = kzalloc(sizeof(*psConnectionPriv), GFP_KERNEL);
 		if (!psConnectionPriv)
 		{
-			PVR_DPF_STOCK(509, (PVR_DBG_ERROR, "%s: No memory to allocate driver_priv data", __func__));
+			PVR_DPF((PVR_DBG_ERROR, "%s: No memory to allocate driver_priv data", __func__));
 			iErr = -ENOMEM;
 			mutex_unlock(&sDeviceInitMutex);
 			goto fail_alloc_connection_priv;
@@ -596,7 +595,7 @@ static int PVRSRVDeviceSyncOpen(PVRSRV_DEVICE_NODE *psDeviceNode,
 
 	if (!psPVRSRVData)
 	{
-		PVR_DPF_STOCK(598, (PVR_DBG_ERROR, "%s: No device data", __func__));
+		PVR_DPF((PVR_DBG_ERROR, "%s: No device data", __func__));
 		iErr = -ENODEV;
 		goto out;
 	}
@@ -607,7 +606,7 @@ static int PVRSRVDeviceSyncOpen(PVRSRV_DEVICE_NODE *psDeviceNode,
 		psConnectionPriv = kzalloc(sizeof(*psConnectionPriv), GFP_KERNEL);
 		if (!psConnectionPriv)
 		{
-			PVR_DPF_STOCK(609, (PVR_DBG_ERROR, "%s: No memory to allocate driver_priv data", __func__));
+			PVR_DPF((PVR_DBG_ERROR, "%s: No memory to allocate driver_priv data", __func__));
 			iErr = -ENOMEM;
 			goto out;
 		}
@@ -621,7 +620,7 @@ static int PVRSRVDeviceSyncOpen(PVRSRV_DEVICE_NODE *psDeviceNode,
 	psConnection = kzalloc(sizeof(*psConnection), GFP_KERNEL);
 	if (!psConnection)
 	{
-		PVR_DPF_STOCK(623, (PVR_DBG_ERROR, "%s: No memory to allocate connection data", __func__));
+		PVR_DPF((PVR_DBG_ERROR, "%s: No memory to allocate connection data", __func__));
 		iErr = -ENOMEM;
 		goto fail_alloc_connection;
 	}
