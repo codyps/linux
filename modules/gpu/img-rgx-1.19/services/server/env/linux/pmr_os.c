@@ -558,6 +558,7 @@ OSMMapPMRGeneric(PMR *psPMR, PMR_MMAP_DATA pOSMMapData)
 #endif
 #line 514
 								 );
+#line 521
 			if (iStatus)
 			{
 				/* Failure error code doesn't get propagated */
