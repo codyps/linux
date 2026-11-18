@@ -121,8 +121,14 @@ $(modules:.ko=$(modpost-ext).mod.c): __modpost ;
 # modname is set to make c_flags define KBUILD_MODNAME
 modname = $(notdir $(@:.mod.o=))
 
+# Match in-tree DWARF source paths for generated module C files in O= builds.
+ifneq ($(KBUILD_SRC),)
+mod_debug_prefix := $(call cc-option,-fdebug-prefix-map=$(CURDIR)/=)
+endif
+
 quiet_cmd_cc_o_c = CC      $@
       cmd_cc_o_c = $(CC) $(c_flags) $(KBUILD_CFLAGS_MODULE) $(CFLAGS_MODULE) \
+		   $(mod_debug_prefix) \
 		   -c -o $@ $<
 
 $(modules:.ko=.mod.o): %.mod.o: %$(modpost-ext).mod.c FORCE
