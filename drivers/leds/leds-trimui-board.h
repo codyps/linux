@@ -195,7 +195,7 @@ static int trimui_ledc_run_thread(void *unused)
 {
 	/* Startup roots only; recompute F2 after caller-clobbering services. */
 	register struct trimui_led_effect *left asm("x22") = &(trimui_effect_l);
-	register struct trimui_led_effect *front2 asm("x18") = &(trimui_effect_f2);
+	struct trimui_led_effect *front2 = &(trimui_effect_f2);
 
 	asm volatile("" : "+r"(front2));
 	int battery_ticks = 0; /* OEM signed comparison, including negative values. */
