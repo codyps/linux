@@ -85,6 +85,18 @@ KBUILD_LDFLAGS_MODULE	+= -plugin-opt=-code-model=large
 endif
 endif
 
+ifeq ($(CONFIG_TRIMUI_BOARD_ALPU_ARELINK),y)
+ifeq ($(KBUILD_EXTMOD),)
+# The stock TrimUI modules use this ISA after the module code model and
+# retain their compiler options and SDK compilation directory in DWARF.
+# The external PowerVR Kbuild supplies its own source and debug paths.
+trimui_sdk_kernel := /home2/trimuidev/tg3040/tina_1.1.1/lichee/linux-4.9
+KBUILD_CFLAGS_MODULE += $(call cc-option,-march=armv8-a+crc+simd)
+KBUILD_CFLAGS_MODULE += $(call cc-option,-fdebug-prefix-map=$(realpath $(srctree))=$(trimui_sdk_kernel))
+KBUILD_CFLAGS_MODULE += $(call cc-option,-grecord-gcc-switches)
+endif
+endif
+
 ifeq ($(CONFIG_ARM64_MODULE_PLTS),y)
 KBUILD_LDFLAGS_MODULE	+= -T $(srctree)/arch/arm64/kernel/module.lds
 endif
